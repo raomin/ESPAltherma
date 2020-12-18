@@ -1,17 +1,16 @@
 //convert read registry value to the expected format based on convID
 // #include <registrys.h>
 #include <Arduino.h>
-#include "mqttserial.h"
-// char buff[64];
 class Converter
 {
 public:
-    void getLabels(char registryID, LabelDef *ret[], int &num)
+    void getLabels(char registryID, LabelDef* ret[], int &num)
     {
         num = 0;
         for (auto &&label : labelDefs)
         {
-            if (label.registryID == registryID)
+            if (label.registryID == registryID
+            )
             {
                 ret[num++] = &label;
             }
@@ -26,38 +25,26 @@ public:
 
     void readRegistryValues(char registryID, char *data)
     {
-        // char bufflog[250]={0};
-        // for (size_t i = 0; i < data[2]+3; i++)
-        // {
-        //     sprintf(bufflog+i*5,"0x%02x ",data[i]);
-        // }        
-        // Serial.print(bufflog);
-        // mqttSerial.printf("Free heap: %d", esp_get_free_heap_size());
-
-        // Serial.printf("Data 3 is 0x%02x\n",data[3]);
-        // Serial.printf("For registry %d, we have these labels:\n", registryID);
-        // mqttSerial.printf("For registry %d, we have these labels:\n", registryID);
+        Serial.printf("For registry %d, we have these labels:\n", registryID);
         int num = 0;
-        LabelDef *labels[128];
-        // Serial.printf("data 3 is 0x%02x\n",data[3]);
+        LabelDef* labels[20];
         getLabels(registryID, labels, num);
-        // Serial.printf("data 3 is 0x%02x\n",data[3]);
-        Serial.printf("%d labels to get on Registry %d: \n", num, registryID);
+        Serial.printf("First is at %p value %p", &labels[1],labels[1]);
 
+        int pos = 3;
         for (size_t i = 0; i < num; i++)
         {
             /* code */
-            Serial.printf("label %d is %s offset: %d ", i, labels[i]->label, labels[i]->offset);
-            char *input = data;
-            input += labels[i]->offset + 3;
-            // mqttSerial.printf("value for 0x%02x vs 0x%02x", input[0], data[labels[i]->offset + 3]);
-            convert(labels[i], input);
-            // data+=labels[i]->dataSize;
-            // mqttSerial.printf("%s\n", labels[i]->asString);
+            Serial.printf("offset %d:%s Getting value: ", labels[i]->offset, labels[i]->label);
+            convert(labels[i], data + pos);
+            pos += labels[i]->dataSize;
+            Serial.printf("%s\n", labels[i]->asString);
         }
+
+        Serial.println("done!");
     }
 
-    void convert(LabelDef *def, char *data)
+    void convert(LabelDef* def, char *data)
     {
         def->asString[0] = {0};
         int convId = def->convid;
@@ -82,7 +69,6 @@ public:
             break;
         case 105:
             dblData = (double)getSignedValue(data, num, 0) * 0.1;
-            // Serial.printf("%f\n",dblData);
             break;
         case 106:
             dblData = (double)getSignedValue(data, num, 1) * 0.1;
@@ -166,50 +152,6 @@ public:
             dblData += (double)(num3 & 255) / 256.0;
             break;
         }
-        case 211:
-        case 151:
-            dblData = (double)getUnsignedValue(data, num, 0);
-            break;
-        case 152:
-            dblData = (double)getUnsignedValue(data, num, 1);
-            break;
-        case 153:
-            dblData = (double)getUnsignedValue(data, num, 0) / 256.0;
-            break;
-        case 154:
-            dblData = (double)getUnsignedValue(data, num, 1) / 256.0;
-            break;
-        case 155:
-            dblData = (double)getUnsignedValue(data, num, 0) * 0.1;
-            break;
-        case 156:
-            dblData = (double)getUnsignedValue(data, num, 1) * 0.1;
-            break;
-        case 157:
-            dblData = (double)getUnsignedValue(data, num, 0) / 256.0 * 2.0;
-            break;
-        case 158:
-            dblData = (double)getUnsignedValue(data, num, 1) / 256.0 * 2.0;
-            break;
-        case 159:
-        case 160:
-            break;
-        case 161:
-            dblData = (double)getUnsignedValue(data, num, 1) * 0.5;
-            break;
-        case 162:
-            dblData = (double)(getUnsignedValue(data, num, 1) - 64) * 0.5;
-            break;
-        case 163:
-            dblData = (double)getUnsignedValue(data, num, 1) * 0.25;
-            break;
-        case 164:
-            dblData = (double)(getUnsignedValue(data, num, 1) * 5);
-            break;
-        case 165:
-            dblData = (double)(getUnsignedValue(data, num, 0) & 16383);
-            break;
-
         case 200:
             convertTable200(data, def->asString);
             return;
@@ -227,22 +169,17 @@ public:
         case 307:
             convertTable300(data, def->convid, def->asString);
             return;
-        case 315:
-            convertTable315(data, def->asString);
-            return;
         case 316:
             convertTable316(data, def->asString);
             return;
         default:
             //conversion is not available
             sprintf(def->asString, "Conv %d not avail.", convId);
-            return;
         }
         if (dblData != NAN)
         {
-            sprintf(def->asString, "%.2lf", dblData);
+            sprintf(def->asString, "%lf", dblData);
         }
-        // Serial.printf("-> %s\n",def->asString);
     }
 
 private:
@@ -261,37 +198,6 @@ private:
         return;
     }
 
-    void convertTable315(char *data, char *ret)
-    {
-        char b = 240 & data[0];
-        b = (char)(b >> 4);
-        switch (b)
-        {
-        case 0:
-            strcat(ret, "Stop");
-            break;
-        case 1:
-            strcat(ret, "Heating");
-            break;
-        case 2:
-            strcat(ret, "Cooling");
-            break;
-        case 3:
-            strcat(ret, "??");
-            break;
-        case 4:
-            strcat(ret, "DHW:Domestic Hot Water");
-            break;
-        case 5:
-            strcat(ret, "Heating + DHW");
-            break;
-        case 6:
-            strcat(ret, "Cooling + DHW");
-            break;
-        default:
-            strcat(ret, "??");
-        }
-    }
     void convertTable316(char *data, char *ret)
     {
         char b = 240 & data[0];
@@ -317,10 +223,8 @@ private:
         if (data[0] == 0)
         {
             strcat(ret, "OFF");
-        }
-        else
-        {
-            strcat(ret, "ON");
+        }else{
+        strcat(ret, "ON");
         }
     }
     //201

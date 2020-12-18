@@ -1,4 +1,26 @@
-//{0x00,0,801,0,-1,"*Refrigerant type"},
+#include <pgmspace.h>
+//This file is a definition file for the ESP Atherma data logger
+//
+//Decomment each value you want to query for your installation.
+//and decomment the #include of this file in main.cpp to activate it.
+
+class LabelDef
+{
+public:
+    int convid;
+    int offset;
+    int registryID;
+    int dataSize;
+    int dataType;
+    const char *label;
+    char *data;
+    char asString[30];
+    LabelDef(){};
+    LabelDef(int registryIDp, int offsetp, int convidp, int dataSizep, int dataTypep, const char *labelp) : convid(convidp), offset(offsetp), registryID(registryIDp), dataSize(dataSizep), dataType(dataTypep), label(labelp){};
+};
+
+LabelDef PROGMEM labelDefs[] = {
+ //{0x00,0,801,0,-1,"*Refrigerant type"},
 //{0x00,1,996,1,-1,"Override CMD:0x00 N_INV=1"},
 //{0x00,2,996,0,-1,"Override CMD:0x00 N_STD=0"},
 //{0x00,3,996,2,-1,"Override CMD:0x00 N_FAN=2"},
@@ -211,3 +233,4 @@
 //{0x64,5,105,2,1,"Hybrid Heating Target Temp."},
 //{0x64,7,105,2,1,"Boiler Heating Target Temp."},
 //{0x00,0,996,0,-1,"Override All Clear"},
+};

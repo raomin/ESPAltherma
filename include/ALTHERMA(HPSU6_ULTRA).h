@@ -1,4 +1,26 @@
-//{0x00,0,801,0,-1,"*Refrigerant type"},
+#include <pgmspace.h>
+//This file is a definition file for the ESP Atherma data logger
+//
+//Decomment each value you want to query for your installation.
+//and decomment the #include of this file in main.cpp to activate it.
+
+class LabelDef
+{
+public:
+    int convid;
+    int offset;
+    int registryID;
+    int dataSize;
+    int dataType;
+    const char *label;
+    char *data;
+    char asString[30];
+    LabelDef(){};
+    LabelDef(int registryIDp, int offsetp, int convidp, int dataSizep, int dataTypep, const char *labelp) : convid(convidp), offset(offsetp), registryID(registryIDp), dataSize(dataSizep), dataType(dataTypep), label(labelp){};
+};
+
+LabelDef PROGMEM labelDefs[] = {
+ //{0x00,0,801,0,-1,"*Refrigerant type"},
 //{0x00,0,152,1,-1,"Sensor Data Qty"},
 //{0x00,1,152,1,-1,"INV compressor Qty"},
 //{0x00,2,152,1,-1,"STD compressor Qty"},
@@ -204,3 +226,4 @@
 //{0x64,12,105,2,1,"2nd Domestic hot water temperature"},
 //{0x64,14,152,1,1,"Target delta T heating"},
 //{0x64,15,152,1,1,"Target delta T cooling"},
+};
