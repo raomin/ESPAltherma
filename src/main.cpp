@@ -74,6 +74,10 @@ void setup()
   client.setCallback(callback);
   mqttSerial.begin(&client, "espaltherma/log");
 
+  setup_wifi();
+  client.setServer(MQTT_SERVER, MQTT_PORT);
+  client.setBufferSize(1024);//to support large json message
+
   //getting the list of registries to query from the selected values
   int i = 0;
   for (auto &&label : labelDefs)
