@@ -75,8 +75,12 @@ void setup()
   mqttSerial.begin(&client, "espaltherma/log");
 
   setup_wifi();
+  ArduinoOTA.setHostname("ESPAltherma");
+  ArduinoOTA.begin();
   client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setBufferSize(1024);//to support large json message
+  client.setBufferSize(4096);//to support large json message
+
+  client.setCallback(callback);
 
   //getting the list of registries to query from the selected values
   int i = 0;

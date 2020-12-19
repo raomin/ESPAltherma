@@ -1,6 +1,7 @@
 //convert read registry value to the expected format based on convID
 // #include <registrys.h>
 #include <Arduino.h>
+char buff[64];
 class Converter
 {
 public:
@@ -25,23 +26,34 @@ public:
 
     void readRegistryValues(char registryID, char *data)
     {
-        Serial.printf("For registry %d, we have these labels:\n", registryID);
-        int num = 0;
-        LabelDef* labels[20];
-        getLabels(registryID, labels, num);
-        Serial.printf("First is at %p value %p", &labels[1],labels[1]);
+        // memcpy(buff,data,64);
+        // for (size_t i = 0; i < data[2]+3; i++)
+        // {
+        //     Serial.printf("0x%02x ",data[i]);
+        // }
+        
 
-        int pos = 3;
+        // Serial.printf("Data 3 is 0x%02x\n",data[3]);
+        // Serial.printf("For registry %d, we have these labels:\n", registryID);
+        int num = 0;
+        LabelDef* labels[128];
+        // Serial.printf("data 3 is 0x%02x\n",data[3]);
+        getLabels(registryID, labels, num);
+        // Serial.printf("data 3 is 0x%02x\n",data[3]);
+        // Serial.printf("%d labels to get on Registry %d: \n",num,registryID);
+        
         for (size_t i = 0; i < num; i++)
         {
             /* code */
-            Serial.printf("offset %d:%s Getting value: ", labels[i]->offset, labels[i]->label);
-            convert(labels[i], data + pos);
-            pos += labels[i]->dataSize;
-            Serial.printf("%s\n", labels[i]->asString);
+            // Serial.printf("label %d is %s offset: %d ",i, labels[i]->label,  labels[i]->offset);
+            char* input = data;
+            input+=labels[i]->offset+3;
+            // Serial.printf("value for 0x%02x vs 0x%02x", input[0],data[labels[i]->offset+3]);
+            convert(labels[i], input);
+            // data+=labels[i]->dataSize;
+            // Serial.printf("%s\n", labels[i]->asString);
         }
 
-        Serial.println("done!");
     }
 
     void convert(LabelDef* def, char *data)
@@ -50,6 +62,12 @@ public:
         int convId = def->convid;
         int num = def->dataSize;
         double dblData = NAN;
+        Serial.print("Converting from:");
+        for (size_t i = 0; i < num; i++)
+        {
+            Serial.printf(" 0x%02x ",data[i]);
+        }
+        
         switch (convId)
         {
         case 100:
@@ -69,6 +87,7 @@ public:
             break;
         case 105:
             dblData = (double)getSignedValue(data, num, 0) * 0.1;
+            Serial.printf("%f\n",dblData);
             break;
         case 106:
             dblData = (double)getSignedValue(data, num, 1) * 0.1;
@@ -180,11 +199,13 @@ public:
         {
             sprintf(def->asString, "%lf", dblData);
         }
+        Serial.printf("-> %s\n",def->asString);
     }
 
 private:
     void convertTable300(char *data, int tableID, char *ret)
     {
+        Serial.printf("Bin Conv %02x with tableID %d \n",data[0],tableID);
         char b = 1;
         b = (char)(b << tableID % 10);
         if ((data[0] & b) > 0)
