@@ -3,22 +3,17 @@
 <hr/>
 
 <p align="center">
-<img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma.svg?style=for-the-badge" />
+<img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
-<img src="https://img.shields.io/travis/com/raomin/ESPAltherma/master?style=for-the-badge" />
-&nbsp;
-<img src="https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge" />
+<img src="https://img.shields.io/github/license/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
 <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 </p>
 
 <hr/>
 
-<br/><br/>
 
 <p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
-<br/>
-<br/>
 
 ## Features
 
