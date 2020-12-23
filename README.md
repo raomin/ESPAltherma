@@ -205,4 +205,4 @@ If this project is useful to you, and if you want, <b>you can buy me a beer</b>!
  <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 
 ### License
-ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
+ESPAltherma is licensed under MIT Licence
