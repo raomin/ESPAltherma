@@ -12,8 +12,11 @@
 
 <hr/>
 
+<br/><br/>
 
 <p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
+<br/>
+<br/>
 
 ## Features
 
@@ -21,7 +24,7 @@
     <li>Connects with the serial port of Altherma on port X10A.</li>
     <li>Needs just an ESP32, no need for extra hardware.</li>
     <li>Queries the Altherma for selected values at defined interval.</li>
-    <li>Converts and formalizes all values in an JSON message sent over MQTT.</li>
+    <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
     <li>Optional: can control (on/off) your heat pump.</li>
 </ul>
@@ -31,9 +34,6 @@
 ![](doc/images/screenshot.png)
 
 <br/>
-<br/>
-<br/>
-
 
 # Getting started
 
@@ -56,9 +56,9 @@
 ### Step 1: Uploading the firmware
 
 1. Download the repository folder and open it in PlatformIO
-2. Edit the file `src/setup.h` as follow: 
+2. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
-    - uncomment the `#include` line corresponding to your heat pump. Eg
+    - uncomment the `#include` line corresponding to your heat pump. E.g.
   
     ```c++
     ...
@@ -69,8 +69,8 @@
     ```
 
     *If you're not sure which one to take, choose the closest or Default.h. The only thing that could happen is that you would have missing values or wrong label names.*
-3. Now open and edit the file you just uncommented, eg `include/def/ALTHERMA(HYBRID).h` as follow:
-    - uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
+3. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` as follow:
+    - Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
   
     ```c++
     ...
@@ -107,29 +107,33 @@
 
 > ESP `RX_PIN` `TX_PIN` can be changed in `src/main.cpp`. Do NOT use the main Serial GPIOs, it is used for debugging logs.
 
+Once installed the setup looks like this:
+
+![](doc/images/installation.png)
+
 5. Cross check twice the connections and turn on your heat pump. Two new entities AlthermaSensor and AlthermaSwitch should appear in the  Home Assistant. AlthermaSensor holds the values as attributes.
 
 ### Troubleshooting
 
-Possible issues could be: improper wifi signal, unsupported protocol ...
+Possible issues could be: improper wifi signal, unsupported protocol...
 
 ESPAltherma generates logs on the main serial port (USB). Connect to the ESP32 and open the serial monitor on Platformio.
 
 ESPAltherma also generates logs on MQTT. If Wifi and MQTT is not the issue, look at the logs on the topic `espalterma/log`.
 
-### Note on the TTL voltage
+### Note on voltage
 
 The serial port of X10A is TTL 5V, where the ESP32 is 3.3V. Your ESP32 might not be 5V tolerant. If you want to play it safe, you should use a level shifter to convert Daikin TX - RX ESP line from 5V to 3.3V.
 
-In practice, I had no problem connecting an ESP32 without level shifters.
+In practice, I had no problem connecting an ESP32 without level shifters. I also had no issue powering the ESP32 from the 5V line of the X10A. It is provided by a 7805 with a massive heat sink, plus, there are not many clients for it on the board.
 
 ## Controling your Daikin Altherma heat pump
 
-ESPAltherma cannot change the configuration values of the heat pump (see [FAQ](#faq)). But ESPAltherma includes an MQTT switch that can be connected to a relay to simulate an *external On Off thermostat*. Doing so, allows to remotely turn on/off the heating function of your heat pump. A second relay can be used to trigger the cooling function. 
+ESPAltherma cannot change the configuration values of the heat pump (see [FAQ](#faq)). However, ESPAltherma can control a relay on MQTT that can simulate an *external On Off thermostat*. Doing so allows to remotely turn on/off the heating function of your heat pump. A second relay can be used to trigger the cooling function.
 
 Refer to the schematic map of your heat pump to see where to connect *external On Off thermostat*.
 
-Adding this will take priority on your thermostat. ESPAltherma will turn the heating on/off, the thermostat will be in standby.
+Adding this will take priority on your thermostat. ESPAltherma will turn the heating on/off ; the thermostat will be in standby.
 
 Note: I resoldered the J1 jumper that was cut when installing my digital thermostat (not sure if it is needed).
 
@@ -166,9 +170,33 @@ Eg. this template declares the 2 operation modes as entities:
         value_template: "{{ state_attr('sensor.altherma','I/U operation mode') }}"
 ```
 
-After restart of Home Assistant, these entities can be added to an history card: 
+After restarting Home Assistant, these entities can be added to an history card:
 
 ![](doc/images/historycard.png)
+
+### A Climate entity
+
+To control heating through the OnOff switch, declare a Climate (aka thermostat) entity monitoring a temperature sensor.
+
+```yaml
+climate:
+  - platform: generic_thermostat
+    name: Altherma
+    heater: switch.altherma
+    target_sensor: sensor.temproom1
+    min_temp: 15
+    max_temp: 25
+    cold_tolerance: 0.5
+    hot_tolerance: 0.5
+    min_cycle_duration:
+      minutes: 30
+    away_temp: 15
+    precision: 0.1
+```
+
+Then, add a climate card somewhere:
+
+![](doc/images/climate.png)
 
 ## FAQ
 
@@ -190,7 +218,7 @@ It is as safe as playing with your heat pump can be. Use is entirely at your own
 
 ### Why not using the Daikin LAN adapter?
 
-Of course you can probably achieve the same with the BRP069A62 adapter. But it is expensive, not wifi and less fun than doing it yourself :) 
+Of course you can probably achieve the same with the BRP069A62 adapter. However, it is expensive, not wifi and less fun than doing it yourself :) 
 
 ### My Daikin heat pump is not an Altherma. Can I still control it?
 
@@ -198,11 +226,11 @@ No, ESPAltherma supports only Altherma protocol. Other (older) units also have a
 
 ### How can I contribute?
 
-Every contribution to this project is highly appriciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!
+Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!
 
 If this project is useful to you, and if you want, <b>you can buy me a beer</b>! It feels good and really helps me keep ESPAltherma updated. Thanks :)
 
  <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 
 ### License
-ESPAltherma is licensed under MIT Licence
+ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
