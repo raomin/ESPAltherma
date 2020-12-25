@@ -2,7 +2,7 @@
 #include <HardwareSerial.h>
 
 HardwareSerial MySerial(1);
-#define SER_TIMEOUT 400 //leave 300ms for the machine to answer
+#define SER_TIMEOUT 400 //leave 400ms for the machine to answer
 
 char getCRC(char *src, int len)
 {
