@@ -1,8 +1,8 @@
 //Setup your credentials and mqtt info here:
-#define WIFI_SSID "SSID"//**Your SSID here**
-#define WIFI_PWD "password"//**Your password here** leave empty if open (bad!)
+#define WIFI_SSID "***REMOVED***"//**Your SSID here**
+#define WIFI_PWD "***REMOVED***"//**Your password here** leave empty if open (bad!)
 
-#define MQTT_SERVER "192.168.1.4"//**Your IP address here**
+#define MQTT_SERVER "***REMOVED***"//**Your IP address here**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
@@ -24,7 +24,7 @@
 //#include "def/ALTHERMA(HPSU6_ULTRA).h"
 //#include "def/ALTHERMA(HYBRID).h"
 //#include "def/ALTHERMA(LT-D7_E_BML).h"
-//#include "def/ALTHERMA(LT_11-16KW_HYDROSPLIT_HYDRO_UNIT).h"
+#include "def/ALTHERMA(LT_11-16KW_HYDROSPLIT_HYDRO_UNIT).h"
 //#include "def/ALTHERMA(LT_CA_CB_04-08KW).h"
 //#include "def/ALTHERMA(LT_CA_CB_11-16KW).h"
 //#include "def/ALTHERMA(LT_DA_04-08KW).h"
