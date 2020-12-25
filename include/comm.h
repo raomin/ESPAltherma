@@ -49,37 +49,18 @@ bool queryRegistry(char regID, char *buffer)
 
   int len = 0;
   buffer[2] = 10;
-<<<<<<< main
   Serial.printf("Querying register 0x%02x... ", regID);
   while ((len < buffer[2] + 2) && (millis() < (start + SER_TIMEOUT)))
-=======
-  Serial.printf("R 0x%02x: ",regID);
-  while ((len < buffer[2]+2) && (millis() < (start + SER_TIMEOUT)))
->>>>>>> HEAD~9
   {
     client.loop();
     if (MySerial.available())
     {
       buffer[len++] = MySerial.read();
-<<<<<<< main
       // Serial.printf("0x%02x ", buffer[len - 1]);
-=======
-      Serial.printf("0x%02x ", buffer[len - 1]);
-      // if (len == 2 && buffer[1] != regID)
-      // {
-      //   Serial.printf("Error: Wrong registry ID!\n");
-      //   while (Serial.available() > 0)
-      //   {
-      //     Serial.read();
-      //   }
-      //   return;
-      // }
->>>>>>> HEAD~9
     }
   }
   if (millis() >= (start + SER_TIMEOUT))
   {
-<<<<<<< main
     if (len == 0)
     {
       Serial.printf("Time out! Check connection\n");
@@ -98,23 +79,13 @@ bool queryRegistry(char regID, char *buffer)
 
     delay(1000);
     return false;
-=======
-    Serial.printf("Time out! Check connection\n");
-    delay(1000);
-    return;
->>>>>>> HEAD~9
   }
   if (getCRC(buffer, len - 1) != buffer[len - 1])
   {
     Serial.println("Wrong CRC!");
-<<<<<<< main
     mqttSerial.printf("ERROR: Wrong CRC on register 0x%02x!", regID);
     Serial.printf("Calculated 0x%2x but got 0x%2x\n", getCRC(buffer, len - 1), buffer[len - 1]);
     return false;
-=======
-    Serial.printf("Calculated 0x%2x but got 0x%2x\n",getCRC(buffer, len - 1),buffer[len - 1]);
-    return;
->>>>>>> HEAD~9
   }
   else
   {
