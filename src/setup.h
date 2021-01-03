@@ -1,8 +1,8 @@
 //Setup your credentials and mqtt info here:
-#define WIFI_SSID "***REMOVED***"//**Your SSID here**
-#define WIFI_PWD "***REMOVED***"//**Your password here** leave empty if open (bad!)
+#define WIFI_SSID "romiot"//**Your SSID here**
+#define WIFI_PWD "RomIOT!!"//**Your password here** leave empty if open (bad!)
 
-#define MQTT_SERVER "***REMOVED***"//**Your IP address here**
+#define MQTT_SERVER "192.168.1.46"//**Your IP address here**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883

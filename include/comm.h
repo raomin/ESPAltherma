@@ -37,6 +37,23 @@ bool queryRegistry(char regID, char *buffer)
   // Serial.printf("done\n");
   //   return;
 
+    //pending unexpected messages?
+    char readbuf[200];
+    int pos=0;
+    while (MySerial.available())
+    {
+      readbuf[pos++] = MySerial.read();
+    }
+    if (pos>0){
+      char bufflog[250]="Unexpected message: ";
+      for (size_t i = strlen(bufflog); i < pos; i++)
+      {
+          sprintf(bufflog+i*5,"0x%02x ",readbuf[i]);
+      }
+      mqttSerial.print(bufflog);
+    }
+
+
   //preparing command:
   char prep[] = {0x03, 0x40, regID, 0x00};
   prep[3] = getCRC(prep, 3);
@@ -52,7 +69,6 @@ bool queryRegistry(char regID, char *buffer)
   Serial.printf("Querying register 0x%02x... ", regID);
   while ((len < buffer[2] + 2) && (millis() < (start + SER_TIMEOUT)))
   {
-    client.loop();
     if (MySerial.available())
     {
       buffer[len++] = MySerial.read();
