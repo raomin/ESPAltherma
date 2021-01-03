@@ -52,7 +52,6 @@ bool queryRegistry(char regID, char *buffer)
   Serial.printf("Querying register 0x%02x... ", regID);
   while ((len < buffer[2] + 2) && (millis() < (start + SER_TIMEOUT)))
   {
-    client.loop();
     if (MySerial.available())
     {
       buffer[len++] = MySerial.read();
