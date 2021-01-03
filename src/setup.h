@@ -1,8 +1,9 @@
 //Setup your credentials and mqtt info here:
+//only change the value between the " " leave the rest of the line untouched.
 #define WIFI_SSID "SSID"//**Your SSID here**
 #define WIFI_PWD "password"//**Your password here** leave empty if open (bad!)
 
-#define MQTT_SERVER "192.168.1.4"//**Your IP address here**
+#define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
@@ -15,7 +16,7 @@
 #define MAX_MSG_SIZE 4096//max size of the json message sent in mqtt 
 
 //Uncomment *ONE* of the following according to your installation.
-//Then, open and edit the selected file in the include folder and uncomment each values you are interested in.
+//Then, open and edit the selected file in the /include/def/ folder and uncomment each values you are interested in.
 
 //#include "def/ALTHERMA(BIZONE_CB_04-08KW).h"
 //#include "def/ALTHERMA(BIZONE_CB_11-16KW).h"
