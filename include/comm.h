@@ -14,6 +14,8 @@ char getCRC(char *src, int len)
   return ~b;
 }
 
+int test = 0;
+
 bool queryRegistry(char regID, char *buffer)
 {
   //test:
@@ -37,29 +39,44 @@ bool queryRegistry(char regID, char *buffer)
   // Serial.printf("done\n");
   //   return;
 
-    //pending unexpected messages?
-    char readbuf[200];
-    int pos=0;
-    while (MySerial.available())
-    {
-      readbuf[pos++] = MySerial.read();
-    }
-    if (pos>0){
-      char bufflog[250]="Unexpected message: ";
-      for (size_t i = strlen(bufflog); i < pos; i++)
-      {
-          sprintf(bufflog+i*5,"0x%02x ",readbuf[i]);
-      }
-      mqttSerial.print(bufflog);
-    }
-
+  // if (test++==5)
+  // {
+  //   mqttSerial.printf("Testing fcmd:");
+  //   char buf[] = {8, 33, 73, 0, 1, 1, 5, 5, 0x82};
+  //   // char buf[] = {3, 0x40, 0x60, 0x5c};
+  //   // buf[8] = getCRC(buf, 3);
+  //   MySerial.write(buf);
+  //   MySerial.flush();
+  //   test = 0;
+  // }
+  //pending unexpected messages?
+  // char readbuf[120];
+  // int pos = 0;
+  // ulong rstart = millis();
+  // while (millis() < (rstart + 3*SER_TIMEOUT))
+  // {
+  //   if (MySerial.available())
+  //   {
+  //     readbuf[pos++] = MySerial.read();
+  //   }
+  // }
+  
+  // if (pos > 0)
+  // {
+  //   char bufflog[250] = "";
+  //   for (size_t i = 0; i < pos; i++)
+  //   {
+  //     sprintf(bufflog + i * 5, "0x%02x ", readbuf[i]);
+  //   }
+  //   mqttSerial.print("Unexpected message: ");
+  //   mqttSerial.print(bufflog);
+  // }
 
   //preparing command:
   char prep[] = {0x03, 0x40, regID, 0x00};
   prep[3] = getCRC(prep, 3);
-  memcpy(buffer, prep, 4);
-
   //Sending command to serial
+  MySerial.flush();
   MySerial.write(prep);
   // MySerial.write(prep);
   ulong start = millis();
@@ -72,6 +89,9 @@ bool queryRegistry(char regID, char *buffer)
     if (MySerial.available())
     {
       buffer[len++] = MySerial.read();
+      if (len==3 && buffer[0]==0x15 && buffer[1]==0xea){//Discard possible error message
+        buffer+=2;
+      }
       // Serial.printf("0x%02x ", buffer[len - 1]);
     }
   }
@@ -85,10 +105,10 @@ bool queryRegistry(char regID, char *buffer)
     else
     {
       mqttSerial.printf("ERR: Time out on register 0x%02x! got %d/%d bytes\n", regID, len, buffer[2]);
-      char bufflog[250]={0};
+      char bufflog[250] = {0};
       for (size_t i = 0; i < len; i++)
       {
-          sprintf(bufflog+i*5,"0x%02x ",buffer[i]);
+        sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
       }
       mqttSerial.print(bufflog);
     }

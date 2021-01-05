@@ -7,7 +7,7 @@
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
 
-#define FREQUENCY 30000 //query values every 30 sec
+#define FREQUENCY 10000 //query values every 30 sec
 #define RX_PIN    36// Pin connected to the TX pin of X10A 
 #define TX_PIN    26// Pin connected to the RX pin of X10A
 #define PIN_THERM 0// Pin connected to the thermosta relay (normally open)

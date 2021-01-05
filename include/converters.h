@@ -202,6 +202,9 @@ public:
         {
             sprintf(def->asString, "%lf", dblData);
         }
+        else{
+            sprintf(def->asString, "Conv %d not avail.", convId);
+        }
         Serial.printf("-> %s\n",def->asString);
     }
 

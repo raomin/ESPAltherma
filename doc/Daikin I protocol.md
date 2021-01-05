@@ -83,3 +83,65 @@ uint8_t SumAndInvert(uint8_t const message[], int nBytes)
     return (~sum);
 }   /* SumAndInvert() */
 ```
+
+
+### Writing in registers:
+
+read
+LEN  33  73  0  OPCODE=1 OPERAND=1 PAGEN SETTINGN CRC
+eg
+
+char buf[] = {8,33,73,0,1,1,5,5,0x81};
+
+
+write
+LEN  33  70  0  OPCODE=1 OPERAND=1 PAGEN SETTINGN DATADATA CRC
+receive 8 
+
+```c#
+private long r_Comm_Fcom_Opcode()
+{
+    checked
+    {
+        Mod_CommDefine.s_comm_data.sbuf = new byte[(int)Mod_CommDefine.s_comm_cmd.Fcmd.byten + 1];
+        long num = 0L;
+        Mod_CommDefine.s_comm_data.sbuf[(int)num] = (byte)Mod_CommDefine.s_comm_cmd.Fcmd.byten;
+        num += 1L;
+        Mod_CommDefine.s_comm_data.sbuf[(int)num] = Mod_CommDefine.s_comm_cmd.Fcmd.cmd;
+        num += 1L;
+        Mod_CommDefine.s_comm_data.sbuf[(int)num] = Mod_CommDefine.s_comm_cmd.Fcmd.subcmd;
+        num += 1L;
+        Mod_CommDefine.s_comm_data.sbuf[(int)num] = 0;
+        num += 1L;
+        Mod_CommDefine.s_comm_data.sbuf[(int)num] = Mod_CommDefine.s_comm_cmd.Fcmd.opcode;
+        num += 1L;
+        Mod_CommDefine.s_comm_data.sbuf[(int)num] = Mod_CommDefine.s_comm_cmd.Fcmd.operand;
+        num += 1L;
+        byte opcode = Mod_CommDefine.s_comm_cmd.Fcmd.opcode;
+        if (opcode == 1)
+        {
+            byte operand = Mod_CommDefine.s_comm_cmd.Fcmd.operand;
+            if (operand == 1)
+            {
+                Mod_CommDefine.s_comm_data.sbuf[(int)num] = Mod_CommDefine.s_comm_cmd.Fcmd.pageN;
+                num += 1L;
+                Mod_CommDefine.s_comm_data.sbuf[(int)num] = Mod_CommDefine.s_comm_cmd.Fcmd.settingN;
+                num += 1L;
+                long num2 = unchecked((long)(checked(Mod_CommDefine.s_comm_cmd.Fcmd.dataN - 1)));
+                for (long num3 = 0L; num3 <= num2; num3 += 1L)
+                {
+                    Mod_CommDefine.s_comm_data.sbuf[(int)num] = Mod_CommDefine.s_comm_cmd.Fcmd.f_data[(int)num3];
+                    num += 1L;
+                }
+                Mod_CommDefine.s_comm_data.Int_rcvN = 8L;
+            }
+        }
+        long num4 = this.r_Comm_MakeSum(ref Mod_CommDefine.s_comm_data.sbuf, (int)num);
+        Mod_CommDefine.s_comm_data.sbuf[(int)num] = (byte)((num4 & 255L) ^ 255L);
+        num += 1L;
+        Mod_CommDefine.s_comm_data.sndN = num;
+        return num;
+    }
+}
+
+```
