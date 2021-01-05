@@ -188,6 +188,9 @@ public:
         case 307:
             convertTable300(data, def->convid, def->asString);
             return;
+        case 315:
+            convertTable315(data, def->asString);
+            return;
         case 316:
             convertTable316(data, def->asString);
             return;
@@ -217,6 +220,45 @@ private:
             strcat(ret, "OFF");
         }
         return;
+    }
+    // 0x00087E1B: Conv56‎ = "Stop"
+// 0x00087E21: Conv57‎ = "Heating"
+// 0x00087E2A: Conv58‎ = "Cooling"
+// 0x00087E33: Conv59‎ = "??"
+// 0x00087E37: Conv60‎ = "DHW:Domestic Hot Water"
+// 0x00087E4F: Conv61‎ = "Heating + DHW"
+// 0x00087E5E: Conv62‎ = "Cooling + DHW"
+   
+    void convertTable315(char *data, char *ret)
+    {
+        char b = 240 & data[0];
+        b = (char)(b >> 4);
+        switch (b)
+        {
+        case 0:
+            strcat(ret, "Stop");
+            break;
+        case 1:
+            strcat(ret, "Heating");
+            break;
+        case 2:
+            strcat(ret, "Cooling");
+            break;
+        case 3:
+            strcat(ret, "??");
+            break;
+        case 4:
+            strcat(ret, "DHW:Domestic Hot Water");
+            break;
+        case 5:
+            strcat(ret, "Heating + DHW");
+            break;
+        case 6:
+            strcat(ret, "Cooling + DHW");
+            break;
+        default:
+            strcat(ret, "");
+        }
     }
 
     void convertTable316(char *data, char *ret)
