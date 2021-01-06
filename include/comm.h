@@ -40,11 +40,10 @@ bool queryRegistry(char regID, char *buffer)
   //preparing command:
   char prep[] = {0x03, 0x40, regID, 0x00};
   prep[3] = getCRC(prep, 3);
-  memcpy(buffer, prep, 4);
 
   //Sending command to serial
+  MySerial.flush(); //Prevent possible pending info on the read
   MySerial.write(prep);
-  // MySerial.write(prep);
   ulong start = millis();
 
   int len = 0;
@@ -55,7 +54,6 @@ bool queryRegistry(char regID, char *buffer)
     if (MySerial.available())
     {
       buffer[len++] = MySerial.read();
-      // Serial.printf("0x%02x ", buffer[len - 1]);
     }
   }
   if (millis() >= (start + SER_TIMEOUT))
@@ -63,19 +61,17 @@ bool queryRegistry(char regID, char *buffer)
     if (len == 0)
     {
       Serial.printf("Time out! Check connection\n");
-      /* code */
     }
     else
     {
       mqttSerial.printf("ERR: Time out on register 0x%02x! got %d/%d bytes\n", regID, len, buffer[2]);
-      char bufflog[250]={0};
+      char bufflog[250] = {0};
       for (size_t i = 0; i < len; i++)
       {
-          sprintf(bufflog+i*5,"0x%02x ",buffer[i]);
+        sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
       }
       mqttSerial.print(bufflog);
     }
-
     delay(1000);
     return false;
   }
