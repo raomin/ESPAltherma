@@ -12,11 +12,7 @@
 
 <hr/>
 
-<br/><br/>
-
-<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
-<br/>
-<br/>
+<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
 
 ## Features
 
@@ -164,7 +160,7 @@ In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `e
 
 ![](doc/images/attribs.png)
 
-If you want to integrate specific `attribute`s in graphs, gauge etc. you need to declare them as `sensor`s using `template` in your `configuration.yaml`.
+If you want to integrate specific `attribute`s in graphs, gauge etc. you need to declare them as `sensor`s using `template` in your `configuration.yaml`. See [HA doc on Template](https://www.home-assistant.io/integrations/template/).
 
 Eg. this template declares the 2 operation modes as entities:
 
@@ -189,7 +185,7 @@ After restarting Home Assistant, these entities can be added to an history card:
 
 ### A Climate entity
 
-To control heating through the OnOff switch, declare a Climate (aka thermostat) entity monitoring a temperature sensor.
+To control heating through the On/Off switch, declare a Climate (aka thermostat) entity monitoring a temperature sensor.
 
 ```yaml
 climate:
