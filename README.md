@@ -233,6 +233,19 @@ Of course you can probably achieve the same with the BRP069A62 adapter. However,
 
 No, ESPAltherma supports only Altherma protocol. Other (older) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 
+### How can I update ESPAltherma remotely?
+
+ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
+
+1- Download the updated code from the repository (or pull new changes) and report your configuration.
+2- Open platformio.ini and uncomment the following line:
+
+```ini
+upload_port = ESPAltherma.local
+```
+
+With this parameter, the upload will happen over wifi. Note: your local firewall should allow incoming connection ; also, it can fail from time to time, if it happens just relaunch update.
+
 ### How can I contribute?
 
 Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!
