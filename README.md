@@ -177,6 +177,10 @@ Eg. this template declares the 2 operation modes as entities:
       espaltherma_iuoperation:
         friendly_name: "Indoor Operation mode"
         value_template: "{{ state_attr('sensor.altherma','I/U operation mode') }}"
+      espaltherma_dhw:
+        friendly_name: "DHW Temp"
+        value_template: "{{ state_attr('sensor.altherma','DHW tank temp. (R5T)') }}"
+        unit_of_measurement: '°C'
 ```
 
 After restarting Home Assistant, these entities can be added to an history card:
