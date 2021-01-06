@@ -29,8 +29,6 @@
 
 ![](doc/images/screenshot.png)
 
-<br/>
-
 # Getting started
 
 ## Prerequisites
@@ -223,11 +221,11 @@ It took quite some time to reverse engineering the protocol. If you're intereste
 
 ### Is it safe? Can I break my machine?
 
-It is as safe as playing with your heat pump can be. Use is entirely at your own risk. No liability.
+It is as safe as interacting with a serial port can be. Pretty safe if you are a bit careful. Use is entirely at your own risk. No liability.
 
 ### Why not using the Daikin LAN adapter?
 
-Of course you can probably achieve the same with the BRP069A62 adapter. However, it is expensive, not wifi and less fun than doing it yourself :) 
+Of course you can probably achieve the same with the BRP069A62 adapter. However, it is expensive, not wifi and less fun than doing it yourself :)
 
 ### My Daikin heat pump is not an Altherma. Can I still control it?
 
@@ -250,7 +248,7 @@ With this parameter, the upload will happen over wifi. Note: your local firewall
 
 Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!
 
-If this project is useful to you, and if you want, <b>you can buy me a beer</b>! It feels good and really helps me keep ESPAltherma updated. Thanks :)
+If this project is useful to you, and if you want, <b>you can buy me a beer</b>! It feels good and really helps improving ESPAltherma. Thanks :)
 
  <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 
