@@ -192,15 +192,16 @@ public:
             convertTable200(data, def->asString);
             return;
         case 211:
-            if (data == 0.0)
+            if (data == 0)
             {
                 strcat(def->asString,"OFF");
+            return;
             }
             else
             {
-                sprintf(def->asString,"{0:F0}",data);
+                dblData = (uint)(double)data[0];
+                break;
             }
-            return;
                     
         case 201:
         case 217:
