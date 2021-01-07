@@ -235,8 +235,8 @@ No, ESPAltherma supports only Altherma protocol. Other (older) units also have a
 
 ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
 
-1- Download the updated code from the repository (or pull new changes) and report your configuration.
-2- Open platformio.ini and uncomment the following line:
+1. Download the updated code from the repository (or pull new changes) and report your configuration.
+2. Open platformio.ini and uncomment the following line:
 
 ```ini
 upload_port = ESPAltherma.local
