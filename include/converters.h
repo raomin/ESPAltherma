@@ -156,7 +156,6 @@ public:
             break;
         case 119:
         {
-
             if (data[0] == 0 && data[1] == 128)
             {
                 strcat(def->asString, "---");
@@ -192,6 +191,17 @@ public:
         case 200:
             convertTable200(data, def->asString);
             return;
+        case 211:
+            if (data == 0.0)
+            {
+                strcat(def->asString,"OFF");
+            }
+            else
+            {
+                sprintf(def->asString,"{0:F0}",data);
+            }
+            return;
+                    
         case 201:
         case 217:
             convertTable217(data, def->asString);
@@ -215,6 +225,7 @@ public:
         default:
             //conversion is not available
             sprintf(def->asString, "Conv %d not avail.", convId);
+            return;
         }
         if (dblData != NAN)
         {
