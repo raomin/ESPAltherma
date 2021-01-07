@@ -5,13 +5,12 @@ char buff[64];
 class Converter
 {
 public:
-    void getLabels(char registryID, LabelDef* ret[], int &num)
+    void getLabels(char registryID, LabelDef *ret[], int &num)
     {
         num = 0;
         for (auto &&label : labelDefs)
         {
-            if (label.registryID == registryID
-            )
+            if (label.registryID == registryID)
             {
                 ret[num++] = &label;
             }
@@ -31,32 +30,30 @@ public:
         // {
         //     Serial.printf("0x%02x ",data[i]);
         // }
-        
 
         // Serial.printf("Data 3 is 0x%02x\n",data[3]);
         // Serial.printf("For registry %d, we have these labels:\n", registryID);
         int num = 0;
-        LabelDef* labels[128];
+        LabelDef *labels[128];
         // Serial.printf("data 3 is 0x%02x\n",data[3]);
         getLabels(registryID, labels, num);
         // Serial.printf("data 3 is 0x%02x\n",data[3]);
         // Serial.printf("%d labels to get on Registry %d: \n",num,registryID);
-        
+
         for (size_t i = 0; i < num; i++)
         {
             /* code */
             // Serial.printf("label %d is %s offset: %d ",i, labels[i]->label,  labels[i]->offset);
-            char* input = data;
-            input+=labels[i]->offset+3;
+            char *input = data;
+            input += labels[i]->offset + 3;
             // Serial.printf("value for 0x%02x vs 0x%02x", input[0],data[labels[i]->offset+3]);
             convert(labels[i], input);
             // data+=labels[i]->dataSize;
             // Serial.printf("%s\n", labels[i]->asString);
         }
-
     }
 
-    void convert(LabelDef* def, char *data)
+    void convert(LabelDef *def, char *data)
     {
         def->asString[0] = {0};
         int convId = def->convid;
@@ -65,9 +62,9 @@ public:
         Serial.print("Converting from:");
         for (size_t i = 0; i < num; i++)
         {
-            Serial.printf(" 0x%02x ",data[i]);
+            Serial.printf(" 0x%02x ", data[i]);
         }
-        
+
         switch (convId)
         {
         case 100:
@@ -87,7 +84,7 @@ public:
             break;
         case 105:
             dblData = (double)getSignedValue(data, num, 0) * 0.1;
-            Serial.printf("%f\n",dblData);
+            Serial.printf("%f\n", dblData);
             break;
         case 106:
             dblData = (double)getSignedValue(data, num, 1) * 0.1;
@@ -171,6 +168,27 @@ public:
             dblData += (double)(num3 & 255) / 256.0;
             break;
         }
+        case 152:
+            dblData = (double)getUnsignedValue(data, num, 1);
+            break;
+        case 153:
+            dblData = (double)getUnsignedValue(data, num, 0) / 256.0;
+            break;
+        case 154:
+            dblData = (double)getUnsignedValue(data, num, 1) / 256.0;
+            break;
+        case 155:
+            dblData = (double)getUnsignedValue(data, num, 0) * 0.1;
+            break;
+        case 156:
+            dblData = (double)getUnsignedValue(data, num, 1) * 0.1;
+            break;
+        case 157:
+            dblData = (double)getUnsignedValue(data, num, 0) / 256.0 * 2.0;
+            break;
+        case 158:
+            dblData = (double)getUnsignedValue(data, num, 1) / 256.0 * 2.0;
+            break;
         case 200:
             convertTable200(data, def->asString);
             return;
@@ -202,16 +220,13 @@ public:
         {
             sprintf(def->asString, "%lf", dblData);
         }
-        else{
-            sprintf(def->asString, "Conv %d not avail.", convId);
-        }
-        Serial.printf("-> %s\n",def->asString);
+        Serial.printf("-> %s\n", def->asString);
     }
 
 private:
     void convertTable300(char *data, int tableID, char *ret)
     {
-        Serial.printf("Bin Conv %02x with tableID %d \n",data[0],tableID);
+        Serial.printf("Bin Conv %02x with tableID %d \n", data[0], tableID);
         char b = 1;
         b = (char)(b << tableID % 10);
         if ((data[0] & b) > 0)
@@ -225,13 +240,13 @@ private:
         return;
     }
     // 0x00087E1B: Conv56‎ = "Stop"
-// 0x00087E21: Conv57‎ = "Heating"
-// 0x00087E2A: Conv58‎ = "Cooling"
-// 0x00087E33: Conv59‎ = "??"
-// 0x00087E37: Conv60‎ = "DHW:Domestic Hot Water"
-// 0x00087E4F: Conv61‎ = "Heating + DHW"
-// 0x00087E5E: Conv62‎ = "Cooling + DHW"
-   
+    // 0x00087E21: Conv57‎ = "Heating"
+    // 0x00087E2A: Conv58‎ = "Cooling"
+    // 0x00087E33: Conv59‎ = "??"
+    // 0x00087E37: Conv60‎ = "DHW:Domestic Hot Water"
+    // 0x00087E4F: Conv61‎ = "Heating + DHW"
+    // 0x00087E5E: Conv62‎ = "Cooling + DHW"
+
     void convertTable315(char *data, char *ret)
     {
         char b = 240 & data[0];
@@ -289,8 +304,10 @@ private:
         if (data[0] == 0)
         {
             strcat(ret, "OFF");
-        }else{
-        strcat(ret, "ON");
+        }
+        else
+        {
+            strcat(ret, "ON");
         }
     }
     //201
