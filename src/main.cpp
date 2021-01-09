@@ -10,10 +10,8 @@
 #include "comm.h"
 #include "mqtt.h"
 
-//global vars
 Converter converter;
-//Holds the registrys to query
-char registryIDs[32];
+char registryIDs[32];//Holds the registrys to query
 
 bool contains(char array[], int size, int value)
 {
@@ -25,6 +23,7 @@ bool contains(char array[], int size, int value)
   return false;
 }
 
+//Converts to string and add the value to the JSON message
 void updateValues(char regID)
 {
   LabelDef *labels[128];
@@ -48,8 +47,6 @@ void setup_wifi()
   // We start by connecting to a WiFi network
   Serial.printf("Connecting to %s\n", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
-  pinMode(PIN_THERM, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -62,27 +59,9 @@ void setup_wifi()
   }
   Serial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
-void setup()
-{
-  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
-  Serial.begin(9600); //Better to keep the same baudrate with the other serial
-  setup_wifi();
-  ArduinoOTA.setHostname("ESPAltherma");
-  ArduinoOTA.begin();
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setBufferSize(MAX_MSG_SIZE); //to support large json message
-  client.setCallback(callback);
-  mqttSerial.begin(&client, "espaltherma/log");
 
-  setup_wifi();
-  ArduinoOTA.setHostname("ESPAltherma");
-  ArduinoOTA.begin();
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setBufferSize(4096);//to support large json message
-
-  client.setCallback(callback);
-
-  //getting the list of registries to query from the selected values
+void initRegistries(){
+    //getting the list of registries to query from the selected values
   int i = 0;
   for (auto &&label : labelDefs)
   {
@@ -104,6 +83,30 @@ void setup()
     registryIDs[i] = 0xFF;
   }
   //calling for registry values
+
+}
+
+void setup()
+{
+  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
+  pinMode(PIN_THERM, OUTPUT);
+  digitalWrite(PIN_THERM, HIGH);
+  readEEPROM();
+
+  Serial.begin(9600); //Better to keep the same baudrate with the other serial
+
+  setup_wifi();
+  ArduinoOTA.setHostname("ESPAltherma");
+  ArduinoOTA.begin();
+  client.setServer(MQTT_SERVER, MQTT_PORT);
+  client.setBufferSize(MAX_MSG_SIZE); //to support large json message
+  client.setCallback(callback);
+  client.setServer(MQTT_SERVER, MQTT_PORT);
+  mqttSerial.begin(&client, "espaltherma/log");
+  reconnect();
+
+  initRegistries();
+  mqttSerial.println("ESPAltherma started!");
 }
 
 void loop()
@@ -127,13 +130,13 @@ void loop()
       converter.readRegistryValues(buff); //process all values from the register
       updateValues(registryIDs[i]);       //send them in mqtt
       unsigned long start = millis();
-      while (millis() < start + 1000) //wait 1sec between registries
+      while (millis() < start + 500) //wait .5sec between registries
       {
         extraLoop();
       }
     }
   }
-  sendValues();
+  sendValues();//Send the full json message
   Serial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
   auto start = millis();
   while (millis() <= start + FREQUENCY)

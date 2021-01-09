@@ -224,6 +224,10 @@ Of course you can probably achieve the same with the BRP069A62 adapter. However,
 
 No, ESPAltherma supports only Altherma protocol. Other (older) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 
+### What happens in case of power cut?
+
+The relay state (ON/OFF external thermostat) is restored as before the power cut.
+
 ### How can I contribute?
 
 Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!

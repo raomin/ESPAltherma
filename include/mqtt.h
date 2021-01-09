@@ -1,7 +1,10 @@
+#include <PubSubClient.h>
+#include <EEPROM.h>
 #define MQTT_state "espaltherma/STATE"
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
 #define MQTT_OnOff "espaltherma/onoff"
+
 
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
 WiFiClient espClient;
@@ -13,6 +16,23 @@ void sendValues()
   jsonbuff[strlen(jsonbuff) - 1] = '}';
   client.publish(MQTT_attr, jsonbuff);
   strcpy(jsonbuff, "{\0");
+}
+
+
+void saveEEPROM(uint8_t state){
+    EEPROM.write('S',state);
+    EEPROM.commit();
+}
+
+void readEEPROM(){
+  if ('R' == EEPROM.read('R')){
+    digitalWrite(PIN_THERM,EEPROM.read('S'));
+  }
+  else{
+    EEPROM.write('R','R');
+    EEPROM.write('S',HIGH);
+    EEPROM.commit();
+  }
 }
 
 
@@ -29,7 +49,7 @@ void reconnect()
       Serial.println("connected!");
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"val_tpl\":\"{{value_json.POWER}}\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
       // Subscribe
       client.subscribe("espaltherma/POWER");
     }
@@ -52,15 +72,19 @@ void callback(char *topic, byte *payload, unsigned int length)
 {
   payload[length] = '\0';
   Serial.printf("Message arrived [%s] : %s\n", topic, payload);
+  // Is it ON or OFF?
+  // Ok I'm not super proud of this, but it works :p 
   if (payload[1] == 'F')
-  { //Ok I'm not super proud of this, but it works :p turn off
+  { //turn off
     digitalWrite(PIN_THERM, HIGH);
+    saveEEPROM(HIGH);
     client.publish("espaltherma/STATE", "OFF");
     Serial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
     digitalWrite(PIN_THERM, LOW);
+    saveEEPROM(LOW);
     client.publish("espaltherma/STATE", "ON");
     Serial.println("Turned ON");
   }
