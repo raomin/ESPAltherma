@@ -18,6 +18,7 @@
 
 Converter converter;
 char registryIDs[32];//Holds the registrys to query
+bool busy=false;
 
 bool contains(char array[], int size, int value)
 {
@@ -37,15 +38,8 @@ void updateValues(char regID)
   converter.getLabels(regID, labels, num);
   for (size_t i = 0; i < num; i++)
   {
-    sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
+    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
   }
-
-#ifdef ARDUINO_M5Stick_C
-  //Add M5 APX values
-  sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%.3fv\",\"%s\":\"%.3fma\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
-  sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%.3fv\",\"%s\":\"%.3fma\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
-  sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%.3fmw\",", "M5BatPwr", M5.Axp.GetBatPower());
-#endif  
 
 }
 
@@ -53,6 +47,9 @@ void extraLoop()
 {
   client.loop();
   ArduinoOTA.handle();
+  while (busy){//Stop processing during OTA
+    ArduinoOTA.handle();
+  }
 }
 
 void setup_wifi()
@@ -102,25 +99,32 @@ void initRegistries(){
 
 void setup()
 {
-  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
-  pinMode(PIN_THERM, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
 #ifdef ARDUINO_M5Stick_C
   M5.begin();
   M5.Axp.EnableCoulombcounter();
 #endif
+  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
+  pinMode(PIN_THERM, OUTPUT);
+  digitalWrite(PIN_THERM, HIGH);
+  EEPROM.begin(10);
 
   Serial.begin(9600); //Better to keep the same baudrate with the other serial
 
   setup_wifi();
   ArduinoOTA.setHostname("ESPAltherma");
+  ArduinoOTA.onStart([]() {
+    busy = true;
+  });
   ArduinoOTA.begin();
+
   client.setServer(MQTT_SERVER, MQTT_PORT);
   client.setBufferSize(MAX_MSG_SIZE); //to support large json message
   client.setCallback(callback);
   client.setServer(MQTT_SERVER, MQTT_PORT);
   mqttSerial.begin(&client, "espaltherma/log");
   reconnect();
+
+  readEEPROM();
 
   initRegistries();
   mqttSerial.print("ESPAltherma started!");
@@ -139,7 +143,7 @@ void loop()
     int tries = 0;
     while (!queryRegistry(registryIDs[i], buff) && tries++ < 3)
     {
-      mqttSerial.println("Retrying...");
+      mqttSerial.print("Retrying...");
       delay(1000);
     }
     if (registryIDs[i] == buff[1]) //if replied registerID is coherent with the command
