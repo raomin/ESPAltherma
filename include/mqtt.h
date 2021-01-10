@@ -5,6 +5,8 @@
 #define MQTT_lwt "espaltherma/LWT"
 #define MQTT_OnOff "espaltherma/onoff"
 
+#define EEPROM_CHK 1
+#define EEPROM_STATE 0
 
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
 WiFiClient espClient;
@@ -13,28 +15,37 @@ PubSubClient client(espClient);
 void sendValues()
 {
   Serial.printf("Sending values in MQTT.\n");
+#ifdef ARDUINO_M5Stick_C
+  //Add M5 APX values
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3fV\",\"%s\":\"%.3fmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3fV\",\"%s\":\"%.3fmA\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3fmW\",", "M5BatPwr", M5.Axp.GetBatPower());
+#endif  
+
   jsonbuff[strlen(jsonbuff) - 1] = '}';
   client.publish(MQTT_attr, jsonbuff);
   strcpy(jsonbuff, "{\0");
 }
 
-
 void saveEEPROM(uint8_t state){
-    EEPROM.write('S',state);
+    EEPROM.write(EEPROM_STATE,state);
     EEPROM.commit();
 }
 
 void readEEPROM(){
-  if ('R' == EEPROM.read('R')){
-    digitalWrite(PIN_THERM,EEPROM.read('S'));
+  if ('R' == EEPROM.read(EEPROM_CHK)){
+    digitalWrite(PIN_THERM,EEPROM.read(EEPROM_STATE));
+    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == HIGH)? "Off":"On" );
   }
   else{
-    EEPROM.write('R','R');
-    EEPROM.write('S',HIGH);
+    mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
+    EEPROM.write(EEPROM_CHK,'R');
+    EEPROM.write(EEPROM_STATE,HIGH);
     EEPROM.commit();
+    mqttSerial.printf("Now EEPROM= (%d).",EEPROM.read(EEPROM_CHK));
+    digitalWrite(PIN_THERM,HIGH);
   }
 }
-
 
 void reconnect()
 {
