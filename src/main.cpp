@@ -106,7 +106,7 @@ void setup()
   reconnect();
 
   initRegistries();
-  mqttSerial.println("ESPAltherma started!");
+  mqttSerial.print("ESPAltherma started!");
 }
 
 void loop()
