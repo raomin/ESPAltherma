@@ -1,5 +1,11 @@
-#include <HardwareSerial.h>
+#ifdef ARDUINO_M5Stick_C
+#include <M5StickC.h>
+#include "AXP192.h"
+#else
 #include <Arduino.h>
+#endif
+
+#include <HardwareSerial.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
@@ -33,6 +39,14 @@ void updateValues(char regID)
   {
     sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
   }
+
+#ifdef ARDUINO_M5Stick_C
+  //Add M5 APX values
+  sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%.3fv\",\"%s\":\"%.3fma\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
+  sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%.3fv\",\"%s\":\"%.3fma\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
+  sprintf(jsonbuff + strlen(jsonbuff), "\"%s\":\"%.3fmw\",", "M5BatPwr", M5.Axp.GetBatPower());
+#endif  
+
 }
 
 void extraLoop()
@@ -92,6 +106,10 @@ void setup()
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
   readEEPROM();
+#ifdef ARDUINO_M5Stick_C
+  M5.begin();
+  M5.Axp.EnableCoulombcounter();
+#endif
 
   Serial.begin(9600); //Better to keep the same baudrate with the other serial
 
