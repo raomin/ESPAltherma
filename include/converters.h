@@ -25,31 +25,17 @@ public:
 
     void readRegistryValues(char registryID, char *data)
     {
-        // memcpy(buff,data,64);
-        // for (size_t i = 0; i < data[2]+3; i++)
-        // {
-        //     Serial.printf("0x%02x ",data[i]);
-        // }
 
-        // Serial.printf("Data 3 is 0x%02x\n",data[3]);
         // Serial.printf("For registry %d, we have these labels:\n", registryID);
         int num = 0;
         LabelDef *labels[128];
-        // Serial.printf("data 3 is 0x%02x\n",data[3]);
         getLabels(registryID, labels, num);
-        // Serial.printf("data 3 is 0x%02x\n",data[3]);
-        // Serial.printf("%d labels to get on Registry %d: \n",num,registryID);
 
         for (size_t i = 0; i < num; i++)
         {
-            /* code */
-            // Serial.printf("label %d is %s offset: %d ",i, labels[i]->label,  labels[i]->offset);
             char *input = data;
             input += labels[i]->offset + 3;
-            // Serial.printf("value for 0x%02x vs 0x%02x", input[0],data[labels[i]->offset+3]);
             convert(labels[i], input);
-            // data+=labels[i]->dataSize;
-            // Serial.printf("%s\n", labels[i]->asString);
         }
     }
 
@@ -258,6 +244,38 @@ private:
     // 0x00087E37: Conv60‎ = "DHW:Domestic Hot Water"
     // 0x00087E4F: Conv61‎ = "Heating + DHW"
     // 0x00087E5E: Conv62‎ = "Cooling + DHW"
+
+    void convertTable315(char *data, char *ret)
+    {
+        char b = 240 & data[0];
+        b = (char)(b >> 4);
+        switch (b)
+        {
+        case 0:
+            strcat(ret, "Stop");
+            break;
+        case 1:
+            strcat(ret, "Heating");
+            break;
+        case 2:
+            strcat(ret, "Cooling");
+            break;
+        case 3:
+            strcat(ret, "??");
+            break;
+        case 4:
+            strcat(ret, "DHW:Domestic Hot Water");
+            break;
+        case 5:
+            strcat(ret, "Heating + DHW");
+            break;
+        case 6:
+            strcat(ret, "Cooling + DHW");
+            break;
+        default:
+            strcat(ret, "");
+        }
+    }
 
     void convertTable315(char *data, char *ret)
     {

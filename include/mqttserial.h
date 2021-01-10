@@ -4,7 +4,6 @@
 #include "Stream.h"
 #include <PubSubClient.h>
 
-
 class MQTTSerial: public Stream
 {
 private:
