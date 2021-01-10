@@ -139,7 +139,10 @@ ESPAltherma also generates logs on MQTT. If Wifi and MQTT is not the issue, look
 
 The serial port of X10A is TTL 5V, where the ESP32 is 3.3V. Your ESP32 might not be 5V tolerant. If you want to play it safe, you should use a level shifter to convert Daikin TX - RX ESP line from 5V to 3.3V.
 
-In practice, I had no problem connecting an ESP32 without level shifters. I also had no issue powering the ESP32 from the 5V line of the X10A. It is provided by a 7805 with a massive heat sink, plus, there are not many clients for it on the board.
+In practice, I had no problem connecting an ESP32 without level shifters. I also had no issue powering the ESP32 from the 5V line of the X10A. On my Daikin Altherma, 5V is provided by a 7805 with a massive heat sink, plus, there are not many clients for it on the board and the ESPAltherma running on my ESP32 consumes 70ma.
+
+If you are using an M5StickC you can select the PlatformIO env:m5stickc, then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
+
 ## Integrating with Home Assitant
 
 ESPAltherma integrates easily with Home Assistant using [mqtt discovery](https://www.home-assistant.io/docs/mqtt/discovery/).
