@@ -21,4 +21,4 @@ install:
     - pio lib -g install 89 6246
 
 script:
-    - pio ci --board=esp32doit-devkit-v1 --board=m5stick-c --lib="."
+    - pio ci --board=esp32doit-devkit-v1 --board=m5stick-c --lib="." src
