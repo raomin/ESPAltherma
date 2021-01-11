@@ -204,9 +204,9 @@ climate:
     precision: 0.1
 ```
 
-Then, add a climate card somewhere:
+Then, add a Thermostat card somewhere:
 
-![](doc/images/climate.png)
+![ha thermostat](doc/images/thermostat.png)
 
 ## FAQ
 
