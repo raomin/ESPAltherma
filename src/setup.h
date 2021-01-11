@@ -32,7 +32,7 @@
 //#include "def/ALTHERMA(HPSU6_ULTRA).h"
 //#include "def/ALTHERMA(HYBRID).h"
 //#include "def/ALTHERMA(LT-D7_E_BML).h"
-#include "def/ALTHERMA(LT_11-16KW_HYDROSPLIT_HYDRO_UNIT).h"
+//#include "def/ALTHERMA(LT_11-16KW_HYDROSPLIT_HYDRO_UNIT).h"
 //#include "def/ALTHERMA(LT_CA_CB_04-08KW).h"
 //#include "def/ALTHERMA(LT_CA_CB_11-16KW).h"
 //#include "def/ALTHERMA(LT_DA_04-08KW).h"
@@ -44,3 +44,8 @@
 //#include "def/ALTHERMA(TOP-GRADE).h"
 //#include "def/DAIKIN_MINI_INVERTER_CHILLER04-08KW.h"
 //#include "def/DEFAULT.h"
+
+#ifndef LABELDEF
+#warning "NO DEFINITION SELECTED: Please select your heat pump definition in /src/setup.h -- Using default."
+#include "def/DEFAULT.h"
+#endif

@@ -1,4 +1,5 @@
 #include <pgmspace.h>
+#define LABELDEF
 
 class LabelDef
 {
