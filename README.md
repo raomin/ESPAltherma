@@ -3,6 +3,8 @@
 <hr/>
 
 <p align="center">
+<a href="https://travis-ci.com/raomin/ESPAltherma"><img src="https://img.shields.io/travis/com/raomin/espaltherma?style=for-the-badge" /></a>
+&nbsp;
 <img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
 <img src="https://img.shields.io/github/license/raomin/ESPAltherma?style=for-the-badge" />
