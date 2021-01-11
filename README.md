@@ -141,6 +141,8 @@ The serial port of X10A is TTL 5V, where the ESP32 is 3.3V. Your ESP32 might not
 
 In practice, I had no problem connecting an ESP32 without level shifters. I also had no issue powering the ESP32 from the 5V line of the X10A. On my Daikin Altherma, 5V is provided by a 7805 with a massive heat sink, plus, there are not many clients for it on the board and the ESPAltherma running on my ESP32 consumes 70ma.
 
+Some users reported that a ROTEX did not have a stable 5v that could be used to power the ESP32. If so, you would need to rely on an external 5V power supply (eg a regular USB charger) to power the ESP32.
+
 If you are using an M5StickC you can select the PlatformIO env:m5stickc, then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
 
 ## Integrating with Home Assitant
