@@ -38,7 +38,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 ### Hardware
 
-- A Daikin Altherma heat pump
+- A Daikin Altherma or ROTEX heat pump
 - An ESP32 *I used the M5StackC, it fits well next to the board and is properly isolated*
 - 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
 
@@ -104,6 +104,8 @@ _If this project has any value for you, please consider [buying me a beer](https
 3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP32 as follow. Pay attention to the orientation of the socket.
 
+#### Daikin Altherma X10A Connection
+
 ![The X10A connector](doc/images/schematics.png)
 
 | X10A | ESP32 |
@@ -114,11 +116,20 @@ _If this project has any value for you, please consider [buying me a beer](https
 | 4-NC | Not connected |
 | 5-GND | GND |
 
-> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`. 
+> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`.
 > 
 > The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma.
 > 
 > This also means that ESPAltherma cannot use Serial0 to communicate with Altherma. Another Serial port is needed to communicate with the Altherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs, it is used for debugging logs. As some GPIOs seem to NOT work properly. Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). For M5StickC, use 26 and 36.
+
+#### ROTEX X10A Connection
+
+ROTEX Heat pumps have an X10A port which connects differently:
+
+![](doc/images/rotexX10A.png)
+
+Some users reported that the 5V from their ROTEX was not enough to power their ESP32. 
+
 
 Once installed the setup looks like this:
 
@@ -129,7 +140,7 @@ Once installed the setup looks like this:
 You can also monitor values and debug messages on your MQTT server:
 
 ```bash
-$mosquitto_sub -v -t "espaltherma/#"
+$ mosquitto_sub -v -t "espaltherma/#"
 ```
 
 ### Step 3 (optional) - Controling your Daikin Altherma heat pump
@@ -264,7 +275,7 @@ upload_port = ESPAltherma.local
 
 With this parameter, the upload will happen over wifi. Note: your local firewall should allow incoming connection ; also, it can fail from time to time, if it happens just relaunch update.
 
-### How can I contribute?
+## How can I contribute?
 
 Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!
 
@@ -272,5 +283,5 @@ If this project is useful to you, and if you want, <b>[you can buy me a beer](ht
 
  <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 
-### License
+## License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
