@@ -16,6 +16,7 @@
 
 <p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
 
+_If this project has any value for you, please consider [buying me a beer](https://www.buymeacoffee.com/raomin). I don't do this for money but it feels good to get some support! Thanks :)_ 
 ## Features
 
   <ul style="list-style-position: inside;">
@@ -65,7 +66,19 @@
     ```
 
     *If you're not sure which one to take, choose the closest or Default.h. The only thing that could happen is that you would have missing values or wrong label names.*
-3. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` as follow:
+
+    **NEW!** *You can now select locale version of the value definition. French, German and Spanish are supported.*
+    Add the Language in the path. Eg for German:
+
+    ```c++
+    ...
+    //#include "def/ALTHERMA(HPSU6_ULTRA).h"
+    #include "def/German/ALTHERMA(HYBRID).h" //<-- this one will be used. 
+    //#include "def/ALTHERMA(LT-D7_E_BML).h"
+    ...
+    ```
+
+3. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
     - Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
   
     ```c++
@@ -82,13 +95,13 @@
     ...
     ```
   
-4. You're ready to go! Plug in your ESP32 and click -> Upload!
+4. You're ready to go! Connect your ESP32 and click -> Upload!
 
-### Step 2: Connecting
+### Step 2: Connecting to the Heat pump
 
 1. Turn OFF your heat pump at the circuit breaker.
 2. Unscrew your pannel to access the main PCB of your indoor unit.
-3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB. It is labeled **X10A**.
+3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP32 as follow. Pay attention to the orientation of the socket.
 
 ![The X10A connector](doc/images/schematics.png)
@@ -255,7 +268,7 @@ With this parameter, the upload will happen over wifi. Note: your local firewall
 
 Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!
 
-If this project is useful to you, and if you want, <b>you can buy me a beer</b>! It feels good and really helps improving ESPAltherma. Thanks :)
+If this project is useful to you, and if you want, <b>[you can buy me a beer](https://www.buymeacoffee.com/raomin)</b>! It feels good and really helps improving ESPAltherma. Thanks :)
 
  <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 
