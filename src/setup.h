@@ -25,6 +25,16 @@
 //Uncomment *ONE* of the following according to your installation.
 //Then, open and edit the selected file in the /include/def/ folder and uncomment each values you are interested in.
 
+//To use a locale version eg German, change the path to the file to the localized version. 
+
+//Eg:
+//instead of: #include "def/ALTHERMA(HPSU6_ULTRA).h" 
+//use: 
+//            #include "def/German/ALTHERMA(HPSU6_ULTRA).h"
+//
+//Suported locales: French, German, Spanish.
+
+
 //#include "def/ALTHERMA(BIZONE_CB_04-08KW).h"
 //#include "def/ALTHERMA(BIZONE_CB_11-16KW).h"
 //#include "def/ALTHERMA(GSHP).h"
