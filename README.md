@@ -83,7 +83,7 @@ _If this project has any value for you, please consider [buying me a beer](https
     ```
 
 3. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
-    - Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
+    Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
   
     ```c++
     ...
@@ -98,7 +98,9 @@ _If this project has any value for you, please consider [buying me a beer](https
     // {0x60,2,300,1,-1,"Freeze Protection for water piping"},
     ...
     ```
-  
+    
+    A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
+
 4. You're ready to go! Connect your ESP32 and click -> Upload!
 
 ### Step 2: Connecting to the Heat pump
