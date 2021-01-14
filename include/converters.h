@@ -153,6 +153,9 @@ public:
             dblData += (double)(num3 & 255) / 256.0;
             break;
         }
+        case 151:
+            dblData = (double)getUnsignedValue(data, num, 0);
+            break;
         case 152:
             dblData = (double)getUnsignedValue(data, num, 1);
             break;
@@ -237,6 +240,7 @@ private:
         }
         return;
     }
+
     void convertTable315(char *data, char *ret)
     {
         char b = 240 & data[0];
