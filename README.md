@@ -55,7 +55,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 1. Download the repository folder and open it in PlatformIO. If you are using an M5StickC, select the corresponding environment from the status bar: ![end m5](doc/images/m5envv.png)
 2. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
-    - select your RX TX GPIO pins communicating with the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. This also means that ESPAltherma cannot use Serial0 to communicate with Altherma. Another Serial port is needed to communicate with the Altherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs, it is used for debugging logs. As some GPIOs seem to NOT work properly.*
+    - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. This also means that ESPAltherma cannot use Serial0 to communicate with Altherma. Another Serial port is needed to communicate with the Altherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs, it is used for debugging logs. As some GPIOs seem to NOT work properly.*
 
       Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC, use 26 and 36**.
 
