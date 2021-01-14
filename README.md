@@ -39,7 +39,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 ### Hardware
 
 - A Daikin Altherma or ROTEX heat pump
-- An ESP32 *I used the M5StackC, it fits well next to the board and is properly isolated*
+- An ESP32 *(I used the M5StickC, it fits well next to the board and is properly isolated)*
 - 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
 
 ### Software
@@ -52,9 +52,13 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 ### Step 1: Uploading the firmware
 
-1. Download the repository folder and open it in PlatformIO
+1. Download the repository folder and open it in PlatformIO. If you are using an M5StickC, select the corresponding environment from the status bar: ![end m5](doc/images/m5envv.png)
 2. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
+    - select your RX TX GPIO pins communicating with the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. This also means that ESPAltherma cannot use Serial0 to communicate with Altherma. Another Serial port is needed to communicate with the Altherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs, it is used for debugging logs. As some GPIOs seem to NOT work properly.*
+
+      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC, use 26 and 36**.
+
     - uncomment the `#include` line corresponding to your heat pump. E.g.
   
     ```c++
@@ -65,7 +69,7 @@ _If this project has any value for you, please consider [buying me a beer](https
     ...
     ```
 
-    *If you're not sure which one to take, choose the closest or Default.h. The only thing that could happen is that you would have missing values or wrong label names.*
+    *If you're not sure which one to take, choose the closest or Default.h. The only thing that could happen is that you would have missing values, null values or wrong label names.*
 
     **NEW!** *You can now select locale version of the value definition. French, German and Spanish are supported.*
     Add the Language in the path. Eg for German:
@@ -104,7 +108,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP32 as follow. Pay attention to the orientation of the socket.
 
-#### Daikin Altherma X10A Connection
+#### Daikin Altherma 4 pin X10A Connection
 
 ![The X10A connector](doc/images/schematics.png)
 
@@ -116,15 +120,11 @@ _If this project has any value for you, please consider [buying me a beer](https
 | 4-NC | Not connected |
 | 5-GND | GND |
 
-> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`.
-> 
-> The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma.
-> 
-> This also means that ESPAltherma cannot use Serial0 to communicate with Altherma. Another Serial port is needed to communicate with the Altherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs, it is used for debugging logs. As some GPIOs seem to NOT work properly. Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). For M5StickC, use 26 and 36.
+> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`. 
 
-#### ROTEX X10A Connection
+#### 8 pin X10A Connection
 
-ROTEX Heat pumps have an X10A port which connects differently:
+Some heat pumps (ROTEX) have an X10A port which connects differently:
 
 ![](doc/images/rotexX10A.png)
 
