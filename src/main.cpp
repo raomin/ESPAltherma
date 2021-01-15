@@ -99,6 +99,7 @@ void initRegistries(){
 
 void setup()
 {
+  Serial.begin(115200);
 #ifdef ARDUINO_M5Stick_C
   M5.begin();
   M5.Axp.EnableCoulombcounter();
@@ -106,9 +107,8 @@ void setup()
   MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
-  EEPROM.begin(10);
 
-  Serial.begin(9600); //Better to keep the same baudrate with the other serial
+  EEPROM.begin(10);
 
   setup_wifi();
   ArduinoOTA.setHostname("ESPAltherma");

@@ -55,9 +55,9 @@ _If this project has any value for you, please consider [buying me a beer](https
 1. Download the repository folder and open it in PlatformIO. If you are using an M5StickC, select the corresponding environment from the status bar: ![end m5](doc/images/m5envv.png)
 2. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
-    - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. This also means that ESPAltherma cannot use Serial0 to communicate with Altherma. Another Serial port is needed to communicate with the Altherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs, it is used for debugging logs. As some GPIOs seem to NOT work properly.*
+    - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
 
-      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC, use 26 and 36**.
+      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC, 26 and 36 will automatically be used if you selected the ![end m5](doc/images/m5envv.png) environment**.
 
     - uncomment the `#include` line corresponding to your heat pump. E.g.
   
@@ -157,7 +157,13 @@ Note: I resoldered the J1 jumper that was cut when installing my digital thermos
 
 ### Troubleshooting
 
-Possible issues could be: improper wifi signal, unsupported protocol, unsupported GPIOs for Serial (stick to default RX2/TX2).
+#### Specific issues
+
+- If, when using an M5StickC (or M5Stack), the ESP32 is unresponsive, upload fails etc. Make sure that you change the ![default env on pio](doc/images/defaultenv.png) environment to ![end m5](doc/images/m5envv.png) on the status bar. Otherwise the default serial port in setup.h conflicts with the PSRAM of M5.
+
+#### Generic issues
+
+Possible generic issues could be: improper wifi signal, unsupported protocol, unsupported GPIOs for Serial (stick to default RX2/TX2).
 
 ESPAltherma generates logs on the main serial port (USB). Connect to the ESP32 and open the serial monitor on Platformio.
 
@@ -260,13 +266,27 @@ It is as safe as interacting with a serial port can be. Pretty safe if you are a
 
 Of course you can probably achieve the same with the BRP069A62 adapter. However, it is expensive, not wifi and less fun than doing it yourself :)
 
+### I selected a value but it is always returning 0 (or OFF)
+
+The definition files contains values for a range of product. It is possible that some of the values are not implemented in your specific heat pump.
+
+If it says 'conv XXX not avail.' it is that I did not implement this specific conversion of value. If you need this value, create an issue and I'll implement it.
+
+### What is the meaning of this value?
+
+Some times the names of the values can be cryptic. Sometimes, the names are more informative on other models: You can look for the registry in other model this can give you a hint. Eg.: One one file `0x62,15` is `"Pressure sensor"` => on the other `0x62,15` is `"Refrigerant pressure sensor"`.
+
+I'm not an expert in heat pump, so I don't understand all possible values. Collectively however, I'm sure that we can understand a lot.
+
+I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) to gather comments on the register values and suggest possible better names!
+
 ### My Daikin heat pump is not an Altherma. Can I still control it?
 
 No, ESPAltherma supports only Altherma protocol. Other (older) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 
 ### How can I update ESPAltherma remotely?
 
-ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
+Yes! ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
 
 1. Download the updated code from the repository (or pull new changes) and report your configuration.
 2. Open platformio.ini and uncomment the following line:
