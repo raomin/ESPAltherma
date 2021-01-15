@@ -39,7 +39,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 ### Hardware
 
 - A Daikin Altherma or ROTEX heat pump
-- An ESP32 *(I used the M5StickC, it fits well next to the board and is properly isolated)*
+- An ESP32 *(I used the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated)*
 - 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
 
 ### Software
@@ -52,8 +52,9 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 ### Step 1: Uploading the firmware
 
-1. Download the repository folder and open it in PlatformIO. If you are using an M5StickC, select the corresponding environment from the status bar: ![end m5](doc/images/m5envv.png)
-2. Edit the file `src/setup.h` as follows:
+1. Download the repository folder and open it in PlatformIO. 
+2. If you are using an M5StickC, select the corresponding environment from the status bar: ![end m5](doc/images/m5envv.png)
+3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
     - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
 
@@ -82,7 +83,7 @@ _If this project has any value for you, please consider [buying me a beer](https
     ...
     ```
 
-3. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
+4. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
     Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
   
     ```c++
@@ -101,7 +102,7 @@ _If this project has any value for you, please consider [buying me a beer](https
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-4. You're ready to go! Connect your ESP32 and click -> Upload!
+5. You're ready to go! Connect your ESP32 and click -> Upload!
 
 ### Step 2: Connecting to the Heat pump
 
@@ -282,14 +283,14 @@ I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Inform
 
 ### My Daikin heat pump is not an Altherma. Can I still control it?
 
-No, ESPAltherma supports only Altherma protocol. Other (older) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
+No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 
 ### How can I update ESPAltherma remotely?
 
 Yes! ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
 
 1. Download the updated code from the repository (or pull new changes) and report your configuration.
-2. Open platformio.ini and uncomment the following line:
+2. Open platformio.ini and uncomment the following line on your specific environment:
 
 ```ini
 upload_port = ESPAltherma.local

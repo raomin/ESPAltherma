@@ -56,7 +56,7 @@ void setup_wifi()
 {
   delay(10);
   // We start by connecting to a WiFi network
-  Serial.printf("Connecting to %s\n", WIFI_SSID);
+  mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED)
@@ -68,7 +68,7 @@ void setup_wifi()
       esp_restart();
     }
   }
-  Serial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
+  mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
 
 void initRegistries(){
@@ -97,20 +97,39 @@ void initRegistries(){
 
 }
 
-void setup()
-{
-  Serial.begin(115200);
+void setupScreen(){
 #ifdef ARDUINO_M5Stick_C
   M5.begin();
   M5.Axp.EnableCoulombcounter();
+  M5.Lcd.setRotation(3);
+  M5.Lcd.fillScreen(TFT_WHITE);
+  M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
+  m5.Lcd.setTextDatum(MC_DATUM);
+  int xpos = M5.Lcd.width() / 2; // Half the screen width
+  int ypos = M5.Lcd.height() / 2; // Half the screen width
+  M5.Lcd.setTextColor(TFT_DARKGREY);
+  Serial.println("Using");
+  M5.Lcd.drawString("ESPAltherma", xpos,ypos,1);
+  Serial.println("done");
+  delay(3000);
+  M5.Lcd.fillScreen(TFT_BLACK);
+  M5.Lcd.setTextFont(1);
+  M5.Lcd.setTextColor(TFT_GREEN);
 #endif
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  setupScreen();
   MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
 
   EEPROM.begin(10);
-
+  mqttSerial.print("Setting up wifi...");
   setup_wifi();
+  mqttSerial.println("OK!");
   ArduinoOTA.setHostname("ESPAltherma");
   ArduinoOTA.onStart([]() {
     busy = true;
@@ -164,4 +183,12 @@ void loop()
   {
     extraLoop();
   }
+#ifdef ARDUINO_M5Stick_C
+  M5.update();
+  if (M5.BtnA.wasPressed()){
+    M5.Axp.ScreenBreath(255);
+  }else{
+    M5.Axp.ScreenBreath(0);
+  }
+#endif
 }
