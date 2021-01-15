@@ -83,7 +83,7 @@ void initRegistries(){
   }
   if (i == 0)
   {
-    Serial.printf("ERROR - No values selected in the include file. Stopping.\n");
+    mqttSerial.printf("ERROR - No values selected in the include file. Stopping.\n");
     while (true)
     {
       delay(200);
@@ -177,7 +177,7 @@ void loop()
     }
   }
   sendValues();//Send the full json message
-  Serial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
+  mqttSerial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
   auto start = millis();
   while (millis() <= start + FREQUENCY)
   {
