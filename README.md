@@ -25,6 +25,8 @@ _If this project has any value for you, please consider [buying me a beer](https
     <li>Queries the Altherma for selected values at defined interval.</li>
     <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
+    <li>Supports update OverTheAir</li>
+    <li>Log messages in Serial + MQTT + Screen (m5StickC)</li>
     <li>Optional: can control (on/off) your heat pump.</li>
 </ul>
 
@@ -39,7 +41,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 ### Hardware
 
 - A Daikin Altherma or ROTEX heat pump
-- An ESP32 *(I used the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated)*
+- An ESP32 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
 - 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
 
 ### Software
@@ -53,7 +55,8 @@ _If this project has any value for you, please consider [buying me a beer](https
 ### Step 1: Uploading the firmware
 
 1. Download the repository folder and open it in PlatformIO. 
-2. If you are using an M5StickC, select the corresponding environment from the status bar: ![end m5](doc/images/m5envv.png)
+2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
+Click  ![end m5](doc/images/defaultenv.png) and select **M5StickC** ![end m5](doc/images/m5envv.png)
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
     - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
@@ -245,9 +248,9 @@ Then, add a Thermostat card somewhere:
 
 ![ha thermostat](doc/images/thermostat.png)
 
-## FAQ
+# FAQ
 
-### Great! I can now monitor my heat pump! Can I change the configuration values too?
+## Great! I can now monitor my heat pump! Can I change the configuration values too?
 
 Not directly. It might be possible to change registry values using the serial port but I'm not aware of this. If you know, comment on [the dedicated issue](/../../issues/1).
 
@@ -255,25 +258,25 @@ However, ESPAltherma, supports an extra GPIO to control a relay that you can plu
 
 If you want to configure your heat pump using an arduino, you can interact with the P1P2 serial protocol (the one of the digital thermostats) using the [nice work on P1P2Serial](https://github.com/Arnold-n/P1P2Serial) of Arnold Niessen.
 
-### Where can I get more info on the protocol used?
+## Where can I get more info on the protocol used?
 
 It took quite some time to reverse engineering the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20Protocol.md).
 
-### Is it safe? Can I break my machine?
+## Is it safe? Can I break my machine?
 
 It is as safe as interacting with a serial port can be. Pretty safe if you are a bit careful. Use is entirely at your own risk. No liability.
 
-### Why not using the Daikin LAN adapter?
+## Why not using the Daikin LAN adapter?
 
 Of course you can probably achieve the same with the BRP069A62 adapter. However, it is expensive, not wifi and less fun than doing it yourself :)
 
-### I selected a value but it is always returning 0 (or OFF)
+## I selected a value but it is always returning 0 (or OFF)
 
 The definition files contains values for a range of product. It is possible that some of the values are not implemented in your specific heat pump.
 
 If it says 'conv XXX not avail.' it is that I did not implement this specific conversion of value. If you need this value, create an issue and I'll implement it.
 
-### What is the meaning of this value?
+## What is the meaning of this value?
 
 Some times the names of the values can be cryptic. Sometimes, the names are more informative on other models: You can look for the registry in other model this can give you a hint. Eg.: One one file `0x62,15` is `"Pressure sensor"` => on the other `0x62,15` is `"Refrigerant pressure sensor"`.
 
@@ -281,11 +284,11 @@ I'm not an expert in heat pump, so I don't understand all possible values. Colle
 
 I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) to gather comments on the register values and suggest possible better names!
 
-### My Daikin heat pump is not an Altherma. Can I still control it?
+## My Daikin heat pump is not an Altherma. Can I still control it?
 
 No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 
-### How can I update ESPAltherma remotely?
+## How can I update ESPAltherma remotely?
 
 Yes! ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
 
@@ -306,5 +309,5 @@ If this project is useful to you, and if you want, <b>[you can buy me a beer](ht
 
  <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 
-## License
+# License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
