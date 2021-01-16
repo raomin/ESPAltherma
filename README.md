@@ -34,29 +34,29 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 ![](doc/images/screenshot.png)
 
-# Getting started
+# Prerequisites
 
-## Prerequisites
-
-### Hardware
+## Hardware
 
 - A Daikin Altherma or ROTEX heat pump
 - An ESP32 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
 - 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
 
-### Software
+## Software
 
 - Platformio
 
 *That's all!*
 
-## Let's get started
+# Getting started
 
-### Step 1: Uploading the firmware
+## Step 1: Uploading the firmware
 
 1. Download the repository folder and open it in PlatformIO. 
+
 2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
-Click  ![end m5](doc/images/defaultenv.png) and select **M5StickC** ![end m5](doc/images/m5envv.png)
+Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](doc/images/m5envv.png)
+
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
     - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
@@ -107,14 +107,14 @@ Click  ![end m5](doc/images/defaultenv.png) and select **M5StickC** ![end m5](do
 
 5. You're ready to go! Connect your ESP32 and click -> Upload!
 
-### Step 2: Connecting to the Heat pump
+## Step 2: Connecting to the Heat pump
 
 1. Turn OFF your heat pump at the circuit breaker.
-2. Unscrew your pannel to access the main PCB of your indoor unit.
+2. Unscrew your pannel to access the main PCB of your unit.
 3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP32 as follow. Pay attention to the orientation of the socket.
 
-#### Daikin Altherma 4 pin X10A Connection
+### Daikin Altherma 4 pin X10A Connection
 
 ![The X10A connector](doc/images/schematics.png)
 
@@ -128,18 +128,14 @@ Click  ![end m5](doc/images/defaultenv.png) and select **M5StickC** ![end m5](do
 
 > ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`. 
 
-#### 8 pin X10A Connection
+### 8 pin X10A Connection
 
 Some heat pumps (ROTEX) have an X10A port which connects differently:
 
 ![](doc/images/rotexX10A.png)
 
-Some users reported that the 5V from their ROTEX was not enough to power their ESP32. 
+Some users reported that the 5V from their ROTEX was not enough to power their ESP32. In this case, use an USB charger to power the ESP32. The 5V from the X10A is then not needed.
 
-
-Once installed the setup looks like this:
-
-![](doc/images/installation.png)
 
 5. Cross check twice the connections and turn on your heat pump. Two new entities AlthermaSensor and AlthermaSwitch should appear in Home Assistant. AlthermaSensor holds the values as attributes.
 
@@ -149,7 +145,7 @@ You can also monitor values and debug messages on your MQTT server:
 $ mosquitto_sub -v -t "espaltherma/#"
 ```
 
-### Step 3 (optional) - Controling your Daikin Altherma heat pump
+## Step 3 (optional) - Controling your Daikin Altherma heat pump
 
 ESPAltherma cannot change the configuration values of the heat pump (see [FAQ](#faq)). However, ESPAltherma can control a relay on MQTT that can simulate an *external On Off thermostat*. Doing so allows to remotely turn on/off the heating function of your heat pump. A second relay can be used to trigger the cooling function.
 
@@ -157,7 +153,11 @@ Refer to the schematic map of your heat pump to see where to connect *external O
 
 Adding this will take priority on your thermostat. ESPAltherma will turn the heating on/off ; the thermostat will be in standby.
 
-Note: I resoldered the J1 jumper that was cut when installing my digital thermostat (not sure if it is needed).
+Note: I resoldered the J1 jumper that was cut when installing my digital thermostat (not sure if it is needed) and configured my *type of thermostat* as *External thermostat* 
+
+Once installed the setup looks like this:
+
+![](doc/images/installation.png)
 
 ### Troubleshooting
 
