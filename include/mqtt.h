@@ -1,14 +1,17 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
-#define MQTT_state "espaltherma/STATE"
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
-#define MQTT_OnOff "espaltherma/onoff"
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
 
+#ifdef JSONTABLE
+char jsonbuff[MAX_MSG_SIZE] = "[{\0";
+#else
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
+#endif
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -23,8 +26,15 @@ void sendValues()
 #endif  
 
   jsonbuff[strlen(jsonbuff) - 1] = '}';
+#ifdef JSONTABLE
+  strcat(jsonbuff,"]");
+#endif
   client.publish(MQTT_attr, jsonbuff);
+#ifdef JSONTABLE
+  strcpy(jsonbuff, "[{\0");
+#else
   strcpy(jsonbuff, "{\0");
+#endif
 }
 
 void saveEEPROM(uint8_t state){
@@ -42,7 +52,6 @@ void readEEPROM(){
     EEPROM.write(EEPROM_CHK,'R');
     EEPROM.write(EEPROM_STATE,HIGH);
     EEPROM.commit();
-    mqttSerial.printf("Now EEPROM= (%d).",EEPROM.read(EEPROM_CHK));
     digitalWrite(PIN_THERM,HIGH);
   }
 }
@@ -90,17 +99,17 @@ void callback(char *topic, byte *payload, unsigned int length)
     digitalWrite(PIN_THERM, HIGH);
     saveEEPROM(HIGH);
     client.publish("espaltherma/STATE", "OFF");
-    Serial.println("Turned OFF");
+    mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
     digitalWrite(PIN_THERM, LOW);
     saveEEPROM(LOW);
     client.publish("espaltherma/STATE", "ON");
-    Serial.println("Turned ON");
+    mqttSerial.println("Turned ON");
   }
   else
   {
-    Serial.printf("Unknown message: %s\n", payload);
+    mqttSerial.printf("Unknown MQTT message: %s\n", payload);
   }
 }

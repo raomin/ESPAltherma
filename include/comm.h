@@ -2,7 +2,7 @@
 #include <HardwareSerial.h>
 
 HardwareSerial MySerial(1);
-#define SER_TIMEOUT 400 //leave 400ms for the machine to answer
+#define SER_TIMEOUT 300 //leave 300ms for the machine to answer
 
 char getCRC(char *src, int len)
 {
@@ -28,7 +28,7 @@ bool queryRegistry(char regID, char *buffer)
 
   int len = 0;
   buffer[2] = 10;
-  Serial.printf("Querying register 0x%02x... ", regID);
+  mqttSerial.printf("Querying register 0x%02x... ", regID);
   while ((len < buffer[2] + 2) && (millis() < (start + SER_TIMEOUT)))
   {
     if (MySerial.available())
@@ -40,7 +40,7 @@ bool queryRegistry(char regID, char *buffer)
   {
     if (len == 0)
     {
-      Serial.printf("Time out! Check connection\n");
+      mqttSerial.printf("Time out! Check connection\n");
     }
     else
     {
@@ -52,7 +52,7 @@ bool queryRegistry(char regID, char *buffer)
       }
       mqttSerial.print(bufflog);
     }
-    delay(1000);
+    delay(500);
     return false;
   }
   if (getCRC(buffer, len - 1) != buffer[len - 1])

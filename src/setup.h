@@ -14,8 +14,7 @@
 //Default GPIO PINs for Serial2:
 #define RX_PIN    16// Pin connected to the TX pin of X10A 
 #define TX_PIN    17// Pin connected to the RX pin of X10A
-#else
-//Values used when M5StickC environment is selected
+#else//Values used when **M5StickC** environment is selected:
 #define RX_PIN    36// Pin connected to the TX pin of X10A 
 #define TX_PIN    26// Pin connected to the RX pin of X10A
 #endif
@@ -23,6 +22,10 @@
 #define PIN_THERM 0// Pin connected to the thermostat relay (normally open)
 
 #define MAX_MSG_SIZE 4096//max size of the json message sent in mqtt 
+
+//Uncomment this line if the JSON message should be in a Json Table format []. Use only for IOBroker Vis. 
+//#define JSONTABLE
+
 
 //Uncomment *ONE* of the following according to your installation.
 //Then, open and edit the selected file in the /include/def/ folder and uncomment each values you are interested in.
@@ -35,7 +38,6 @@
 //            #include "def/German/ALTHERMA(HPSU6_ULTRA).h"
 //
 //Suported locales: French, German, Spanish.
-
 
 //#include "def/ALTHERMA(BIZONE_CB_04-08KW).h"
 //#include "def/ALTHERMA(BIZONE_CB_11-16KW).h"
