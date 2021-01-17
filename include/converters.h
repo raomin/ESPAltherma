@@ -219,7 +219,7 @@ public:
         }
         if (dblData != NAN)
         {
-            sprintf(def->asString, "%lf", dblData);
+            sprintf(def->asString, "%g", dblData);
         }
         Serial.printf("-> %s\n", def->asString);
     }

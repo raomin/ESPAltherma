@@ -20,9 +20,9 @@ void sendValues()
   Serial.printf("Sending values in MQTT.\n");
 #ifdef ARDUINO_M5Stick_C
   //Add M5 APX values
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3fV\",\"%s\":\"%.3fmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3fV\",\"%s\":\"%.3fmA\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3fmW\",", "M5BatPwr", M5.Axp.GetBatPower());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Axp.GetBatPower());
 #endif  
 
   jsonbuff[strlen(jsonbuff) - 1] = '}';
@@ -64,7 +64,7 @@ void reconnect()
   {
     Serial.print("Attempting MQTT connection...");
 
-    if (client.connect("ESPAltherma", MQTT_USERNAME, MQTT_PASSWORD, MQTT_lwt, 0, true, "Offline"))
+    if (client.connect("ESPAltherma-dev", MQTT_USERNAME, MQTT_PASSWORD, MQTT_lwt, 0, true, "Offline"))
     {
       Serial.println("connected!");
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
@@ -99,17 +99,17 @@ void callback(char *topic, byte *payload, unsigned int length)
     digitalWrite(PIN_THERM, HIGH);
     saveEEPROM(HIGH);
     client.publish("espaltherma/STATE", "OFF");
-    mqttSerial.println("Turned OFF");
+    Serial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
     digitalWrite(PIN_THERM, LOW);
     saveEEPROM(LOW);
     client.publish("espaltherma/STATE", "ON");
-    mqttSerial.println("Turned ON");
+    Serial.println("Turned ON");
   }
   else
   {
-    mqttSerial.printf("Unknown MQTT message: %s\n", payload);
+    Serial.printf("Unknown message: %s\n", payload);
   }
 }
