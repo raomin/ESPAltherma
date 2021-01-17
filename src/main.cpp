@@ -87,7 +87,12 @@ void setup_wifi()
 }
 
 void initRegistries(){
-    //getting the list of registries to query from the selected values
+    //getting the list of registries to query from the selected values  
+  for (size_t i = 0; i < sizeof(registryIDs); i++)
+  {
+    registryIDs[i]=0xff;
+  }
+  
   int i = 0;
   for (auto &&label : labelDefs)
   {
@@ -104,10 +109,10 @@ void initRegistries(){
       extraLoop();
     }
   }
-  for (; i < 32; i++) //initialize the rest to 0xFF
-  {
-    registryIDs[i] = 0xFF;
-  }
+  // for (; i < 32; i++) //initialize the rest to 0xFF
+  // {
+  //   registryIDs[i] = 0xFF;
+  // }
   //calling for registry values
 
 }
