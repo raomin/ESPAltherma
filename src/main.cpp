@@ -1,6 +1,5 @@
 #ifdef ARDUINO_M5Stick_C
 #include <M5StickC.h>
-#include "AXP192.h"
 #else
 #include <Arduino.h>
 #endif
@@ -10,7 +9,7 @@
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
-#include "setup.h" //Configure your setup here
+#include "setup.h" //<-- Configure your setup here
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"
@@ -19,6 +18,10 @@
 Converter converter;
 char registryIDs[32];//Holds the registrys to query
 bool busy=false;
+
+#ifdef ARDUINO_M5Stick_C
+long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
+#endif
 
 bool contains(char array[], int size, int value)
 {
@@ -43,6 +46,8 @@ void updateValues(char regID)
 
 }
 
+uint16_t loopcount =0;
+
 void extraLoop()
 {
   client.loop();
@@ -50,13 +55,23 @@ void extraLoop()
   while (busy){//Stop processing during OTA
     ArduinoOTA.handle();
   }
+
+#ifdef ARDUINO_M5Stick_C
+  if (M5.BtnA.wasPressed()){//Turn back ON screen
+    M5.Axp.ScreenBreath(12);
+    LCDTimeout = millis() + 30000;
+  }else if (LCDTimeout < millis()){//Turn screen off.
+    M5.Axp.ScreenBreath(0);
+  }
+  M5.update();
+#endif
 }
 
 void setup_wifi()
 {
   delay(10);
   // We start by connecting to a WiFi network
-  Serial.printf("Connecting to %s\n", WIFI_SSID);
+  mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED)
@@ -68,11 +83,16 @@ void setup_wifi()
       esp_restart();
     }
   }
-  Serial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
+  mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
 
 void initRegistries(){
-    //getting the list of registries to query from the selected values
+    //getting the list of registries to query from the selected values  
+  for (size_t i = 0; i < sizeof(registryIDs); i++)
+  {
+    registryIDs[i]=0xff;
+  }
+  
   int i = 0;
   for (auto &&label : labelDefs)
   {
@@ -83,33 +103,50 @@ void initRegistries(){
   }
   if (i == 0)
   {
-    Serial.printf("ERROR - No values selected in the include file. Stopping.\n");
+    mqttSerial.printf("ERROR - No values selected in the include file. Stopping.\n");
     while (true)
     {
-      delay(200);
+      extraLoop();
     }
   }
-  for (; i < 32; i++) //initialize the rest to 0xFF
-  {
-    registryIDs[i] = 0xFF;
-  }
+  // for (; i < 32; i++) //initialize the rest to 0xFF
+  // {
+  //   registryIDs[i] = 0xFF;
+  // }
   //calling for registry values
 
 }
 
-void setup()
-{
+void setupScreen(){
 #ifdef ARDUINO_M5Stick_C
   M5.begin();
   M5.Axp.EnableCoulombcounter();
+  M5.Lcd.setRotation(1);
+  M5.Axp.ScreenBreath(12);
+  M5.Lcd.fillScreen(TFT_WHITE);
+  M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
+  m5.Lcd.setTextDatum(MC_DATUM);
+  int xpos = M5.Lcd.width() / 2; // Half the screen width
+  int ypos = M5.Lcd.height() / 2; // Half the screen width
+  M5.Lcd.setTextColor(TFT_DARKGREY);
+  M5.Lcd.drawString("ESPAltherma", xpos,ypos,1);
+  delay(2000);
+  M5.Lcd.fillScreen(TFT_BLACK);
+  M5.Lcd.setTextFont(1);
+  M5.Lcd.setTextColor(TFT_GREEN);
 #endif
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  setupScreen();
   MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
+
   EEPROM.begin(10);
-
-  Serial.begin(9600); //Better to keep the same baudrate with the other serial
-
+  mqttSerial.print("Setting up wifi...");
   setup_wifi();
   ArduinoOTA.setHostname("ESPAltherma");
   ArduinoOTA.onStart([]() {
@@ -121,13 +158,23 @@ void setup()
   client.setBufferSize(MAX_MSG_SIZE); //to support large json message
   client.setCallback(callback);
   client.setServer(MQTT_SERVER, MQTT_PORT);
+  mqttSerial.print("Connecting to MQTT server...");
   mqttSerial.begin(&client, "espaltherma/log");
   reconnect();
+  mqttSerial.println("OK!");
 
   readEEPROM();
 
   initRegistries();
   mqttSerial.print("ESPAltherma started!");
+}
+
+void waitLoop(uint ms){
+      unsigned long start = millis();
+      while (millis() < start + ms) //wait .5sec between registries
+      {
+        extraLoop();
+      }
 }
 
 void loop()
@@ -143,25 +190,17 @@ void loop()
     int tries = 0;
     while (!queryRegistry(registryIDs[i], buff) && tries++ < 3)
     {
-      mqttSerial.print("Retrying...");
-      delay(1000);
+      mqttSerial.println("Retrying...");
+      waitLoop(1000);
     }
     if (registryIDs[i] == buff[1]) //if replied registerID is coherent with the command
     {
       converter.readRegistryValues(buff); //process all values from the register
       updateValues(registryIDs[i]);       //send them in mqtt
-      unsigned long start = millis();
-      while (millis() < start + 500) //wait .5sec between registries
-      {
-        extraLoop();
-      }
+      waitLoop(500);//wait .5sec between registries
     }
   }
   sendValues();//Send the full json message
-  Serial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
-  auto start = millis();
-  while (millis() <= start + FREQUENCY)
-  {
-    extraLoop();
-  }
+  mqttSerial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
+  waitLoop(FREQUENCY);
 }

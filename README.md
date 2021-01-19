@@ -25,6 +25,8 @@ _If this project has any value for you, please consider [buying me a beer](https
     <li>Queries the Altherma for selected values at defined interval.</li>
     <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
+    <li>Supports update OverTheAir</li>
+    <li>Log messages in Serial + MQTT + Screen (m5StickC)</li>
     <li>Optional: can control (on/off) your heat pump.</li>
 </ul>
 
@@ -32,29 +34,35 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 ![](doc/images/screenshot.png)
 
-# Getting started
+# Prerequisites
 
-## Prerequisites
-
-### Hardware
+## Hardware
 
 - A Daikin Altherma or ROTEX heat pump
-- An ESP32 *I used the M5StackC, it fits well next to the board and is properly isolated*
+- An ESP32 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
 - 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
 
-### Software
+## Software
 
 - Platformio
 
 *That's all!*
 
-## Let's get started
+# Getting started
 
-### Step 1: Uploading the firmware
+## Step 1: Uploading the firmware
 
-1. Download the repository folder and open it in PlatformIO
-2. Edit the file `src/setup.h` as follows:
+1. Download the repository folder and open it in PlatformIO. 
+
+2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
+Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](doc/images/m5envv.png)
+
+3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
+    - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
+
+      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC, 26 and 36 will automatically be used if you selected the ![end m5](doc/images/m5envv.png) environment**.
+
     - uncomment the `#include` line corresponding to your heat pump. E.g.
   
     ```c++
@@ -65,7 +73,7 @@ _If this project has any value for you, please consider [buying me a beer](https
     ...
     ```
 
-    *If you're not sure which one to take, choose the closest or Default.h. The only thing that could happen is that you would have missing values or wrong label names.*
+    *If you're not sure which one to take, choose the closest or Default.h. The only thing that could happen is that you would have missing values, null values or wrong label names.*
 
     **NEW!** *You can now select locale version of the value definition. French, German and Spanish are supported.*
     Add the Language in the path. Eg for German:
@@ -78,8 +86,8 @@ _If this project has any value for you, please consider [buying me a beer](https
     ...
     ```
 
-3. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
-    - Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
+4. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
+    Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
   
     ```c++
     ...
@@ -94,17 +102,19 @@ _If this project has any value for you, please consider [buying me a beer](https
     // {0x60,2,300,1,-1,"Freeze Protection for water piping"},
     ...
     ```
-  
-4. You're ready to go! Connect your ESP32 and click -> Upload!
+    
+    A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-### Step 2: Connecting to the Heat pump
+5. You're ready to go! Connect your ESP32 and click -> Upload!
+
+## Step 2: Connecting to the Heat pump
 
 1. Turn OFF your heat pump at the circuit breaker.
-2. Unscrew your pannel to access the main PCB of your indoor unit.
+2. Unscrew your pannel to access the main PCB of your unit.
 3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP32 as follow. Pay attention to the orientation of the socket.
 
-#### Daikin Altherma X10A Connection
+### Daikin Altherma 4 pin X10A Connection
 
 ![The X10A connector](doc/images/schematics.png)
 
@@ -116,24 +126,16 @@ _If this project has any value for you, please consider [buying me a beer](https
 | 4-NC | Not connected |
 | 5-GND | GND |
 
-> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`.
-> 
-> The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma.
-> 
-> This also means that ESPAltherma cannot use Serial0 to communicate with Altherma. Another Serial port is needed to communicate with the Altherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs, it is used for debugging logs. As some GPIOs seem to NOT work properly. Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). For M5StickC, use 26 and 36.
+> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`. 
 
-#### ROTEX X10A Connection
+### 8 pin X10A Connection
 
-ROTEX Heat pumps have an X10A port which connects differently:
+Some heat pumps (ROTEX) have an X10A port which connects differently:
 
 ![](doc/images/rotexX10A.png)
 
-Some users reported that the 5V from their ROTEX was not enough to power their ESP32. 
+Some users reported that the 5V from their ROTEX was not enough to power their ESP32. In this case, use an USB charger to power the ESP32. The 5V from the X10A is then not needed.
 
-
-Once installed the setup looks like this:
-
-![](doc/images/installation.png)
 
 5. Cross check twice the connections and turn on your heat pump. Two new entities AlthermaSensor and AlthermaSwitch should appear in Home Assistant. AlthermaSensor holds the values as attributes.
 
@@ -143,7 +145,7 @@ You can also monitor values and debug messages on your MQTT server:
 $ mosquitto_sub -v -t "espaltherma/#"
 ```
 
-### Step 3 (optional) - Controling your Daikin Altherma heat pump
+## Step 3 (optional) - Controling your Daikin Altherma heat pump
 
 ESPAltherma cannot change the configuration values of the heat pump (see [FAQ](#faq)). However, ESPAltherma can control a relay on MQTT that can simulate an *external On Off thermostat*. Doing so allows to remotely turn on/off the heating function of your heat pump. A second relay can be used to trigger the cooling function.
 
@@ -151,11 +153,21 @@ Refer to the schematic map of your heat pump to see where to connect *external O
 
 Adding this will take priority on your thermostat. ESPAltherma will turn the heating on/off ; the thermostat will be in standby.
 
-Note: I resoldered the J1 jumper that was cut when installing my digital thermostat (not sure if it is needed).
+Note: I resoldered the J1 jumper that was cut when installing my digital thermostat (not sure if it is needed) and configured my *type of thermostat* as *External thermostat* 
+
+Once installed the setup looks like this:
+
+![](doc/images/installation.png)
 
 ### Troubleshooting
 
-Possible issues could be: improper wifi signal, unsupported protocol, unsupported GPIOs for Serial (stick to default RX2/TX2).
+#### Specific issues
+
+- If, when using an M5StickC (or M5Stack), the ESP32 is unresponsive, upload fails etc. Make sure that you change the ![default env on pio](doc/images/defaultenv.png) environment to ![end m5](doc/images/m5envv.png) on the status bar. Otherwise the default serial port in setup.h conflicts with the PSRAM of M5.
+
+#### Generic issues
+
+Possible generic issues could be: improper wifi signal, unsupported protocol, unsupported GPIOs for Serial (stick to default RX2/TX2).
 
 ESPAltherma generates logs on the main serial port (USB). Connect to the ESP32 and open the serial monitor on Platformio.
 
@@ -236,9 +248,9 @@ Then, add a Thermostat card somewhere:
 
 ![ha thermostat](doc/images/thermostat.png)
 
-## FAQ
+# FAQ
 
-### Great! I can now monitor my heat pump! Can I change the configuration values too?
+## Great! I can now monitor my heat pump! Can I change the configuration values too?
 
 Not directly. It might be possible to change registry values using the serial port but I'm not aware of this. If you know, comment on [the dedicated issue](/../../issues/1).
 
@@ -246,28 +258,42 @@ However, ESPAltherma, supports an extra GPIO to control a relay that you can plu
 
 If you want to configure your heat pump using an arduino, you can interact with the P1P2 serial protocol (the one of the digital thermostats) using the [nice work on P1P2Serial](https://github.com/Arnold-n/P1P2Serial) of Arnold Niessen.
 
-### Where can I get more info on the protocol used?
+## Where can I get more info on the protocol used?
 
 It took quite some time to reverse engineering the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20Protocol.md).
 
-### Is it safe? Can I break my machine?
+## Is it safe? Can I break my machine?
 
 It is as safe as interacting with a serial port can be. Pretty safe if you are a bit careful. Use is entirely at your own risk. No liability.
 
-### Why not using the Daikin LAN adapter?
+## Why not using the Daikin LAN adapter?
 
 Of course you can probably achieve the same with the BRP069A62 adapter. However, it is expensive, not wifi and less fun than doing it yourself :)
 
-### My Daikin heat pump is not an Altherma. Can I still control it?
+## I selected a value but it is always returning 0 (or OFF)
 
-No, ESPAltherma supports only Altherma protocol. Other (older) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
+The definition files contains values for a range of product. It is possible that some of the values are not implemented in your specific heat pump.
 
-### How can I update ESPAltherma remotely?
+If it says 'conv XXX not avail.' it is that I did not implement this specific conversion of value. If you need this value, create an issue and I'll implement it.
 
-ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
+## What is the meaning of this value?
+
+Some times the names of the values can be cryptic. Sometimes, the names are more informative on other models: You can look for the registry in other model this can give you a hint. Eg.: One one file `0x62,15` is `"Pressure sensor"` => on the other `0x62,15` is `"Refrigerant pressure sensor"`.
+
+I'm not an expert in heat pump, so I don't understand all possible values. Collectively however, I'm sure that we can understand a lot.
+
+I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) to gather comments on the register values and suggest possible better names!
+
+## My Daikin heat pump is not an Altherma. Can I still control it?
+
+No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
+
+## How can I update ESPAltherma remotely?
+
+Yes! ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
 
 1. Download the updated code from the repository (or pull new changes) and report your configuration.
-2. Open platformio.ini and uncomment the following line:
+2. Open platformio.ini and uncomment the following line on your specific environment:
 
 ```ini
 upload_port = ESPAltherma.local
@@ -283,5 +309,5 @@ If this project is useful to you, and if you want, <b>[you can buy me a beer](ht
 
  <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 
-## License
+# License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
