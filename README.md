@@ -258,6 +258,24 @@ Then, add a Thermostat card somewhere:
 
 ![ha thermostat](doc/images/thermostat.png)
 
+### Calculating COP
+
+The information returned by ESPAltherma allows to calculate the coefficient of performance (COP). It is the ratio of the heat delivered by your heat pump to the energy consumed by it.
+
+When put in terms of ESPAltherma variables, the COP can be define as a sensor like this in the `sensor:` section of Home Assistant:
+
+```yaml
+      espaltherma_cop:
+        friendly_name: "COP"
+        unit_of_measurement: 'COP'
+        value_template: "{{ 
+          ((state_attr('sensor.althermasensors','Flow sensor (l/min)')| float * 0.06 * 1.16 * (state_attr('sensor.althermasensors','Leaving water temp. before BUH (R1T)') | float - state_attr('sensor.althermasensors','Inlet water temp.(R4T)')|float) )
+            /
+          (state_attr('sensor.althermasensors','INV primary current (A)') | float * state_attr('sensor.althermasensors','Voltage (N-phase) (V)')|float / 1000))
+          |round(2)
+        }}"
+```
+
 # FAQ
 
 ## Great! I can now monitor my heat pump! Can I change the configuration values too?
