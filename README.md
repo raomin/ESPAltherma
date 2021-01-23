@@ -62,7 +62,7 @@ For **M5StickCPlus** select **env:M5StickCPlus**
     - enter your wifi and mqtt settings
     - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
 
-      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC, 26 and 36 will automatically be used if you selected the ![end m5](doc/images/m5envv.png) environment**.
+      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC or M5StickCPlus, 26 and 36 will automatically be used if you selected the corresponding environment**.
 
     - uncomment the `#include` line corresponding to your heat pump. E.g.
   
@@ -108,7 +108,9 @@ For **M5StickCPlus** select **env:M5StickCPlus**
 
 5. You're ready to go! Connect your ESP32 and click -> Upload! Or run on the command line:
 
-    ```pio run --environment <your environment> --target upload````
+    ```bash
+    $ pio run --environment <your environment> --target upload
+    ````
 
 ## Step 2: Connecting to the Heat pump
 
@@ -164,7 +166,7 @@ Once installed the setup looks like this:
 
 ![](doc/images/installation.png)
 
-On a Rotex this would connect to J16 Pin 1 and 2. Note: RT needs to be switched ON in the heatpump Connection menu. Heating will be ON if pins are connectee, else no heating so connect to the NC (normally closed) of the relay. 
+On a Rotex this would connect to J16 Pin 1 and 2. Note: RT needs to be switched ON in the heatpump Connection menu. Heating will be ON if pins are connected, else no heating, so connect to the NC (normally closed) of the relay. 
 
 ### Troubleshooting
 
@@ -198,7 +200,7 @@ After setup, ESPAltherma will generate 2 entities on Home Assistant:
 
 ![](doc/images/haentities.png)
 
-- `sensor.altherma` holds the values as attributes.
+- `sensor.althermasensors` holds the values as attributes.
 
 - `switch.altherma` activates the relay connected to the `PIN_THERM`
 
