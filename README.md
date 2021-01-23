@@ -56,6 +56,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
 Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](doc/images/m5envv.png)
+For **M5StickCPlus** select **env:M5StickCPlus**
 
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
@@ -105,7 +106,9 @@ Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the t
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-5. You're ready to go! Connect your ESP32 and click -> Upload!
+5. You're ready to go! Connect your ESP32 and click -> Upload! Or run on the command line:
+
+    ```pio run --environment <your environment> --target upload````
 
 ## Step 2: Connecting to the Heat pump
 
@@ -145,6 +148,8 @@ You can also monitor values and debug messages on your MQTT server:
 $ mosquitto_sub -v -t "espaltherma/#"
 ```
 
+or via Home Assistant Configuration->Integration->MQTT Configure->Listen to topic espaltherma/# -> Start Listening
+
 ## Step 3 (optional) - Controling your Daikin Altherma heat pump
 
 ESPAltherma cannot change the configuration values of the heat pump (see [FAQ](#faq)). However, ESPAltherma can control a relay on MQTT that can simulate an *external On Off thermostat*. Doing so allows to remotely turn on/off the heating function of your heat pump. A second relay can be used to trigger the cooling function.
@@ -158,6 +163,8 @@ Note: I resoldered the J1 jumper that was cut when installing my digital thermos
 Once installed the setup looks like this:
 
 ![](doc/images/installation.png)
+
+On a Rotex this would connect to J16 Pin 1 and 2. Note: RT needs to be switched ON in the heatpump Connection menu. Heating will be ON if pins are connectee, else no heating so connect to the NC (normally closed) of the relay. 
 
 ### Troubleshooting
 
@@ -181,7 +188,7 @@ In practice, I had no problem connecting an ESP32 without level shifters. I also
 
 Some users reported that a ROTEX did not have a stable 5v that could be used to power the ESP32. If so, you would need to rely on an external 5V power supply (eg a regular USB charger) to power the ESP32.
 
-If you are using an M5StickC you can select the PlatformIO env:m5stickc, then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
+If you are using an M5StickC you can select the PlatformIO env:m5stickc (or env_m5stickcplus for that version), then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
 
 ## Integrating with Home Assitant
 
@@ -197,7 +204,7 @@ After setup, ESPAltherma will generate 2 entities on Home Assistant:
 
 ### Declaring sensor entities
 
-In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `entity` ESPAltherma.
+In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `entity` sensor.althermasensors.
 
 ![](doc/images/attribs.png)
 
@@ -206,17 +213,18 @@ If you want to integrate specific `attribute`s in graphs, gauge etc. you need to
 Eg. this template declares the 2 operation modes as entities:
 
 ```yaml
+sensor:
   - platform: template
     sensors:
       espaltherma_operation:
         friendly_name: "Operation mode"
-        value_template: "{{ state_attr('sensor.altherma','Operation Mode') }}"
+        value_template: "{{ state_attr('sensor.althermasensors','Operation Mode') }}"
       espaltherma_iuoperation:
         friendly_name: "Indoor Operation mode"
-        value_template: "{{ state_attr('sensor.altherma','I/U operation mode') }}"
+        value_template: "{{ state_attr('sensor.althermasensors','I/U operation mode') }}"
       espaltherma_dhw:
         friendly_name: "DHW Temp"
-        value_template: "{{ state_attr('sensor.altherma','DHW tank temp. (R5T)') }}"
+        value_template: "{{ state_attr('sensor.althermasensors','DHW tank temp. (R5T)') }}"
         unit_of_measurement: '°C'
 ```
 
