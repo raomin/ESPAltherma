@@ -2,7 +2,9 @@
 #define mqttSerial_h
 #include "Stream.h"
 #include <PubSubClient.h>
-#ifdef ARDUINO_M5Stick_C
+#ifdef ARDUINO_M5Stick_C_Plus
+#include <M5StickCPlus.h>
+#elif ARDUINO_M5Stick_C
 #include <M5StickC.h>
 #endif
 class MQTTSerial: public Stream

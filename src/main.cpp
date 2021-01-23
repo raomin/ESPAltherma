@@ -1,4 +1,6 @@
-#ifdef ARDUINO_M5Stick_C
+#ifdef ARDUINO_M5Stick_C_Plus
+#include <M5StickCPlus.h>
+#elif ARDUINO_M5Stick_C
 #include <M5StickC.h>
 #else
 #include <Arduino.h>
@@ -19,7 +21,7 @@ Converter converter;
 char registryIDs[32];//Holds the registrys to query
 bool busy=false;
 
-#ifdef ARDUINO_M5Stick_C
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
 long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
 #endif
 
@@ -56,7 +58,7 @@ void extraLoop()
     ArduinoOTA.handle();
   }
 
-#ifdef ARDUINO_M5Stick_C
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
   if (M5.BtnA.wasPressed()){//Turn back ON screen
     M5.Axp.ScreenBreath(12);
     LCDTimeout = millis() + 30000;
@@ -118,7 +120,7 @@ void initRegistries(){
 }
 
 void setupScreen(){
-#ifdef ARDUINO_M5Stick_C
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
   M5.begin();
   M5.Axp.EnableCoulombcounter();
   M5.Lcd.setRotation(1);
@@ -144,6 +146,10 @@ void setup()
   MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
+#ifdef ARDUINA_M5Stick_C_Plus
+  gpio_pulldown_dis(GPIO_NUM_25);
+  gpio_pullup_dis(GPIO_NUM_25);
+#endif
 
   EEPROM.begin(10);
   mqttSerial.print("Setting up wifi...");
