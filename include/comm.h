@@ -23,7 +23,7 @@ bool queryRegistry(char regID, char *buffer)
 
   //Sending command to serial
   MySerial.flush(); //Prevent possible pending info on the read
-  MySerial.write(prep, 4);
+  MySerial.write(prep);
   ulong start = millis();
 
   int len = 0;
