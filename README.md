@@ -56,12 +56,13 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
 Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](doc/images/m5envv.png)
+For **M5StickCPlus** select **env:M5StickCPlus**
 
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
     - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
 
-      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC, 26 and 36 will automatically be used if you selected the ![end m5](doc/images/m5envv.png) environment**.
+      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC or M5StickCPlus, 26 and 36 will automatically be used if you selected the corresponding environment**.
 
     - uncomment the `#include` line corresponding to your heat pump. E.g.
   
@@ -105,7 +106,11 @@ Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the t
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-5. You're ready to go! Connect your ESP32 and click -> Upload!
+5. You're ready to go! Connect your ESP32 and click -> Upload! Or run on the command line:
+
+    ```bash
+    $ pio run --environment <your environment> --target upload
+    ````
 
 ## Step 2: Connecting to the Heat pump
 
@@ -145,6 +150,8 @@ You can also monitor values and debug messages on your MQTT server:
 $ mosquitto_sub -v -t "espaltherma/#"
 ```
 
+or via Home Assistant Configuration->Integration->MQTT Configure->Listen to topic espaltherma/# -> Start Listening
+
 ## Step 3 (optional) - Controling your Daikin Altherma heat pump
 
 ESPAltherma cannot change the configuration values of the heat pump (see [FAQ](#faq)). However, ESPAltherma can control a relay on MQTT that can simulate an *external On Off thermostat*. Doing so allows to remotely turn on/off the heating function of your heat pump. A second relay can be used to trigger the cooling function.
@@ -158,6 +165,8 @@ Note: I resoldered the J1 jumper that was cut when installing my digital thermos
 Once installed the setup looks like this:
 
 ![](doc/images/installation.png)
+
+On a Rotex this would connect to J16 Pin 1 and 2. Note: RT needs to be switched ON in the heatpump Connection menu. Heating will be ON if pins are connected, else no heating, so connect to the NC (normally closed) of the relay. 
 
 ### Troubleshooting
 
@@ -181,7 +190,7 @@ In practice, I had no problem connecting an ESP32 without level shifters. I also
 
 Some users reported that a ROTEX did not have a stable 5v that could be used to power the ESP32. If so, you would need to rely on an external 5V power supply (eg a regular USB charger) to power the ESP32.
 
-If you are using an M5StickC you can select the PlatformIO env:m5stickc, then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
+If you are using an M5StickC you can select the PlatformIO env:m5stickc (or env_m5stickcplus for that version), then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
 
 ## Integrating with Home Assitant
 
@@ -191,13 +200,13 @@ After setup, ESPAltherma will generate 2 entities on Home Assistant:
 
 ![](doc/images/haentities.png)
 
-- `sensor.altherma` holds the values as attributes.
+- `sensor.althermasensors` holds the values as attributes.
 
 - `switch.altherma` activates the relay connected to the `PIN_THERM`
 
 ### Declaring sensor entities
 
-In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `entity` ESPAltherma.
+In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `entity` sensor.althermasensors.
 
 ![](doc/images/attribs.png)
 
@@ -206,17 +215,18 @@ If you want to integrate specific `attribute`s in graphs, gauge etc. you need to
 Eg. this template declares the 2 operation modes as entities:
 
 ```yaml
+sensor:
   - platform: template
     sensors:
       espaltherma_operation:
         friendly_name: "Operation mode"
-        value_template: "{{ state_attr('sensor.altherma','Operation Mode') }}"
+        value_template: "{{ state_attr('sensor.althermasensors','Operation Mode') }}"
       espaltherma_iuoperation:
         friendly_name: "Indoor Operation mode"
-        value_template: "{{ state_attr('sensor.altherma','I/U operation mode') }}"
+        value_template: "{{ state_attr('sensor.althermasensors','I/U operation mode') }}"
       espaltherma_dhw:
         friendly_name: "DHW Temp"
-        value_template: "{{ state_attr('sensor.altherma','DHW tank temp. (R5T)') }}"
+        value_template: "{{ state_attr('sensor.althermasensors','DHW tank temp. (R5T)') }}"
         unit_of_measurement: '°C'
 ```
 
@@ -247,6 +257,24 @@ climate:
 Then, add a Thermostat card somewhere:
 
 ![ha thermostat](doc/images/thermostat.png)
+
+### Calculating COP
+
+The information returned by ESPAltherma allows to calculate the coefficient of performance (COP). It is the ratio of the heat delivered by your heat pump to the energy consumed by it.
+
+When put in terms of ESPAltherma variables, the COP can be define as a sensor like this in the `sensor:` section of Home Assistant:
+
+```yaml
+      espaltherma_cop:
+        friendly_name: "COP"
+        unit_of_measurement: 'COP'
+        value_template: "{{ 
+          ((state_attr('sensor.althermasensors','Flow sensor (l/min)')| float * 0.06 * 1.16 * (state_attr('sensor.althermasensors','Leaving water temp. before BUH (R1T)') | float - state_attr('sensor.althermasensors','Inlet water temp.(R4T)')|float) )
+            /
+          (state_attr('sensor.althermasensors','INV primary current (A)') | float * state_attr('sensor.althermasensors','Voltage (N-phase) (V)')|float / 1000))
+          |round(2)
+        }}"
+```
 
 # FAQ
 
