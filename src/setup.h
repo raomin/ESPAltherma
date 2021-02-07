@@ -1,12 +1,41 @@
-//Setup your credentials and mqtt info here:
-//only change the value between the " " leave the rest of the line untouched.
-#define WIFI_SSID "SSID"//**Your SSID here**
-#define WIFI_PWD "password"//**Your password here** leave empty if open (bad!)
+#define ST(A) #A
+#define STR(A) ST(A)
 
-#define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
-#define MQTT_USERNAME ""//leave empty if not set (bad!)
-#define MQTT_PASSWORD ""//leave empty if not set (bad!)
-#define MQTT_PORT 1883
+#ifdef ESPALTHERMA_WIFI_SSID
+    #define WIFI_SSID STR(ESPALTHERMA_WIFI_SSID)
+#else
+    #define WIFI_SSID ""
+#endif
+
+#ifdef ESPALTHERMA_WIFI_PWD
+    #define WIFI_PWD STR(ESPALTHERMA_WIFI_PWD)
+#else
+    #define WIFI_PWD ""
+#endif
+
+#ifdef ESPALTHERMA_MQTT_SERVER
+    #define MQTT_SERVER STR(ESPALTHERMA_MQTT_SERVER)
+#else
+    #define MQTT_SERVER ""
+#endif
+
+#ifdef ESPALTHERMA_MQTT_USERNAME
+    #define MQTT_USERNAME STR(ESPALTHERMA_MQTT_USERNAME)
+#else
+    #define MQTT_USERNAME ""
+#endif
+
+#ifdef ESPALTHERMA_MQTT_PWD
+    #define MQTT_PASSWORD STR(ESPALTHERMA_MQTT_PWD)
+#else
+    #define MQTT_PASSWORD ""
+#endif
+
+#ifdef ESPALTHERMA_MQTT_PORT
+    #define MQTT_PORT ESPALTHERMA_MQTT_PORT
+#else
+    #define MQTT_PORT 1883
+#endif
 
 #define FREQUENCY 30000 //query values every 30 sec
 

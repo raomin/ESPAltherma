@@ -5,3 +5,5 @@
 .vscode/ipch
 src/setup.h
 private/
+
+.env

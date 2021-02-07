@@ -58,8 +58,11 @@ _If this project has any value for you, please consider [buying me a beer](https
 Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](doc/images/m5envv.png)
 For **M5StickCPlus** select **env:M5StickCPlus**
 
-3. Edit the file `src/setup.h` as follows:
-    - enter your wifi and mqtt settings
+3. Create a `.env` file. This file will contain all your secrets (wifi and MQTT configuration) so you cannot accidentally push them in public repositories.
+   Use `.env.template` as a starting point. You just need to copy-paste it, rename and enter values of your network.
+   If you prefer, you can enter values directly in `src\setup.h`, but make sure not to push those changes to github or the like.
+
+4. Edit the file `src/setup.h` as follows:
     - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
 
       Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC or M5StickCPlus, 26 and 36 will automatically be used if you selected the corresponding environment**.
@@ -87,7 +90,7 @@ For **M5StickCPlus** select **env:M5StickCPlus**
     ...
     ```
 
-4. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
+5. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
     Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
   
     ```c++
@@ -106,7 +109,7 @@ For **M5StickCPlus** select **env:M5StickCPlus**
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-5. You're ready to go! Connect your ESP32 and click -> Upload! Or run on the command line:
+6. You're ready to go! Connect your ESP32 and click -> Upload! Or run on the command line:
 
     ```bash
     $ pio run --environment <your environment> --target upload
