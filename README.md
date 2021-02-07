@@ -166,6 +166,8 @@ Once installed the setup looks like this:
 
 ![](doc/images/installation.png)
 
+Other users installations are described [in this issue](/../../issues/17).
+
 On a Rotex this would connect to J16 Pin 1 and 2. Note: RT needs to be switched ON in the heatpump Connection menu. Heating will be ON if pins are connected, else no heating, so connect to the NC (normally closed) of the relay. 
 
 ### Troubleshooting
@@ -268,12 +270,14 @@ When put in terms of ESPAltherma variables, the COP can be define as a sensor li
       espaltherma_cop:
         friendly_name: "COP"
         unit_of_measurement: 'COP'
-        value_template: "{{ 
-          ((state_attr('sensor.althermasensors','Flow sensor (l/min)')| float * 0.06 * 1.16 * (state_attr('sensor.althermasensors','Leaving water temp. before BUH (R1T)') | float - state_attr('sensor.althermasensors','Inlet water temp.(R4T)')|float) )
-            /
-          (state_attr('sensor.althermasensors','INV primary current (A)') | float * state_attr('sensor.althermasensors','Voltage (N-phase) (V)')|float / 1000))
-          |round(2)
-        }}"
+        value_template: "{% if is_state_attr('sensor.althermasensors','Operation Mode', 'Heating') and is_state_attr('sensor.althermasensors','Freeze Protection', 'OFF')  %} 
+{{ 
+  ((state_attr('sensor.althermasensors','Flow sensor (l/min)')| float * 0.06 * 1.16 * (state_attr('sensor.althermasensors','Leaving water temp. before BUH (R1T)') | float - state_attr('sensor.althermasensors','Inlet water temp.(R4T)')|float) )
+    /
+  (state_attr('sensor.althermasensors','INV primary current (A)') | float * state_attr('sensor.althermasensors','Voltage (N-phase) (V)')|float / 1000))
+  |round(2)
+}}
+{% else %} 0 {%endif%}"
 ```
 
 # FAQ
@@ -310,9 +314,9 @@ Some times the names of the values can be cryptic. Sometimes, the names are more
 
 I'm not an expert in heat pump, so I don't understand all possible values. Collectively however, I'm sure that we can understand a lot.
 
-I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) to gather comments on the register values and suggest possible better names!
+I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values). You can add your comments on the register values and suggest possible better names!
 
-## My Daikin heat pump is not an Altherma. Can I still control it?
+## My Daikin heat pump is not an Daikin Altherma / ROTEX. Can I still control it?
 
 No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 
