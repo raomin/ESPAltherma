@@ -180,18 +180,24 @@ public:
         case 200:
             convertTable200(data, def->asString);
             return;
+        case 203:
+            convertTable203(data, def->asString);
+            return;
+        case 204:
+            convertTable204(data, def->asString);
+            return;
         case 211:
             if (data == 0)
             {
-                strcat(def->asString,"OFF");
-            return;
+                strcat(def->asString, "OFF");
+                return;
             }
             else
             {
                 dblData = (uint)(double)data[0];
                 break;
             }
-                    
+
         case 201:
         case 217:
             convertTable217(data, def->asString);
@@ -239,6 +245,39 @@ private:
             strcat(ret, "OFF");
         }
         return;
+    }
+
+    void convertTable203(char *data, char *ret)
+    {
+        switch (data[0])
+        {
+        case 0:
+            strcat(ret, "Normal");
+            break;
+        case 1:
+            strcat(ret, "Error");
+            break;
+        case 2:
+            strcat(ret, "Warning");
+            break;
+        case 3:
+            strcat(ret, "Caution");
+            break;
+        default:
+            strcat(ret, "");
+            ;
+        }
+    }
+
+    void convertTable204(char *data, char *ret)
+    {
+        char array[] = " ACEHFJLPU987654";
+        char array2[] = "0123456789AHCJEF";
+        int num = data[0] >> 4 & 15;
+        int num2 = (int)(data[0] & 15);
+        ret[0] = array[num];
+        ret[1] = array2[num2];
+        ret[2] = 0;
     }
 
     void convertTable315(char *data, char *ret)

@@ -5,3 +5,4 @@
 .vscode/ipch
 src/setup.h
 private/
+.vscode/settings.json
