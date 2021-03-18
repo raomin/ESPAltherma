@@ -171,11 +171,16 @@ Other users installations are described [in this issue](/../../issues/17).
 On a Rotex this would connect to J16 Pin 1 and 2. Note: RT needs to be switched ON in the heatpump Connection menu. Heating will be ON if pins are connected, else no heating, so connect to the NC (normally closed) of the relay. 
 
 ## Step 4 (optional) - Smart grid features
-ESPaltherma can also integrate with SG-Ready options of your heat pump. To do so, configure `PIN_SG1` and `PIN_SG2` in `src/setup.c` and send one of the allowed values (0..3) to MQTT channel `espaltherma/sg/set`. Current SG mode will be available in `espaltherma/sg/state`.  
+ESPaltherma can also integrate with SG-Ready options of your heat pump. To do so, uncomment and configure `PIN_SG1` and `PIN_SG2` in `src/setup.c` and send one of the allowed values (0..3) to MQTT channel `espaltherma/sg/set`. Current SG mode will be available in `espaltherma/sg/state`.  
+
 Of course, you will need to use 2 more relays to open/close SG1 and SG2 contacts of your heat pump.  
+
 I found that using 5V supply pin of X10A provides enough power for my ESP32 and both relays, but your mileage may vary.  
+
 On a Roter SG1 and SG2 contacts are located in J8 connector, pin 5-6 (Smart Grid) and 11-12 (EVU) respectively.  
+
 Once configured and connected, your heat pump will work like this:  
+
 | sg/set value| SG1   | SG2   | SG-Mode              | Working mode | Typical result |
 | ----------- | ----- | ----- | -------------------- | ------------ | -------------- |
 | 0           | open  | open  | 0 - normal operation | normal working mode        | HP works like if SG features are disabled/not used |
