@@ -88,7 +88,7 @@ void reconnect()
       }
 
       if (i++ == 100)
-        Serial.printf("Tried for 500 sec, rebooting now.", client.state());
+        Serial.printf("Tried for 500 sec, rebooting now.");
         esp_restart();
     }
   }

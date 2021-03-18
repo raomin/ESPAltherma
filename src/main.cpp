@@ -145,11 +145,15 @@ void setup()
   setupScreen();
   MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
+  digitalWrite(PIN_THERM, HIGH);
+
+#ifdef PIN_SG1
+  //Smartgrid pins
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
   digitalWrite(PIN_SG1, LOW);
   digitalWrite(PIN_SG2, LOW);
+#endif
 #ifdef ARDUINA_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
   gpio_pullup_dis(GPIO_NUM_25);
