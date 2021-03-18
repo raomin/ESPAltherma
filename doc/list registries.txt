@@ -1,0 +1,459 @@
+|  19   |   0x00,0,152,1   | Sensor Data Qty |                             | 
+|  1   |   0x00,0,405,0   | *Refrigerant type |                             | 
+|  12   |   0x00,0,801,0   | *Refrigerant type |                             | 
+|  6   |   0x00,0,802,0   | *Refrigerant type |                             | 
+|  4   |   0x00,0,995,1   |  |                             | 
+|  34   |   0x00,0,995,1   | NextDataGrid |                             | 
+|  9   |   0x00,0,996,0   | Override All Clear |                             | 
+|  2   |   0x00,0,998,1   |  |                             | 
+|  17   |   0x00,0,998,1   | In-Out separator |                             | 
+|  19   |   0x00,1,152,1   | INV compressor Qty |                             | 
+|  18   |   0x00,10,152,1   | O/U MPU ID (xx) |                             | 
+|  1   |   0x00,10,213,1   | O/U MPU ID |                             | 
+|  18   |   0x00,11,152,1   | O/U MPU ID (yy) |                             | 
+|  1   |   0x00,11,213,1   | O/U MPU ID |                             | 
+|  18   |   0x00,12,105,1   | O/U capacity (kW) |                             | 
+|  1   |   0x00,2,152,1   | STD Compressor |                             | 
+|  18   |   0x00,2,152,1   | STD compressor Qty |                             | 
+|  19   |   0x00,3,152,1   | Fan Data Qty |                             | 
+|  19   |   0x00,4,152,1   | Expansion Valve Data Qty |                             | 
+|  19   |   0x00,5,152,1   | 4 Way Valve Data Qty |                             | 
+|  19   |   0x00,6,152,1   | Crank Case Heater Qty |                             | 
+|  19   |   0x00,7,152,1   | Solenoid valve Qty |                             | 
+|  19   |   0x00,8,152,1   | Max. connectable indoor units |                             | 
+|  19   |   0x00,9,152,1   | Connected Indoor Unit Qty |                             | 
+|  19   |   0x10,0,217,1   | Operation Mode |                             | 
+|  19   |   0x10,1,300,1   | Low noise control |                             | 
+|  19   |   0x10,1,301,1   | Demand Signal |                             | 
+|  19   |   0x10,1,302,1   | Pressure equalizing operation |                             | 
+|  19   |   0x10,1,303,1   | Oil Return Operation |                             | 
+|  19   |   0x10,1,304,1   | Defrost Operation |                             | 
+|  19   |   0x10,1,305,1   | Startup Control |                             | 
+|  19   |   0x10,1,306,1   | Restart standby |                             | 
+|  19   |   0x10,1,307,1   | Thermostat ON/OFF |                             | 
+|  19   |   0x10,10,303,1   | Comp. INV Current Drop |                             | 
+|  19   |   0x10,10,307,1   | Discharge Temp. Drop |                             | 
+|  19   |   0x10,10,310,1   | Discharge Temp. Protection Retry Qty |                             | 
+|  19   |   0x10,10,311,1   | Comp. INV Current Protection Retry Qty |                             | 
+|  19   |   0x10,11,303,1   | LP Drop Control |                             | 
+|  19   |   0x10,11,307,1   | HP Drop Control |                             | 
+|  19   |   0x10,11,310,1   | HP Protection Retry Qty |                             | 
+|  19   |   0x10,11,311,1   | LP Protection Retry Qty |                             | 
+|  1   |   0x10,12,303,1   | Other Control |                             | 
+|  18   |   0x10,12,303,1   | Other Drop Control |                             | 
+|  18   |   0x10,12,307,1   | Fin Temp. Drop Control |                             | 
+|  18   |   0x10,12,310,1   | Fin Temp. Protection Retry Qty |                             | 
+|  18   |   0x10,12,311,1   | Not in use |                             | 
+|  1   |   0x10,2,300,1   | Other control 8 |                             | 
+|  1   |   0x10,2,301,1   | Other control 7 |                             | 
+|  1   |   0x10,2,302,1   | Other control 6 |                             | 
+|  1   |   0x10,2,303,1   | Other control 5 |                             | 
+|  1   |   0x10,2,304,1   | Other control 4 |                             | 
+|  1   |   0x10,2,305,1   | Other control 3 |                             | 
+|  1   |   0x10,2,306,1   | Other control 2 |                             | 
+|  1   |   0x10,2,307,1   | Other control 1 |                             | 
+|  1   |   0x10,3,300,1   | Other control 16 |                             | 
+|  1   |   0x10,3,301,1   | Other control 15 |                             | 
+|  1   |   0x10,3,302,1   | Other control 14 |                             | 
+|  1   |   0x10,3,303,1   | Other control 13 |                             | 
+|  1   |   0x10,3,304,1   | Other control 12 |                             | 
+|  1   |   0x10,3,305,1   | Other control 11 |                             | 
+|  1   |   0x10,3,306,1   | Other control 10 |                             | 
+|  1   |   0x10,3,307,1   | Other control 9 |                             | 
+|  19   |   0x10,4,203,1   | Error type |                             | 
+|  19   |   0x10,5,204,1   | Error Code |                             | 
+|  1   |   0x10,6,114,2, | Target Discharge Temp. |                             | 
+|  18   |   0x10,6,114,2, | Target Evap. Temp. |                             | 
+|  19   |   0x10,8,114,2, | Target Cond. Temp. |                             | 
+|  18   |   0x11,0,215,1   | O/U EEPROM (1st digit) |                             | 
+|  18   |   0x11,1,215,1   | O/U EEPROM (3rd 4th digit) |                             | 
+|  18   |   0x11,2,215,1   | O/U EEPROM (5th 6th digit) |                             | 
+|  18   |   0x11,3,215,1   | O/U EEPROM (7th 8th digit) |                             | 
+|  18   |   0x11,4,215,1   | O/U EEPROM (10th digit) |                             | 
+|  18   |   0x11,5,214,1   | O/U EEPROM (11th digit) |                             | 
+|  3   |   0x20,0,105,2, | Outdoor air temp. |                             | 
+|  16   |   0x20,0,105,2, | Outdoor air temp.(R1T) |                             | 
+|  2   |   0x20,10,105,2, | Leaving brine temp.(R6T) |                             | 
+|  4   |   0x20,10,105,2, | Liquid pipe temp. |                             | 
+|  12   |   0x20,10,105,2, | Liquid pipe temp.(R6T) |                             | 
+|  1   |   0x20,10,105,2, | Liquid temperature(R3T) |                             | 
+|  1   |   0x20,12,105,2, | Fin Temp. |                             | 
+|  10   |   0x20,12,105,2, | Heat sink temp. |                             | 
+|  1   |   0x20,12,105,2, | Heat sink temp.(R10T) |                             | 
+|  3   |   0x20,12,105,2, | INV fin temp. |                             | 
+|  4   |   0x20,12,105,2, | High Pressure |                             | 
+|  3   |   0x20,12,405,2, | High Pressure(T) |                             | 
+|  6   |   0x20,14,105,2, | Low Pressure |                             | 
+|  3   |   0x20,14,105,2, | Pressure sensor |                             | 
+|  10   |   0x20,14,105,2, | Pressure |                             | 
+|  5   |   0x20,14,405,2, | Low Pressure(T) |                             | 
+|  3   |   0x20,14,405,2, | Pressure sensor(T) |                             | 
+|  10   |   0x20,14,405,2, | Pressure(T) |                             | 
+|  5   |   0x20,16,105,2   | Not in use |                             | 
+|  1   |   0x20,16,105,2   | Sensor data 9 |                             | 
+|  5   |   0x20,18,105,2   | Not in use |                             | 
+|  1   |   0x20,18,105,2   | Sensor data 10 |                             | 
+|  2   |   0x20,2,105,2, | 2 phase thermistor (R4T) |                             | 
+|  15   |   0x20,2,105,2, | O/U Heat Exch. Temp. |                             | 
+|  2   |   0x20,2,105,2, | Outdoor heat exchanger temp. |                             | 
+|  1   |   0x20,20,105,2   | Sensor data 11 |                             | 
+|  19   |   0x20,4,105,2, | Discharge pipe temp. |                             | 
+|  1   |   0x20,6,105,2, | Suction Pipe Temperature |                             | 
+|  16   |   0x20,6,105,2, | Suction pipe temp. |                             | 
+|  2   |   0x20,6,105,2, | Suction pipe temp.(R3T) |                             | 
+|  2   |   0x20,8,105,2, | Entering brine temp.(R5T) |                             | 
+|  13   |   0x20,8,105,2, | Heat exchanger mid-temp. |                             | 
+|  2   |   0x20,8,105,2, | O/U Heat Exch. Mid-temp. |                             | 
+|  2   |   0x20,8,105,2, | Outdoor heat exchanger mid temp. |                             | 
+|  19   |   0x21,0,105,2   | INV primary current (A) |                             | 
+|  1   |   0x21,0,105,2   | INV secondary current (A) |                             | 
+|  1   |   0x21,10,105,2   | Sensor data 6 |                             | 
+|  3   |   0x21,10,105,2, | Compressor outlet temperature |                             | 
+|  1   |   0x21,10,105,2, | Refrig. temp. evap.Out |                             | 
+|  1   |   0x21,10,152,2, | Compressor outlet temperature |                             | 
+|  13   |   0x21,11,105,2, | Refrig. temp. evap. In |                             | 
+|  1   |   0x21,12,105,2   | Sensor data 7 |                             | 
+|  1   |   0x21,12,105,2, | Refrig. temp. evap.Out |                             | 
+|  13   |   0x21,13,105,2, | Refrig. temp. evap.Out |                             | 
+|  1   |   0x21,14,105,2   | Sensor data 8 |                             | 
+|  14   |   0x21,15,105,1   | Not in use |                             | 
+|  14   |   0x21,16,105,1   | Not in use |                             | 
+|  1   |   0x21,16,105,2   | Sensor data 9 |                             | 
+|  14   |   0x21,17,105,1   | Not in use |                             | 
+|  14   |   0x21,18,105,1   | Not in use |                             | 
+|  1   |   0x21,18,105,2   | Sensor data 10 |                             | 
+|  1   |   0x21,2,101,2   | Voltage (N-phase) (V) |                             | 
+|  18   |   0x21,2,105,2   | INV secondary current (A) |                             | 
+|  1   |   0x21,20,105,2   | Sensor data 11 |                             | 
+|  11   |   0x21,4,101,2   | Voltage (N-phase) (V) |                             | 
+|  2   |   0x21,4,101,2   | Voltage (V) |                             | 
+|  1   |   0x21,4,105,2, | Brine inlet temp. |                             | 
+|  5   |   0x21,4,105,2, | INV fin temp. |                             | 
+|  1   |   0x21,6,105,2   | Sensor data 4 |                             | 
+|  1   |   0x21,6,105,2, | Brine inlet temp. |                             | 
+|  1   |   0x21,6,105,2, | Brine outlet temp. |                             | 
+|  2   |   0x21,6,105,2, | Fan1 Fin temp. |                             | 
+|  1   |   0x21,6,152,2, | Fan1 Fin temp. |                             | 
+|  13   |   0x21,6,300,1   | Not in use |                             | 
+|  13   |   0x21,6,301,1   | Not in use |                             | 
+|  13   |   0x21,6,302,1   | Not in use |                             | 
+|  13   |   0x21,6,303,1   | Not in use |                             | 
+|  13   |   0x21,6,304,1   | Not in use |                             | 
+|  13   |   0x21,6,305,1   | Not in use |                             | 
+|  13   |   0x21,6,306,1   | Not in use |                             | 
+|  13   |   0x21,6,307,1   | Brine Flow Switch |                             | 
+|  13   |   0x21,7,105,2, | Brine inlet temp. |                             | 
+|  1   |   0x21,8,105,2   | Sensor data 5 |                             | 
+|  1   |   0x21,8,105,2, | Brine outlet temp. |                             | 
+|  2   |   0x21,8,105,2, | Fan2 Fin temp. |                             | 
+|  1   |   0x21,8,105,2, | Refrig. temp. evap. In |                             | 
+|  1   |   0x21,8,152,2, | Fan2 Fin temp. |                             | 
+|  13   |   0x21,9,105,2, | Brine outlet temp. |                             | 
+|  8   |   0x30,0,151,2   | Expansion valve (pls) |                             | 
+|  3   |   0x30,0,151,2   | Expansion valve 1 (pls) |                             | 
+|  18   |   0x30,0,152,1   | INV frequency (rps) |                             | 
+|  1   |   0x30,0,152,1   | INV frequency 1 (rps) |                             | 
+|  3   |   0x30,0,211,1   | Fan 1 (10 rpm) |                             | 
+|  8   |   0x30,0,211,1   | Fan 1 (step) |                             | 
+|  1   |   0x30,0,300,1   | Solenoid Valve 8 |                             | 
+|  1   |   0x30,0,301,1   | Solenoid Valve 7 |                             | 
+|  1   |   0x30,0,302,1   | Solenoid Valve 6 |                             | 
+|  10   |   0x30,0,303,1   | 4 Way Valve 5 |                             | 
+|  1   |   0x30,0,303,1   | Crank case heater 5 |                             | 
+|  12   |   0x30,0,303,1   | Solenoid Valve 5 |                             | 
+|  10   |   0x30,0,304,1   | 4 Way Valve 4 |                             | 
+|  10   |   0x30,0,304,1   | Crank case heater 4 |                             | 
+|  12   |   0x30,0,304,1   | Solenoid Valve 4 |                             | 
+|  10   |   0x30,0,305,1   | 4 Way Valve 3 |                             | 
+|  10   |   0x30,0,305,1   | Crank case heater 3 |                             | 
+|  11   |   0x30,0,305,1   | Solenoid Valve 3 |                             | 
+|  11   |   0x30,0,306,1   | 4 Way Valve 2 |                             | 
+|  11   |   0x30,0,306,1   | Crank case heater 2 |                             | 
+|  11   |   0x30,0,306,1   | STD Compressor 2 |                             | 
+|  2   |   0x30,0,306,1   | SV (BPH) |                             | 
+|  1   |   0x30,0,306,1   | SV2 (BPH) |                             | 
+|  8   |   0x30,0,306,1   | Solenoid Valve 2 |                             | 
+|  9   |   0x30,0,307,1   | 4 Way Valve 1 |                             | 
+|  2   |   0x30,0,307,1   | 4 Way Valve |                             | 
+|  9   |   0x30,0,307,1   | Crank case heater 1 |                             | 
+|  2   |   0x30,0,307,1   | Crank case heater |                             | 
+|  11   |   0x30,0,307,1   | STD Compressor 1 |                             | 
+|  1   |   0x30,0,307,1   | SV (hot Gas) |                             | 
+|  1   |   0x30,0,307,1   | SV1 (hot gas) |                             | 
+|  9   |   0x30,0,307,1   | Solenoid Valve 1 |                             | 
+|  11   |   0x30,1,152,1   | INV frequency 2 (rps) |                             | 
+|  1   |   0x30,1,211,1   | Brine pump feedback |                             | 
+|  3   |   0x30,1,211,1   | Fan 1 (10 rpm) |                             | 
+|  4   |   0x30,1,211,1   | Fan 1 (step) |                             | 
+|  11   |   0x30,1,211,1   | Fan 2 (step) |                             | 
+|  1   |   0x30,1,306,1   | Solenoid Valve 10 |                             | 
+|  1   |   0x30,1,307,1   | Solenoid Valve 9 |                             | 
+|  1   |   0x30,10,105,1, | Inlet water temp. (DMW) |                             | 
+|  1   |   0x30,10,113,1, | Inlet water temp. (DMW) |                             | 
+|  1   |   0x30,11,105,1, | Outlet water hex temp. before BUH (DLWB2) |                             | 
+|  1   |   0x30,11,113,1, | Outlet water hex temp. before BUH (DLWB2) |                             | 
+|  3   |   0x30,11,307,1   | 4 Way Valve |                             | 
+|  3   |   0x30,12,307,1   | Crank case heater |                             | 
+|  3   |   0x30,13,305,1   | Y3S |                             | 
+|  1   |   0x30,13,306,1   | LP bypass valve (Y2S) |                             | 
+|  1   |   0x30,13,306,1   | SV (drain pan heater) |                             | 
+|  1   |   0x30,13,306,1   | Y2S |                             | 
+|  1   |   0x30,13,307,1   | 4 way valve (Y1S) |                             | 
+|  1   |   0x30,13,307,1   | Hot gas bypass valve (Y3S) |                             | 
+|  1   |   0x30,13,307,1   | Y1S |                             | 
+|  2   |   0x30,2,151,2   | Expansion valve (pls) |                             | 
+|  11   |   0x30,2,151,2   | Expansion valve 2 (pls) |                             | 
+|  5   |   0x30,2,211,1   | Fan 2 (step) |                             | 
+|  1   |   0x30,2,211,1   | Not in use |                             | 
+|  6   |   0x30,3,151,2   | Expansion valve 1 (pls) |                             | 
+|  10   |   0x30,4,151,2   | Expansion valve 3 (pls) |                             | 
+|  2   |   0x30,4,303,1   | 4 Way Valve 5 |                             | 
+|  2   |   0x30,4,304,1   | 4 Way Valve 4 |                             | 
+|  2   |   0x30,4,305,1   | 4 Way Valve 3 |                             | 
+|  2   |   0x30,4,306,1   | 4 Way Valve 2 |                             | 
+|  2   |   0x30,4,307,1   | 4 Way Valve 1 |                             | 
+|  6   |   0x30,5,151,2   | Expansion valve 2 (pls) |                             | 
+|  10   |   0x30,6,151,2   | Expansion valve 4 (pls) |                             | 
+|  3   |   0x30,7,151,2   | Expansion valve 3 (pls) |                             | 
+|  1   |   0x30,7,300,1   | 4 Way Valve 8 |                             | 
+|  1   |   0x30,7,301,1   | 4 Way Valve 7 |                             | 
+|  1   |   0x30,7,302,1   | 4 Way Valve 6 |                             | 
+|  3   |   0x30,7,303,1   | 4 Way Valve 5 |                             | 
+|  3   |   0x30,7,304,1   | 4 Way Valve 4 |                             | 
+|  3   |   0x30,7,305,1   | 4 Way Valve 3 |                             | 
+|  3   |   0x30,7,306,1   | 4 Way Valve 2 |                             | 
+|  3   |   0x30,7,307,1   | 4 Way Valve 1 |                             | 
+|  10   |   0x30,8,151,2   | Expansion valve 5 (pls) |                             | 
+|  1   |   0x30,8,303,1   | Crank case heater 5 |                             | 
+|  2   |   0x30,8,304,1   | Crank case heater 4 |                             | 
+|  2   |   0x30,8,305,1   | Crank case heater 3 |                             | 
+|  2   |   0x30,8,306,1   | Crank case heater 2 |                             | 
+|  2   |   0x30,8,307,1   | Crank case heater 1 |                             | 
+|  1   |   0x30,8,307,1   | Crank case heater |                             | 
+|  3   |   0x30,9,151,2   | Expansion valve 4 (pls) |                             | 
+|  2   |   0x30,9,303,1   | Solenoid Valve 5 |                             | 
+|  2   |   0x30,9,304,1   | Solenoid Valve 4 |                             | 
+|  2   |   0x30,9,305,1   | Solenoid Valve 3 |                             | 
+|  1   |   0x30,9,305,1, | Solenoid Valve 3 |                             | 
+|  1   |   0x30,9,306,1   | SV2 (BPH) |                             | 
+|  1   |   0x30,9,306,1   | Solenoid Valve 2 |                             | 
+|  1   |   0x30,9,306,1, | LP bypass valve (Y3S) |                             | 
+|  1   |   0x30,9,307,1   | SV1 (hot gas) |                             | 
+|  1   |   0x30,9,307,1   | Solenoid Valve 1 |                             | 
+|  1   |   0x30,9,307,1, | Hot gas bypass valve (Y2S) |                             | 
+|  18   |   0x60,0,304,1   | Data Enable/Disable |                             | 
+|  1   |   0x60,0,307,1   | Data Enable/Disable |                             | 
+|  19   |   0x60,1,152,1   | Indoor Unit Address |                             | 
+|  19   |   0x60,11,300,1   | Bivalent Operation |                             | 
+|  19   |   0x60,11,301,1   | Not in use |                             | 
+|  19   |   0x60,11,302,1   | Not in use |                             | 
+|  19   |   0x60,11,303,1   | Solar input |                             | 
+|  18   |   0x60,11,304,1   | Benefit kWh rate power supply |                             | 
+|  1   |   0x60,11,304,1   | HP tariff input |                             | 
+|  1   |   0x60,11,305,1   | Clixon BSH |                             | 
+|  18   |   0x60,11,305,1   | Thermal protector BSH |                             | 
+|  1   |   0x60,11,306,1   | Clixon BUH |                             | 
+|  2   |   0x60,11,306,1   | Thermal Protector BUH |                             | 
+|  16   |   0x60,11,306,1   | Thermal protector (Q1L) BUH |                             | 
+|  1   |   0x60,11,307,1   | Flow Switch |                             | 
+|  18   |   0x60,11,307,1   | Water flow switch |                             | 
+|  1   |   0x60,12,300,1   | Solar Output Signal |                             | 
+|  18   |   0x60,12,300,1   | Solar pump operation |                             | 
+|  1   |   0x60,12,301,1   | Pump Output |                             | 
+|  18   |   0x60,12,301,1   | Water pump operation |                             | 
+|  9   |   0x60,12,302,1   | BPH |                             | 
+|  1   |   0x60,12,302,1   | Bottom Plate Heater |                             | 
+|  9   |   0x60,12,302,1   | Floor loop shut off valve |                             | 
+|  18   |   0x60,12,303,1   | BUH Step2 |                             | 
+|  1   |   0x60,12,303,1   | BUH2 |                             | 
+|  18   |   0x60,12,304,1   | BUH Step1 |                             | 
+|  1   |   0x60,12,304,1   | BUH1 |                             | 
+|  19   |   0x60,12,305,1   | BSH |                             | 
+|  18   |   0x60,12,306,1   | 3way valve(On:DHW_Off:Space) |                             | 
+|  1   |   0x60,12,306,1   | 4way Valve(Space/DHW) |                             | 
+|  18   |   0x60,12,307,1   | 2way valve(On:Heat_Off:Cool) |                             | 
+|  1   |   0x60,12,307,1   | 3way Valve(Cool/Heat) |                             | 
+|  18   |   0x60,13,152,1   | Indoor Option Code |                             | 
+|  1   |   0x60,13,212,1   | Indoor Option Code |                             | 
+|  18   |   0x60,14,215,1   | I/U Software ID (yy) |                             | 
+|  1   |   0x60,14,314,2   | Indoor Software Version |                             | 
+|  1   |   0x60,15,212,1   | Indoor EEPROM Version |                             | 
+|  18   |   0x60,15,215,1   | I/U Software ID (xx) |                             | 
+|  18   |   0x60,16,152,1   | I/U EEPROM Ver. |                             | 
+|  19   |   0x60,2,300,1   | Freeze Protection for water piping |                             | 
+|  19   |   0x60,2,301,1   | Silent Mode |                             | 
+|  19   |   0x60,2,302,1   | Freeze Protection |                             | 
+|  19   |   0x60,2,303,1   | Thermostat ON/OFF |                             | 
+|  18   |   0x60,2,315,1   | I/U operation mode |                             | 
+|  1   |   0x60,2,315,1   | Indoor Operation Mode |                             | 
+|  19   |   0x60,3,204,1   | Error Code |                             | 
+|  11   |   0x60,4,152,1   | Error detailed code |                             | 
+|  2   |   0x60,4,152,2   | Indoor Unit Code |                             | 
+|  6   |   0x60,4,314,2   | Indoor Unit Code |                             | 
+|  11   |   0x60,5,203,1   | Error type |                             | 
+|  17   |   0x60,6,219,1   | I/U capacity code |                             | 
+|  2   |   0x60,6,219,1   | Indoor Unit Capacity |                             | 
+|  18   |   0x60,7,105,2, | DHW setpoint |                             | 
+|  1   |   0x60,7,105,2, | R/C Setpoint |                             | 
+|  1   |   0x60,9,105,2, | H/P Outlet Setpoint |                             | 
+|  18   |   0x60,9,105,2, | LW setpoint (main) |                             | 
+|  19   |   0x61,0,307,1   | Data Enable/Disable |                             | 
+|  19   |   0x61,1,152,1   | Indoor Unit Address |                             | 
+|  18   |   0x61,10,105,2, | DHW tank temp. (R5T) |                             | 
+|  1   |   0x61,10,105,2, | DHW temperature(R5T) |                             | 
+|  16   |   0x61,12,105,2, | Indoor ambient temp. (R1T) |                             | 
+|  2   |   0x61,12,105,2, | RT Temp. |                             | 
+|  1   |   0x61,12,105,2, | Remocon thermistor |                             | 
+|  2   |   0x61,13,105,2, | Ext. indoor ambient sensor (R6T) |                             | 
+|  13   |   0x61,14,105,2, | Ext. indoor ambient sensor (R6T) |                             | 
+|  2   |   0x61,14,105,2, | Outdoor Ambient or Ext Sensor |                             | 
+|  15   |   0x61,2,105,2, | Leaving water temp. before BUH (R1T) |                             | 
+|  1   |   0x61,2,105,2, | Outlet PHE(R1T) |                             | 
+|  3   |   0x61,2,105,2, | Outlet Water Heat Exch. Temp. (R1T) |                             | 
+|  15   |   0x61,4,105,2, | Leaving water temp. after BUH (R2T) |                             | 
+|  1   |   0x61,4,105,2, | Outlet BUH(R2T) |                             | 
+|  3   |   0x61,4,105,2, | Outlet Water BUH Temp. (R2T) |                             | 
+|  1   |   0x61,6,105,2, | Liquid temperature(R3T) |                             | 
+|  18   |   0x61,6,105,2, | Refrig. Temp. liquid side (R3T) |                             | 
+|  1   |   0x61,8,105,2, | Inlet temperature(R4T) |                             | 
+|  18   |   0x61,8,105,2, | Inlet water temp.(R4T) |                             | 
+|  18   |   0x62,0,307,1   | Data Enable/Disable |                             | 
+|  18   |   0x62,1,152,1   | Indoor Unit Address |                             | 
+|  18   |   0x62,11,105,1, | Water pressure |                             | 
+|  18   |   0x62,12,152,1   | Water pump signal (0:max-100:stop) |                             | 
+|  2   |   0x62,13,152,1   | 3 way Valve Mixing 1 |                             | 
+|  16   |   0x62,13,152,1   | [Future] 3 way Valve Mixing 1 |                             | 
+|  2   |   0x62,14,152,1   | 3 way Valve Mixing 2 |                             | 
+|  16   |   0x62,14,152,1   | [Future] 3 way Valve Mixing 2 |                             | 
+|  1   |   0x62,15,105,2, | Pressure sensor |                             | 
+|  3   |   0x62,15,105,2, | Refrigerant pressure sensor |                             | 
+|  10   |   0x62,15,152,1   | Not in use |                             | 
+|  1   |   0x62,15,152,2   | Not in use |                             | 
+|  3   |   0x62,15,152,2, | Refrigerant pressure sensor |                             | 
+|  10   |   0x62,16,300,1   | Not in use |                             | 
+|  10   |   0x62,16,301,1   | Not in use |                             | 
+|  10   |   0x62,16,302,1   | Not in use |                             | 
+|  10   |   0x62,16,303,1   | Not in use |                             | 
+|  10   |   0x62,16,304,1   | Not in use |                             | 
+|  10   |   0x62,16,305,1   | Not in use |                             | 
+|  10   |   0x62,16,306,1   | Not in use |                             | 
+|  10   |   0x62,16,307,1   | Not in use |                             | 
+|  1   |   0x62,17,300,1   | Not in use |                             | 
+|  1   |   0x62,17,301,1   | Not in use |                             | 
+|  1   |   0x62,17,302,1   | Not in use |                             | 
+|  1   |   0x62,17,303,1   | Not in use |                             | 
+|  1   |   0x62,17,304,1   | Not in use |                             | 
+|  1   |   0x62,17,305,1   | Not in use |                             | 
+|  1   |   0x62,17,306,1   | Not in use |                             | 
+|  1   |   0x62,17,307,1   | Not in use |                             | 
+|  18   |   0x62,2,300,1   | Emergency (indoor) active/not active |                             | 
+|  18   |   0x62,2,301,1   | Not in use |                             | 
+|  18   |   0x62,2,302,1   | System OFF (ON:System off) |                             | 
+|  18   |   0x62,2,303,1   | Space heating Operation ON/OFF |                             | 
+|  18   |   0x62,2,304,1   | Powerful DHW Operation. ON/OFF |                             | 
+|  18   |   0x62,2,305,1   | Storage comfort ON/OFF |                             | 
+|  18   |   0x62,2,306,1   | Storage eco ON/OFF |                             | 
+|  18   |   0x62,2,307,1   | Reheat ON/OFF |                             | 
+|  18   |   0x62,3,105,2, | LW setpoint (add) |                             | 
+|  18   |   0x62,5,105,2, | RT setpoint |                             | 
+|  18   |   0x62,7,300,1   | Pwr consumption limit 1 |                             | 
+|  18   |   0x62,7,301,1   | Pwr consumption limit 2 |                             | 
+|  18   |   0x62,7,302,1   | Pwr consumption limit 3 |                             | 
+|  18   |   0x62,7,303,1   | Pwr consumption limit 4 |                             | 
+|  18   |   0x62,7,304,1   | Main RT Heating |                             | 
+|  18   |   0x62,7,305,1   | Main RT Cooling |                             | 
+|  18   |   0x62,7,306,1   | Add. Ext. RT Input Heat. |                             | 
+|  18   |   0x62,7,307,1   | Add. Ext. RT Input Cool. |                             | 
+|  2   |   0x62,8,300,1   | Space C/H Op. or BPH |                             | 
+|  16   |   0x62,8,300,1   | Space H Operation output |                             | 
+|  18   |   0x62,8,301,1   | Alarm output |                             | 
+|  18   |   0x62,8,302,1   | Circulation pump operation |                             | 
+|  2   |   0x62,8,303,1   | Mode conflict |                             | 
+|  1   |   0x62,8,303,1   | Not in use |                             | 
+|  15   |   0x62,8,303,1   | Tank preheat ON/OFF |                             | 
+|  2   |   0x62,8,304,1   | DHW priority request |                             | 
+|  10   |   0x62,8,304,1   | Not in use |                             | 
+|  6   |   0x62,8,304,1   | PHE Heater |                             | 
+|  16   |   0x62,8,305,1   | Not in use |                             | 
+|  2   |   0x62,8,305,1   | Powerful demand |                             | 
+|  2   |   0x62,8,306,1   | Defrost prohibition ON/OFF |                             | 
+|  16   |   0x62,8,306,1   | Not in use |                             | 
+|  18   |   0x62,8,307,1   | None |                             | 
+|  18   |   0x62,9,105,2   | Flow sensor (l/min) |                             | 
+|  18   |   0x63,0,307,1   | Data Enable/Disable |                             | 
+|  18   |   0x63,1,152,1   | Indoor Unit Address |                             | 
+|  2   |   0x63,10,215,1   | Not in use |                             | 
+|  2   |   0x63,11,215,1   | Not in use |                             | 
+|  2   |   0x63,12,215,1   | Not in use |                             | 
+|  1   |   0x63,13,152,1   | BUH output capacity |                             | 
+|  2   |   0x63,13,311,1   | BUH output capacity |                             | 
+|  3   |   0x63,14,161,1   | Current measured by CT sensor of L1 |                             | 
+|  3   |   0x63,15,161,1   | Current measured by CT sensor of L2 |                             | 
+|  3   |   0x63,16,161,1   | Current measured by CT sensor of L3 |                             | 
+|  3   |   0x63,16,307,1   | HP Forced FG |                             | 
+|  1   |   0x63,16,307,1   | HP is operation forced OFF by installer |                             | 
+|  18   |   0x63,2,215,1   | I/U EEPROM (3rd digit) |                             | 
+|  18   |   0x63,3,215,1   | I/U EEPROM (4th 5th digit) |                             | 
+|  18   |   0x63,4,215,1   | I/U EEPROM (6th 7th digit) |                             | 
+|  18   |   0x63,5,215,1   | I/U EEPROM (8th 9th digit) |                             | 
+|  18   |   0x63,6,215,1   | I/U EEPROM (11th digit) |                             | 
+|  16   |   0x63,7,214,1   | I/U EEPROM (12th digit)(rev.) |                             | 
+|  2   |   0x63,7,215,1   | I/U EEPROM (12th digit)(rev.) |                             | 
+|  2   |   0x63,8,215,1   | Not in use |                             | 
+|  2   |   0x63,9,215,1   | Not in use |                             | 
+|  17   |   0x64,0,307,1   | Data Enable/Disable |                             | 
+|  17   |   0x64,1,152,1   | Indoor Unit Address |                             | 
+|  7   |   0x64,10,105,2, | Mixed water temp. |                             | 
+|  7   |   0x64,10,118,2, | Mixed water temp.(R7T) |                             | 
+|  8   |   0x64,12,105,2, | 2nd Domestic hot water temperature |                             | 
+|  1   |   0x64,14,152,1   | Target delta T heating |                             | 
+|  7   |   0x64,14,152,1, | Target delta T heating |                             | 
+|  1   |   0x64,15,152,1   | Target delta T cooling |                             | 
+|  7   |   0x64,15,152,1, | Target delta T cooling |                             | 
+|  3   |   0x64,2,300,1   | Hybrid DHW operation mode |                             | 
+|  17   |   0x64,2,301,1   | Bypass Valve Output |                             | 
+|  17   |   0x64,2,302,1   | Boiler DHW Demand |                             | 
+|  17   |   0x64,2,303,1   | Boiler Operation Demand |                             | 
+|  17   |   0x64,2,316,1   | Hybrid Op. Mode |                             | 
+|  17   |   0x64,3,105,2   | BE_COP |                             | 
+|  17   |   0x64,5,105,2, | Hybrid Heating Target Temp. |                             | 
+|  17   |   0x64,7,105,2, | Boiler Heating Target Temp. |                             | 
+|  2   |   0x64,9,300,1   | Main pump |                             | 
+|  2   |   0x64,9,301,1   | Add pump |                             | 
+|  12   |   0x64,9,301,1   | Main pump |                             | 
+|  12   |   0x64,9,302,1   | Add pump |                             | 
+|  2   |   0xA0,0,119,2, | Suction temp |                             | 
+|  2   |   0xA0,10,152,1   | O/U MPU ID |                             | 
+|  2   |   0xA0,11,152,1   | O/U MPU ID |                             | 
+|  2   |   0xA0,12,300,1   | 52C Output |                             | 
+|  2   |   0xA0,12,301,1   | 4 way valve (Y1S) |                             | 
+|  1   |   0xA0,12,301,1, | 4 way valve (Y1S) |                             | 
+|  2   |   0xA0,12,302,1   | Solenoid Valve 1 |                             | 
+|  1   |   0xA0,12,303,1   | SV (drain pan heater) |                             | 
+|  1   |   0xA0,12,303,1   | Solenoid Valve 2 |                             | 
+|  2   |   0xA0,12,304,1   | Solenoid Valve 3 |                             | 
+|  2   |   0xA0,12,305,1   | Crank case heater |                             | 
+|  2   |   0xA0,12,306,1   | Safeguard operation |                             | 
+|  2   |   0xA0,12,307,1   | HPS operation |                             | 
+|  2   |   0xA0,13,300,1   | Powerful bit (MT setting bit) |                             | 
+|  2   |   0xA0,13,301,1   | Indoor unit blowout 50 ° C flag |                             | 
+|  2   |   0xA0,13,302,1   | During emergency operation |                             | 
+|  2   |   0xA0,13,303,1   | Discharge Temp. Drop |                             | 
+|  2   |   0xA0,14,105,2, | Compressor port temperature |                             | 
+|  2   |   0xA0,2,119,2, | Outdoor heat exchanger temp. |                             | 
+|  2   |   0xA0,4,119,2, | Liquid pipe temp. |                             | 
+|  2   |   0xA0,6,119,2, | Pressure |                             | 
+|  2   |   0xA0,8,151,2   | Expansion valve 3 (pls) |                             | 
+|  3   |   0xA1,0,119,2, | Water heat exchanger inlet temp. |                             | 
+|  3   |   0xA1,2,119,2, | Water heat exchanger outlet temp. |                             | 
+|  3   |   0xA1,4,300,1   | PHE Heater |                             | 
+|  3   |   0xA1,4,301,1   | Bottom Plate Heater |                             | 
+|  2   |   0xA1,4,302,1   | Liquid INJ solenoid valve (Y4S) |                             | 
+|  2   |   0xA1,5,114,2, | Target Discharge Temp. |                             | 
+|  2   |   0xA1,7,114,2, | Target port temperature |                             | 
+|  2   |   0xA1,9,300,1   | Alterma LT setting |                             | 
+|  2   |   0xA1,9,301,1   | Hydro split setting |                             | 
+|  2   |   0xA1,9,302,1   | GSHP setting |                             | 
+|  2   |   0xA1,9,303,1   | MT setting |                             | 
+|  2   |   0xA1,9,304,1   | Minichiller setting |                             | 
+|  2   |   0xA1,9,305,1   | Monobloc setting |                             | 
