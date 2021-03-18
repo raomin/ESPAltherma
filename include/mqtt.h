@@ -82,7 +82,8 @@ void reconnect()
         ArduinoOTA.handle();
       }
 
-      if (i++ == 5)
+      if (i++ == 100)
+        Serial.printf("Tried for 500 sec, rebooting now.", client.state());
         esp_restart();
     }
   }

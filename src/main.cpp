@@ -152,6 +152,7 @@ void setup()
 #endif
 
   EEPROM.begin(10);
+  readEEPROM();//Restore previous state
   mqttSerial.print("Setting up wifi...");
   setup_wifi();
   ArduinoOTA.setHostname("ESPAltherma");
@@ -164,12 +165,10 @@ void setup()
   client.setBufferSize(MAX_MSG_SIZE); //to support large json message
   client.setCallback(callback);
   client.setServer(MQTT_SERVER, MQTT_PORT);
-  mqttSerial.print("Connecting to MQTT server...");
+  Serial.print("Connecting to MQTT server...");
   mqttSerial.begin(&client, "espaltherma/log");
   reconnect();
   mqttSerial.println("OK!");
-
-  readEEPROM();
 
   initRegistries();
   mqttSerial.print("ESPAltherma started!");
