@@ -70,10 +70,13 @@ void reconnect()
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
       client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-      client.publish("homeassistant/sg/espAltherma/config", "{\"name\":\"AlthermaSmartGrid\",\"cmd_t\":\"~/set\",\"stat_t\":\"~/state\",\"~\":\"espaltherma/sg\"}", true);
+ 
       // Subscribe
       client.subscribe("espaltherma/POWER");
+#ifdef PIN_SG1
+      client.publish("homeassistant/sg/espAltherma/config", "{\"name\":\"AlthermaSmartGrid\",\"cmd_t\":\"~/set\",\"stat_t\":\"~/state\",\"~\":\"espaltherma/sg\"}", true);
       client.subscribe("espaltherma/sg/set");
+#endif
     }
     else
     {
@@ -117,6 +120,8 @@ void callbackTherm(byte *payload, unsigned int length)
   }
 }
 
+#ifdef PIN_SG1
+//Smartgrid callbacks
 void callbackSg(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
@@ -158,6 +163,7 @@ void callbackSg(byte *payload, unsigned int length)
     Serial.printf("Unknown message: %s\n", payload);
   }
 }
+#endif
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -167,10 +173,12 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     callbackTherm(payload, length);
   }
+#ifdef PIN_SG1
   else if (strcmp(topic, "espaltherma/sg/set") == 0)
   {
     callbackSg(payload, length);
   }
+#endif
   else
   {
     Serial.printf("Unknown topic: %s\n", topic);
