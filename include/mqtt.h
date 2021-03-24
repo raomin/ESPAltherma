@@ -105,15 +105,20 @@ void callbackTherm(byte *payload, unsigned int length)
     digitalWrite(PIN_THERM, HIGH);
     saveEEPROM(HIGH);
     client.publish("espaltherma/STATE", "OFF");
-    Serial.println("Turned OFF");
+    mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
     digitalWrite(PIN_THERM, LOW);
     saveEEPROM(LOW);
     client.publish("espaltherma/STATE", "ON");
-    Serial.println("Turned ON");
+    mqttSerial.println("Turned ON");
   }
+  else if (payload[0] == 'R')//R(eset/eboot)
+  { 
+    mqttSerial.println("Rebooting");
+    esp_restart();
+  }  
   else
   {
     Serial.printf("Unknown message: %s\n", payload);

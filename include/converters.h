@@ -299,7 +299,7 @@ private:
             strcat(ret, "??");
             break;
         case 4:
-            strcat(ret, "DHW:Domestic Hot Water");
+            strcat(ret, "DHW");
             break;
         case 5:
             strcat(ret, "Heating + DHW");
