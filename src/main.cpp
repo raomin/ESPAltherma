@@ -18,8 +18,8 @@
 #include "mqtt.h"
 
 Converter converter;
-char registryIDs[32];//Holds the registrys to query
-bool busy=false;
+char registryIDs[32]; //Holds the registrys to query
+bool busy = false;
 
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
 long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
@@ -43,9 +43,8 @@ void updateValues(char regID)
   converter.getLabels(regID, labels, num);
   for (size_t i = 0; i < num; i++)
   {
-    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
+    snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
   }
-
 }
 
 uint16_t loopcount =0;
@@ -54,7 +53,8 @@ void extraLoop()
 {
   client.loop();
   ArduinoOTA.handle();
-  while (busy){//Stop processing during OTA
+  while (busy)
+  { //Stop processing during OTA
     ArduinoOTA.handle();
   }
 
@@ -100,6 +100,7 @@ void initRegistries(){
   {
     if (!contains(registryIDs, sizeof(registryIDs), label.registryID))
     {
+      mqttSerial.printf("Adding registry 0x%2x to be queried.\n", label.registryID);
       registryIDs[i++] = label.registryID;
     }
   }
@@ -116,7 +117,6 @@ void initRegistries(){
   //   registryIDs[i] = 0xFF;
   // }
   //calling for registry values
-
 }
 
 void setupScreen(){
@@ -166,6 +166,11 @@ void setup()
   ArduinoOTA.setHostname("ESPAltherma");
   ArduinoOTA.onStart([]() {
     busy = true;
+  });
+
+  ArduinoOTA.onError([](ota_error_t error) {
+    mqttSerial.print("Error on OTA - restarting");
+    esp_restart();
   });
   ArduinoOTA.begin();
 
