@@ -117,6 +117,7 @@ void callbackTherm(byte *payload, unsigned int length)
   else if (payload[0] == 'R')//R(eset/eboot)
   { 
     mqttSerial.println("Rebooting");
+    delay(100);
     esp_restart();
   }  
   else
