@@ -9,14 +9,14 @@
 &nbsp;
 <img src="https://img.shields.io/github/license/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
-<a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
+<iframe src="https://github.com/sponsors/raomin/button" title="Sponsor raomin" height="35" width="116" style="border: 0;"></iframe>
 </p>
 
 <hr/>
 
 <p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
 
-_If this project has any value for you, please consider [buying me a beer](https://www.buymeacoffee.com/raomin). I don't do this for money but it feels good to get some support! Thanks :)_ 
+_If this project has any value for you, please consider <iframe src="https://github.com/sponsors/raomin/button" title="Sponsor raomin" height="35" width="116" style="border: 0;"></iframe>. I don't do this for money but it feels good to get some support! Thanks :)_ 
 ## Features
 
   <ul style="list-style-position: inside;">
@@ -363,7 +363,7 @@ Every contribution to this project is highly appreciated! Don't fear to create i
 
 If this project is useful to you, and if you want, <b>[you can buy me a beer](https://www.buymeacoffee.com/raomin)</b>! It feels good and really helps improving ESPAltherma. Thanks :)
 
- <a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
+You can also <iframe src="https://github.com/sponsors/raomin/button" title="Sponsor raomin" height="35" width="116" style="border: 0;"></iframe> this project and become an official supporter of ESPAltherma and get your badge on this page!
 
 # License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
