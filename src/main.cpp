@@ -47,7 +47,7 @@ void updateValues(char regID)
     for (size_t j = 0; j < strlen(labels[i]->asString); j++)
     {
       char c = labels[i]->asString[j];
-      if (!isdigit(c) || c!='.'){
+      if (!isdigit(c) && c!='.'){
         alpha = true;
       }
     }
