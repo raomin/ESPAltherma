@@ -10,13 +10,15 @@
 <img src="https://img.shields.io/github/license/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
 <a href="https://github.com/sponsors/raomin/"><img src="https://github.com/raomin/ESPAltherma/blob/main/doc/images/sponsor.png?raw=true"></a>
+&nbsp;
+<a href="https://www.buymeacoffee.com/raomin" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20beer-%245-orange?style=for-the-badge&logo=buy-me-a-beer" /></a>
 </p>
 
 <hr/>
 
-<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
+<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
 
-_If this project has any value for you, please consider [buying me a beer](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)!. I don't do this for money but it feels good to get some support! Thanks :)_ 
+_If this project has any value for you, please consider [buying me a 🍺](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)!. I don't do this for money but it feels good to get some support! Thanks :)_ 
 
 ## Features
 
@@ -39,7 +41,7 @@ _If this project has any value for you, please consider [buying me a beer](https
 
 ## Hardware
 
-- A Daikin Altherma or ROTEX heat pump
+- A Daikin Altherma or Daikin Altherma based heat pump (ROTEX, HOVAL Belaria...)
 - An ESP32 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
 - 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
 
@@ -341,7 +343,7 @@ I'm not an expert in heat pump, so I don't understand all possible values. Colle
 
 I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values). You can add your comments on the register values and suggest possible better names!
 
-## My Daikin heat pump is not an Daikin Altherma / ROTEX. Can I still control it?
+## My Daikin heat pump is not an Daikin Altherma. Can I still control it?
 
 No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 

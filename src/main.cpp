@@ -43,7 +43,21 @@ void updateValues(char regID)
   converter.getLabels(regID, labels, num);
   for (size_t i = 0; i < num; i++)
   {
-    snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
+    bool alpha = false;
+    for (size_t j = 0; j < strlen(labels[i]->asString); j++)
+    {
+      char c = labels[i]->asString[j];
+      if (!isdigit(c) || c!='.'){
+        alpha = true;
+      }
+    }
+    if (alpha){
+      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
+    }
+    else{//number, no quotes
+      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
+
+    }
   }
 }
 
