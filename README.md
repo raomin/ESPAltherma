@@ -193,7 +193,13 @@ Once configured and connected, your heat pump will work like this:
   
 *Note that In SG3 mode your HP will really be power hungry so make sure to enable it only when electricity cost is low (ideally free) or be prepared to get a high bill!*  
   
-Depending on your HP model, SG3 might be configurable in "ECO mode", "Normal mode" or "Comfort mode". I do not have any documentation about different modes, so I just left the default value (Normal mode). From my tests, this do not seem to apply to other SG working modes.
+Depending on your HP model, SG3 might be configurable in "ECO mode", "Normal mode" or "Comfort mode". The mode can be set using the specialist code Main Menu > Settings > Input/Output.
+
+| SG-Mode | Description |
+| ------- | ----------- |
+| Comfort mode | Increase of the hot water set temperature by 5 K. |
+| Normak mode | Increase of flow set temperature by 2 K and hot water set temperature by 5 K. |
+| ECO mode | Increase the flow set temperature by 5 K and hot water set temperature by 7 K. |
 
 Note: Smart Grid needs to be switched ON in the heatpump configuration menu, otherwise SG1 and SG2 contacts are not evaluated.
 
