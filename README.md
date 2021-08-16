@@ -198,7 +198,7 @@ Depending on your HP model, SG3 might be configurable in "ECO mode", "Normal mod
 | SG-Mode | Description |
 | ------- | ----------- |
 | Comfort mode | Increase of the hot water set temperature by 5 K. |
-| Normak mode | Increase of flow set temperature by 2 K and hot water set temperature by 5 K. |
+| Normal mode | Increase of flow set temperature by 2 K and hot water set temperature by 5 K. |
 | ECO mode | Increase the flow set temperature by 5 K and hot water set temperature by 7 K. |
 
 Note: Smart Grid needs to be switched ON in the heatpump configuration menu, otherwise SG1 and SG2 contacts are not evaluated.
