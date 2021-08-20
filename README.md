@@ -374,5 +374,9 @@ If this project is useful to you, and if you want, <b>[you can buy me a beer](ht
 
 You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie regular beers :)) and become an official supporter of ESPAltherma and get your badge on this page!
 
+## ❤ Sponsors ❤
+
+<a href="https://github.com/freddydeschepper">@freddydeschepper</a>
+
 # License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
