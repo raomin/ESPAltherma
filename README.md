@@ -377,6 +377,7 @@ You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie reg
 ## ❤ Sponsors ❤
 
 <a href="https://github.com/freddydeschepper">@freddydeschepper</a>
+<a href="https://github.com/qwirx">@qris (Chris Wilson)</a>
 
 # License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
