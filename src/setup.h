@@ -33,6 +33,9 @@
 //Uncomment this line if the JSON message should be in a Json Table format []. Use only for IOBroker Vis. 
 //#define JSONTABLE
 
+//Uncomment this if you want to activate the One Value <-> One Topic mode. Each value will be sent to a specific topic below 
+// #define ONEVAL_ONETOPIC
+// #define MQTT_OneTopic "espaltherma/OneATTR/" //Keep the ending "/" !!
 
 //Uncomment *ONE* of the following according to your installation.
 //Then, open and edit the selected file in the /include/def/ folder and uncomment each values you are interested in.

@@ -51,7 +51,14 @@ void updateValues(char regID)
         alpha = true;
       }
     }
-    if (alpha){
+
+    #ifdef ONEVAL_ONETOPIC
+    char topicBuff[128] = MQTT_OneTopic;
+    strcat(topicBuff,labels[i]->asString);
+    client.publish(topicBuff, labels[i]->asString);
+    #endif
+    
+    if (alpha){      
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
     else{//number, no quotes
