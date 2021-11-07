@@ -54,7 +54,7 @@ void updateValues(char regID)
 
     #ifdef ONEVAL_ONETOPIC
     char topicBuff[128] = MQTT_OneTopic;
-    strcat(topicBuff,labels[i]->asString);
+    strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
     #endif
     
@@ -133,11 +133,6 @@ void initRegistries(){
       extraLoop();
     }
   }
-  // for (; i < 32; i++) //initialize the rest to 0xFF
-  // {
-  //   registryIDs[i] = 0xFF;
-  // }
-  //calling for registry values
 }
 
 void setupScreen(){

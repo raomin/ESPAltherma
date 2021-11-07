@@ -360,6 +360,19 @@ upload_port = ESPAltherma.local
 
 With this parameter, the upload will happen over wifi. Note: your local firewall should allow incoming connection ; also, it can fail from time to time, if it happens just relaunch update.
 
+## I'm using OpenHAB (or others) can I get the values in separated MQTT topics?
+
+Yes, ESPAltherma now supports sending each value to a specific topic in addition to sending a complete JSON on the main topic.
+To activate this specific feature uncomment the following lines from `src/setup.h`
+
+```c++
+//Uncomment this if you want to activate the One Value <-> One Topic mode. Each value will be sent to a specific topic below 
+#define ONEVAL_ONETOPIC
+#define MQTT_OneTopic "espaltherma/OneATTR/" //Keep the ending "/" !!
+```
+
+Now each value will be published in `espaltherma/OneATTR/[valuename]` eg `espaltherma/OneATTR/Boiler Heating Target Temp.`
+
 ## How can I contribute?
 
 Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!

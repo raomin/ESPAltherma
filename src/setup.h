@@ -37,6 +37,7 @@
 // #define ONEVAL_ONETOPIC
 // #define MQTT_OneTopic "espaltherma/OneATTR/" //Keep the ending "/" !!
 
+
 //Uncomment *ONE* of the following according to your installation.
 //Then, open and edit the selected file in the /include/def/ folder and uncomment each values you are interested in.
 
