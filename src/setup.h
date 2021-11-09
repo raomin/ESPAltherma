@@ -3,9 +3,9 @@
 #define WIFI_SSID "lambi"//**Your SSID here**
 #define WIFI_PWD "%G1q7U!Ax4O&"//**Your password here** leave empty if open (bad!)
 
-#define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
-#define MQTT_USERNAME ""//leave empty if not set (bad!)
-#define MQTT_PASSWORD ""//leave empty if not set (bad!)
+#define MQTT_SERVER "192.168.178.34"//**IP address here of your MQTT server**
+#define MQTT_USERNAME "pi"//leave empty if not set (bad!)
+#define MQTT_PASSWORD "3+^>8GSL6Mt#"//leave empty if not set (bad!)
 #define MQTT_PORT 1883
 
 #define FREQUENCY 30000 //query values every 30 sec
