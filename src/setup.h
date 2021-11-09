@@ -1,7 +1,7 @@
 //Setup your credentials and mqtt info here:
 //only change the value between the " " leave the rest of the line untouched.
-#define WIFI_SSID "SSID"//**Your SSID here**
-#define WIFI_PWD "password"//**Your password here** leave empty if open (bad!)
+#define WIFI_SSID "lambi"//**Your SSID here**
+#define WIFI_PWD "%G1q7U!Ax4O&"//**Your password here** leave empty if open (bad!)
 
 #define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
