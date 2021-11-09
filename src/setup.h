@@ -54,7 +54,7 @@
 //#include "def/ALTHERMA(BIZONE_CB_11-16KW).h"
 //#include "def/ALTHERMA(GSHP).h"
 //#include "def/ALTHERMA(GSHP2).h"
-//#include "def/ALTHERMA(HPSU6_ULTRA).h"
+#include "def/German/ALTHERMA(HPSU6_ULTRA).h"
 //#include "def/ALTHERMA(HYBRID).h"
 //#include "def/ALTHERMA(LT-D7_E_BML).h"
 //#include "def/ALTHERMA(LT_11-16KW_HYDROSPLIT_HYDRO_UNIT).h"
