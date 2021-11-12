@@ -6,3 +6,4 @@
 src/setup.h
 private/
 .vscode/settings.json
+.idea
