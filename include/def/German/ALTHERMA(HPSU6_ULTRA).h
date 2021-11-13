@@ -103,7 +103,7 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x00,0,998,1,-1,"In-Out separator"},
 //{0x60,0,304,1,-1,"Daten Aktivieren/Deaktivieren"},
 //{0x60,1,152,1,-1,"Adresse des Innengeräts"},
-//{0x60,2,315,1,-1,"I/U betriebsart"},
+{0x60,2,315,1,-1,"I/U betriebsart"},
 {0x60,2,303,1,-1,"Thermostat EIN/AUS"},
 //{0x60,2,302,1,-1,"Frostschutz"},
 {0x60,2,301,1,-1,"Leisemodus"},
