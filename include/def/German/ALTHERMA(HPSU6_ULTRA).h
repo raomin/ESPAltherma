@@ -136,8 +136,8 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x60,16,152,1,-1,"EEPROM Hydrobox Version"},
 //{0x61,0,307,1,-1,"Daten Aktivieren/Deaktivieren"},
 //{0x61,1,152,1,-1,"Adresse des Innengeräts"},
-//{0x61,2,105,2,1,"Auslass Wasser Wärmetauscher Temp. (R1T)"},
-//{0x61,4,105,2,1,"Auslass Wasser BUH Temp. (R2T)"},
+{0x61,2,105,2,1,"Auslass Wasser Wärmetauscher Temp. (R1T)"},
+{0x61,4,105,2,1,"Auslass Wasser BUH Temp. (R2T)"},
 //{0x61,6,105,2,1,"R3T-Kältemittel Flüssigkeitstemperatur"},
 {0x61,8,105,2,1,"R4T-Wasser Rücklauftemp. vor dem Plattenwärmetauscher"},
 {0x61,10,105,2,1,"R5T-Brauchwassertemperatur im Speicher"},
@@ -206,7 +206,7 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,9,302,1,-1,"Add pump"},
 //{0x64,9,301,1,-1,"Main pump"},
 {0x64,10,105,2,1,"Mischwassertemperatur"},
-//{0x64,12,105,2,1,"2nd Domestic hot water temperature"},
+{0x64,12,105,2,1,"2nd Domestic hot water temperature"},
 //{0x64,14,152,1,1,"Target delta T heating"},
 //{0x64,15,152,1,1,"Target delta T cooling"}
 };
