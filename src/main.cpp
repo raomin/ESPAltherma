@@ -170,7 +170,7 @@ void setup()
   digitalWrite(PIN_SG1, LOW);
   digitalWrite(PIN_SG2, LOW);
 #endif
-#ifdef ARDUINA_M5Stick_C_Plus
+#ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
   gpio_pullup_dis(GPIO_NUM_25);
 #endif
