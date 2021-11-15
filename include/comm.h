@@ -55,6 +55,12 @@ bool queryRegistry(char regID, char *buffer)
     delay(500);
     return false;
   }
+    char bufflog[250] = {0};
+    for (size_t i = 0; i < len; i++)
+    {
+        sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
+    }
+    mqttSerial.print(bufflog);
   if (getCRC(buffer, len - 1) != buffer[len - 1])
   {
     Serial.println("Wrong CRC!");
