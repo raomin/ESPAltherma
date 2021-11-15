@@ -119,7 +119,12 @@ void initRegistries(){
   int i = 0;
   for (auto &&label : labelDefs)
   {
-    if (!contains(registryIDs, sizeof(registryIDs), label.registryID))
+    if (i >= sizeof(registryIDs))
+    {
+      mqttSerial.printf("Exceeding maximum number of registry entries (%d) to be queried.\n", sizeof(registryIDs));
+      break;
+    }
+    else if (!contains(registryIDs, sizeof(registryIDs), label.registryID))
     {
       mqttSerial.printf("Adding registry 0x%2x to be queried.\n", label.registryID);
       registryIDs[i++] = label.registryID;
