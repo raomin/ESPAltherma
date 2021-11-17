@@ -142,7 +142,7 @@ Some heat pumps (ROTEX) have an X10A port which connects differently:
 
 ![](doc/images/rotexX10A.png)
 
-Some users reported that the 5V from their ROTEX was not enough to power their ESP32. In this case, use an USB charger to power the ESP32. The 5V from the X10A is then not needed.
+Some users reported that the 5V from their ROTEX was not enough to power their ESP32. In this case, use an USB charger to power the ESP32. The 5V from the X10A is then not needed. Whatever you do, **make sure you keep a wire connecting the GND of the ESP32 to the GND pin of the X10A (even if you power your ESP32 with a USB charger)!!**
 
 
 5. Cross check twice the connections and turn on your heat pump. Two new entities AlthermaSensor and AlthermaSwitch should appear in Home Assistant. AlthermaSensor holds the values as attributes.
@@ -180,7 +180,7 @@ Of course, you will need to use 2 more relays to open/close SG1 and SG2 contacts
 
 I found that using 5V supply pin of X10A provides enough power for my ESP32 and both relays, but your mileage may vary.  
 
-On a Roter SG1 and SG2 contacts are located in J8 connector, pin 5-6 (Smart Grid) and 11-12 (EVU) respectively.  
+On a Rotex SG1 and SG2 contacts are located in J8 connector, pin 5-6 (Smart Grid) and 11-12 (EVU) respectively.  
 
 Once configured and connected, your heat pump will work like this:  
 
