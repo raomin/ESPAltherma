@@ -18,7 +18,7 @@ bool queryRegistry(char regID, char *buffer)
 {
 
   //preparing command:
-  char prep[] = {0x03, 0x40, regID, 0x00, 0x00};
+  char prep[] = {0x03, 0x40, regID, 0x00};
   prep[3] = getCRC(prep, 3);
 
   //Sending command to serial
