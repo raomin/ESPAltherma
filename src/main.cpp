@@ -18,7 +18,7 @@
 #include "mqtt.h"
 
 Converter converter;
-char registryIDs[32]; //Holds the registrys to query
+char registryIDs[32]; //Holds the registries to query
 bool busy = false;
 
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
