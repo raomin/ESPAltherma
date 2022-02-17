@@ -43,7 +43,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
 - A Daikin Altherma or Daikin Altherma based heat pump (ROTEX, HOVAL Belaria...)
 - An ESP32 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
-- 5 pins jst PH 2mm connector (or 4 Dupont wires M-F)
+- 5 pins JST EH 2.5mm connector (or 4 Dupont wires M-F)
 
 ## Software
 
@@ -215,7 +215,7 @@ Possible generic issues could be: improper wifi signal, unsupported protocol, un
 
 ESPAltherma generates logs on the main serial port (USB). Connect to the ESP32 and open the serial monitor on Platformio.
 
-ESPAltherma also generates logs on MQTT. If Wifi and MQTT is not the issue, look at the logs on the topic `espalterma/log`.
+ESPAltherma also generates logs on MQTT. If Wifi and MQTT is not the issue, look at the logs on the topic `espaltherma/log`. You can see them on Home Assistant through  Configuration -> Integration -> MQTT -> Config -> Listen to a topic. 
 
 ## Note on voltage
 
