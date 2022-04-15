@@ -135,33 +135,33 @@ void callbackSg(byte *payload, unsigned int length)
   
   if (payload[0] == '0')
   {
-    // Set SG 0 mode => SG1 = LOW, SG2 = LOW
-    digitalWrite(PIN_SG1, LOW);
-    digitalWrite(PIN_SG2, LOW);
+    // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
     client.publish("espaltherma/sg/state", "0");
     Serial.println("Set SG mode to 0 - Normal operation");
   }
   else if (payload[0] == '1')
   {
-    // Set SG 1 mode => SG1 = LOW, SG2 = HIGH
-    digitalWrite(PIN_SG1, LOW);
-    digitalWrite(PIN_SG2, HIGH);
+    // Set SG 1 mode => SG1 = INACTIVE, SG2 = ACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
     client.publish("espaltherma/sg/state", "1");
     Serial.println("Set SG mode to 1 - Forced OFF");
   }
   else if (payload[0] == '2')
   {
-    // Set SG 2 mode => SG1 = HIGH, SG2 = LOW
-    digitalWrite(PIN_SG1, HIGH);
-    digitalWrite(PIN_SG2, LOW);
+    // Set SG 2 mode => SG1 = ACTIVE, SG2 = INACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
     client.publish("espaltherma/sg/state", "2");
     Serial.println("Set SG mode to 2 - Recommended ON");
   }
   else if (payload[0] == '3')
   {
-    // Set SG 3 mode => SG1 = HIGH, SG2 = HIGH
-    digitalWrite(PIN_SG1, HIGH);
-    digitalWrite(PIN_SG2, HIGH);
+    // Set SG 3 mode => SG1 = ACTIVE, SG2 = ACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
     client.publish("espaltherma/sg/state", "3");
     Serial.println("Set SG mode to 3 - Forced ON");
   }
