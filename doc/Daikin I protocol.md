@@ -6,10 +6,15 @@
 
 ### Command format
 Eg: 03-40-60-5C
+
 	0  1  2  3
+	
 Pos 0: Length of the command (-1 for the checksum)
+
 Pos 1: 40, always.
+
 Pos 2: Registry
+
 Pos 3: CRC - SumAndInvert
 
 ### Response Message format
