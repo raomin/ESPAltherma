@@ -164,11 +164,12 @@ void setup()
   digitalWrite(PIN_THERM, HIGH);
 
 #ifdef PIN_SG1
-  //Smartgrid pins
+  //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
+  digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+  digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
-  digitalWrite(PIN_SG1, LOW);
-  digitalWrite(PIN_SG2, LOW);
+ 
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);

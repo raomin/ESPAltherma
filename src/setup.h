@@ -26,7 +26,19 @@
 //Uncomment and set to enable SG mqtt functions
 //#define PIN_SG1 32// Pin connected to dry contact SG 1 relay (normally open)
 //#define PIN_SG2 33// Pin connected to dry contact SG 2 relay (normally open)
+// Define if your SG relay board is Low or High triggered (signal pins)
+// Only uncomment one of them
+#define SG_RELAY_HIGH_TRIGGER
+//#define SG_RELAY_LOW_TRIGGER
 
+// DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
+#if defined(SG_RELAY_LOW_TRIGGER)
+#define SG_RELAY_ACTIVE_STATE LOW
+#define SG_RELAY_INACTIVE_STATE HIGH
+#else
+#define SG_RELAY_ACTIVE_STATE HIGH
+#define SG_RELAY_INACTIVE_STATE LOW
+#endif
 
 #define MAX_MSG_SIZE 4096//max size of the json message sent in mqtt 
 
