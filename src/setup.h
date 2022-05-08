@@ -3,6 +3,13 @@
 #define WIFI_SSID "SSID"//**Your SSID here**
 #define WIFI_PWD "password"//**Your password here** leave empty if open (bad!)
 
+//Uncomment this to set a static IP instead of DHCP for the ESP (Separate by commas instead of dots)
+//#define WIFI_IP 192, 168, 0, 5
+//#define WIFI_SUBNET 255, 255, 255, 0
+//#define WIFI_GATEWAY 192, 168, 0, 1
+//#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //optional
+//#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //optional
+
 #define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)

@@ -95,6 +95,29 @@ void setup_wifi()
   delay(10);
   // We start by connecting to a WiFi network
   mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
+  
+  #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
+    IPAddress local_IP(WIFI_IP);
+    IPAddress gateway(WIFI_GATEWAY);
+    IPAddress subnet(WIFI_SUBNET);
+
+    #ifdef WIFI_PRIMARY_DNS
+      IPAddress primaryDNS(WIFI_PRIMARY_DNS);
+    #else
+      IPAddress primaryDNS();
+    #endif
+
+    #ifdef WIFI_SECONDARY_DNS
+      IPAddress secondaryDNS(WIFI_SECONDARY_DNS);
+    #else
+      IPAddress secondaryDNS();
+    #endif
+
+    if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+      mqttSerial.println("Failed to set static ip!");
+    }
+  #endif  
+
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   int i = 0;
   while (WiFi.status() != WL_CONNECTED)
