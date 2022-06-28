@@ -2,9 +2,6 @@
 #include <HardwareSerial.h>
 #ifdef ARDUINO_ARCH_ESP8266
 #include <SoftwareSerial.h>
-#endif
-
-#ifdef ARDUINO_ARCH_ESP8266
 SoftwareSerial MySerial;
 #define SERIAL_CONFIG (SWSERIAL_8E1)
 #else
