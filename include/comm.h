@@ -52,7 +52,7 @@ bool queryRegistry(char regID, char *buffer)
     {
       mqttSerial.printf("ERR: Time out on register 0x%02x! got %d/%d bytes\n", regID, len, buffer[2]);
       char bufflog[250] = {0};
-      for (size_t i = 0; i < len; i++)
+      for (int i = 0; i < len; i++)
       {
         sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
       }

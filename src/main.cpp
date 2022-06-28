@@ -48,7 +48,7 @@ void updateValues(char regID)
   LabelDef *labels[128];
   int num = 0;
   converter.getLabels(regID, labels, num);
-  for (size_t i = 0; i < num; i++)
+  for (int i = 0; i < num; i++)
   {
     bool alpha = false;
     for (size_t j = 0; j < strlen(labels[i]->asString); j++)

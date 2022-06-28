@@ -90,9 +90,10 @@ void reconnect()
         ArduinoOTA.handle();
       }
 
-      if (i++ == 100)
+      if (i++ == 100) {
         Serial.printf("Tried for 500 sec, rebooting now.");
         restart_board();
+      }
     }
   }
 }
