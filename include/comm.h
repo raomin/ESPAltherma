@@ -1,7 +1,16 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#ifdef ARDUINO_ARCH_ESP8266
+#include <SoftwareSerial.h>
+#endif
 
+#ifdef ARDUINO_ARCH_ESP8266
+SoftwareSerial MySerial;
+#define SERIAL_CONFIG (SWSERIAL_8E1)
+#else
 HardwareSerial MySerial(1);
+#define SERIAL_CONFIG (SERIAL_8E1)
+#endif
 #define SER_TIMEOUT 300 //leave 300ms for the machine to answer
 
 char getCRC(char *src, int len)

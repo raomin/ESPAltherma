@@ -6,8 +6,14 @@
 #include <Arduino.h>
 #endif
 
-#include <HardwareSerial.h>
+#ifdef ARDUINO_ARCH_ESP8266
+#include <SoftwareSerial.h>
+#include <ESP8266WiFi.h>
+#else
 #include <WiFi.h>
+#endif
+#include <HardwareSerial.h>
+
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
@@ -182,7 +188,7 @@ void setup()
 {
   Serial.begin(115200);
   setupScreen();
-  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
+  MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
 
