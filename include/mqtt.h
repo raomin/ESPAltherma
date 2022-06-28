@@ -1,5 +1,7 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
+#include "restart.h"
+
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
 
@@ -90,7 +92,7 @@ void reconnect()
 
       if (i++ == 100)
         Serial.printf("Tried for 500 sec, rebooting now.");
-        esp_restart();
+        restart_board();
     }
   }
 }
@@ -119,7 +121,7 @@ void callbackTherm(byte *payload, unsigned int length)
   { 
     mqttSerial.println("Rebooting");
     delay(100);
-    esp_restart();
+    restart_board();
   }  
   else
   {

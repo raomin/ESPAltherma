@@ -132,7 +132,7 @@ void setup_wifi()
     Serial.print(".");
     if (i++ == 100)
     {
-      esp_restart();
+      restart_board();
     }
   }
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
@@ -216,7 +216,7 @@ void setup()
 
   ArduinoOTA.onError([](ota_error_t error) {
     mqttSerial.print("Error on OTA - restarting");
-    esp_restart();
+    restart_board();
   });
   ArduinoOTA.begin();
 
