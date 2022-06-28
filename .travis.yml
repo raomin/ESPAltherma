@@ -12,7 +12,7 @@ cache:
 env:
 
 install:
-    - pip install --upgrade pip setuptools
+    - pip install --upgrade pip setuptools importlib-metadata
     - pip install -U platformio
     - pio pkg install
     - pio pkg update
