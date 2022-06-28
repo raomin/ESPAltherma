@@ -1,3 +1,6 @@
+#ifndef ESPALTHERMA_RESTART_H
+#define ESPALTHERMA_RESTART_H
+
 #include <Arduino.h>
 
 void restart_board()
@@ -8,3 +11,5 @@ void restart_board()
   esp_restart();
   #endif
 }
+
+#endif

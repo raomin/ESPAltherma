@@ -22,6 +22,7 @@
 #include "converters.h"
 #include "comm.h"
 #include "mqtt.h"
+#include "restart.h"
 
 Converter converter;
 char registryIDs[32]; //Holds the registries to query
