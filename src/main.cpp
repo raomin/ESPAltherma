@@ -64,8 +64,8 @@ void updateValues(char regID)
     strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
     #endif
-    
-    if (alpha){      
+
+    if (alpha){
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
     else{//number, no quotes
@@ -102,7 +102,7 @@ void setup_wifi()
   delay(10);
   // We start by connecting to a WiFi network
   mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
-  
+
   #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
     IPAddress local_IP(WIFI_IP);
     IPAddress gateway(WIFI_GATEWAY);
@@ -123,7 +123,7 @@ void setup_wifi()
     if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
       mqttSerial.println("Failed to set static ip!");
     }
-  #endif  
+  #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   int i = 0;
@@ -140,12 +140,12 @@ void setup_wifi()
 }
 
 void initRegistries(){
-    //getting the list of registries to query from the selected values  
+    //getting the list of registries to query from the selected values
   for (size_t i = 0; i < sizeof(registryIDs); i++)
   {
     registryIDs[i]=0xff;
   }
-  
+
   int i = 0;
   for (auto &&label : labelDefs)
   {
@@ -199,7 +199,7 @@ void setup()
   digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
- 
+
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
