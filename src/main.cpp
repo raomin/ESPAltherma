@@ -56,15 +56,14 @@ void updateValues(char regID)
     char topicBuff[128] = MQTT_OneTopic;
     strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
-    #endif
-    
+    #else
     if (alpha){      
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
     else{//number, no quotes
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
-
     }
+    #endif
   }
 }
 
