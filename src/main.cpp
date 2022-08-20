@@ -240,6 +240,7 @@ void loop()
   { //(re)connect to MQTT if needed
     reconnect();
   }
+  client.publish(MQTT_loop, "START");
   //Querying all registries
   for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
   {
@@ -254,10 +255,11 @@ void loop()
     {
       converter.readRegistryValues(buff); //process all values from the register
       updateValues(registryIDs[i]);       //send them in mqtt
-      waitLoop(500);//wait .5sec between registries
+      //waitLoop(500);//wait .5sec between registries
     }
   }
   sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
+  mqttSerial.printf("Done. Waiting %d sec...", FREQUENCY / 1000);
+  client.publish(MQTT_loop, "END");
   waitLoop(FREQUENCY);
 }
