@@ -6,7 +6,6 @@
 
 #define MQTT_attr "espaltherma/attr"
 #define MQTT_lwt "espaltherma/lwt"
-#define MQTT_loop "espaltherma/loop"
 
 #ifdef JSONTABLE
 char jsonbuff[MAX_MSG_SIZE] = "[{\0";
