@@ -6,8 +6,14 @@
 #include <Arduino.h>
 #endif
 
-#include <HardwareSerial.h>
+#ifdef ARDUINO_ARCH_ESP8266
+#include <SoftwareSerial.h>
+#include <ESP8266WiFi.h>
+#else
 #include <WiFi.h>
+#endif
+#include <HardwareSerial.h>
+
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
@@ -16,6 +22,7 @@
 #include "converters.h"
 #include "comm.h"
 #include "mqtt.h"
+#include "restart.h"
 
 Converter converter;
 char registryIDs[32]; //Holds the registries to query
@@ -41,7 +48,7 @@ void updateValues(char regID)
   LabelDef *labels[128];
   int num = 0;
   converter.getLabels(regID, labels, num);
-  for (size_t i = 0; i < num; i++)
+  for (int i = 0; i < num; i++)
   {
     bool alpha = false;
     for (size_t j = 0; j < strlen(labels[i]->asString); j++)
@@ -56,8 +63,10 @@ void updateValues(char regID)
     char topicBuff[128] = MQTT_OneTopic;
     strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
+
     #else
     if (alpha){      
+
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
     else{//number, no quotes
@@ -94,7 +103,7 @@ void setup_wifi()
   delay(10);
   // We start by connecting to a WiFi network
   mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
-  
+
   #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
     IPAddress local_IP(WIFI_IP);
     IPAddress gateway(WIFI_GATEWAY);
@@ -115,7 +124,7 @@ void setup_wifi()
     if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
       mqttSerial.println("Failed to set static ip!");
     }
-  #endif  
+  #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   int i = 0;
@@ -125,19 +134,19 @@ void setup_wifi()
     Serial.print(".");
     if (i++ == 100)
     {
-      esp_restart();
+      restart_board();
     }
   }
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
 
 void initRegistries(){
-    //getting the list of registries to query from the selected values  
+    //getting the list of registries to query from the selected values
   for (size_t i = 0; i < sizeof(registryIDs); i++)
   {
     registryIDs[i]=0xff;
   }
-  
+
   int i = 0;
   for (auto &&label : labelDefs)
   {
@@ -181,7 +190,7 @@ void setup()
 {
   Serial.begin(115200);
   setupScreen();
-  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
+  MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
 
@@ -191,7 +200,7 @@ void setup()
   digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
- 
+
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
@@ -209,7 +218,7 @@ void setup()
 
   ArduinoOTA.onError([](ota_error_t error) {
     mqttSerial.print("Error on OTA - restarting");
-    esp_restart();
+    restart_board();
   });
   ArduinoOTA.begin();
 
