@@ -63,15 +63,16 @@ void updateValues(char regID)
     char topicBuff[128] = MQTT_OneTopic;
     strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
-    #endif
 
-    if (alpha){
+    #else
+    if (alpha){      
+
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
     else{//number, no quotes
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
-
     }
+    #endif
   }
 }
 
@@ -262,10 +263,10 @@ void loop()
     {
       converter.readRegistryValues(buff); //process all values from the register
       updateValues(registryIDs[i]);       //send them in mqtt
-      waitLoop(500);//wait .5sec between registries
+      //waitLoop(500);//wait .5sec between registries
     }
   }
   sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
+  mqttSerial.printf("Done. Waiting %d sec...", FREQUENCY / 1000);
   waitLoop(FREQUENCY);
 }

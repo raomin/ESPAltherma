@@ -1,5 +1,4 @@
-//convert read registry value to the expected format based on convID
-// #include <registrys.h>
+// convert read registry value to the expected format based on convID
 #include <Arduino.h>
 char buff[64];
 class Converter
@@ -38,6 +37,19 @@ public:
             convert(labels[i], input);
         }
     }
+
+    double convertPress2Temp(double data){//assuming R32 gaz
+        	double num = -2.6989493795556E-07 * data * data * data * data * data * data;
+			double num2 = 4.26383417104661E-05 * data * data * data * data * data;
+			double num3 = -0.00262978346547749 * data * data * data * data;
+			double num4 = 0.0805858127503585 * data * data * data;
+			double num5 = -1.31924457284073 * data * data;
+			double num6 = 13.4157368435437 * data;
+			double num7 = -51.1813342993155;
+			return num + num2 + num3 + num4 + num5 + num6 + num7;
+    }
+
+
 
     void convert(LabelDef *def, char *data)
     {
@@ -218,8 +230,29 @@ public:
         case 316:
             convertTable316(data, def->asString);
             return;
+
+        // pressure to temp
+        case 401:
+            dblData = (double)getSignedValue(data, num, 0);
+            dblData = convertPress2Temp(dblData);
+        case 402:
+            dblData = (double)getSignedValue(data, num, 1);
+            dblData = convertPress2Temp(dblData);
+        case 403:
+            dblData = (double)getSignedValue(data, num, 0) / 256.0;
+            dblData = convertPress2Temp(dblData);
+        case 404:
+            dblData = (double)getSignedValue(data, num, 1) / 256.0;
+            dblData = convertPress2Temp(dblData);
+        case 405:
+            dblData = (double)getSignedValue(data, num, 0) * 0.1;
+            dblData = convertPress2Temp(dblData);
+        case 406:
+            dblData = (double)getSignedValue(data, num, 1) * 0.1;
+            dblData = convertPress2Temp(dblData);
+
         default:
-            //conversion is not available
+            // conversion is not available
             sprintf(def->asString, "Conv %d not avail.", convId);
             return;
         }
@@ -264,7 +297,7 @@ private:
             strcat(ret, "Caution");
             break;
         default:
-            strcat(ret, "");
+            strcat(ret, "-");
             ;
         }
     }
@@ -308,7 +341,7 @@ private:
             strcat(ret, "Cooling + DHW");
             break;
         default:
-            strcat(ret, "");
+            strcat(ret, "-");
         }
     }
 
@@ -343,7 +376,7 @@ private:
             strcat(ret, "ON");
         }
     }
-    //201
+    // 201
     void convertTable217(char *data, char *ret)
     {
         char r217[][30] = {"Fan Only",

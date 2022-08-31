@@ -8,6 +8,9 @@
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
 
+#define MQTT_attr "espaltherma/ATTR"
+#define MQTT_lwt "espaltherma/LWT"
+
 #ifdef JSONTABLE
 char jsonbuff[MAX_MSG_SIZE] = "[{\0";
 #else

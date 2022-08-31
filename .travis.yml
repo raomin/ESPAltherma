@@ -1,6 +1,6 @@
 language: python
 python:
-    - "3.7"
+    - "3.9"
 
 # Cache PlatformIO packages using Travis CI container-based infrastructure
 sudo: false
