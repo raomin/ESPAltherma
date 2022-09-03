@@ -1,10 +1,15 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
+#include "restart.h"
+
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
+
+#define MQTT_attr "espaltherma/ATTR"
+#define MQTT_lwt "espaltherma/LWT"
 
 #ifdef JSONTABLE
 char jsonbuff[MAX_MSG_SIZE] = "[{\0";
@@ -23,7 +28,7 @@ void sendValues()
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Axp.GetBatPower());
-#endif  
+#endif
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
 
   jsonbuff[strlen(jsonbuff) - 1] = '}';
@@ -71,7 +76,7 @@ void reconnect()
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
       client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
- 
+
       // Subscribe
       client.subscribe("espaltherma/POWER");
 #ifdef PIN_SG1
@@ -88,9 +93,10 @@ void reconnect()
         ArduinoOTA.handle();
       }
 
-      if (i++ == 100)
+      if (i++ == 100) {
         Serial.printf("Tried for 500 sec, rebooting now.");
-        esp_restart();
+        restart_board();
+      }
     }
   }
 }
@@ -98,9 +104,9 @@ void reconnect()
 void callbackTherm(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
-  
+
   // Is it ON or OFF?
-  // Ok I'm not super proud of this, but it works :p 
+  // Ok I'm not super proud of this, but it works :p
   if (payload[1] == 'F')
   { //turn off
     digitalWrite(PIN_THERM, HIGH);
@@ -116,11 +122,11 @@ void callbackTherm(byte *payload, unsigned int length)
     mqttSerial.println("Turned ON");
   }
   else if (payload[0] == 'R')//R(eset/eboot)
-  { 
+  {
     mqttSerial.println("Rebooting");
     delay(100);
-    esp_restart();
-  }  
+    restart_board();
+  }
   else
   {
     Serial.printf("Unknown message: %s\n", payload);
@@ -132,7 +138,7 @@ void callbackTherm(byte *payload, unsigned int length)
 void callbackSg(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
-  
+
   if (payload[0] == '0')
   {
     // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE

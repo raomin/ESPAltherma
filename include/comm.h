@@ -1,7 +1,13 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
-
+#ifdef ARDUINO_ARCH_ESP8266
+#include <SoftwareSerial.h>
+SoftwareSerial MySerial;
+#define SERIAL_CONFIG (SWSERIAL_8E1)
+#else
 HardwareSerial MySerial(1);
+#define SERIAL_CONFIG (SERIAL_8E1)
+#endif
 #define SER_TIMEOUT 300 //leave 300ms for the machine to answer
 
 char getCRC(char *src, int len)
@@ -46,7 +52,7 @@ bool queryRegistry(char regID, char *buffer)
     {
       mqttSerial.printf("ERR: Time out on register 0x%02x! got %d/%d bytes\n", regID, len, buffer[2]);
       char bufflog[250] = {0};
-      for (size_t i = 0; i < len; i++)
+      for (int i = 0; i < len; i++)
       {
         sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
       }
