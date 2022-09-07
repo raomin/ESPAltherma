@@ -30,7 +30,7 @@ public:
     LabelDef *labels[128];
     getLabels(registryID, labels, num);
 
-    for (size_t i = 0; i < num; i++) {
+    for (int i = 0; i < num; i++) {
       char *input = data;
       input += labels[i]->offset + 3;
       convert(labels[i], input);
@@ -56,7 +56,7 @@ public:
     int num = def->dataSize;
     double dblData = NAN;
     Serial.print("Converting from:");
-    for (size_t i = 0; i < num; i++) {
+    for (int i = 0; i < num; i++) {
       Serial.printf(" 0x%02x ", data[i]);
     }
 

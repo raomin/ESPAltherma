@@ -12,13 +12,11 @@ cache:
 env:
 
 install:
+    - pip install --upgrade pip setuptools importlib-metadata
     - pip install -U platformio
-    - pio update
+    - pio pkg install
+    - pio pkg update
 
-    #
-    # Libraries from PlatformIO Library Registry:
-    #
-    - pio lib -g install 89 6246
 
 script:
-    - pio ci --board=esp32doit-devkit-v1 --board=m5stick-c --lib="." src
+    - pio ci --project-conf=platformio.ini --lib="." src

@@ -1,5 +1,9 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
+#include "restart.h"
+
+#define MQTT_attr "espaltherma/ATTR"
+#define MQTT_lwt "espaltherma/LWT"
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
@@ -24,7 +28,7 @@ void sendValues()
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Axp.GetBatPower());
-#endif  
+#endif
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
 
   jsonbuff[strlen(jsonbuff) - 1] = '}';
@@ -87,7 +91,8 @@ void reconnect()
 
       if (i++ == 100) {
         Serial.printf("Tried for 500 sec, rebooting now.");
-        esp_restart();
+        restart_board();
+      }
       }
     }
   }
@@ -115,7 +120,7 @@ void callbackTherm(byte *payload, unsigned int length)
     //R(eset/eboot)
     mqttSerial.println("Rebooting");
     delay(100);
-    esp_restart();
+    restart_board();
   } else {
     Serial.printf("Unknown message: %s\n", payload);
   }

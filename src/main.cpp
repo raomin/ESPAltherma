@@ -6,8 +6,14 @@
 #include <Arduino.h>
 #endif
 
-#include <HardwareSerial.h>
+#ifdef ARDUINO_ARCH_ESP8266
+#include <SoftwareSerial.h>
+#include <ESP8266WiFi.h>
+#else
 #include <WiFi.h>
+#endif
+#include <HardwareSerial.h>
+
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
@@ -16,6 +22,7 @@
 #include "converters.h"
 #include "comm.h"
 #include "mqtt.h"
+#include "restart.h"
 
 Converter converter;
 char registryIDs[32]; // Holds the registries to query
@@ -41,7 +48,7 @@ void updateValues(char regID)
   LabelDef *labels[128];
   int num = 0;
   converter.getLabels(regID, labels, num);
-  for (size_t i = 0; i < num; i++) {
+  for (int i = 0; i < num; i++) {
     bool alpha = false;
     for (size_t j = 0; j < strlen(labels[i]->asString); j++) {
       char c = labels[i]->asString[j];
@@ -54,8 +61,10 @@ void updateValues(char regID)
     char topicBuff[128] = MQTT_OneTopic;
     strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
+
     #else
     if (alpha) {
+
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     } else { // number, no quotes
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
@@ -111,7 +120,7 @@ void setup_wifi()
     if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
       mqttSerial.println("Failed to set static ip!");
     }
-  #endif  
+  #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   int i = 0;
@@ -119,7 +128,7 @@ void setup_wifi()
     delay(500);
     Serial.print(".");
     if (i++ == 100) {
-      esp_restart();
+      restart_board();
     }
   }
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
@@ -172,7 +181,7 @@ void setup()
 {
   Serial.begin(115200);
   setupScreen();
-  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
+  MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
 
@@ -199,7 +208,7 @@ void setup()
 
   ArduinoOTA.onError([](ota_error_t error) {
     mqttSerial.print("Error on OTA - restarting");
-    esp_restart();
+    restart_board();
   });
   ArduinoOTA.begin();
 
