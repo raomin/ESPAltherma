@@ -91,7 +91,7 @@ For **M5StickCPlus** select **env:M5StickCPlus**
     ```
 
 4. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
-    Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*
+    Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*. When building for ESP8622 I had to delete `PROGMEM` from the declaration to avoid an endless reboot cycle. YMMV. 
   
     ```c++
     ...
