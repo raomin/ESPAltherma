@@ -16,7 +16,7 @@
 
 <hr/>
 
-<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
+<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just Arduino on an <b>ESP32</b> or <b>ESP8266</b> Microcontroller.</p>
 
 _If this project has any value for you, please consider [buying me a 🍺](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)!. I don't do this for money but it feels good to get some support! Thanks :)_ 
 
@@ -24,7 +24,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
   <ul style="list-style-position: inside;">
     <li>Connects with the serial port of Altherma on port X10A.</li>
-    <li>Needs just an ESP32, no need for extra hardware.</li>
+    <li>Needs just an ESP32 or ESP8266, no need for extra hardware.</li>
     <li>Queries the Altherma for selected values at defined interval.</li>
     <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
@@ -42,7 +42,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 ## Hardware
 
 - A Daikin Altherma or Daikin Altherma based heat pump (ROTEX, HOVAL Belaria...)
-- An ESP32 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
+- An ESP32 or ESP8266 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
 - 5 pins JST EH 2.5mm connector (or 4 Dupont wires M-F)
 
 ## Software
@@ -63,9 +63,9 @@ For **M5StickCPlus** select **env:M5StickCPlus**
 
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
-    - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.*
+    - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.* * The ESP8266 only has 1.5 Serial ports so it uses a software based serial driver. You can choose any pins, but some will stop you from being able to use the console*
 
-      Try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC or M5StickCPlus, 26 and 36 will automatically be used if you selected the corresponding environment**.
+      For ESP32 try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC or M5StickCPlus, 26 and 36 will automatically be used if you selected the corresponding environment**. For ESP8266 pins 4 & 5 (D2 & D1 on the NodeMCUv2) are known to work well. 
 
     - uncomment the `#include` line corresponding to your heat pump. E.g.
   
@@ -109,7 +109,7 @@ For **M5StickCPlus** select **env:M5StickCPlus**
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-5. You're ready to go! Connect your ESP32 and click -> Upload! Or run on the command line:
+5. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or run on the command line:
 
     ```bash
     $ pio run --environment <your environment> --target upload
@@ -142,7 +142,7 @@ Some heat pumps (ROTEX) have an X10A port which connects differently:
 
 ![](doc/images/rotexX10A.png)
 
-Some users reported that the 5V from their ROTEX was not enough to power their ESP32. In this case, use an USB charger to power the ESP32. The 5V from the X10A is then not needed. Whatever you do, **make sure you keep a wire connecting the GND of the ESP32 to the GND pin of the X10A (even if you power your ESP32 with a USB charger)!!**
+Some users reported that the 5V from their ROTEX was not enough to power their ESP32/ESP8266. In this case, use an USB charger to power the ESP32/ESP8266. The 5V from the X10A is then not needed. Whatever you do, **make sure you keep a wire connecting the GND of the ESP32/ESP8266 to the GND pin of the X10A (even if you power your ESP32/ESP8266 with a USB charger)!!**
 
 
 5. Cross check twice the connections and turn on your heat pump. Two new entities AlthermaSensor and AlthermaSwitch should appear in Home Assistant. AlthermaSensor holds the values as attributes.
