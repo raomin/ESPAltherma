@@ -48,7 +48,7 @@ void updateValues(char regID)
   LabelDef *labels[128];
   int num = 0;
   converter.getLabels(regID, labels, num);
-  for (int i = 0; i < num; i++) {
+  for (int i = 0; i < num; i++)
   {
     bool alpha = false;
     for (size_t j = 0; j < strlen(labels[i]->asString); j++)
@@ -103,7 +103,7 @@ void setup_wifi()
   delay(10);
   // We start by connecting to a WiFi network
   mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
-  
+
   #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
     IPAddress local_IP(WIFI_IP);
     IPAddress gateway(WIFI_GATEWAY);
@@ -133,6 +133,7 @@ void setup_wifi()
     delay(500);
     Serial.print(".");
     if (i++ == 100)
+    {
       restart_board();
     }
   }
@@ -140,12 +141,12 @@ void setup_wifi()
 }
 
 void initRegistries(){
-    //getting the list of registries to query from the selected values  
+    //getting the list of registries to query from the selected values
   for (size_t i = 0; i < sizeof(registryIDs); i++)
   {
     registryIDs[i]=0xff;
   }
-  
+
   int i = 0;
   for (auto &&label : labelDefs)
   {
@@ -199,7 +200,7 @@ void setup()
   digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
- 
+
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
@@ -244,6 +245,7 @@ void waitLoop(uint ms){
 
 void loop()
 {
+  unsigned long start = millis();
   if (!client.connected())
   { //(re)connect to MQTT if needed
     reconnect();
@@ -266,6 +268,6 @@ void loop()
     }
   }
   sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %d sec...", FREQUENCY / 1000);
-  waitLoop(FREQUENCY);
+  mqttSerial.printf("Done. Waiting %d ms...", FREQUENCY - millis() + start);
+  waitLoop(FREQUENCY - millis() + start);
 }

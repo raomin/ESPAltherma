@@ -76,7 +76,7 @@ void reconnect()
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
       client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
- 
+
       // Subscribe
       client.subscribe("espaltherma/POWER");
 #ifdef PIN_SG1
@@ -93,7 +93,7 @@ void reconnect()
         ArduinoOTA.handle();
       }
 
-      if (i++ == 100)
+      if (i++ == 100) {
         Serial.printf("Tried for 500 sec, rebooting now.");
         restart_board();
       }
@@ -104,9 +104,9 @@ void reconnect()
 void callbackTherm(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
-  
+
   // Is it ON or OFF?
-  // Ok I'm not super proud of this, but it works :p 
+  // Ok I'm not super proud of this, but it works :p
   if (payload[1] == 'F')
   { //turn off
     digitalWrite(PIN_THERM, HIGH);
@@ -122,11 +122,11 @@ void callbackTherm(byte *payload, unsigned int length)
     mqttSerial.println("Turned ON");
   }
   else if (payload[0] == 'R')//R(eset/eboot)
-  { 
+  {
     mqttSerial.println("Rebooting");
     delay(100);
     restart_board();
-  }  
+  }
   else
   {
     Serial.printf("Unknown message: %s\n", payload);
@@ -138,7 +138,7 @@ void callbackTherm(byte *payload, unsigned int length)
 void callbackSg(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
-  
+
   if (payload[0] == '0')
   {
     // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
