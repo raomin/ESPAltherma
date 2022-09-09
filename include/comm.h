@@ -74,4 +74,3 @@ bool queryRegistry(char regID, char *buffer)
     return true;
   }
 }
-
