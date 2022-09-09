@@ -93,6 +93,7 @@ void reconnect()
         Serial.printf("Tried for 500 sec, rebooting now.");
         restart_board();
       }
+      }
     }
   }
 }
