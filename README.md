@@ -16,7 +16,7 @@
 
 <hr/>
 
-<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just Arduino on an <b>ESP32</b> Microcontroller.</p>
+<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just Arduino on an <b>ESP32</b>/esp8266 Microcontroller.</p>
 
 _If this project has any value for you, please consider [buying me a 🍺](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)!. I don't do this for money but it feels good to get some support! Thanks :)_ 
 
@@ -24,7 +24,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
   <ul style="list-style-position: inside;">
     <li>Connects with the serial port of Altherma on port X10A.</li>
-    <li>Needs just an ESP32, no need for extra hardware.</li>
+    <li>Needs just an ESP32, no need for extra hardware. ESP8266 is also supported.</li>
     <li>Queries the Altherma for selected values at defined interval.</li>
     <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
@@ -42,7 +42,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 ## Hardware
 
 - A Daikin Altherma or Daikin Altherma based heat pump (ROTEX, HOVAL Belaria...)
-- An ESP32 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.* (esp8266 is also supported)
+- An ESP32 or ESP8266 *I recommend an ESP32, more precisely the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work. A support is added for esp8266.*
 - 5 pins JST EH 2.5mm connector (or 4 Dupont wires M-F)
 
 ## Software
