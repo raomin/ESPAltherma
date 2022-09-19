@@ -3,7 +3,7 @@
 <hr/>
 
 <p align="center">
-<a href="https://travis-ci.com/raomin/ESPAltherma"><img src="https://img.shields.io/travis/com/raomin/espaltherma?style=for-the-badge" /></a>
+<a href="https://travis-ci.com/raomin/ESPAltherma"><img src="https://app.travis-ci.com/raomin/ESPAltherma.svg?branch=main&status=passed" /></a>
 &nbsp;
 <img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
@@ -24,7 +24,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
   <ul style="list-style-position: inside;">
     <li>Connects with the serial port of Altherma on port X10A.</li>
-    <li>Needs just an ESP32 or ESP8266, no need for extra hardware.</li>
+    <li>Needs just an ESP32, no need for extra hardware. ESP8266 is also supported.</li>
     <li>Queries the Altherma for selected values at defined interval.</li>
     <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
@@ -42,7 +42,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 ## Hardware
 
 - A Daikin Altherma or Daikin Altherma based heat pump (ROTEX, HOVAL Belaria...)
-- An ESP32 or ESP8266 *I recommend the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work.*
+- An ESP32 or ESP8266 *I recommend an ESP32, more precisely the M5StickC, it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 should work. A support is added for esp8266.*
 - 5 pins JST EH 2.5mm connector (or 4 Dupont wires M-F)
 
 ## Software
@@ -60,6 +60,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
 Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](doc/images/m5envv.png)
 For **M5StickCPlus** select **env:M5StickCPlus**
+If you are using an **ESP8266** select the `nodemcuv2` environement.
 
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
@@ -91,7 +92,7 @@ For **M5StickCPlus** select **env:M5StickCPlus**
     ```
 
 4. Now open and edit the file you just uncommented, e.g. `include/def/ALTHERMA(HYBRID).h` (or the one under the language chosen) as follow:
-    Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*. When building for ESP8622 I had to delete `PROGMEM` from the declaration to avoid an endless reboot cycle. YMMV. 
+    Uncomment each line of the values you are interested in. *Try not to get everything as it will turn into a very big mqtt message*. 
   
     ```c++
     ...
@@ -109,18 +110,14 @@ For **M5StickCPlus** select **env:M5StickCPlus**
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-5. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or run on the command line:
-
-    ```bash
-    $ pio run --environment <your environment> --target upload
-    ````
+5. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or press `F1` and select -> `PlatformIO: Upload`
 
 ## Step 2: Connecting to the Heat pump
 
 1. Turn OFF your heat pump at the circuit breaker.
 2. Unscrew your pannel to access the main PCB of your unit.
-3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB.
-4. Using the 5 pin connector or 4 Dupont wires, connect the ESP32 as follow. Pay attention to the orientation of the socket.
+3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB. If your installation include a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
+4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follow. Pay attention to the orientation of the socket.
 
 ### Daikin Altherma 4 pin X10A Connection
 
@@ -128,7 +125,7 @@ For **M5StickCPlus** select **env:M5StickCPlus**
 
 | X10A | ESP32 |
 | ---- | ----- |
-| 1-5V | 5V - VIN *Can supply voltage for the ESP32 :)* |
+| 1-5V | 5V - VIN *Can supply voltage for the ESP :)* |
 | 2-TX | `RX_PIN` *Default GPIO 16. Prefer RX2 of your board.* |
 | 3-RX | `TX_PIN` *Default GPIO 17. Prefer TX2 of your board.* |
 | 4-NC | Not connected |
@@ -319,7 +316,7 @@ When put in terms of ESPAltherma variables, the COP can be define as a sensor li
 
 Not directly. It might be possible to change registry values using the serial port but I'm not aware of this. If you know, comment on [the dedicated issue](/../../issues/1).
 
-However, ESPAltherma, supports an extra GPIO to control a relay that you can plug as *external On Off thermostat*. See [**Controling your Daikin Altherma heat pump**](#controling-your-daikin-altherma-heat-pump).
+However, ESPAltherma, supports an extra GPIO to control a relay that you can plug as *external On/Off thermostat*. See [**Controling your Daikin Altherma heat pump**](#controling-your-daikin-altherma-heat-pump).
 
 If you want to configure your heat pump using an arduino, you can interact with the P1P2 serial protocol (the one of the digital thermostats) using the [nice work on P1P2Serial](https://github.com/Arnold-n/P1P2Serial) of Arnold Niessen.
 
