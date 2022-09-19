@@ -202,5 +202,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,7,105,2,1,"Boiler Heizung Solltemp."},
 //{0x64,9,301,1,-1,"Add pump"},
 //{0x64,9,300,1,-1,"Main pump"},
-//{0x64,10,118,2,1,"Mixed water temp."}
+//{0x64,10,118,2,1,"Mixed water temp."},
 };
