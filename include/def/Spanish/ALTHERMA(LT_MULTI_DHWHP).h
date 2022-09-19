@@ -214,5 +214,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,9,302,1,-1,"Add pump"},
 //{0x64,9,301,1,-1,"Main pump"},
 //{0x64,10,118,2,1,"Mixed water temp.(R7T)"},
-//{0x00,0,996,0,-1,"Override All Clear"}
+//{0x00,0,996,0,-1,"Override All Clear"},
 };
