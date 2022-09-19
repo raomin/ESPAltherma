@@ -187,5 +187,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,10,105,2,1,"Temperatura del agua mezclada"},
 //{0x64,12,105,2,1,"2nd Domestic hot water temperature"},
 //{0x64,14,152,1,1,"Target delta T heating"},
-//{0x64,15,152,1,1,"Target delta T cooling"},
+//{0x64,15,152,1,1,"Target delta T cooling"}
 };

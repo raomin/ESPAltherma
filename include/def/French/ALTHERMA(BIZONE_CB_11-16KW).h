@@ -3,7 +3,7 @@
 //  uncomment each value you want to query for your installation.
 
 LabelDef PROGMEM labelDefs[] = {
-//{0x00,0,801,0,-1,"*Type de réfrigérant"},
+//{0x00,0,405,0,-1,"*Type de réfrigérant"},
 //{0x00,0,152,1,-1,"Qté de données du capteur"},
 //{0x00,1,152,1,-1,"Qté compresseur INV"},
 //{0x00,2,152,1,-1,"Qté compresseur STD"},
@@ -208,5 +208,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,7,105,2,1,"Temp. cible de chauffage de chaudière"},
 //{0x64,9,301,1,-1,"Add pump"},
 //{0x64,9,300,1,-1,"Main pump"},
-//{0x64,10,118,2,1,"Mixed water temp.(R7T)"},
+//{0x64,10,118,2,1,"Mixed water temp.(R7T)"}
 };
