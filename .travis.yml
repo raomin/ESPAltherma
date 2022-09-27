@@ -19,4 +19,6 @@ install:
 
 
 script:
-    - pio ci --project-conf=platformio.ini --lib="." src
+    # Don't build native, used only for unit tests
+    - pio ci --project-conf=platformio.ini --lib="." -e nodemcuv2 -e esp32 -e m5stickc -e m5stickcplus src
+    - pio test -e native -v
