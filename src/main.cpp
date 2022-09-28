@@ -245,6 +245,7 @@ void waitLoop(uint ms){
 
 void loop()
 {
+  unsigned long start = millis();
   if (!client.connected())
   { //(re)connect to MQTT if needed
     reconnect();
@@ -267,6 +268,6 @@ void loop()
     }
   }
   sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %d sec...", FREQUENCY / 1000);
-  waitLoop(FREQUENCY);
+  mqttSerial.printf("Done. Waiting %d ms...", FREQUENCY - millis() + start);
+  waitLoop(FREQUENCY - millis() + start);
 }
