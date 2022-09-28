@@ -3,7 +3,7 @@
 //  uncomment each value you want to query for your installation.
 
 LabelDef PROGMEM labelDefs[] = {
-//{0x00,0,405,0,-1,"*Refrigerant type"},
+//{0x00,0,801,0,-1,"*Refrigerant type"},
 //{0x00,0,152,1,-1,"Sensor Data Qty"},
 //{0x00,1,152,1,-1,"INV compressor Qty"},
 //{0x00,2,152,1,-1,"STD compressor Qty"},

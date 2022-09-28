@@ -215,5 +215,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,3,105,2,-1,"BE_COP"},
 //{0x64,5,105,2,1,"Hybrid Heizung Solltemp."},
 //{0x64,7,105,2,1,"Boiler Heizung Solltemp."},
-//{0x00,0,996,0,-1,"Override All Clear"}
+//{0x00,0,996,0,-1,"Override All Clear"},
 };

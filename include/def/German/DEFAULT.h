@@ -140,5 +140,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x61,6,105,2,1,"Flüssigkeitstemperatur (R3T)"},
 //{0x61,8,105,2,1,"Einlasstemperatur (R4T)"},
 //{0x61,10,105,2,1,"DHW Temperatur (R5T)"},
-//{0x61,12,105,2,1,"Fernbedienungsthermistor"}
+//{0x61,12,105,2,1,"Fernbedienungsthermistor"},
 };
