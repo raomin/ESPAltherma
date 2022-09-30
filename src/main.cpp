@@ -98,11 +98,25 @@ void extraLoop()
 #endif
 }
 
+void reconnectWifi()
+{
+  mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    if (i++ == 120) {
+      Serial.printf("Tried for 60 sec, rebooting now.");
+      restart_board();
+    }
+  }
+  mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
+}
+
 void setup_wifi()
 {
   delay(10);
   // We start by connecting to a WiFi network
-  mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
 
   #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
     IPAddress local_IP(WIFI_IP);
@@ -127,17 +141,7 @@ void setup_wifi()
   #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PWD);
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    if (i++ == 100)
-    {
-      restart_board();
-    }
-  }
-  mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
+  reconnectWifi();
 }
 
 void initRegistries(){
@@ -228,7 +232,7 @@ void setup()
   client.setServer(MQTT_SERVER, MQTT_PORT);
   mqttSerial.print("Connecting to MQTT server...");
   mqttSerial.begin(&client, "espaltherma/log");
-  reconnect();
+  reconnectMqtt();
   mqttSerial.println("OK!");
 
   initRegistries();
@@ -246,9 +250,13 @@ void waitLoop(uint ms){
 void loop()
 {
   unsigned long start = millis();
+  if (WiFi.status() != WL_CONNECTED)
+  { //(re)connect to WiFi if needed
+    reconnectWifi();
+  }
   if (!client.connected())
   { //(re)connect to MQTT if needed
-    reconnect();
+    reconnectMqtt();
   }
   //Querying all registries
   for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
