@@ -263,16 +263,17 @@ void loop()
   //Querying all registries
   for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
   {
-    char buff[64] = {0};
+    unsigned char buff[64] = {0};
     int tries = 0;
-    while (!queryRegistry(registryIDs[i], buff) && tries++ < 3)
+    while (!queryRegistry(registryIDs[i], buff, PROTOCOL) && tries++ < 3)
     {
       mqttSerial.println("Retrying...");
       waitLoop(1000);
     }
-    if (registryIDs[i] == buff[1]) //if replied registerID is coherent with the command
+    unsigned char receivedRegistryID = PROTOCOL == 'S' ? buff[0] : buff[1];
+    if (registryIDs[i] == receivedRegistryID) //if replied registerID is coherent with the command
     {
-      converter.readRegistryValues(buff); //process all values from the register
+      converter.readRegistryValues(buff, PROTOCOL); //process all values from the register
       updateValues(registryIDs[i]);       //send them in mqtt
       //waitLoop(500);//wait .5sec between registries
     }
