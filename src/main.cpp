@@ -98,21 +98,6 @@ void extraLoop()
 #endif
 }
 
-void checkWifi()
-{
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    if (i++ == 120)
-    {
-      Serial.printf("Tried connecting for 60 sec, rebooting now.");
-      restart_board();
-    }
-  }
-}
-
 void setup_wifi()
 {
   delay(10);
@@ -142,7 +127,18 @@ void setup_wifi()
   #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PWD);
-  checkWifi();
+  WiFi.setAutoReconnect(true);
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+    if (i++ == 120)
+    {
+      Serial.printf("Tried connecting for 60 sec, rebooting now.");
+      restart_board();
+    }
+  }
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
 
@@ -234,7 +230,7 @@ void setup()
   client.setServer(MQTT_SERVER, MQTT_PORT);
   mqttSerial.print("Connecting to MQTT server...");
   mqttSerial.begin(&client, "espaltherma/log");
-  reconnectMqtt();
+  reconnect();
   mqttSerial.println("OK!");
 
   initRegistries();
@@ -252,13 +248,9 @@ void waitLoop(uint ms){
 void loop()
 {
   unsigned long start = millis();
-  if (WiFi.status() != WL_CONNECTED)
-  { //restart board if needed
-    checkWifi();
-  }
   if (!client.connected())
   { //(re)connect to MQTT if needed
-    reconnectMqtt();
+    reconnect();
   }
   //Querying all registries
   for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)

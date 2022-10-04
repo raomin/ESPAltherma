@@ -62,7 +62,7 @@ void readEEPROM(){
   }
 }
 
-void reconnectMqtt()
+void reconnect()
 {
   // Loop until we're reconnected
   int i = 0;
