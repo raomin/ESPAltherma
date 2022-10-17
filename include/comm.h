@@ -12,9 +12,9 @@ HardwareSerial MySerial(1);
 #endif
 #define SER_TIMEOUT 300 //leave 300ms for the machine to answer
 
-char getCRC(unsigned char *src, int len)
+unsigned char getCRC(unsigned char *src, int len)
 {
-  char b = 0;
+  unsigned char b = 0;
   for (int i = 0; i < len; i++)
   {
     b += src[i];
@@ -88,9 +88,10 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
       buffer[len++] = MySerial.read();
       if (protocol == 'I' && len == 3)
       {
-        // Override reply length with the actual one
-        replyLen = buffer[2];
+        // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
+        replyLen = buffer[2] + 2;
       }
+      // Error reply common to both protocols
       if (len == 2 && buffer[0] == 0x15 && buffer[1] == 0xea)
       {
         // HP didn't understand the command
