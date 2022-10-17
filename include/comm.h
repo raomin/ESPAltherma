@@ -12,9 +12,9 @@ HardwareSerial MySerial(1);
 #endif
 #define SER_TIMEOUT 300 //leave 300ms for the machine to answer
 
-char getCRC(unsigned char *src, int len)
+unsigned char getCRC(unsigned char *src, int len)
 {
-  char b = 0;
+  unsigned char b = 0;
   for (int i = 0; i < len; i++)
   {
     b += src[i];
