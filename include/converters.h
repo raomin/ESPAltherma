@@ -1,5 +1,5 @@
 // convert read registry value to the expected format based on convID
-#include <Arduino.h>
+#include <string.h>
 char buff[64];
 class Converter
 {
@@ -17,14 +17,21 @@ public:
     }
 
     // Extract all values from the registry data response
-    void readRegistryValues(char *data)
+    void readRegistryValues(unsigned char *data, unsigned char protocol)
     {
-        readRegistryValues(data[1], data);
+        if (protocol == 'S')
+        {
+            // Registry ID is first byte
+            readRegistryValues(data[0], data, 1);
+        }
+        else
+        {
+            readRegistryValues(data[1], data, 3);
+        }
     }
 
-    void readRegistryValues(char registryID, char *data)
+    void readRegistryValues(char registryID, unsigned char *data, unsigned int offset)
     {
-
         // Serial.printf("For registry %d, we have these labels:\n", registryID);
         int num = 0;
         LabelDef *labels[128];
@@ -32,8 +39,8 @@ public:
 
         for (int i = 0; i < num; i++)
         {
-            char *input = data;
-            input += labels[i]->offset + 3;
+            unsigned char *input = data;
+            input += labels[i]->offset + offset;
             convert(labels[i], input);
         }
     }
@@ -51,7 +58,7 @@ public:
 
 
 
-    void convert(LabelDef *def, char *data)
+    void convert(LabelDef *def, unsigned char *data)
     {
         def->asString[0] = {0};
         int convId = def->convid;
@@ -66,7 +73,7 @@ public:
         switch (convId)
         {
         case 100:
-            strlcat(def->asString, data, num);
+            strlcat(def->asString, (char*)data, num);
             return;
         case 101:
             dblData = (double)getSignedValue(data, num, 0);
@@ -189,6 +196,9 @@ public:
         case 158:
             dblData = (double)getUnsignedValue(data, num, 1) / 256.0 * 2.0;
             break;
+        case 164:
+            dblData = (double)getUnsignedValue(data, num, 1) * 5;
+            break;
         case 200:
             convertTable200(data, def->asString);
             return;
@@ -224,6 +234,9 @@ public:
         case 307:
             convertTable300(data, def->convid, def->asString);
             return;
+        case 312:
+            dblData = convertTable312(data);
+            break;
         case 315:
             convertTable315(data, def->asString);
             return;
@@ -264,7 +277,7 @@ public:
     }
 
 private:
-    void convertTable300(char *data, int tableID, char *ret)
+    void convertTable300(unsigned char *data, int tableID, char *ret)
     {
         Serial.printf("Bin Conv %02x with tableID %d \n", data[0], tableID);
         char b = 1;
@@ -280,7 +293,7 @@ private:
         return;
     }
 
-    void convertTable203(char *data, char *ret)
+    void convertTable203(unsigned char *data, char *ret)
     {
         switch (data[0])
         {
@@ -302,7 +315,7 @@ private:
         }
     }
 
-    void convertTable204(char *data, char *ret)
+    void convertTable204(unsigned char *data, char *ret)
     {
         char array[] = " ACEHFJLPU987654";
         char array2[] = "0123456789AHCJEF";
@@ -313,7 +326,18 @@ private:
         ret[2] = 0;
     }
 
-    void convertTable315(char *data, char *ret)
+    double convertTable312(unsigned char *data)
+    {
+        double dblData = ((unsigned char) (7 & data[0] >> 4) + (unsigned char) (15U & data[0])) / 16.0;
+        if ((128 & data[0]) > 0)
+        {
+            dblData *= -1.0;
+        }
+        // Serial.printf("convertTable312 %02x -> %f \n", data[0], dblData);
+        return dblData;
+    }
+    
+    void convertTable315(unsigned char *data, char *ret)
     {
         char b = 240 & data[0];
         b = (char)(b >> 4);
@@ -345,7 +369,7 @@ private:
         }
     }
 
-    void convertTable316(char *data, char *ret)
+    void convertTable316(unsigned char *data, char *ret)
     {
         char b = 240 & data[0];
         b = (char)(b >> 4);
@@ -365,7 +389,7 @@ private:
         }
     }
 
-    void convertTable200(char *data, char *ret)
+    void convertTable200(unsigned char *data, char *ret)
     {
         if (data[0] == 0)
         {
@@ -377,7 +401,7 @@ private:
         }
     }
     // 201
-    void convertTable217(char *data, char *ret)
+    void convertTable217(unsigned char *data, char *ret)
     {
         char r217[][30] = {"Fan Only",
                            "Heating",
@@ -401,7 +425,7 @@ private:
         sprintf(ret, r217[(int)data[0]]);
     }
 
-    unsigned short getUnsignedValue(char *data, int dataSize, int cnvflg)
+    unsigned short getUnsignedValue(unsigned char *data, int dataSize, int cnvflg)
     {
         unsigned short result;
         if (dataSize == 1)
@@ -418,7 +442,7 @@ private:
         }
         return result;
     }
-    short getSignedValue(char *data, int datasize, int cnvflg)
+    short getSignedValue(unsigned char *data, int datasize, int cnvflg)
     {
         unsigned short num = getUnsignedValue(data, datasize, cnvflg);
         short result = (short)num;

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Dchecker">
+      <!-- Path to official Daikin Dchecker 3 install -->
+      <HintPath>D:\Dchecker3_V3602\Dchecker3\Dchecker.exe</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

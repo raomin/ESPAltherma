@@ -9,3 +9,12 @@ in the development cycle.
 
 More information about PlatformIO Unit Testing:
 - https://docs.platformio.org/page/plus/unit-testing.html
+
+# HOW TO
+Run unit tests using the `native` platform:
+```
+# Ensure g++ is in PATH
+# On Windows, if using powershell:
+#  $Env:Path += ";C:\msys64\mingw64\bin\"
+pio test -e native -v
+```
