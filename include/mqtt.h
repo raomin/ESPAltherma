@@ -111,14 +111,14 @@ void callbackTherm(byte *payload, unsigned int length)
   { //turn off
     digitalWrite(PIN_THERM, HIGH);
     saveEEPROM(HIGH);
-    client.publish("espaltherma/STATE", "OFF");
+    client.publish("espaltherma/STATE", "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
     digitalWrite(PIN_THERM, LOW);
     saveEEPROM(LOW);
-    client.publish("espaltherma/STATE", "ON");
+    client.publish("espaltherma/STATE", "ON", true);
     mqttSerial.println("Turned ON");
   }
   else if (payload[0] == 'R')//R(eset/eboot)
