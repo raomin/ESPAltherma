@@ -88,6 +88,7 @@
 //#include "def/ALTHERMA(TOP-GRADE).h"
 //#include "def/DAIKIN_MINI_INVERTER_CHILLER04-08KW.h"
 //#include "def/PROTOCOL_S_ROTEX.h"
+//#include "def/PROTOCOL_S.h"
 //#include "def/DEFAULT.h"
 
 #ifndef LABELDEF
