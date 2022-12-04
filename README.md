@@ -401,10 +401,11 @@ You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie reg
 
 ## ❤ Sponsors ❤
 
-<a href="https://github.com/kloni">@kloni (Tom Klonikowski)</a>
-<a href="https://github.com/freddydeschepper">@freddydeschepper</a>
-<a href="https://github.com/qwirx">@qris (Chris Wilson)</a>
-<a href="https://github.com/mauromorello">mauromorello</a>
+<a href="https://github.com/kloni">@kloni (Tom Klonikowski)</a><br/>
+<a href="https://github.com/freddydeschepper">@freddydeschepper</a><br/>
+<a href="https://github.com/qwirx">@qris (Chris Wilson)</a><br/>
+<a href="https://github.com/mauromorello">@mauromorello</a><br/>
+<a href="https://github.com/tarmor1">@tarmor1</a>
 
 
 # License
