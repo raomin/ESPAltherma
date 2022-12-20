@@ -406,6 +406,7 @@ You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie reg
 <a href="https://github.com/qwirx">@qris (Chris Wilson)</a><br/>
 <a href="https://github.com/mauromorello">@mauromorello</a><br/>
 <a href="https://github.com/tarmor1">@tarmor1</a>
+<a href="https://github.com/EvertJob">@EvertJob (toppe)</a>
 
 
 # License
