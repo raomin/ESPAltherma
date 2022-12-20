@@ -337,7 +337,7 @@ If you want to configure your heat pump using an arduino, you can interact with 
 
 ## Where can I get more info on the protocol used?
 
-It took quite some time to reverse engineer the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20Protocol.md).
+It took quite some time to reverse engineer the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20protocol.md).
 
 ## Is it safe? Can I break my machine?
 
