@@ -202,7 +202,7 @@ Note: Smart Grid needs to be switched ON in the heatpump configuration menu, oth
 
 # Troubleshooting
 
-## Specific issues
+## Specific issues with M5
 
 - If, when using an M5StickC (or M5Stack), the ESP32 is unresponsive, upload fails etc. Make sure that you change the ![default env on pio](doc/images/defaultenv.png) environment to ![end m5](doc/images/m5envv.png) on the status bar. Otherwise the default serial port in setup.h conflicts with the PSRAM of M5.
 
@@ -210,9 +210,24 @@ Note: Smart Grid needs to be switched ON in the heatpump configuration menu, oth
 
 Possible generic issues could be: improper wifi signal, unsupported protocol, unsupported GPIOs for Serial (stick to default RX2/TX2).
 
-ESPAltherma generates logs on the main serial port (USB). Connect to the ESP32 and open the serial monitor on Platformio.
+ESPAltherma generates logs on the main serial port (USB) and on the screen of the M5. Connect to the ESP32 and open the serial monitor on Platformio.
 
 ESPAltherma also generates logs on MQTT. If Wifi and MQTT is not the issue, look at the logs on the topic `espaltherma/log`. You can see them on Home Assistant through  Configuration -> Integration -> MQTT -> Config -> Listen to a topic. 
+
+## Logs show 'Timeout on register' with value 0x15 0xea or 'Error 0x15 0xEA returned from HP'
+
+`0x15 0xea` is the reply from the heatpump to say it does not understand the protocol.
+If you have an older Altherma heat pump (around 2010 or before) it is probably using the older S protocol.
+To activate it, at the end of `setup.h` change `#define PROTOCOL 'I'` to `#define PROTOCOL 'S'`
+Also select the `def/PROTOCOL_S_ROTEX.h` or `def/PROTOCOL_S.h` definition file.
+
+## Logs show 'Time out! Check connection' 'Wrong CRC on registry...'
+
+This means that the communication is wrong. Usual suspects: 
+
+1. Un-conected GND: whatever you do, the GND of the ESP should always be connected to the GND of the Altherma. So, if you power your ESP with a USB charger (or your computer), make sure you also connect the GND from the ESP to your GND of the Altherma.
+2. If not GND, then it's alway the Dupont cable. A faulty dupont cable is a VERY COMMON cause of issue. You can have a perfectly looking cable, they are not the best to do connection on the X10A connector (although much more common than an EH JST 5pin). So, change your cable. You can also use a common 2.54 female long header, plug it to the X10A connector and then your dupont cable to the long pins of the header.
+![pic of header](doc/images/header.png)
 
 ## Note on voltage
 
@@ -322,7 +337,7 @@ If you want to configure your heat pump using an arduino, you can interact with 
 
 ## Where can I get more info on the protocol used?
 
-It took quite some time to reverse engineering the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20Protocol.md).
+It took quite some time to reverse engineer the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20protocol.md).
 
 ## Is it safe? Can I break my machine?
 
@@ -386,10 +401,12 @@ You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie reg
 
 ## ❤ Sponsors ❤
 
-<a href="https://github.com/kloni">@kloni (Tom Klonikowski)</a>
-<a href="https://github.com/freddydeschepper">@freddydeschepper</a>
-<a href="https://github.com/qwirx">@qris (Chris Wilson)</a>
-<a href="https://github.com/mauromorello">mauromorello</a>
+<a href="https://github.com/kloni">@kloni (Tom Klonikowski)</a><br/>
+<a href="https://github.com/freddydeschepper">@freddydeschepper</a><br/>
+<a href="https://github.com/qwirx">@qris (Chris Wilson)</a><br/>
+<a href="https://github.com/mauromorello">@mauromorello</a><br/>
+<a href="https://github.com/tarmor1">@tarmor1</a>
+<a href="https://github.com/EvertJob">@EvertJob (toppe)</a>
 
 
 # License

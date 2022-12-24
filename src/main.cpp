@@ -279,6 +279,6 @@ void loop()
     }
   }
   sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %d ms...", FREQUENCY - millis() + start);
+  mqttSerial.printf("Done. Waiting %ld ms...", FREQUENCY - millis() + start);
   waitLoop(FREQUENCY - millis() + start);
 }
