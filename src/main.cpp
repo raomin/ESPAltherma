@@ -206,8 +206,20 @@ void setup()
   digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
-
 #endif
+
+#ifdef PIN_L1
+  // Demand Shapping X85A pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
+  digitalWrite(PIN_L1, X85A_RELAY_INACTIVE_STATE);
+  digitalWrite(PIN_L2, X85A_RELAY_INACTIVE_STATE);
+  digitalWrite(PIN_L3, X85A_RELAY_INACTIVE_STATE);
+  digitalWrite(PIN_L4, X85A_RELAY_INACTIVE_STATE);
+  pinMode(PIN_L1, OUTPUT);
+  pinMode(PIN_L2, OUTPUT);
+  pinMode(PIN_L3, OUTPUT);
+  pinMode(PIN_L4, OUTPUT);
+#endif
+
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
   gpio_pullup_dis(GPIO_NUM_25);

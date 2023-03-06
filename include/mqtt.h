@@ -83,6 +83,18 @@ void reconnectMqtt()
       client.publish("homeassistant/sg/espAltherma/config", "{\"name\":\"AlthermaSmartGrid\",\"cmd_t\":\"~/set\",\"stat_t\":\"~/state\",\"~\":\"espaltherma/sg\"}", true);
       client.subscribe("espaltherma/sg/set");
 #endif
+
+#ifdef PIN_L1
+      // Demand Shapping X85A
+      client.publish("homeassistant/select/espAltherma/x85a/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_demand\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:transmission-tower-import\",\"name\":\"EspAltherma Demand Shapping\",\"command_topic\":\"espaltherma/x85a/set\",\"command_template\":\"{% if value == 'No Limit' %} 0 {% elif value == 'Limit 1' %} 1 {% elif value == 'Limit 2' %} 2 {% elif value == 'Limit 3' %} 3 {% elif value == 'Limit 4' %} 4 {% else %} 0 {% endif %}\",\"options\":[\"No Limit\",\"Limit 1\",\"Limit 2\",\"Limit 3\",\"Limit 4\"],\"state_topic\":\"espaltherma/x85a/state\",\"value_template\":\"{% set mapper = { '0':'No Limit', '1':'Limit 1', '2':'Limit 2', '3':'Limit 3', '4': 'Limit 4' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
+      client.subscribe("espaltherma/x85a/set");
+      client.publish("espaltherma/x85a/state", "0");
+#endif
+#ifndef PIN_L1
+        // Publish empty retained message so discovered entities are removed from HA
+        client.publish("homeassistant/select/espAltherma/x85a/config", "", true);
+#endif
+
     }
     else
     {
@@ -178,6 +190,69 @@ void callbackSg(byte *payload, unsigned int length)
 }
 #endif
 
+#ifdef PIN_L1
+//X85A Demand shapping callbacks
+void callbackX58a(byte *payload, unsigned int length)
+{
+  payload[length] = '\0';
+
+  if (payload[0] == '0')
+  {
+    // No limit
+    digitalWrite(PIN_L1, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L2, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L3, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L4, X85A_RELAY_INACTIVE_STATE);
+    client.publish("espaltherma/x85a/state", "0");
+    Serial.println("Set X85A mode to 0 - No power Limit");
+  }
+  else if (payload[0] == '1')
+  {
+    // Limit 1
+    digitalWrite(PIN_L1, X85A_RELAY_ACTIVE_STATE);
+    digitalWrite(PIN_L2, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L3, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L4, X85A_RELAY_INACTIVE_STATE);
+    client.publish("espaltherma/x85a/state", "1");
+    Serial.println("Set X85A mode to 1 - Power Limit 1");
+  }
+  else if (payload[0] == '2')
+  {
+    // Limit 2
+    digitalWrite(PIN_L1, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L2, X85A_RELAY_ACTIVE_STATE);
+    digitalWrite(PIN_L3, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L4, X85A_RELAY_INACTIVE_STATE);
+    client.publish("espaltherma/x85a/state", "2");
+    Serial.println("Set X85A mode to 2 - Power Limit 2");
+  }
+  else if (payload[0] == '3')
+  {
+    // Limit 3
+    digitalWrite(PIN_L1, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L2, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L3, X85A_RELAY_ACTIVE_STATE);
+    digitalWrite(PIN_L4, X85A_RELAY_INACTIVE_STATE);
+    client.publish("espaltherma/x85a/state", "3");
+    Serial.println("Set X85A mode to 3 - Power Limit 3");
+  }
+  else if (payload[0] == '4')
+  {
+    // Limit 4
+    digitalWrite(PIN_L1, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L2, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L3, X85A_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_L4, X85A_RELAY_ACTIVE_STATE);
+    client.publish("espaltherma/x85a/state", "4");
+    Serial.println("Set X85A mode to 4 - Power Limit 4");
+  }
+  else
+  {
+    Serial.printf("Unknown message: %s\n", payload);
+  }
+}
+#endif
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
   Serial.printf("Message arrived [%s] : %s\n", topic, payload);
@@ -190,6 +265,12 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (strcmp(topic, "espaltherma/sg/set") == 0)
   {
     callbackSg(payload, length);
+  }
+#endif
+#ifdef PIN_L1
+  else if (strcmp(topic, "espaltherma/x85a/set") == 0)
+  {
+    callbackX58a(payload, length);
   }
 #endif
   else
