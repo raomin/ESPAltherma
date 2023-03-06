@@ -50,15 +50,21 @@ void saveEEPROM(uint8_t state){
 
 void readEEPROM(){
   if ('R' == EEPROM.read(EEPROM_CHK)){
+#ifdef PIN_THERM
     digitalWrite(PIN_THERM,EEPROM.read(EEPROM_STATE));
-    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == HIGH)? "Off":"On" );
+    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == THERM_RELAY_INACTIVE_STATE)? "Off":"On" );
+#endif
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
     EEPROM.write(EEPROM_CHK,'R');
-    EEPROM.write(EEPROM_STATE,HIGH);
+#ifdef PIN_THERM
+    EEPROM.write(EEPROM_STATE,THERM_RELAY_INACTIVE_STATE);
+#endif
     EEPROM.commit();
-    digitalWrite(PIN_THERM,HIGH);
+#ifdef PIN_THERM
+    digitalWrite(PIN_THERM,THERM_RELAY_INACTIVE_STATE);
+#endif
   }
 }
 
@@ -73,12 +79,18 @@ void reconnectMqtt()
     if (client.connect("ESPAltherma-dev", MQTT_USERNAME, MQTT_PASSWORD, MQTT_lwt, 0, true, "Offline"))
     {
       Serial.println("connected!");
-      client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
+      client.publish("homeassistant/sensor/espAltherma/AlthermaSensors/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sensors\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:access-point-check\",\"name\":\"ESPAltherma Sensors\",\"state_topic\":\"espaltherma/LWT\",\"json_attributes_topic\":\"espaltherma/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
 
-      // Subscribe
+      // Thermostat relay
+#ifdef PIN_THERM
+      client.publish("homeassistant/switch/espAltherma/switch/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_switch\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:water-boiler\",\"name\":\"EspAltherma Heat Pump Demand\",\"command_topic\":\"espaltherma/POWER\",\"state_topic\":\"espaltherma/STATE\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\"}", true);
       client.subscribe("espaltherma/POWER");
+#endif
+#ifndef PIN_THERM
+      client.publish("homeassistant/switch/espAltherma/switch/config", "", true);
+#endif
+
 #ifdef PIN_SG1
       client.publish("homeassistant/sg/espAltherma/config", "{\"name\":\"AlthermaSmartGrid\",\"cmd_t\":\"~/set\",\"stat_t\":\"~/state\",\"~\":\"espaltherma/sg\"}", true);
       client.subscribe("espaltherma/sg/set");
@@ -109,17 +121,21 @@ void callbackTherm(byte *payload, unsigned int length)
   // Ok I'm not super proud of this, but it works :p
   if (payload[1] == 'F')
   { //turn off
-    digitalWrite(PIN_THERM, HIGH);
-    saveEEPROM(HIGH);
+#ifdef PIN_THERM
+    digitalWrite(PIN_THERM, THERM_RELAY_INACTIVE_STATE);
+    saveEEPROM(THERM_RELAY_INACTIVE_STATE);
     client.publish("espaltherma/STATE", "OFF", true);
     mqttSerial.println("Turned OFF");
+#endif
   }
   else if (payload[1] == 'N')
   { //turn on
-    digitalWrite(PIN_THERM, LOW);
-    saveEEPROM(LOW);
+#ifdef PIN_THERM
+    digitalWrite(PIN_THERM, THERM_RELAY_ACTIVE_STATE);
+    saveEEPROM(THERM_RELAY_ACTIVE_STATE);
     client.publish("espaltherma/STATE", "ON", true);
     mqttSerial.println("Turned ON");
+#endif
   }
   else if (payload[0] == 'R')//R(eset/eboot)
   {
