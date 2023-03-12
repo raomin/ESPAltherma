@@ -96,7 +96,7 @@ If you are using an **ESP8266** select the `nodemcuv2` environement.
   
     ```c++
     ...
-    LabelDef PROGMEM labelDefs[] = {
+    LabelDef labelDefs[] = {
     //  {0x00,0,801,0,-1,"*Refrigerant type"},
     {0x60,0,304,1,-1,"Data Enable/Disable"}, //<-- This value will be queried and reported
     // {0x60,1,152,1,-1,"Indoor Unit Address"},
