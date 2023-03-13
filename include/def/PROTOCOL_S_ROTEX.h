@@ -2,7 +2,7 @@
 //  This file is a definition file for Rotex heat pump, technically looking like protocol S, but not using the same mapping.
 //  Confirmed working for Rotex RDLQ014AA6V3.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
     // 0x50 not supported by RDLQ014AA6V3
 
     // 0x53 seems to be a collection of booleans

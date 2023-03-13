@@ -1,7 +1,7 @@
 #include "labeldef.h"
 //  This file is a definition file for the older protocol S devices.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
     {0x50, 0, 103, 2, -1, "HP Sensor(kgcm2)"},
     {0x50, 2, 103, 2, -1, "LP Sensor(kgcm2)"},
     {0x53, 0, 152, 2, -1, "EV (pls)"},

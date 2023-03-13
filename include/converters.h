@@ -220,6 +220,15 @@ public:
                 break;
             }
 
+        case 215:
+        case 216:
+		{
+			int num = data[0] >> 4;
+			int num2 = (int)(data[0] & 15);
+            sprintf(def->asString,"{0:X}{1:X}", num, num2);
+            return;
+		}
+
         case 201:
         case 217:
             convertTable217(data, def->asString);

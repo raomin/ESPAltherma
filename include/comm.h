@@ -96,7 +96,6 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
       {
         // HP didn't understand the command
         mqttSerial.printf("Error 0x15 0xEA returned from HP\n");
-        Serial.println("Error 0x15 0xEA returned from HP\n");
         delay(500);
         return false;
       }
@@ -116,12 +115,10 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
     delay(500);
     return false;
   }
-  // logBuffer(buffer, len);
+  logBuffer(buffer, len);
   if (getCRC(buffer, len - 1) != buffer[len - 1])
   {
-    Serial.println("Wrong CRC!");
     mqttSerial.printf("ERROR: Wrong CRC on register 0x%02x. Calculated 0x%2x but got 0x%2x\nBuffer: ",regID, getCRC(buffer, len - 1), buffer[len - 1]);
-    Serial.printf("ERROR: Wrong CRC on register 0x%02x. Calculated 0x%2x but got 0x%2x\nBuffer: ",regID, getCRC(buffer, len - 1), buffer[len - 1]);
     logBuffer(buffer,len);
     return false;
   }
