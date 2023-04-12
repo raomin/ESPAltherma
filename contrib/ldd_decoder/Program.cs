@@ -33,7 +33,7 @@ namespace ldd_decoder
         static void GenerateDefInclude(string fileName, LabelDefine[] defines, string folder = null)
         {
             StringBuilder stringBuilder = new StringBuilder(
-                "#include \"labeldef.h\"\n// Generated def file\nLabelDef PROGMEM labelDefs[] = {\n");
+                "#include \"labeldef.h\"\n// Generated def file\nLabelDef labelDefs[] = {\n");
 
             foreach (LabelDefine define in defines)
             {

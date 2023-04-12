@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,802,0,-1,"*Tipo de refrigerante"},
 //{0x00,0,152,1,-1,"Cant. de datos del sensor"},
 //{0x00,1,152,1,-1,"Cant. de compresor INV"},

@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,801,0,-1,"*冷媒種別"},
 //{0x00,0,152,1,-1,"センサ数(個)"},
 //{0x00,1,152,1,-1,"INVデータ数(個)"},
