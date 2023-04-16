@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,802,0,-1,"*Type de réfrigérant"},
 //{0x00,0,152,1,-1,"Qté de données du capteur"},
 //{0x00,1,152,1,-1,"Qté compresseur INV"},
@@ -99,8 +99,8 @@ LabelDef PROGMEM labelDefs[] = {
 //{0xA0,13,301,1,-1,"Drapeau unité éruption 50 ° C"},
 //{0xA0,13,300,1,-1,"Bit puissant (bit de réglage MT)"},
 //{0xA0,14,105,2,1,"Température du port du compresseur"},
-//{0xA1,0,119,2,1,"Température d entrée de l échangeur de chaleur"},
-//{0xA1,2,119,2,1,"Température de sortie de l échangeur thermique"},
+//{0xA1,0,119,2,1,"(Données brutes)Température d entrée de l échangeur de chaleur"},
+//{0xA1,2,119,2,1,"(Données brutes)Température de sortie de l échangeur thermique"},
 //{0xA1,4,302,1,-1,"Électrovanne INJ liquide (Y4S)"},
 //{0xA1,4,301,1,-1,"Chauffage de plaque inférieure"},
 //{0xA1,4,300,1,-1,"Chauffage PHE"},
@@ -220,5 +220,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,10,105,2,1,"Température de l eau mélangée"},
 //{0x64,12,105,2,1,"2nd Domestic hot water temperature"},
 //{0x64,14,152,1,1,"Target delta T heating"},
-//{0x64,15,152,1,1,"Target delta T cooling"}
+//{0x64,15,152,1,1,"Target delta T cooling"},
 };

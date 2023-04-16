@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,801,0,-1,"*Type de réfrigérant"},
 //{0x00,1,996,1,-1,"Override CMD:0x00 N_INV=1"},
 //{0x00,2,996,0,-1,"Override CMD:0x00 N_STD=0"},
@@ -213,5 +213,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,3,105,2,-1,"BE_COP"},
 //{0x64,5,105,2,1,"Temp. cible de chauffage hybride"},
 //{0x64,7,105,2,1,"Temp. cible de chauffage de chaudière"},
-//{0x00,0,996,0,-1,"Override All Clear"}
+//{0x00,0,996,0,-1,"Override All Clear"},
 };

@@ -47,7 +47,7 @@
 #define SG_RELAY_INACTIVE_STATE LOW
 #endif
 
-#define MAX_MSG_SIZE 4096//max size of the json message sent in mqtt 
+#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt 
 
 //Uncomment this line if the JSON message should be in a Json Table format []. Use only for IOBroker Vis. 
 //#define JSONTABLE
@@ -87,9 +87,16 @@
 //#include "def/ALTHERMA(MONOBLOC_CA_05-07KW).h"
 //#include "def/ALTHERMA(TOP-GRADE).h"
 //#include "def/DAIKIN_MINI_INVERTER_CHILLER04-08KW.h"
+//#include "def/PROTOCOL_S_ROTEX.h"
+//#include "def/PROTOCOL_S.h"
 //#include "def/DEFAULT.h"
 
 #ifndef LABELDEF
 #warning "NO DEFINITION SELECTED: Please select your heat pump definition in /src/setup.h -- Using default."
 #include "def/DEFAULT.h"
+#endif
+
+// Default to "Protocol I"
+#ifndef PROTOCOL
+#define PROTOCOL 'I'
 #endif

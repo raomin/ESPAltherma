@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,801,0,-1,"*Tipo de refrigerante"},
 //{0x00,1,996,1,-1,"Override CMD:0x00 N_INV=1"},
 //{0x00,2,996,0,-1,"Override CMD:0x00 N_STD=0"},
@@ -215,5 +215,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,9,302,1,-1,"Add pump"},
 //{0x64,9,301,1,-1,"Main pump"},
 //{0x64,10,118,2,1,"Mixed water temp.(R7T)"},
-//{0x00,0,996,0,-1,"Override All Clear"}
+//{0x00,0,996,0,-1,"Override All Clear"},
 };

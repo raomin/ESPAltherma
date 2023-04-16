@@ -6,8 +6,14 @@
 #include <Arduino.h>
 #endif
 
-#include <HardwareSerial.h>
+#ifdef ARDUINO_ARCH_ESP8266
+#include <SoftwareSerial.h>
+#include <ESP8266WiFi.h>
+#else
 #include <WiFi.h>
+#endif
+#include <HardwareSerial.h>
+
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
@@ -16,6 +22,7 @@
 #include "converters.h"
 #include "comm.h"
 #include "mqtt.h"
+#include "restart.h"
 
 Converter converter;
 char registryIDs[32]; //Holds the registries to query
@@ -41,14 +48,15 @@ void updateValues(char regID)
   LabelDef *labels[128];
   int num = 0;
   converter.getLabels(regID, labels, num);
-  for (size_t i = 0; i < num; i++)
+  for (int i = 0; i < num; i++)
   {
     bool alpha = false;
     for (size_t j = 0; j < strlen(labels[i]->asString); j++)
     {
       char c = labels[i]->asString[j];
-      if (!isdigit(c) && c!='.'){
+      if (!isdigit(c) && c!='.' && !(c=='-' && j==0)){
         alpha = true;
+        break;
       }
     }
 
@@ -56,15 +64,16 @@ void updateValues(char regID)
     char topicBuff[128] = MQTT_OneTopic;
     strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
-    #endif
-    
+
+    #else
     if (alpha){      
+
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
     else{//number, no quotes
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
-
     }
+    #endif
   }
 }
 
@@ -90,12 +99,27 @@ void extraLoop()
 #endif
 }
 
+void checkWifi()
+{
+  int i = 0;
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+    if (i++ == 120)
+    {
+      Serial.printf("Tried connecting for 60 sec, rebooting now.");
+      restart_board();
+    }
+  }
+}
+
 void setup_wifi()
 {
   delay(10);
   // We start by connecting to a WiFi network
   mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
-  
+
   #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
     IPAddress local_IP(WIFI_IP);
     IPAddress gateway(WIFI_GATEWAY);
@@ -116,29 +140,22 @@ void setup_wifi()
     if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
       mqttSerial.println("Failed to set static ip!");
     }
-  #endif  
+  #endif
 
+  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    if (i++ == 100)
-    {
-      esp_restart();
-    }
-  }
+  checkWifi();
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
 
 void initRegistries(){
-    //getting the list of registries to query from the selected values  
+    //getting the list of registries to query from the selected values
   for (size_t i = 0; i < sizeof(registryIDs); i++)
   {
     registryIDs[i]=0xff;
   }
-  
+
   int i = 0;
   for (auto &&label : labelDefs)
   {
@@ -182,7 +199,7 @@ void setup()
 {
   Serial.begin(115200);
   setupScreen();
-  MySerial.begin(9600, SERIAL_8E1, RX_PIN, TX_PIN);
+  MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   digitalWrite(PIN_THERM, HIGH);
 
@@ -192,7 +209,7 @@ void setup()
   digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
- 
+
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
@@ -210,7 +227,7 @@ void setup()
 
   ArduinoOTA.onError([](ota_error_t error) {
     mqttSerial.print("Error on OTA - restarting");
-    esp_restart();
+    restart_board();
   });
   ArduinoOTA.begin();
 
@@ -220,7 +237,7 @@ void setup()
   client.setServer(MQTT_SERVER, MQTT_PORT);
   mqttSerial.print("Connecting to MQTT server...");
   mqttSerial.begin(&client, "espaltherma/log");
-  reconnect();
+  reconnectMqtt();
   mqttSerial.println("OK!");
 
   initRegistries();
@@ -237,28 +254,34 @@ void waitLoop(uint ms){
 
 void loop()
 {
+  unsigned long start = millis();
+  if (WiFi.status() != WL_CONNECTED)
+  { //restart board if needed
+    checkWifi();
+  }
   if (!client.connected())
   { //(re)connect to MQTT if needed
-    reconnect();
+    reconnectMqtt();
   }
   //Querying all registries
   for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
   {
-    char buff[64] = {0};
+    unsigned char buff[64] = {0};
     int tries = 0;
-    while (!queryRegistry(registryIDs[i], buff) && tries++ < 3)
+    while (!queryRegistry(registryIDs[i], buff, PROTOCOL) && tries++ < 3)
     {
       mqttSerial.println("Retrying...");
       waitLoop(1000);
     }
-    if (registryIDs[i] == buff[1]) //if replied registerID is coherent with the command
+    unsigned char receivedRegistryID = PROTOCOL == 'S' ? buff[0] : buff[1];
+    if (registryIDs[i] == receivedRegistryID) //if replied registerID is coherent with the command
     {
-      converter.readRegistryValues(buff); //process all values from the register
+      converter.readRegistryValues(buff, PROTOCOL); //process all values from the register
       updateValues(registryIDs[i]);       //send them in mqtt
-      waitLoop(500);//wait .5sec between registries
+      //waitLoop(500);//wait .5sec between registries
     }
   }
   sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %d sec...\n", FREQUENCY / 1000);
-  waitLoop(FREQUENCY);
+  mqttSerial.printf("Done. Waiting %ld ms...", FREQUENCY - millis() + start);
+  waitLoop(FREQUENCY - millis() + start);
 }

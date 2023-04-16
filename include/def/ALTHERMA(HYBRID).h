@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,801,0,-1,"*Refrigerant type"},
 //{0x00,1,996,1,-1,"Override CMD:0x00 N_INV=1"},
 //{0x00,2,996,0,-1,"Override CMD:0x00 N_STD=0"},
@@ -25,7 +25,7 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x00,11,152,1,-1,"O/U MPU ID (yy)"},
 //{0x00,12,105,1,-1,"O/U capacity (kW)"},
 //{0x10,0,217,1,-1,"Operation Mode"},
-//{0x10,1,307,1,-1,"Thermostat ON/OFF"},
+//{0x10,1,307,1,-1,"Thermostat 2 ON/OFF"},
 //{0x10,1,306,1,-1,"Restart standby"},
 //{0x10,1,305,1,-1,"Startup Control"},
 //{0x10,1,304,1,-1,"Defrost Operation"},
@@ -117,7 +117,7 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x60,0,304,1,-1,"Data Enable/Disable"},
 //{0x60,1,152,1,-1,"Indoor Unit Address"},
 //{0x60,2,315,1,-1,"I/U operation mode"},
-//{0x60,2,303,1,-1,"Thermostat ON/OFF"},
+//{0x60,2,303,1,-1,"Thermostat 1 ON/OFF"},
 //{0x60,2,302,1,-1,"Freeze Protection"},
 //{0x60,2,301,1,-1,"Silent Mode"},
 //{0x60,2,300,1,-1,"Freeze Protection for water piping"},

@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,802,0,-1,"*Refrigerant type"},
 //{0x00,0,152,1,-1,"Sensor Data Qty"},
 //{0x00,1,152,1,-1,"INV compressor Qty"},
@@ -99,8 +99,8 @@ LabelDef PROGMEM labelDefs[] = {
 //{0xA0,13,301,1,-1,"Indoor unit blowout 50 ° C flag"},
 //{0xA0,13,300,1,-1,"Powerful bit (MT setting bit)"},
 //{0xA0,14,105,2,1,"Compressor port temperature"},
-//{0xA1,0,119,2,1,"Water heat exchanger inlet temp."},
-//{0xA1,2,119,2,1,"Water heat exchanger outlet temp."},
+//{0xA1,0,119,2,1,"(Raw data)Water heat exchanger inlet temp."},
+//{0xA1,2,119,2,1,"(Raw data)Water heat exchanger outlet temp."},
 //{0xA1,4,302,1,-1,"Liquid INJ solenoid valve (Y4S)"},
 //{0xA1,4,301,1,-1,"Bottom Plate Heater"},
 //{0xA1,4,300,1,-1,"PHE Heater"},

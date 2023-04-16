@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,802,0,-1,"*Tipo de refrigerante"},
 //{0x00,1,996,1,-1,"Override CMD:0x00 N_INV=1"},
 //{0x00,2,996,0,-1,"Override CMD:0x00 N_STD=0"},
@@ -210,5 +210,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x64,12,105,2,1,"2nd Domestic hot water temperature"},
 //{0x64,14,152,1,1,"Target delta T heating"},
 //{0x64,15,152,1,1,"Target delta T cooling"},
-//{0x00,0,996,0,-1,"Override All Clear"}
+//{0x00,0,996,0,-1,"Override All Clear"},
 };

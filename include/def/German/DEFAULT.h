@@ -2,7 +2,7 @@
 //  This file is a definition file for the ESPAtherma.
 //  uncomment each value you want to query for your installation.
 
-LabelDef PROGMEM labelDefs[] = {
+LabelDef labelDefs[] = {
 //{0x00,0,801,0,-1,"*Kältemittel Typ"},
 //{0x00,0,152,1,-1,"Anzahl - Sensoren"},
 //{0x00,1,152,1,-1,"Anzahl - Inverterverdichter"},
@@ -140,5 +140,5 @@ LabelDef PROGMEM labelDefs[] = {
 //{0x61,6,105,2,1,"Flüssigkeitstemperatur (R3T)"},
 //{0x61,8,105,2,1,"Einlasstemperatur (R4T)"},
 //{0x61,10,105,2,1,"DHW Temperatur (R5T)"},
-//{0x61,12,105,2,1,"Fernbedienungsthermistor"}
+//{0x61,12,105,2,1,"Fernbedienungsthermistor"},
 };
