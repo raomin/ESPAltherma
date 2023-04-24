@@ -230,6 +230,7 @@
             <option value="">Please select</option>
             <option value="spi_mcp2515">External MCP2515 via SPI</option>
             <option value="uart_elm327">External ELM327 via UART</option>
+            <option value="bt_elm327">External ELM327 via Bluetooth</option>
             <option value="uart_sja1000">SJA1000 with external transciever</option>
           </select>
 
@@ -273,6 +274,22 @@
                 </select>
               </label>
             </div>
+          </div>
+
+          <div id="can_bt_config" class="hidden">
+            Bluetooth Config:
+            <label for="pin_can_bt_devicename">Devicename:</label>
+            <input type="text" id="pin_can_bt_devicename" name="pin_can_bt_devicename"/>
+
+            <label for="pin_can_bt_use_pin" >
+              <input type="checkbox" id="pin_can_bt_use_pin" name="pin_can_bt_use_pin" role="switch" onclick="show('bt_use_pin');"/>
+              Use pin
+            </label>
+
+            <article id="bt_use_pin" class="hidden">
+              <label for="pin_can_bt_pin">Pin</label>
+              <input type="text" id="pin_can_bt_pin" name="pin_can_bt_pin"/>
+            </article>
           </div>
 
           <div id="can_uart_config" class="hidden">

@@ -20,7 +20,8 @@ enum class CAN_ICTypes : uint8_t {
 enum class CAN_ICBus : uint8_t {
     None,
     SPI,
-    UART
+    UART,
+    BT
 };
 
 enum class CAN_PollMode : uint8_t {
@@ -82,6 +83,11 @@ struct Config
         uint8_t PIN_INT;
         uint8_t IC_MHZ;
     } CAN_SPI;
+    struct {
+        String DEVICENAME;
+        bool USE_PIN;
+        String PIN;
+    } CAN_BLUETOOTH;
     uint16_t CAN_SPEED_KBPS;
     String CAN_MQTT_TOPIC_NAME;
     bool CAN_READONLY_ENABLED;

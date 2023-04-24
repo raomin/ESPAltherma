@@ -584,6 +584,8 @@ void onSaveConfig(AsyncWebServerRequest *request)
       canICBus = CAN_ICBus::UART;
     } else if(ICType.startsWith("spi_")) {
       canICBus = CAN_ICBus::SPI;
+    } else if(ICType.startsWith("bt_")) {
+      canICBus = CAN_ICBus::BT;
     } else {
       request->send(422, "text/plain", "Invalid CAN IC/Chip communication type given");
       return;
@@ -619,6 +621,14 @@ void onSaveConfig(AsyncWebServerRequest *request)
       !request->hasParam("pin_can_spi_mhz", true)))
   {
     request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus SPI");
+    return;
+  }
+
+  if(request->hasParam("can_enabled", true) && canICBus == CAN_ICBus::BT &&
+     (!request->hasParam("pin_can_bt_devicename", true) ||
+      (request->hasParam("pin_can_bt_use_pin", true) && !request->hasParam("pin_can_bt_pin", true))))
+  {
+    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus Bluetooth");
     return;
   }
 
@@ -711,6 +721,14 @@ void onSaveConfig(AsyncWebServerRequest *request)
     {
       config->PIN_CAN_RX = request->getParam("pin_can_uart_rx", true)->value().toInt();
       config->PIN_CAN_TX = request->getParam("pin_can_uart_tx", true)->value().toInt();
+    }
+    else if(config->CAN_BUS == CAN_ICBus::BT)
+    {
+      config->CAN_BLUETOOTH.DEVICENAME = (char *)request->getParam("pin_can_bt_devicename", true)->value().c_str();
+      config->CAN_BLUETOOTH.USE_PIN = request->hasParam("pin_can_bt_use_pin", true);
+      if(config->CAN_BLUETOOTH.USE_PIN) {
+        config->CAN_BLUETOOTH.PIN = (char *)request->getParam("pin_can_bt_pin", true)->value().c_str();
+      }
     }
 
     config->CAN_SPEED_KBPS = request->getParam("can_speed_kbps", true)->value().toInt();

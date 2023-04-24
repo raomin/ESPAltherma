@@ -5,6 +5,7 @@
 #include "CAN/CANDriver.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
+#include "BluetoothSerial.h"
 
 class DriverELM327 : public CANDriver
 {
@@ -15,6 +16,7 @@ private:
     bool ATCommandIsOK();
     bool listenOnly;
     String received = "";
+    Stream* Elm327Serial;
 
 public:
     bool initInterface();

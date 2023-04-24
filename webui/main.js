@@ -250,6 +250,18 @@ async function loadConfig()
                 document.getElementById('pin_can_uart_rx').value = data['PIN_CAN_RX'];
                 document.getElementById('pin_can_uart_tx').value = data['PIN_CAN_TX'];
             }
+            else if(data['CAN_BUS'] == 3)
+            {
+                canBusPrefix = 'bt_';
+                document.getElementById('pin_can_bt_devicename').value = data['BLUETOOTH']['DEVICENAME'];
+                document.getElementById('pin_can_bt_use_pin').checked = data['BLUETOOTH']['USE_PIN'];
+
+                if(data['BLUETOOTH']['USE_PIN'])
+                {
+                    document.getElementById('pin_can_bt_pin').value = data['BLUETOOTH']['PIN'];
+                    show('bt_use_pin');
+                }
+            }
 
             if(data['CAN_IC'] == 1)
             {
@@ -570,29 +582,46 @@ async function sendConfigData(event)
         const can_ic_type = document.getElementById('can_ic_type');
         can_ic_type.setAttribute('aria-invalid', can_ic_type.value == '');
 
-        const pin_can_rx = document.getElementById('pin_can_uart_rx');
-        pin_can_rx.setAttribute('aria-invalid', pin_can_rx.value == '');
+        const can_bus_type = can_ic_type.value.split('_')[0];
 
-        const pin_can_tx = document.getElementById('pin_can_uart_tx');
-        pin_can_tx.setAttribute('aria-invalid', pin_can_tx.value == '');
+        if(can_bus_type == 'uart')
+        {
+            const pin_can_rx = document.getElementById('pin_can_uart_rx');
+            pin_can_rx.setAttribute('aria-invalid', pin_can_rx.value == '');
 
-        const pin_can_spi_mosi = document.getElementById('pin_can_spi_mosi');
-        pin_can_spi_mosi.setAttribute('aria-invalid', pin_can_spi_mosi.value == '');
+            const pin_can_tx = document.getElementById('pin_can_uart_tx');
+            pin_can_tx.setAttribute('aria-invalid', pin_can_tx.value == '');
+        }
+        else if(can_bus_type == 'spi')
+        {
+            const pin_can_spi_mosi = document.getElementById('pin_can_spi_mosi');
+            pin_can_spi_mosi.setAttribute('aria-invalid', pin_can_spi_mosi.value == '');
 
-        const pin_can_spi_miso = document.getElementById('pin_can_spi_miso');
-        pin_can_spi_miso.setAttribute('aria-invalid', pin_can_spi_miso.value == '');
+            const pin_can_spi_miso = document.getElementById('pin_can_spi_miso');
+            pin_can_spi_miso.setAttribute('aria-invalid', pin_can_spi_miso.value == '');
 
-        const pin_can_spi_sck = document.getElementById('pin_can_spi_sck');
-        pin_can_spi_sck.setAttribute('aria-invalid', pin_can_spi_sck.value == '');
+            const pin_can_spi_sck = document.getElementById('pin_can_spi_sck');
+            pin_can_spi_sck.setAttribute('aria-invalid', pin_can_spi_sck.value == '');
 
-        const pin_can_spi_cs = document.getElementById('pin_can_spi_cs');
-        pin_can_spi_cs.setAttribute('aria-invalid', pin_can_spi_cs.value == '');
+            const pin_can_spi_cs = document.getElementById('pin_can_spi_cs');
+            pin_can_spi_cs.setAttribute('aria-invalid', pin_can_spi_cs.value == '');
 
-        const pin_can_spi_int = document.getElementById('pin_can_spi_int');
-        pin_can_spi_int.setAttribute('aria-invalid', pin_can_spi_int.value == '');
+            const pin_can_spi_int = document.getElementById('pin_can_spi_int');
+            pin_can_spi_int.setAttribute('aria-invalid', pin_can_spi_int.value == '');
 
-        const pin_can_spi_mhz = document.getElementById('pin_can_spi_mhz');
-        pin_can_spi_mhz.setAttribute('aria-invalid', pin_can_spi_mhz.value == '');
+            const pin_can_spi_mhz = document.getElementById('pin_can_spi_mhz');
+            pin_can_spi_mhz.setAttribute('aria-invalid', pin_can_spi_mhz.value == '');
+        }
+        else if(can_bus_type == 'bt')
+        {
+            const pin_can_bt_devicename = document.getElementById('pin_can_bt_devicename');
+            pin_can_bt_devicename.setAttribute('aria-invalid', pin_can_bt_devicename.value == '');
+
+            const pin_can_bt_use_pin = document.getElementById('pin_can_bt_use_pin').checked;
+
+            const pin_can_bt_pin = document.getElementById('pin_can_bt_pin');
+            pin_can_bt_pin.setAttribute('aria-invalid', pin_can_bt_use_pin && pin_can_bt_pin.value == '');
+        }
 
         const can_speed_kbps = document.getElementById('can_speed_kbps');
         can_speed_kbps.setAttribute('aria-invalid', can_speed_kbps.value == '');
@@ -1676,4 +1705,5 @@ function updateCANConfigDisplay()
 
     show('can_spi_config', !icType.startsWith('spi_'));
     show('can_uart_config', !icType.startsWith('uart_'));
+    show('can_bt_config', !icType.startsWith('bt_'));
 }

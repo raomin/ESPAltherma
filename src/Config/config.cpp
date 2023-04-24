@@ -95,12 +95,17 @@ void readConfig()
     config->CAN_BUS = (CAN_ICBus)configDoc["CAN_BUS"].as<uint8_t>();
     config->PIN_CAN_RX = configDoc["PIN_CAN_RX"].as<uint8_t>();
     config->PIN_CAN_TX = configDoc["PIN_CAN_TX"].as<uint8_t>();
+
     config->CAN_SPI.PIN_MISO = configDoc["SPI"]["MISO"].as<uint8_t>();
     config->CAN_SPI.PIN_MOSI = configDoc["SPI"]["MOSI"].as<uint8_t>();
     config->CAN_SPI.PIN_SCK = configDoc["SPI"]["SCK"].as<uint8_t>();
     config->CAN_SPI.PIN_CS = configDoc["SPI"]["CS"].as<uint8_t>();
     config->CAN_SPI.PIN_INT = configDoc["SPI"]["INT"].as<uint8_t>();
     config->CAN_SPI.IC_MHZ = configDoc["SPI"]["MHZ"].as<uint8_t>();
+
+    config->CAN_BLUETOOTH.DEVICENAME = (char *)configDoc["BLUETOOTH"]["DEVICENAME"].as<const char*>();
+    config->CAN_BLUETOOTH.USE_PIN = configDoc["BLUETOOTH"]["USE_PIN"].as<const bool>();
+    config->CAN_BLUETOOTH.PIN = (char *)configDoc["BLUETOOTH"]["PIN"].as<const char*>();
 
     config->CAN_SPEED_KBPS = configDoc["CAN_SPEED_KBPS"].as<uint16_t>();
     config->CAN_MQTT_TOPIC_NAME = (char *)configDoc["CAN_MQTT_TOPIC_NAME"].as<const char*>();
@@ -244,6 +249,11 @@ void saveConfig()
     canSPI["CS"] = config->CAN_SPI.PIN_CS;
     canSPI["INT"] = config->CAN_SPI.PIN_INT;
     canSPI["MHZ"] = config->CAN_SPI.IC_MHZ;
+
+    JsonObject canBT = configDoc.createNestedObject("BLUETOOTH");
+    canBT["DEVICENAME"] = config->CAN_BLUETOOTH.DEVICENAME;
+    canBT["USE_PIN"] = config->CAN_BLUETOOTH.USE_PIN;
+    canBT["PIN"] = config->CAN_BLUETOOTH.PIN;
 
     configDoc["CAN_SPEED_KBPS"] = config->CAN_SPEED_KBPS;
     configDoc["CAN_MQTT_TOPIC_NAME"] = config->CAN_MQTT_TOPIC_NAME;
