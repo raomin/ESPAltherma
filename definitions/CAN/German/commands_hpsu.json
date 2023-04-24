@@ -1,0 +1,741 @@
+{
+  "Model": "HPSU",
+  "Language": "German",
+  "Commands": [
+    {
+      "name": "t_hs",
+      "label": "T-WE",
+      "description": "Angezeigt wird die aktuelle Vorlauftemperatur (TVBH) des Waermeerzeugers in C."
+    },
+    {
+      "name": "t_hs_set",
+      "label": "T-WE Soll",
+      "description": "Angezeigt wird die aktuelle Vorlauf-Solltemperatur des Waermeerzeugers in C"
+    },
+    {
+      "name": "water_pressure",
+      "label": "Wasserdruck",
+      "description": "Angezeigt wird der aktuelle Wasserdruck in bar."
+    },
+    {
+      "name": "t_ext",
+      "label": "T-Aussen",
+      "description": "Angezeigt wird die gemittelte Aussentemperatur in C."
+    },
+    {
+      "name": "t_dhw",
+      "label": "T-WW",
+      "description": "Angezeigt wird die aktuelle Temperatur des Warmwasserspeichers in C. Sollte keine Warmwasserfunktion aktiviert sein, wird --- angezeigt."
+    },
+    {
+      "name": "t_dhw_set",
+      "label": "T-WW Soll",
+      "description": "aktuelle Warmwasser-Solltemperatur in C. Sollte keine Warmwasserfunktion aktiviert sein, wird --- angezeigt. Der aktuelle Sollwert ist hier immer der Maximalwert aller fuer diesen Warmwasserkreis relevanten Anforderungen."
+    },
+    {
+      "name": "t_return",
+      "label": "T-Ruecklauf",
+      "description": "Angezeigt wird die aktuelle Ruecklauftemperatur des Waermeerzeugers in C. Ist kein entsprechender Sensor am Waermeerzeuger angeschlossen, wird --- angezeigt."
+    },
+    {
+      "name": "flow_rate",
+      "label": "Durchfluss",
+      "description": "Angezeigt wird der gefilterte Wert des aktuellen Volumenstroms in Liter pro Stunde."
+    },
+    {
+      "name": "t_hc",
+      "label": "T-HK",
+      "description": "Angezeigt wird die Vorlauftemperatur des direkten Heizkreises in C."
+    },
+    {
+      "name": "t_hc_set",
+      "label": "T-HK Soll",
+      "description": "Angezeigt wird die Vorlauf-Solltemperatur des direkten Heizkreises in C."
+    },
+    {
+      "name": "status_pump",
+      "label": "Status Kesselpumpe",
+      "description": "Angezeigt wird der aktuelle Status der internen Heizungsumwaelzpumpe der ROTEX HPSU compact."
+    },
+    {
+      "name": "runtime_comp",
+      "label": "Laufzeit Kompr",
+      "description": "Angezeigt wird die Laufzeit des Kuehltemittelverdichters in h."
+    },
+    {
+      "name": "runtime_pump",
+      "label": "Laufzeit Pumpe",
+      "description": "Angezeigt wird die Laufzeit der internen Heizungsumwaelzpumpe in h."
+    },
+    {
+      "name": "posmix",
+      "label": "Mischer Position",
+      "description": "aktuelle Stellung des 3-Wege-Umschaltventils 3UV DHW. 0 %: Stellung A (Raumheizung) 100 %: Stellung B (Warmwasserbereitung)"
+    },
+    {
+      "name": "qboh",
+      "label": "EHS fuer DHW",
+      "description": "Angezeigt wird die Waermemenge des zusaetzlichen Waermeerzeugers fuer die Warmwasserbereitung in kWh."
+    },
+    {
+      "name": "qchhp",
+      "label": "EHS fuer CH",
+      "description": "Angezeigt wird die Waermemenge des zusaetzlichen Waermeerzeugers fuer den Heizbetrieb in kWh."
+    },
+    {
+      "name": "qsc",
+      "label": "Energie Kuehlung",
+      "description": "Angezeigt wird die Waermemenge der Waermepumpe fuer den Kuehlbetrieb in kWh."
+    },
+    {
+      "name": "qch",
+      "label": "Energie Heizung",
+      "description": "Angezeigt wird die Waermemenge der Waermepumpe fuer den Heizbetrieb in kWh."
+    },
+    {
+      "name": "qwp",
+      "label": "Energie erzeugt",
+      "description": "Angezeigt wird die gesamte Waermemenge der Waermepumpe in kWh."
+    },
+    {
+      "name": "qdhw",
+      "label": "Energie fuer WW",
+      "description": "Angezeigt wird die Waermemenge fuer die Warmwasserbereitung in kWh."
+    },
+    {
+      "name": "sw_vers_01",
+      "label": "Version SW 1",
+      "description": "Software Version 1"
+    },
+    {
+      "name": "sw_vers_02",
+      "label": "Version SW 2",
+      "description": "Software Version 2"
+    },
+    {
+      "name": "sw_vers_03",
+      "label": "Version SW 3",
+      "description": "Software version 3"
+    },
+    {
+      "name": "mode_01",
+      "label": "Modus",
+      "description": "Modus Rotex"
+    },
+    {
+      "name": "tvbh2",
+      "label": "TVBH2 [C]",
+      "description": "Aktuelle Temperatur Heizung Vorlauf ggf. nach Heizungsunterstuetzungswaermetauscher (tV,BH)."
+    },
+    {
+      "name": "tliq2",
+      "label": "Tliq2 [C]",
+      "description": "Aktuelle Kältemitteltemperatur (tliq2)."
+    },
+    {
+      "name": "tr2",
+      "label": "TR2 [C]",
+      "description": "Aktuelle Temperatur Heizung Ruecklauf, sekundaerer Fuehler (tR2)."
+    },
+    {
+      "name": "ta2",
+      "label": "TA2 [C]",
+      "description": "Aktuelle Aussentemperatur (gemessen von Temperaturfuehler des Waermepumpenaussengeraets)"
+    },
+    {
+      "name": "tdhw2",
+      "label": "Tdhw2 [C]",
+      "description": "Current temperature in domestic hot water storage tank, secondary sensor (tDHW2)."
+    },
+    {
+      "name": "quiet",
+      "label": "quiet",
+      "description": "Shows the status of the whisper mode."
+    },
+    {
+      "name": "mode",
+      "label": "Modus",
+      "description": "Aktueller Modus der Wärmepumpe: ---: No heating or cooling demand : Heating : Cooling : Domestic hot water generation : Automatic defrosting function active"
+    },
+    {
+      "name": "pump",
+      "label": "Pump",
+      "description": "Aktuelle Leistung der internen Heizungsumwälzpumpe in %"
+    },
+    {
+      "name": "ext",
+      "label": "Ext",
+      "description": "Aktueller Energiemodus der Wärmepumpe: LT: EVU-Funktion HT/NT aktiv und Niedertarif. HT: EVU-Funktion HT/NT aktiv und Hochtarif. SGN: EVU-Funktion SMART GRID aktiv, Normalbetrieb. SG1: EVU-Funktion SMART GRID aktiv, Abwurf: kein Wärmepumpenbetrieb, keine Frostschutzfunktion. SG2: EVU-Funktion SMART GRID aktiv, Einschaltempfehlung, Betrieb mit höheren Solltemperaturen, billiger Strom. SG3:EVU-Funktion SMART GRID aktiv, Einschaltbefehl und Speicherladung auf 70 °C, billiger Strom. - - -: Kein externer Modus aktiv, Wärmepumpe arbeitet im normalen Betrieb."
+    },
+    {
+      "name": "ehs",
+      "label": "EHS",
+      "description": "Aktuelle Leistung des Backup-Heaters in kW"
+    },
+    {
+      "name": "rt",
+      "label": "RT",
+      "description": "Parameter [Room thermostat] / [Interlink fct]"
+    },
+    {
+      "name": "bpv",
+      "label": "BPV",
+      "description": "Aktuelle Position Mischventil 3UVB1 (100% = A, 0% = B)"
+    },
+    {
+      "name": "t_v1",
+      "label": "TV",
+      "description": "Aktuelle Vorlauftemperatur nach dem Plattenwaermetauscher (tV1)"
+    },
+    {
+      "name": "t_dhw1",
+      "label": "Tdhw",
+      "description": "Aktuelle Temperatur im Warmwasserspeicher  (tDHW1)"
+    },
+    {
+      "name": "t_vbh",
+      "label": "TVBH",
+      "description": "Aktuelle Temperatur Heizung Vorlauf ggf. nach Heizungsunterstuetzungswaermetauscher  (tV,BH)"
+    },
+    {
+      "name": "t_outdoor_ot1",
+      "label": "TA",
+      "description": "Aktuelle Aussentemperatur (gemessen von optionalem Temperaturfuehler RoCon OT1)"
+    },
+    {
+      "name": "t_r1",
+      "label": "TR",
+      "description": "Aktuelle Temperatur Heizung Ruecklauf (tR1)"
+    },
+    {
+      "name": "v1",
+      "label": "V",
+      "description": "Aktueller Volumenstrom (Durchfluss) in der Heizungsanlage"
+    },
+    {
+      "name": "t_room1_setpoint",
+      "label": "T Room 1 Setpoint",
+      "description": "Setpoint 1 value"
+    },
+    {
+      "name": "t_room2_setpoint",
+      "label": "T Room 2 Setpoint",
+      "description": "Setpoint 2 value"
+    },
+    {
+      "name": "t_room3_setpoint",
+      "label": "T Room 3 Setpoint",
+      "description": "Setpoint 3 value"
+    },
+    {
+      "name": "heat_slope",
+      "label": "Heizkurve",
+      "description": "Heizkurve"
+    },
+    {
+      "name": "t_dhw_setpoint1",
+      "label": "T-WW Soll 1",
+      "description": "Sollwert der Warmwassertemperatur in Grad C, welche fuer den 1. Schaltzeitzyklus der Zeitprogramme [Automatik 1] und [Automatik 2] gilt"
+    },
+    {
+      "name": "t_dhw_setpoint2",
+      "label": "T-WW Soll 1",
+      "description": "Sollwert der Warmwassertemperatur in Grad C, welche fuer den 2. Schaltzeitzyklus der Zeitprogramme [Automatik 1] und [Automatik 2] gilt"
+    },
+    {
+      "name": "t_dhw_setpoint3",
+      "label": "T-WW Soll 1",
+      "description": "Sollwert der Warmwassertemperatur in Grad C, welche fuer den 3. Schaltzeitzyklus der Zeitprogramme [Automatik 1] und [Automatik 2] gilt"
+    },
+    {
+      "name": "hyst_hp",
+      "label": "Hysterese WW",
+      "description": "Einstellung der Hysterese fuer die Warmwasserbereitung. Die Warmwasserbereitung wird aktiviert, wenn die am Warmwasserfuehler gemessene Temperatur unter die aktuelle Warmwasser-Solltemperatur minus dem hier eingestellten Wert liegt. Eine Warmwasserbereitung istbeendet, wenn die am Warmwasserfuehler gemessene Temperatur ueber der aktuellen Warmwasser-Solltemperatur liegt"
+    },
+    {
+      "name": "t_flow_cooling",
+      "label": "T-Flow Kuehlung",
+      "description": "T-Flow Kühlung"
+    },
+    {
+      "name": "error",
+      "label": "Fehler",
+      "description": "Fehlercodename"
+    },
+    {
+      "name": "outdoor_type",
+      "label": "Aussengerät",
+      "description": "Typ Wärmepumpenaußengerät"
+    },
+    {
+      "name": "indoor_unit",
+      "label": "Innengerät",
+      "description": "Typ Wärmepumpeninnengerät"
+    },
+    {
+      "name": "func_heating",
+      "label": "Funktion EHS",
+      "description": "Einstellung ob zusätzlicher Wärmeerzeuger (WEZ) für Warmwasserbereitung und Heizungsunterstützung vorhanden ist"
+    },
+    {
+      "name": "hzu",
+      "label": "HZ Unterstützung",
+      "description": "Heizungsunterstützung aus Warmwasserspeicher, wenn Mindesttemperatur überschritten ist"
+    },
+    {
+      "name": "equi_func",
+      "label": "Bivalenzfunktion",
+      "description": "Die Bivalenzfunktion ist für den Betrieb des optionalen Zuheizers aufgrund einer Backup-Anforderung (Raumheizbetrieb) relevant."
+    },
+    {
+      "name": "smart_grid",
+      "label": "SMART GRID",
+      "description": "Auswertung des SG-Signals"
+    },
+    {
+      "name": "modus_sg",
+      "label": "Modus SG",
+      "description": "Nur wenn Parameter [SMART GRID] = 1: Dient zu einer möglichen Soll-Temperaturerhöhung bei einem SMART GRID-Einschaltbefehl"
+    },
+    {
+      "name": "ht_nt_func",
+      "label": "HT/NT Funktion",
+      "description": "Einstellung, welche Wärmequellen ausgeschaltet werden, wenn bei einem Niedertarif-Netzanschluss das vom Energieversorgungsunternehmen (EVU) ausgegebene Signal für Hochtarif empfangen wird."
+    },
+    {
+      "name": "ht_nt_contact",
+      "label": "HT/NT Anschluss",
+      "description": "Festlegung, ob der HT-/NT-Eingang als Öffner- oder Schließerkontakt ausgewertet wird"
+    },
+    {
+      "name": "room_therm",
+      "label": "Raumthermostat",
+      "description": "Konfiguration eines am Anschluss J16 der ROTEX HPSU compact angeschlossenen Raumthermostats mit potenzialfreien Kontakten"
+    },
+    {
+      "name": "interlink",
+      "label": "Interlinkfunktion",
+      "description": "Konfiguration für Anlagen, die mit 2 verschiedenen Vorlauf-Solltemperaturen betrieben werden"
+    },
+    {
+      "name": "air_purge",
+      "label": "Entlüftungsfunktion",
+      "description": "Aktivierung der automatischen Entlüftung der ROTEX HPSU compact und des angeschlossenen Heizkreislaufs"
+    },
+    {
+      "name": "max_perf_pump",
+      "label": "Max Leistung Pumpe",
+      "description": "Obergrenze für die Modulation der Pumpenleistung"
+    },
+    {
+      "name": "min_perf_pump",
+      "label": "Min Leistung Pumpe",
+      "description": "Untergrenze für die Modulation der Pumpenleistung"
+    },
+    {
+      "name": "outside_conf",
+      "label": "SKonfig T-Aussen",
+      "description": "Konfiguration des optionalen Außentemperaturfühlers RoCon OT1"
+    },
+    {
+      "name": "storage_conf",
+      "label": "SKonfig T-WW",
+      "description": "Konfiguration der Warmwasserbereitung"
+    },
+    {
+      "name": "pres_conf",
+      "label": "SKonfig Druck",
+      "description": "Konfiguration des Sensors zur Erfassung des Wasserdrucks der Anlage"
+    },
+    {
+      "name": "out_temp_adapt",
+      "label": "AF Anpassung",
+      "description": "Individuelle Anpassung für den Messwert der für die Regelung relevanten Außentemperatur"
+    },
+    {
+      "name": "power_dhw",
+      "label": "Leistung WW",
+      "description": "Wärmeleistung des elektrischen Zuheizers für Warmwasserbereitung"
+    },
+    {
+      "name": "buh_s1_pow",
+      "label": "Leistung EHS Stufe 1",
+      "description": "Wärmeleistung des elektrischen Zuheizers bei Heizungsunterstützung Stufe 1"
+    },
+    {
+      "name": "buh_s2_pow",
+      "label": "Leistung EHS Stufe 2",
+      "description": "Wärmeleistung des elektrischen Zuheizers bei Heizungsunterstützung Stufe 2"
+    },
+    {
+      "name": "power_biv",
+      "label": "Leistung BIV",
+      "description": "Einstellung begrenzt Leistung der Heizungsunterstützung"
+    },
+    {
+      "name": "tdiff_dhw_ch",
+      "label": "TDiff-WW HZU",
+      "description": "TDiff-WW HZU"
+    },
+    {
+      "name": "t_vbh1_max",
+      "label": "Max Temp Heizung",
+      "description": "Einstellung begrenzt die Vorlauf-Solltemperatur (gemessen an tV, BH) bei aktiver Heizungsunterstützungsfunktion"
+    },
+    {
+      "name": "equi_temp",
+      "label": "Bivalenztemperatur",
+      "description": "Einstellung beeinflusst die im Parameter [Sonderfkt Schaltk] definierte Wirkungsweise des potenzialfreien AUX-Schaltkontakts (Wechselschaltausgang A)"
+    },
+    {
+      "name": "quiet_mode",
+      "label": "Flüsterbetrieb",
+      "description": "Modus für geräuscharmen Betrieb bei reduzierter Leistung"
+    },
+    {
+      "name": "aux_fct",
+      "label": "Sonderfkt Schaltk",
+      "description": "Einstellung weist die Schaltbedingungen für den potenzialfreien AUX-Schaltkontakt zu"
+    },
+    {
+      "name": "aux_time",
+      "label": "Wartezeit Sonderfkt",
+      "description": "AUX-Schaltkontakt (A) schaltet erst verzögert, wenn die Schaltbedingung"
+    },
+    {
+      "name": "t_dhw_1_min",
+      "label": "Schaltschwelle TDHW",
+      "description": "Schaltschwelle Speichertemperatur (Tdhw) für AUX-Schaltkontakt"
+    },
+    {
+      "name": "delta_t_ch",
+      "label": "Spreizung Mod HZ",
+      "description": "Sollspreizung für Raumheizung. Die Heizungsumwälzpumpe der ROTEX HPSU compact regelt den Durchfluss, um die in dem Parameter hinterlegte Sollspreizung zwischen Vorlauf-Solltemperatur und Rücklauftemperatur (tV, BH - tR1), zu erreichen"
+    },
+    {
+      "name": "v_var",
+      "label": "DurchflussBer",
+      "description": "Aktuell benötigter Mindest-Volumenstrom der Anlage"
+    },
+    {
+      "name": "t_flow_ch_adj",
+      "label": "Anpass T-VL Heizen",
+      "description": "Nur wenn Parameter [Interlinkfunktion] = Ein. Vorlauf-Solltemperatur wird bei geschlossenem RT-Schaltkontakt Kühlen um den eingestellten Wert erhöht"
+    },
+    {
+      "name": "t_flow_cool_adj",
+      "label": "Anpass T-VL Kühlen",
+      "description": "Nur wenn Parameter [Interlinkfunktion] = Ein. Kühlvorlauf-Solltemperatur wird bei geschlossenem RT-Schaltkontakt Kühlen um den eingestellten Wert reduziert"
+    },
+    {
+      "name": "min_pressure",
+      "label": "Min Druck",
+      "description": "Definiert den minimalen Wasserdruck"
+    },
+    {
+      "name": "max_pressure",
+      "label": "Max Druck",
+      "description": "Definiert den maximalen Wasserdruck"
+    },
+    {
+      "name": "setpoint_pressure",
+      "label": "Soll Druck",
+      "description": "Definiert den Soll-Wasserdruck"
+    },
+    {
+      "name": "max_pressure_drop",
+      "label": "Max Druckverlust",
+      "description": "Definiert den maximal akzeptablen Druckverlust in der Heizungsanlage"
+    },
+    {
+      "name": "hc_func",
+      "label": "HK Funktion",
+      "description": "Einstellung definiert Art der Vorlauftemperaturregelung"
+    },
+    {
+      "name": "t_frost_protect",
+      "label": "T-Frostschutz",
+      "description": "Aus: Kein Frostschutz des Heizkreises Sonst: Wenn die Außentemperatur unter den eingestellten Wert sinkt, schaltet die Anlage in den Frostschutzbetrieb (Einschalten der Pumpen). Die Funktion wird beendet,wenn die Außentemperatur über den eingestellten Wert +1 K steigt"
+    },
+    {
+      "name": "insulation",
+      "label": "Gebäudedämmung",
+      "description": "Einstellung des Gebäudedämmstandards. Dadurch werden die gemittelte Außentemperatur und die automatischen Anpassungen der Heizkurve und der Heizzeiten beeinflusst"
+    },
+    {
+      "name": "screed",
+      "label": "Estrich",
+      "description": "Funktion zur Estrichtrocknung"
+    },
+    {
+      "name": "t_screed_day1",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day2",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day3",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day4",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day5",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day6",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day7",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day8",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day9",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day10",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day11",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day12",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day13",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day14",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day15",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day16",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day17",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day18",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day19",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day20",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day21",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day22",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day23",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day24",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day25",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day26",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day27",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_screed_day28",
+      "label": "Estrichprogramm",
+      "description": "Einstellung des Ablaufprogramms der Estrichaufheizung. Für eine Dauer von maximal 28 Tagen kann separat für jeden Tag eine eigene Vorlauf-Solltemperatur eingestellt werden. Das Ende des Estrichprogramms wird durch den 1. Tag mit der Sollwerteinstellung - - - - definiert"
+    },
+    {
+      "name": "t_out_lim_day",
+      "label": "Heizgrenze Tag",
+      "description": "Einstellung der automatischen Sommerabschaltung des Heizbetriebs"
+    },
+    {
+      "name": "t_out_lim_night",
+      "label": "Heizgrenze Nacht",
+      "description": "Einstellung der Heizgrenze zur \"Abschaltung\" des Heizkreises während der Absenkzeit"
+    },
+    {
+      "name": "t_flow_day",
+      "label": "T-Vorlauf Tag",
+      "description": "Einstellung der Vorlauf-Solltemperatur für den Heizkreis während der Heizzeit bei Betriebsart: \"Automatik 1\", \"Automatik 2\", \"Heizen"
+    },
+    {
+      "name": "t_flow_night",
+      "label": "T-Vorlauf Nacht",
+      "description": "Einstellung der Vorlauf-Solltemperatur für den Heizkreis während der Absenkzeit bei Betriebsart: \"Automatik 1\", \"Automatik 2\", \"Absenken"
+    },
+    {
+      "name": "max_t_flow",
+      "label": "Max T-Vorlauf",
+      "description": "Die ermittelte Vorlauf-Solltemperatur des Heizkreises wird auf den hier eingestellten Maximalwert begrenzt"
+    },
+    {
+      "name": "min_t_flow",
+      "label": "Min T-Vorlauf",
+      "description": "Die ermittelte Vorlauf-Solltemperatur des Heizkreises wird auf den hier eingestellten Minimalwert begrenzt"
+    },
+    {
+      "name": "hc_adapt",
+      "label": "Heizk Adaption",
+      "description": "Heizk Adaption"
+    },
+    {
+      "name": "start_tout_cool",
+      "label": "Start Kühlen A-Temp",
+      "description": "Einstellung, ab welcher Außentemperatur der Kühlbetrieb mit der höchsten Kühlvorlauf- Solltemperatur startet"
+    },
+    {
+      "name": "max_tout_cool",
+      "label": "Max Kühlen A-Temp",
+      "description": "Einstellung, bei welcher Außentemperatur die niedrigste Kühlvorlauf-Solltemperatur vorgegeben wird"
+    },
+    {
+      "name": "t_flow_cool_start",
+      "label": "VL-Soll Start Kühlen",
+      "description": "Einstellung der Kühlvorlauf-Solltemperatur beim Start des Kühlbetriebs"
+    },
+    {
+      "name": "t_flow_cool_max",
+      "label": "VL-Soll Max Kühlen",
+      "description": "Einstellung der minimalen Kühlvorlauf-Solltemperatur. Diese wird ab der Außentemperatur"
+    },
+    {
+      "name": "min_t_flow_cool",
+      "label": "Min VL-Soll Kühlen",
+      "description": "Einstellung der absoluten Untergrenze der Kühlvorlauf-Solltemperatur. Begrenzung wirkt, falls aus anderen Parametereinstellungen eine niedrigere Kühlvorlauf-Solltemperatur ermittelt würde"
+    },
+    {
+      "name": "t_flow_cool",
+      "label": "T-VL Kühlen",
+      "description": "Einstellung der Kühlvorlauf-Solltemperatur (Festwert) bei aktivem Kühlbetrieb"
+    },
+    {
+      "name": "cool_setpoint_adj",
+      "label": "Kühlsollwert Korr",
+      "description": "Parallelverschiebung der Kühl-Kennlinie um den eingestellten Wert"
+    },
+    {
+      "name": "circ_pump_dhw",
+      "label": "Zirk mit WW-Prog",
+      "description": "Einstellung zur Ansteuerung einer Zirkulationspumpe"
+    },
+    {
+      "name": "circ_pump_interval",
+      "label": "Zirk Intervall",
+      "description": "Einstellung der Intervallsteuerung für optionale Zirkulationspumpe"
+    },
+    {
+      "name": "anti_leg_day",
+      "label": "Antileg Tag",
+      "description": "Einstellung des Tages zur thermischen Desinfektion des Warmwasserspeichers"
+    },
+    {
+      "name": "anti_leg_time",
+      "label": "Antileg Zeit",
+      "description": "Einstellung der Startzeit der thermischen Desinfektion des Warmwasserspeichers"
+    },
+    {
+      "name": "anti_leg_temp",
+      "label": "Antileg Temp",
+      "description": "Einstellung der Warmwasser-Solltemperatur während der thermischen Desinfektion des Warmwasserspeichers"
+    },
+    {
+      "name": "max_dhw_loading",
+      "label": "Max WW Ladezeit",
+      "description": "Einstellung begrenzt den Zeitraum für die Warmwasserbereitung auf den eingestellten Sollwert"
+    },
+    {
+      "name": "dhw_off_time",
+      "label": "WW Sperrzeit",
+      "description": "Einstellung der Sperrzeit nach Abschluss oder Abbruch eines Warmwasserbereitungszyklus"
+    },
+    {
+      "name": "one_hot_water",
+      "label": "1x Warmwasser",
+      "description": "Start der einmaligen Aufheizung des Warmwassers auf den eingestellten Sollwert"
+    },
+    {
+      "name": "timer_boh",
+      "label": "Wartezeit BOH",
+      "description": "Verzögerungszeit, ab wann der zusätzliche Wärmeerzeuger die Wärmepumpe bei einer Warmwasserladung unterstützen darf"
+    },
+    {
+      "name": "t_reduced",
+      "label": "T-Absenkung",
+      "description": "Raum-Solltemperatur für die Absenkzeiten der permanenten Zeitprogramme [Automatik 1] und [Automatik 2] gilt"
+    },
+    {
+      "name": "t_absence",
+      "label": "T-Abwesend",
+      "description": "Raum-Solltemperatur für die Absenkzeiten der temporären Zeitprogramme [Abwesend] + [Urlaub]"
+    },
+    {
+      "name": "t_room",
+      "label": "T-Raum",
+      "description": "Raumtemperatur, die von einer optionalen Rocon U1 Raumstation gemessen wird"
+    }
+  ]
+}

@@ -1,181 +1,39 @@
-#ifdef ARDUINO_M5Stick_C_Plus
-#include <M5StickCPlus.h>
-#elif ARDUINO_M5Stick_C
-#include <M5StickC.h>
-#else
-#include <Arduino.h>
-#endif
+#include "main.hpp"
 
-#ifdef ARDUINO_ARCH_ESP8266
-#include <SoftwareSerial.h>
-#include <ESP8266WiFi.h>
-#else
-#include <WiFi.h>
-#endif
-#include <HardwareSerial.h>
+bool doRestartInStandaloneWifi = false;
 
-#include <PubSubClient.h>
-#include <ArduinoOTA.h>
-
-#include "setup.h" //<-- Configure your setup here
-#include "mqttserial.h"
-#include "converters.h"
-#include "comm.h"
-#include "mqtt.h"
-#include "restart.h"
-
-Converter converter;
-char registryIDs[32]; //Holds the registries to query
-bool busy = false;
-
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
-long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
-#endif
-
-bool contains(char array[], int size, int value)
-{
-  for (int i = 0; i < size; i++)
-  {
-    if (array[i] == value)
-      return true;
-  }
-  return false;
-}
-
-//Converts to string and add the value to the JSON message
-void updateValues(char regID)
-{
-  LabelDef *labels[128];
-  int num = 0;
-  converter.getLabels(regID, labels, num);
-  for (int i = 0; i < num; i++)
-  {
-    bool alpha = false;
-    for (size_t j = 0; j < strlen(labels[i]->asString); j++)
-    {
-      char c = labels[i]->asString[j];
-      if (!isdigit(c) && c!='.' && !(c=='-' && j==0)){
-        alpha = true;
-        break;
-      }
-    }
-
-    #ifdef ONEVAL_ONETOPIC
-    char topicBuff[128] = MQTT_OneTopic;
-    strcat(topicBuff,labels[i]->label);
-    client.publish(topicBuff, labels[i]->asString);
-
-    #else
-    if (alpha){      
-
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
-    }
-    else{//number, no quotes
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
-    }
-    #endif
-  }
-}
-
-uint16_t loopcount =0;
+uint16_t loopcount = 0;
 
 void extraLoop()
 {
+  while(webOTAIsBusy) {}
+
   client.loop();
-  ArduinoOTA.handle();
-  while (busy)
-  { //Stop processing during OTA
-    ArduinoOTA.handle();
-  }
+
+  if(config->CAN_ENABLED)
+    canBus_loop();
 
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
-  if (M5.BtnA.wasPressed()){//Turn back ON screen
+  if (M5.BtnA.wasPressed()) { // turn back ON screen
     M5.Axp.ScreenBreath(12);
     LCDTimeout = millis() + 30000;
-  }else if (LCDTimeout < millis()){//Turn screen off.
+  } else if (LCDTimeout < millis()) { // turn screen off.
     M5.Axp.ScreenBreath(0);
   }
   M5.update();
 #endif
+
+  if(!doRestartInStandaloneWifi)
+   return;
+
+  debugSerial.println("Restarting in standalone wifi mode");
+  config->STANDALONE_WIFI = true;
+  saveConfig();
+  restart_board();
 }
 
-void checkWifi()
+void setupScreen()
 {
-  int i = 0;
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    if (i++ == 120)
-    {
-      Serial.printf("Tried connecting for 60 sec, rebooting now.");
-      restart_board();
-    }
-  }
-}
-
-void setup_wifi()
-{
-  delay(10);
-  // We start by connecting to a WiFi network
-  mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
-
-  #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
-    IPAddress local_IP(WIFI_IP);
-    IPAddress gateway(WIFI_GATEWAY);
-    IPAddress subnet(WIFI_SUBNET);
-
-    #ifdef WIFI_PRIMARY_DNS
-      IPAddress primaryDNS(WIFI_PRIMARY_DNS);
-    #else
-      IPAddress primaryDNS();
-    #endif
-
-    #ifdef WIFI_SECONDARY_DNS
-      IPAddress secondaryDNS(WIFI_SECONDARY_DNS);
-    #else
-      IPAddress secondaryDNS();
-    #endif
-
-    if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-      mqttSerial.println("Failed to set static ip!");
-    }
-  #endif
-
-  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
-  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
-  WiFi.begin(WIFI_SSID, WIFI_PWD);
-  checkWifi();
-  mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
-}
-
-void initRegistries(){
-    //getting the list of registries to query from the selected values
-  for (size_t i = 0; i < sizeof(registryIDs); i++)
-  {
-    registryIDs[i]=0xff;
-  }
-
-  int i = 0;
-  for (auto &&label : labelDefs)
-  {
-    if (!contains(registryIDs, sizeof(registryIDs), label.registryID))
-    {
-      mqttSerial.printf("Adding registry 0x%2x to be queried.\n", label.registryID);
-      registryIDs[i++] = label.registryID;
-    }
-  }
-  if (i == 0)
-  {
-    mqttSerial.printf("ERROR - No values selected in the include file. Stopping.\n");
-    while (true)
-    {
-      extraLoop();
-    }
-  }
-}
-
-void setupScreen(){
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
   M5.begin();
   M5.Axp.EnableCoulombcounter();
@@ -184,10 +42,10 @@ void setupScreen(){
   M5.Lcd.fillScreen(TFT_WHITE);
   M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
   m5.Lcd.setTextDatum(MC_DATUM);
-  int xpos = M5.Lcd.width() / 2; // Half the screen width
-  int ypos = M5.Lcd.height() / 2; // Half the screen width
+  int xpos = M5.Lcd.width() / 2; // half the screen width
+  int ypos = M5.Lcd.height() / 2; // half the screen width
   M5.Lcd.setTextColor(TFT_DARKGREY);
-  M5.Lcd.drawString("ESPAltherma", xpos,ypos,1);
+  M5.Lcd.drawString("ESPAltherma", xpos, ypos, 1);
   delay(2000);
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setTextFont(1);
@@ -195,93 +53,148 @@ void setupScreen(){
 #endif
 }
 
+void IRAM_ATTR restartInStandaloneWifi()
+{
+  doRestartInStandaloneWifi = true;
+}
+
 void setup()
 {
   Serial.begin(115200);
+
+  if(!LittleFS.begin(true)) {
+      Serial.println("An Error has occurred while mounting LittleFS");
+      return;
+  }
+
+  esp_chip_info_t chip;
+  esp_chip_info(&chip);
+
+  debugSerial.printf("ESP32 Model: %i\n", chip.model);
+  debugSerial.printf("ESP32 Revision: %i\n", chip.revision);
+  debugSerial.printf("ESP32 Cores: %i\n", chip.cores);
+
+  initPersistence();
+
+  readConfig();
+
+  if(config->STANDALONE_WIFI || !config->configStored) {
+    debugSerial.println("Start in standalone mode..");
+    start_standalone_wifi();
+    WebUI_Init();
+  }
+
+  initMQTT();
+
   setupScreen();
-  MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
-  pinMode(PIN_THERM, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
 
-#ifdef PIN_SG1
-  //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
-  digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-  digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
-  pinMode(PIN_SG1, OUTPUT);
-  pinMode(PIN_SG2, OUTPUT);
+  if(!config->configStored) {
+    debugSerial.println("No config found, skip setup...");
+    return;
+  }
 
-#endif
+  if(config->X10A_ENABLED) {
+    X10AInit(config->PIN_RX, config->PIN_TX);
+    initRegistries(&registryBuffers, registryBufferSize, config->PARAMETERS, config->PARAMETERS_LENGTH);
+  }
+
+  if(config->HEATING_ENABLED) {
+    pinMode(config->PIN_HEATING, OUTPUT);
+    digitalWrite(config->PIN_HEATING, HIGH);
+  }
+
+  if(config->COOLING_ENABLED) {
+    pinMode(config->PIN_COOLING, OUTPUT);
+    digitalWrite(config->PIN_COOLING, HIGH);
+  }
+
+  if(config->SG_ENABLED) {
+    // Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
+    digitalWrite(config->PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(config->PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    pinMode(config->PIN_SG1, OUTPUT);
+    pinMode(config->PIN_SG2, OUTPUT);
+
+    debugSerial.printf("Configured SG Pins %u %u - State: %u\n", config->PIN_SG1, config->PIN_SG2, SG_RELAY_INACTIVE_STATE);
+  }
+
+  if(config->CAN_ENABLED) {
+    canBus_setup();
+  }
+
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
   gpio_pullup_dis(GPIO_NUM_25);
 #endif
 
-  EEPROM.begin(10);
-  readEEPROM();//Restore previous state
-  mqttSerial.print("Setting up wifi...");
-  setup_wifi();
-  ArduinoOTA.setHostname("ESPAltherma");
-  ArduinoOTA.onStart([]() {
-    busy = true;
-  });
+  readPersistence(); // restore previous state
 
-  ArduinoOTA.onError([](ota_error_t error) {
-    mqttSerial.print("Error on OTA - restarting");
-    restart_board();
-  });
-  ArduinoOTA.begin();
+  if(!config->STANDALONE_WIFI) {
+    debugSerial.println("Setting up wifi...");
+    setup_wifi();
+    WebUI_Init();
+  }
 
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setBufferSize(MAX_MSG_SIZE); //to support large json message
-  client.setCallback(callback);
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-  mqttSerial.print("Connecting to MQTT server...");
-  mqttSerial.begin(&client, "espaltherma/log");
+  pinMode(config->PIN_ENABLE_CONFIG, INPUT_PULLUP);
+  attachInterrupt(config->PIN_ENABLE_CONFIG, restartInStandaloneWifi, FALLING);
+
+  debugSerial.print("Connecting to MQTT server...\n");
   reconnectMqtt();
-  mqttSerial.println("OK!");
+  debugSerial.println("OK!");
 
-  initRegistries();
-  mqttSerial.print("ESPAltherma started!");
+  debugSerial.print("ESPAltherma started!\n");
 }
 
-void waitLoop(uint ms){
-      unsigned long start = millis();
-      while (millis() < start + ms) //wait .5sec between registries
-      {
-        extraLoop();
-      }
+void waitLoop(ulong ms)
+{
+  ulong start = millis();
+  while (millis() < start + ms) { // wait .5sec between registries
+
+    if(valueLoadState == Pending ||
+       wifiLoadState  == Pending ||
+       mainLoopStatus == LoopRunStatus::Stopping) {
+      return;
+    }
+
+    extraLoop();
+  }
 }
 
 void loop()
 {
-  unsigned long start = millis();
-  if (WiFi.status() != WL_CONNECTED)
-  { //restart board if needed
+  ulong loopStart = millis();
+
+  if(mainLoopStatus == LoopRunStatus::Stopped)
+    return;
+
+  if (wifiLoadState == ValueLoadState::NotLoading &&
+      !config->STANDALONE_WIFI &&
+      config->configStored &&
+      WiFi.status() != WL_CONNECTED) {
+    //restart board if needed
     checkWifi();
   }
-  if (!client.connected())
-  { //(re)connect to MQTT if needed
-    reconnectMqtt();
-  }
-  //Querying all registries
-  for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
-  {
-    unsigned char buff[64] = {0};
-    int tries = 0;
-    while (!queryRegistry(registryIDs[i], buff, PROTOCOL) && tries++ < 3)
-    {
-      mqttSerial.println("Retrying...");
-      waitLoop(1000);
+
+  if(!config->configStored) {
+    extraLoop();
+  } else {
+    webuiScanRegister();
+    webuiScanWifi();
+
+    if (!client.connected()) { // (re)connect to MQTT if needed
+      reconnectMqtt();
     }
-    unsigned char receivedRegistryID = PROTOCOL == 'S' ? buff[0] : buff[1];
-    if (registryIDs[i] == receivedRegistryID) //if replied registerID is coherent with the command
-    {
-      converter.readRegistryValues(buff, PROTOCOL); //process all values from the register
-      updateValues(registryIDs[i]);       //send them in mqtt
-      //waitLoop(500);//wait .5sec between registries
+
+    if(config->X10A_ENABLED) {
+      handleX10A(registryBuffers, registryBufferSize, config->PARAMETERS, config->PARAMETERS_LENGTH, true, config->X10A_PROTOCOL);
     }
+
+    ulong loopEnd = config->FREQUENCY - millis() + loopStart;
+
+    debugSerial.printf("Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
+    waitLoop(loopEnd);
   }
-  sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %ld ms...", FREQUENCY - millis() + start);
-  waitLoop(FREQUENCY - millis() + start);
+
+  if(mainLoopStatus == LoopRunStatus::Stopping)
+    mainLoopStatus = LoopRunStatus::Stopped;
 }

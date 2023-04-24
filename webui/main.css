@@ -1,0 +1,45 @@
+.row-selected {
+    background-color: rgb(233, 230, 230);
+}
+
+.grid-wifi {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    margin-top: calc(var(--spacing) * .25);
+}
+
+.container-wifilist { 
+    grid-area: 1 / 1 / 2 / 2; 
+}
+
+.container-refreshBtn { 
+    grid-area: 1 / 2 / 2 / 3; 
+}
+
+.parametersSection {
+    border: 0.1em;
+    border-style: dashed; 
+    border-radius: 0.5em; 
+    padding: 0.3em;
+    margin-bottom: 0.5em;
+}
+
+.parametersSection figure {
+    max-height: 500px;
+}
+
+.parametersSection figure table {
+    white-space: nowrap;
+}    
+
+.customParameterSection {
+    text-align: center; 
+    margin-top: 20pt;
+}
+
+.hidden {
+    display: none;
+}

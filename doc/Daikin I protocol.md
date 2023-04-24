@@ -1,3 +1,7 @@
+![](doc/images/logo.png)
+
+# Daikin I protocol
+
 ### Serial protocol
  BaudRate = 9600
  DataBits = 8
@@ -8,7 +12,7 @@
 Eg: 03-40-60-5C
 
 	0  1  2  3
-	
+
 Pos 0: Length of the command (-1 for the checksum)
 
 Pos 1: 40, always.
@@ -50,7 +54,7 @@ From the /include/ALTHERMAxxx.h the registry 0x61 contains the following labels:
 {0x61,12,105,2,1,"Indoor ambient temp. (R1T)"},
 {0x61,14,105,2,1,"Ext. indoor ambient sensor (R6T)"},
 
-Label format: {int registryIDp, int offsetp, int convidp, int dataSizep, int dataTypep, const char *labelp} 
+Label format: {int registryIDp, int offsetp, int convidp, int dataSizep, int dataTypep, const char *labelp}
 Offset: position of the value in the registry (starting at byte 4)
 
 Datatype: 1: temperature in (C), 2: pressure in (kgcm2), -1: everything else
@@ -72,7 +76,7 @@ eg:
 
 F9-00 - The registrys description tells us that for registry 0x21 we have uint16 at offset 0 an **A**nalog value
 `105,,0,0x21,A,-1,437,INV primary current (A)`
-So F9-00 codes for the *INV primary current (A)*. F9-00 little endian is 249. 
+So F9-00 codes for the *INV primary current (A)*. F9-00 little endian is 249.
 ConvID 105 tells us to divide by 10, we get 24.9 Amp.
 
 ### CRC
@@ -101,7 +105,7 @@ char buf[] = {8,33,73,0,1,1,5,5,0x81};
 
 write
 LEN  33  70  0  OPCODE=1 OPERAND=1 PAGEN SETTINGN DATADATA CRC
-receive 8 
+receive 8
 
 ```c#
 private long r_Comm_Fcom_Opcode()

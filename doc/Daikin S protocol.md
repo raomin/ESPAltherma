@@ -1,3 +1,7 @@
+![](doc/images/logo.png)
+
+# Daikin S protocol
+
 Some HP (older Daikin and Rotex?) use a slightly simpler protocol: Daikin S protocol.
 
 It seems to be the case for [DAIKIN EKHBH016BA6WN year 2009](https://github.com/raomin/ESPAltherma/issues/46) and is confirmed on my 2009 Rotex RDLQ014AA6V3.
