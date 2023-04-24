@@ -1,14 +1,12 @@
 #include "ELM327.hpp"
 
-Stream* Elm327Serial;
-
 bool DriverELM327::ATCommandIsOK()
 {
     char result[] = "KO";
 
     int packetSize = Elm327Serial->available();
 
-    if(packetSize == 2) {
+    if(packetSize == sizeof(result)) {
         result[0] = Elm327Serial->read();
         result[1] = Elm327Serial->read();
         Elm327Serial->read(); // > char
