@@ -1,5 +1,9 @@
 #include "CANDriver.hpp"
 
+// tranlated from fhemHPSU and pyHPSU github project.
+// https://github.com/ahermann86/fhemHPSU
+// https://github.com/zanac/pyHPSU
+
 CanFrame* CANDriver::getCanFrameFromCommand(CommandDef* cmd, bool setValue, int value)
 {
   CanFrame* frame = new CanFrame();

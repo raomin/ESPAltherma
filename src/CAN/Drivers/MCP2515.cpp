@@ -1,7 +1,5 @@
 #include "MCP2515.hpp"
 
-// tranlate from fhemHPSU
-
 using namespace MCP2515;
 
 DriverMCP2515* self;

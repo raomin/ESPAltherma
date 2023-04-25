@@ -5,7 +5,11 @@
 #include "CAN/CANDriver.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
+#ifndef NO_BLUETOOTH
 #include "BluetoothSerial.h"
+#endif
+
+#define ELM327_SERIAL_SPEED 38400
 
 class DriverELM327 : public CANDriver
 {
