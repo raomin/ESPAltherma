@@ -2,6 +2,7 @@
 
 String lastUploadFileName;
 bool webOTAIsBusy = false;
+bool updateVersionValid = false;
 LoopRunStatus mainLoopStatus = LoopRunStatus::Running;
 
 // Set web server port number to 80
@@ -61,9 +62,9 @@ void onWifiLoadFinished(AsyncWebServerRequest *request)
 
 void onLoadBoardInfo(AsyncWebServerRequest *request)
 {
-#if defined(ARDUINO_M5Stick_C)
-  const String response =
+  String response =
     "{"
+#if defined(ARDUINO_M5Stick_C)
       "\"Pins\": {"
         "\"0\": \"GPIO0 - ADC2_1,TOUCH1\","
 #if defined(ARDUINO_M5Stick_C_Plus)
@@ -104,8 +105,6 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
       "}"
     "}";
 #elif defined(ESP32)
-  const String response =
-    "{"
       "\"Pins\": {"
         "\"0\": \"GPIO0 - ADC2_1,TOUCH1\","
         "\"1\": \"GPIO1 - U0_TXD,CLK3\","
@@ -160,10 +159,37 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
         "\"mqtt_onetopic_name\": \"OneATTR/\","
         "\"mqtt_port\": 1883"
       "}"
-    "}";
 #else
-  const String response = "{\"Pins\": {}, \"Default\": {}}";
+    "\"Pins\": {},"
+    "\"Default\": {}"
 #endif
+  ",";
+
+  esp_app_desc_t app_info;
+  esp_ota_get_partition_description(esp_ota_get_running_partition(), &app_info);
+
+  SemanticVersion version(app_info.version);
+
+  response += "\"Version\": \"";
+
+  if(version.hasVersionNr) {
+    response += version.Major;
+    response += ".";
+    response += version.Minor;
+    response += ".";
+    response += version.Patch;
+    response += "-";
+  }
+
+  if(version.hasBuildNr) {
+    response += version.Build;
+    response += "-";
+  }
+
+  if(version.hasCommitNr) {
+    response += version.Extra;
+    response += "\"}";
+  }
 
   request->send(200, "application/json", response);
 }
@@ -862,13 +888,13 @@ void onUpdate(AsyncWebServerRequest *request)
 
   request->onDisconnect([hasError]()
   {
-    if(hasError)
+    if(hasError || !updateVersionValid)
       return;
 
     restart_board();
   });
 
-  AsyncWebServerResponse *response = request->beginResponse((hasError)?500:200, "text/plain", (hasError)?"FAIL":"OK");
+  AsyncWebServerResponse *response = request->beginResponse((hasError)?500:200, "text/plain", (hasError)?"FAIL":((updateVersionValid)?"OK":"INVALID"));
   response->addHeader("Connection", "close");
   response->addHeader("Access-Control-Allow-Origin", "*");
   request->send(response);
@@ -879,6 +905,8 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
   //Upload handler chunks in data
   if (!index)
   {
+    updateVersionValid = false;
+
     debugSerial.print("Start Web OTA Update - MD5: ");
 
     if(!request->hasParam("MD5", true))
@@ -924,12 +952,32 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
 
   if (final)
   { // if the final flag is set then this is the last frame of data
+    const esp_partition_t* updatePartition = esp_ota_get_next_update_partition(NULL);
+    const esp_partition_t* runningPartition = esp_ota_get_running_partition();
     debugSerial.print("\n--> Update finished!\n");
     webOTAIsBusy = false;
     if (!Update.end(true))
     { //true to set the size to the current progress
       Update.printError(debugSerial);
       return request->send(400, "text/plain", "Could not end OTA");
+    }
+
+    esp_app_desc_t appRunning, appUpdate;
+    esp_ota_get_partition_description(runningPartition, &appRunning);
+    esp_ota_get_partition_description(updatePartition, &appUpdate);
+
+    SemanticVersion runningVersion(appRunning.version);
+    SemanticVersion updateVersion(appUpdate.version);
+
+    if (!runningVersion.hasVersionNr ||
+        !updateVersion.hasVersionNr ||
+        runningVersion.Major <= updateVersion.Major ||
+        (runningVersion.Major <= updateVersion.Major &&
+         runningVersion.Minor <= updateVersion.Minor) ||
+        (runningVersion.Major <= updateVersion.Major &&
+         runningVersion.Minor <= updateVersion.Minor &&
+         runningVersion.Patch <= updateVersion.Patch)) {
+      updateVersionValid = true;
     }
   }
 }

@@ -8,6 +8,7 @@ let modelCommands = [];
 let models = [];
 let canCommands = [];
 let boardDefaults = {};
+let currentFirmwareVersion = "";
 
 let fetchWifiNetworksBtnValue;
 let fetchWifiErrorCounter = 0;
@@ -77,6 +78,8 @@ async function loadBoardDefaults()
         }
 
         boardDefaults = data['Default'];
+        currentFirmwareVersion = data['Version'];
+        document.getElementById('firmware-version').innerText = currentFirmwareVersion;
         resetToDefaults();
     })
     .catch(function(err) {
@@ -737,10 +740,18 @@ async function sendUpdate(event)
                 if (request.status === 200) {
                     updateFile.removeAttribute('aria-invalid');
                     updateFile.value = null;
-                    document.getElementById("otaProgress").innerText = "Finished! Reload Config page in 3 seconds";
-                    setTimeout(() => {
-                        document.location.reload();
-                    }, 3000);
+
+                    if(request.responseText == "INVALID")
+                    {
+                        oatError = "Update file is invalid or version is lower then current version!";
+                    }
+                    else
+                    {
+                        document.getElementById("otaProgress").innerText = "Finished! Reload Config page in 3 seconds";
+                        setTimeout(() => {
+                            document.location.reload();
+                        }, 3000);
+                    }
                 } else if (request.status !== 500) {
                     oatError = `[HTTP ERROR] ${request.statusText}`;
                 } else {

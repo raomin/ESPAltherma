@@ -5,6 +5,7 @@
 #include <Update.h>
 #include "ESPAsyncWebServer.h"
 #include <WebSerialLite.h>
+#include <esp_ota_ops.h>
 #include "esp_task_wdt.h"
 #include "ArduinoJson.h"
 #include "X10A/comm.hpp"
@@ -13,6 +14,7 @@
 #include "persistence.hpp"
 #include "arrayFunctions.hpp"
 #include "webuiBackgroundTasks.hpp"
+#include "SemanticVersion.hpp"
 
 #define MODELS_FILE "/models.json"
 #define CAN_COMMANDS_FILE "/CANCommands.json"
