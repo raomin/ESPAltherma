@@ -400,22 +400,22 @@ void onUploadConfigFile(AsyncWebServerRequest *request)
 
 void onLoadValuesResult(AsyncWebServerRequest *request)
 {
-  if(valueLoadState == NotLoading)
+  if(valueX10ALoadState == NotLoading)
   {
     request->send(503, "text/plain", "No values loading in progress");
     return;
   }
 
-  if(valueLoadState == Loading || valueLoadState == Pending)
+  if(valueX10ALoadState == Loading || valueX10ALoadState == Pending)
   {
     request->send(503, "text/plain", "Values loading not finished");
     return;
   }
 
-  request->send(200, "application/json", valueLoadResponse);
-  valueLoadResponse = "";
+  request->send(200, "application/json", valueX10ALoadResponse);
+  valueX10ALoadResponse = "";
 
-  valueLoadState = NotLoading;
+  valueX10ALoadState = NotLoading;
 }
 
 void onLoadValues(AsyncWebServerRequest *request)
@@ -426,18 +426,18 @@ void onLoadValues(AsyncWebServerRequest *request)
     return;
   }
 
-  if(valueLoadState != NotLoading)
+  if(valueX10ALoadState != NotLoading)
   {
     request->send(202, "text/plain", "Value loading in progress");
     return;
   }
 
-  webuiScanRegisterConfig.PinRx = request->getParam("PIN_RX", true)->value().toInt();
-  webuiScanRegisterConfig.PinTx = request->getParam("PIN_TX", true)->value().toInt();
-  webuiScanRegisterConfig.protocol = (X10AProtocol)request->getParam("X10A_PROTOCOL", true)->value().toInt();
-  webuiScanRegisterConfig.Params = request->getParam("PARAMS", true)->value();
+  webuiScanX10ARegisterConfig.PinRx = request->getParam("PIN_RX", true)->value().toInt();
+  webuiScanX10ARegisterConfig.PinTx = request->getParam("PIN_TX", true)->value().toInt();
+  webuiScanX10ARegisterConfig.Protocol = (X10AProtocol)request->getParam("X10A_PROTOCOL", true)->value().toInt();
+  webuiScanX10ARegisterConfig.Params = request->getParam("PARAMS", true)->value();
 
-  valueLoadState = Pending;
+  valueX10ALoadState = Pending;
 
   request->send(200, "application/json", "OK");
 }
@@ -1087,6 +1087,48 @@ void onReset(AsyncWebServerRequest *request)
   request->send(200, "text/javascript", "OK");
 }
 
+void onLoadCANValuesResult(AsyncWebServerRequest *request)
+{
+  if(valueCANLoadState == NotLoading)
+  {
+    request->send(503, "text/plain", "No values loading in progress");
+    return;
+  }
+
+  if(valueCANLoadState == Loading || valueCANLoadState == Pending)
+  {
+    request->send(503, "text/plain", "Values loading not finished");
+    return;
+  }
+
+  request->send(200, "application/json", valueCANLoadResponse);
+  valueCANLoadResponse = "";
+
+  valueCANLoadState = NotLoading;
+}
+
+void onLoadCANValues(AsyncWebServerRequest *request)
+{
+  if(!request->hasParam("KBPS", true) || !request->hasParam("PARAMS", true))
+  {
+    request->send(422, "text/plain", "Missing parameters KBPS or PARAMS");
+    return;
+  }
+
+  if(valueCANLoadState != NotLoading)
+  {
+    request->send(202, "text/plain", "Value loading in progress");
+    return;
+  }
+
+  webuiScanCANRegisterConfig.KBPS = request->getParam("KBPS", true)->value().toInt();
+  webuiScanCANRegisterConfig.Params = request->getParam("PARAMS", true)->value();
+
+  valueCANLoadState = Pending;
+
+  request->send(200, "application/json", "OK");
+}
+
 void WebUI_Init()
 {
   if(!LittleFS.exists(MODELS_FILE))
@@ -1113,6 +1155,8 @@ void WebUI_Init()
   server.on("/saveConfig", HTTP_POST, onSaveConfig);
   server.on("/exportConfig", HTTP_GET, onExportConfig);
   server.on("/loadConfig", HTTP_GET, onLoadConfig);
+  server.on("/can/loadValues", HTTP_POST, onLoadCANValues);
+  server.on("/can/loadValuesResult", HTTP_GET, onLoadCANValuesResult);
   server.on("/wifi/loadNetworks", HTTP_GET, onWifiLoadNetworks);
   server.on("/wifi/loadFinished", HTTP_GET, onWifiLoadFinished);
   server.on("/format", HTTP_GET, onFormat);

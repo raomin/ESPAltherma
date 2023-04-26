@@ -14,27 +14,58 @@
 #define MODELS_DOC_SIZE 1024*10
 #define WIFI_DOC_SIZE 1024
 
-struct WebUIScanRegister {
-  int8_t PinRx;
-  int8_t PinTx;
-  X10AProtocol protocol;
-  String Params;
+struct WebUIScanX10ARegister {
+    int8_t PinRx;
+    int8_t PinTx;
+    X10AProtocol Protocol;
+    String Params;
+};
+
+struct WebUIScanCANRegister {
+    CAN_ICTypes CAN_IC;
+    CAN_ICBus CAN_BUS;
+    struct
+    {
+        uint8_t PIN_CAN_RX;
+        uint8_t PIN_CAN_TX;
+    } CAN_UART;
+    struct
+    {
+        uint8_t PIN_MOSI;
+        uint8_t PIN_MISO;
+        uint8_t PIN_SCK;
+        uint8_t PIN_CS;
+        uint8_t PIN_INT;
+        uint8_t IC_MHZ;
+    } CAN_SPI;
+    struct {
+        String DEVICENAME;
+        bool USE_PIN;
+        String PIN;
+    } CAN_BLUETOOTH;
+    uint16_t CAN_SPEED_KBPS;
+    int16_t KBPS;
+    String Params;
 };
 
 enum ValueLoadState {
-  NotLoading,
-  Pending,
-  Loading,
-  LoadingFinished
+    NotLoading,
+    Pending,
+    Loading,
+    LoadingFinished
 };
 
-extern WebUIScanRegister webuiScanRegisterConfig;
-extern ValueLoadState valueLoadState;
+extern WebUIScanX10ARegister webuiScanX10ARegisterConfig;
+extern WebUIScanCANRegister webuiScanCANRegisterConfig;
+extern ValueLoadState valueX10ALoadState;
+extern ValueLoadState valueCANLoadState;
 extern ValueLoadState wifiLoadState;
-extern String valueLoadResponse;
+extern String valueX10ALoadResponse;
+extern String valueCANLoadResponse;
 extern String wifiLoadResponse;
 
-void webuiScanRegister();
+void webuiScanX10ARegister();
+void webuiScanCANRegister();
 void webuiScanWifi();
 
 #endif

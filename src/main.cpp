@@ -150,7 +150,8 @@ void waitLoop(ulong ms)
   ulong start = millis();
   while (millis() < start + ms) { // wait .5sec between registries
 
-    if(valueLoadState == Pending ||
+    if(valueX10ALoadState == Pending ||
+       valueCANLoadState == Pending ||
        wifiLoadState  == Pending ||
        mainLoopStatus == LoopRunStatus::Stopping) {
       return;
@@ -178,7 +179,8 @@ void loop()
   if(!config->configStored) {
     extraLoop();
   } else {
-    webuiScanRegister();
+    webuiScanX10ARegister();
+    webuiScanCANRegister();
     webuiScanWifi();
 
     if (!client.connected()) { // (re)connect to MQTT if needed
