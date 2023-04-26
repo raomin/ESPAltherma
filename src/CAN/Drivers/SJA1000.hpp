@@ -16,12 +16,14 @@ private:
 
   bool setMode(CanDriverMode mode);
   bool getRate(const uint16_t speed, twai_timing_config_t &t_config);
+  bool stopInterface();
 
 public:
   bool initInterface();
   void writeLoopbackTest();
   void sendCommand(CommandDef* cmd, bool setValue = false, int value = 0);
-   void handleLoop();
+  void handleLoop();
+  ~DriverSJA1000();
 };
 
 #endif

@@ -24,6 +24,7 @@ public:
   void writeLoopbackTest();
   void sendCommand(CommandDef* cmd, bool setValue = false, int value = 0);
   void handleInterrupt();
+  ~DriverMCP2515();
 };
 
 #endif

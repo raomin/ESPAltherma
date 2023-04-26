@@ -349,3 +349,9 @@ void DriverMCP2515::sendCommand(CommandDef* cmd, bool setValue, int value)
 
   delete frame;
 }
+
+DriverMCP2515::~DriverMCP2515()
+{
+  delete mcp2515;
+  self = nullptr;
+}

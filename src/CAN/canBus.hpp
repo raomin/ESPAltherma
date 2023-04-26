@@ -12,4 +12,6 @@ void canBus_setup();
 
 void canBus_loop();
 
+void canBus_stop();
+
 #endif

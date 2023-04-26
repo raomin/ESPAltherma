@@ -34,3 +34,9 @@ void canBus_loop()
     if(driver != nullptr)
         driver->handleLoop();
 }
+
+void canBus_stop()
+{
+    if(driver != nullptr)
+        delete driver;
+}

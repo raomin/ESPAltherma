@@ -19,6 +19,7 @@ private:
     bool setMode(CanDriverMode mode);
     bool ATCommandIsOK();
     bool listenOnly;
+    bool deleteNeeded = false;
     String received = "";
     Stream* Elm327Serial;
 
@@ -26,6 +27,7 @@ public:
     bool initInterface();
     void handleLoop();
     void sendCommand(CommandDef* cmd, bool setValue = false, int value = 0);
+    ~DriverELM327();
 };
 
 #endif

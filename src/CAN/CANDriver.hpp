@@ -52,6 +52,7 @@ public:
     void listenOnly(bool value = true);
     void enableSniffing(bool value);
     void handleMQTTSetRequest(const String &label, const char *payload, const uint32_t length);
+    virtual ~CANDriver();
 };
 
 #endif

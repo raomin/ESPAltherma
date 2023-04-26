@@ -192,3 +192,35 @@ bool DriverSJA1000::setMode(CanDriverMode mode)
 
     return true;
 }
+
+
+bool DriverSJA1000::stopInterface()
+{
+    int result;
+
+    if(driverIsRunning) {
+        //Stop the TWAI driver
+        if ((result = twai_stop()) != ESP_OK) {
+            debugSerial.print("CAN-Bus stop failed! ");
+            debugSerial.println(result);
+            return false;
+        }
+
+        //Uninstall the TWAI driver
+        if ((result = twai_driver_uninstall()) != ESP_OK) {
+            debugSerial.print("CAN-Bus uninstall failed! ");
+            debugSerial.println(result);
+            return false;
+        }
+
+        driverIsRunning = false;
+    }
+
+    return driverIsRunning;
+}
+
+
+DriverSJA1000::~DriverSJA1000()
+{
+    stopInterface();
+}

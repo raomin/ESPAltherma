@@ -405,8 +405,7 @@ void CANDriver::handleMQTTSetRequest(const String &label, const char *payload, c
 void CANDriver::defaultInit()
 {
   cmdSendInfos = new CMDSendInfo*[config->COMMANDS_LENGTH];
-  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
-  {
+  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
     cmdSendInfos[i] = new CMDSendInfo();
     cmdSendInfos[i]->cmd = config->COMMANDS[i];
   }
@@ -418,4 +417,11 @@ void CANDriver::defaultInit()
   listenOnly(config->CAN_READONLY_ENABLED);
 
   debugSerial.println("CAN-Bus inited");
+}
+
+CANDriver::~CANDriver() {
+  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
+    delete cmdSendInfos[i];
+  }
+  delete[] cmdSendInfos;
 }

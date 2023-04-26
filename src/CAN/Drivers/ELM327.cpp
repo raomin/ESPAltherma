@@ -113,6 +113,7 @@ bool DriverELM327::initInterface()
     if(config->CAN_BUS == CAN_ICBus::BT) {
         #ifndef NO_BLUETOOTH
         BluetoothSerial* SerialBT = new BluetoothSerial();
+        deleteNeeded = true;
 
         if(!SerialBT->begin("ESPAltherma", true)) {
             debugSerial.println("CAN-Bus init failed! BT - begin failed");
@@ -231,4 +232,10 @@ void DriverELM327::sendCommand(CommandDef* cmd, bool setValue, int value)
     }
 
     delete frame;
+}
+
+DriverELM327::~DriverELM327()
+{
+    if(deleteNeeded)
+        delete Elm327Serial;
 }
