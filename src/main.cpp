@@ -119,7 +119,32 @@ void setup()
   }
 
   if(config->CAN_ENABLED) {
-    canBus_setup();
+    void* driverConfig = nullptr;
+
+    switch (config->CAN_IC) {
+      case CAN_ICTypes::MCP2515:
+          driverConfig = &config->CAN_SPI;
+          break;
+
+      case CAN_ICTypes::ELM327:
+          if(config->CAN_BUS == CAN_ICBus::UART) {
+            driverConfig = &config->CAN_UART;
+          } else if(config->CAN_BUS == CAN_ICBus::BT) {
+            driverConfig = &config->CAN_BLUETOOTH;
+          }
+          break;
+
+      case CAN_ICTypes::SJA1000:
+          driverConfig = &config->CAN_UART;
+          break;
+
+      default:
+          break;
+    }
+
+    if(driverConfig != nullptr) {
+        canBus_setup(config->CAN_IC, config->CAN_BUS, config->CAN_SPEED_KBPS, driverConfig);
+    }
   }
 
 #ifdef ARDUINO_M5Stick_C_Plus

@@ -1,5 +1,10 @@
 #include "ELM327.hpp"
 
+DriverELM327::DriverELM327(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig) : CANDriver(bus, speed, driverConfig)
+{
+
+}
+
 bool DriverELM327::ATCommandIsOK()
 {
     char result[] = "KO";
@@ -138,7 +143,7 @@ bool DriverELM327::initInterface()
         return false;
         #endif
     } else if(config->CAN_BUS == CAN_ICBus::UART) {
-        Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, config->PIN_CAN_RX, config->PIN_CAN_TX);
+        Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, config->CAN_UART.PIN_RX, config->CAN_UART.PIN_TX);
         delay(100);
 
         if(!Serial1) {

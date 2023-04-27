@@ -19,6 +19,7 @@ private:
   bool stopInterface();
 
 public:
+  DriverSJA1000(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig);
   bool initInterface();
   void writeLoopbackTest();
   void sendCommand(CommandDef* cmd, bool setValue = false, int value = 0);

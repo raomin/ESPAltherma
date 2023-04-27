@@ -5,6 +5,7 @@
 #include "MQTT/mqtt.hpp"
 
 #define CAN_MESSAGE_TIMEOUT 4 // define timout in seconds for message send to get answer
+#define NOT_IMPLEMENTED = 0
 
 struct CanFrame
 {
@@ -37,17 +38,22 @@ protected:
     ulong lastTimeRunned = 0;
     bool sniffingEnabled = false;
     CanDriverMode currentMode;
+    CAN_ICBus bus;
+    uint16_t speed;
+    const void* driverConfig;
+
     CanFrame* getCanFrameFromCommand(CommandDef* cmd, bool setValue, int value);
     void sniffCAN(uint32_t const, CanFrame const);
     CommandDef* getCommandFromData(const uint8_t *data);
     int HPSU_toSigned(uint16_t value, char* unit);
-    virtual bool setMode(CanDriverMode mode);
+    virtual bool setMode(CanDriverMode mode) NOT_IMPLEMENTED;
     void defaultInit();
 
 public:
-    virtual bool initInterface();
+    CANDriver(const CAN_ICBus bus, const uint16_t speed, const void* driverConfig);
+    virtual bool initInterface() NOT_IMPLEMENTED;
     virtual void handleLoop();
-    virtual void sendCommand(CommandDef *cmd, bool setValue = false, int value = 0);
+    virtual void sendCommand(CommandDef *cmd, bool setValue = false, int value = 0) NOT_IMPLEMENTED;
     void onDataRecieved(uint32_t const, CanFrame const);
     void listenOnly(bool value = true);
     void enableSniffing(bool value);

@@ -1,5 +1,10 @@
 #include "SJA1000.hpp"
 
+DriverSJA1000::DriverSJA1000(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig) : CANDriver(bus, speed, driverConfig)
+{
+
+}
+
 bool DriverSJA1000::getRate(const uint16_t speed, twai_timing_config_t &t_config)
 {
     esp_chip_info_t chip;
@@ -7,8 +12,7 @@ bool DriverSJA1000::getRate(const uint16_t speed, twai_timing_config_t &t_config
 
     bool found = true;
 
-    switch (speed)
-    {
+    switch (speed) {
 #if (SOC_TWAI_BRP_MAX > 256)
         case 10:
             t_config = TWAI_TIMING_CONFIG_10KBITS();
@@ -66,8 +70,7 @@ bool DriverSJA1000::initInterface()
 
     bool ratePossible = getRate(config->CAN_SPEED_KBPS, t_config);
 
-    if(!ratePossible)
-    {
+    if(!ratePossible) {
         debugSerial.println("CAN-Bus init failed! E1");
         return false;
     }
@@ -109,8 +112,7 @@ void DriverSJA1000::handleLoop()
     twai_status_info_t status_info;
     twai_get_status_info(&status_info);
 
-    while(status_info.msgs_to_rx > 0)
-    {
+    while(status_info.msgs_to_rx > 0) {
         twai_message_t message;
 
         if (twai_receive(&message, 0) != ESP_OK) {
@@ -132,39 +134,19 @@ void DriverSJA1000::handleLoop()
 
 bool DriverSJA1000::setMode(CanDriverMode mode)
 {
-    int result;
+    stopInterface();
 
-    if(driverIsRunning)
-    {
-        //Stop the TWAI driver
-        if ((result = twai_stop()) != ESP_OK) {
-            debugSerial.print("CAN-Bus stop failed! ");
-            debugSerial.println(result);
-            return false;
-        }
-
-        //Uninstall the TWAI driver
-        if ((result = twai_driver_uninstall()) != ESP_OK) {
-            debugSerial.print("CAN-Bus uninstall failed! ");
-            debugSerial.println(result);
-            return false;
-        }
-
-        driverIsRunning = false;
-    }
-
-    switch (mode)
-    {
+    switch (mode) {
     case CanDriverMode::Normal:
-        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->PIN_CAN_TX, (gpio_num_t)config->PIN_CAN_RX, TWAI_MODE_NORMAL);
+        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->CAN_UART.PIN_TX, (gpio_num_t)config->CAN_UART.PIN_RX, TWAI_MODE_NORMAL);
         break;
 
     case CanDriverMode::Loopback:
-        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->PIN_CAN_TX, (gpio_num_t)config->PIN_CAN_RX, TWAI_MODE_NO_ACK);
+        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->CAN_UART.PIN_TX, (gpio_num_t)config->CAN_UART.PIN_RX, TWAI_MODE_NO_ACK);
         break;
 
     case CanDriverMode::ListenOnly:
-        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->PIN_CAN_TX, (gpio_num_t)config->PIN_CAN_RX, TWAI_MODE_LISTEN_ONLY);
+        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->CAN_UART.PIN_TX, (gpio_num_t)config->CAN_UART.PIN_RX, TWAI_MODE_LISTEN_ONLY);
         break;
 
     default:
@@ -173,15 +155,15 @@ bool DriverSJA1000::setMode(CanDriverMode mode)
 
     debugSerial.printf("CAN-Bus mode %u\n", (uint8_t)mode);
 
-    if ((result = twai_driver_install(&g_config, &t_config, &f_config)) != ESP_OK)
-    {
+    int result;
+
+    if ((result = twai_driver_install(&g_config, &t_config, &f_config)) != ESP_OK) {
         debugSerial.print("CAN-Bus init failed! E2 - ");
         debugSerial.println(result);
         return false;
     }
 
-    if ((result = twai_start()) != ESP_OK)
-    {
+    if ((result = twai_start()) != ESP_OK) {
         debugSerial.print("CAN-Bus init failed! E3 - ");
         debugSerial.println(result);
         return false;

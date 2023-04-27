@@ -118,6 +118,12 @@ void CANDriver::sniffCAN(const uint32_t timestamp_us, CanFrame const frame)
   debugSerial.println(resultText);
 }
 
+CANDriver::CANDriver(const CAN_ICBus bus, const uint16_t speed, const void *driverConfigArg) : driverConfig(driverConfigArg)
+{
+  this->bus = bus;
+  this->speed = speed;
+}
+
 void CANDriver::handleLoop()
 {
   if(!canInited)

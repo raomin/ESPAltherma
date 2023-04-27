@@ -745,8 +745,8 @@ void onSaveConfig(AsyncWebServerRequest *request)
     }
     else if(config->CAN_BUS == CAN_ICBus::UART)
     {
-      config->PIN_CAN_RX = request->getParam("pin_can_uart_rx", true)->value().toInt();
-      config->PIN_CAN_TX = request->getParam("pin_can_uart_tx", true)->value().toInt();
+      config->CAN_UART.PIN_RX = request->getParam("pin_can_uart_rx", true)->value().toInt();
+      config->CAN_UART.PIN_TX = request->getParam("pin_can_uart_tx", true)->value().toInt();
     }
     else if(config->CAN_BUS == CAN_ICBus::BT)
     {

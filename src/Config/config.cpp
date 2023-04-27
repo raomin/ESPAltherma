@@ -4,19 +4,15 @@ Config* config = nullptr;
 
 Config::~Config()
 {
-    if(PARAMETERS_LENGTH)
-    {
-        for (size_t i = 0; i < PARAMETERS_LENGTH; i++)
-        {
+    if(PARAMETERS_LENGTH) {
+        for (size_t i = 0; i < PARAMETERS_LENGTH; i++) {
             delete PARAMETERS[i];
         }
         delete[] PARAMETERS;
     }
 
-    if(COMMANDS_LENGTH)
-    {
-        for (size_t i = 0; i < COMMANDS_LENGTH; i++)
-        {
+    if(COMMANDS_LENGTH) {
+        for (size_t i = 0; i < COMMANDS_LENGTH; i++) {
             delete COMMANDS[i];
         }
         delete[] COMMANDS;
@@ -48,13 +44,11 @@ void readConfig()
     config->configStored = true;
     config->STANDALONE_WIFI = configDoc["STANDALONE_WIFI"].as<const bool>();
 
-    if(!config->STANDALONE_WIFI)
-    {
+    if(!config->STANDALONE_WIFI) {
         config->SSID = (char *)configDoc["SSID"].as<const char*>();
         config->SSID_PASSWORD = (char *)configDoc["SSID_PASSWORD"].as<const char*>();
         config->SSID_STATIC_IP = configDoc["SSID_STATIC_IP"].as<const bool>();
-        if(config->SSID_STATIC_IP)
-        {
+        if(config->SSID_STATIC_IP) {
             config->SSID_IP = (char *)configDoc["SSID_IP"].as<const char*>();
             config->SSID_SUBNET = (char *)configDoc["SSID_SUBNET"].as<const char*>();
             config->SSID_GATEWAY = (char *)configDoc["SSID_GATEWAY"].as<const char*>();
@@ -70,8 +64,7 @@ void readConfig()
     config->MQTT_USE_JSONTABLE = configDoc["MQTT_USE_JSONTABLE"].as<const bool>();
     config->MQTT_USE_ONETOPIC = configDoc["MQTT_USE_ONETOPIC"].as<const bool>();
 
-    if(config->MQTT_USE_ONETOPIC)
-    {
+    if(config->MQTT_USE_ONETOPIC) {
         config->MQTT_ONETOPIC_NAME = (char *)configDoc["MQTT_ONETOPIC_NAME"].as<const char*>();
     }
 
@@ -93,8 +86,9 @@ void readConfig()
     config->CAN_ENABLED = configDoc["CAN_ENABLED"].as<const bool>();
     config->CAN_IC = (CAN_ICTypes)configDoc["CAN_IC"].as<uint8_t>();
     config->CAN_BUS = (CAN_ICBus)configDoc["CAN_BUS"].as<uint8_t>();
-    config->PIN_CAN_RX = configDoc["PIN_CAN_RX"].as<uint8_t>();
-    config->PIN_CAN_TX = configDoc["PIN_CAN_TX"].as<uint8_t>();
+
+    config->CAN_UART.PIN_RX = configDoc["UART"]["PIN_RX"].as<uint8_t>();
+    config->CAN_UART.PIN_TX = configDoc["UART"]["PIN_TX"].as<uint8_t>();
 
     config->CAN_SPI.PIN_MISO = configDoc["SPI"]["MISO"].as<uint8_t>();
     config->CAN_SPI.PIN_MOSI = configDoc["SPI"]["MOSI"].as<uint8_t>();
@@ -112,8 +106,7 @@ void readConfig()
     config->CAN_READONLY_ENABLED = configDoc["CAN_READONLY_ENABLED"].as<const bool>();
     config->CAN_SNIFFING_ENABLED = configDoc["CAN_SNIFFING_ENABLED"].as<const bool>();
     config->CAN_AUTOPOLL_MODE = (CAN_PollMode)configDoc["CAN_AUTOPOLL_MODE"].as<uint8_t>();
-    if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
-    {
+    if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
         config->CAN_AUTOPOLL_TIME = configDoc["CAN_AUTOPOLL_TIME"].as<uint16_t>();
     }
 
@@ -121,8 +114,7 @@ void readConfig()
     config->PARAMETERS_LENGTH = parameters.size();
     config->PARAMETERS = new ParameterDef*[config->PARAMETERS_LENGTH];
 
-    for(size_t i = 0; i < config->PARAMETERS_LENGTH; i++)
-    {
+    for(size_t i = 0; i < config->PARAMETERS_LENGTH; i++) {
         JsonArray parameter = parameters[i];
         config->PARAMETERS[i] = new ParameterDef(
             parameter[0].as<const int>(),
@@ -137,8 +129,7 @@ void readConfig()
     config->COMMANDS_LENGTH = commands.size();
     config->COMMANDS = new CommandDef*[config->COMMANDS_LENGTH];
 
-    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
-    {
+    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
         JsonArray command = commands[i];
 
         JsonArray commandBytes = command[COMMANDDEF_INDEX_COMMAND];
@@ -155,8 +146,7 @@ void readConfig()
         CommandDefValueCode** valueCodes;
         uint8_t valueCodeSize = 0;
 
-        if(command.size() > COMMANDDEF_INDEX_VALUE_CODE)
-        {
+        if(command.size() > COMMANDDEF_INDEX_VALUE_CODE) {
             JsonObject valueCodeCommands = command[COMMANDDEF_INDEX_VALUE_CODE].as<JsonObject>();
             valueCodeSize = valueCodeCommands.size();
             valueCodes = new CommandDefValueCode*[valueCodeSize];
@@ -167,9 +157,7 @@ void readConfig()
                 valueCodes[valueCodeCounter] = new CommandDefValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
                 valueCodeCounter++;
             }
-        }
-        else
-        {
+        } else {
             valueCodes = nullptr;
         }
 
@@ -194,14 +182,12 @@ void saveConfig()
     DynamicJsonDocument configDoc(MODELS_CONFIG_SIZE);
     configDoc["STANDALONE_WIFI"] = config->STANDALONE_WIFI;
 
-    if(!config->STANDALONE_WIFI)
-    {
+    if(!config->STANDALONE_WIFI) {
         configDoc["SSID"] = config->SSID;
         configDoc["SSID_PASSWORD"] = config->SSID_PASSWORD;
         configDoc["SSID_STATIC_IP"] = config->SSID_STATIC_IP;
 
-        if(config->SSID_STATIC_IP)
-        {
+        if(config->SSID_STATIC_IP) {
             configDoc["SSID_IP"] = config->SSID_IP;
             configDoc["SSID_SUBNET"] = config->SSID_SUBNET;
             configDoc["SSID_GATEWAY"] = config->SSID_GATEWAY;
@@ -217,8 +203,7 @@ void saveConfig()
     configDoc["MQTT_USE_JSONTABLE"] = config->MQTT_USE_JSONTABLE;
     configDoc["MQTT_USE_ONETOPIC"] = config->MQTT_USE_ONETOPIC;
 
-    if(config->MQTT_USE_ONETOPIC)
-    {
+    if(config->MQTT_USE_ONETOPIC) {
         configDoc["MQTT_ONETOPIC_NAME"] = config->MQTT_ONETOPIC_NAME;
     }
 
@@ -239,8 +224,10 @@ void saveConfig()
     configDoc["CAN_ENABLED"] = config->CAN_ENABLED;
     configDoc["CAN_IC"] = (uint8_t)config->CAN_IC;
     configDoc["CAN_BUS"] = (uint8_t)config->CAN_BUS;
-    configDoc["PIN_CAN_RX"] = config->PIN_CAN_RX;
-    configDoc["PIN_CAN_TX"] = config->PIN_CAN_TX;
+
+    JsonObject canUART = configDoc.createNestedObject("UART");
+    canUART["PIN_RX"] = config->CAN_UART.PIN_RX;
+    canUART["PIN_TX"] = config->CAN_UART.PIN_TX;
 
     JsonObject canSPI = configDoc.createNestedObject("SPI");
     canSPI["MISO"] = config->CAN_SPI.PIN_MISO;
@@ -260,16 +247,14 @@ void saveConfig()
     configDoc["CAN_READONLY_ENABLED"] = config->CAN_READONLY_ENABLED;
     configDoc["CAN_SNIFFING_ENABLED"] = config->CAN_SNIFFING_ENABLED;
     configDoc["CAN_AUTOPOLL_MODE"] = (uint8_t)config->CAN_AUTOPOLL_MODE;
-    if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
-    {
+    if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
         configDoc["CAN_AUTOPOLL_TIME"] = config->CAN_AUTOPOLL_TIME;
     }
 
     configDoc["SG_RELAY_HIGH_TRIGGER"] = config->SG_RELAY_HIGH_TRIGGER;
 
     JsonArray parameters = configDoc.createNestedArray("PARAMETERS");
-    for(size_t i = 0; i < config->PARAMETERS_LENGTH; i++)
-    {
+    for(size_t i = 0; i < config->PARAMETERS_LENGTH; i++) {
         JsonArray parameter = parameters.createNestedArray();
         parameter.add(config->PARAMETERS[i]->registryID);
         parameter.add(config->PARAMETERS[i]->offset);
@@ -280,15 +265,13 @@ void saveConfig()
     }
 
     JsonArray commands = configDoc.createNestedArray("COMMANDS");
-    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
-    {
+    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
         JsonArray command = commands.createNestedArray();
         command.add(config->COMMANDS[i]->name);
         command.add(config->COMMANDS[i]->label);
 
         JsonArray commandBytes = command.createNestedArray();
-        for (uint8_t j = 0; j < COMMAND_BYTE_LENGTH; j++)
-        {
+        for (uint8_t j = 0; j < COMMAND_BYTE_LENGTH; j++) {
             commandBytes.add(config->COMMANDS[i]->command[j]);
         }
 
@@ -298,12 +281,10 @@ void saveConfig()
         command.add(config->COMMANDS[i]->unit);
         command.add(config->COMMANDS[i]->type);
 
-        if(config->COMMANDS[i]->valueCodeSize > 0)
-        {
+        if(config->COMMANDS[i]->valueCodeSize > 0) {
             JsonObject valueCodeObject = command.createNestedObject();
 
-            for(uint8_t j = 0; j < config->COMMANDS[i]->valueCodeSize; j++)
-            {
+            for(uint8_t j = 0; j < config->COMMANDS[i]->valueCodeSize; j++) {
                 valueCodeObject[config->COMMANDS[i]->valueCode[j]->key] = config->COMMANDS[i]->valueCode[j]->value;
             }
         }

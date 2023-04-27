@@ -6,6 +6,7 @@
 #include "parameterDef.hpp"
 #include "commandDef.hpp"
 #include "ArduinoJson.h"
+#include "CAN/BusConfigTypes.hpp"
 
 #define CONFIG_FILE "/config.json"
 #define MODELS_CONFIG_SIZE 1024*10
@@ -72,22 +73,9 @@ struct Config
     bool CAN_ENABLED;
     CAN_ICTypes CAN_IC;
     CAN_ICBus CAN_BUS;
-    uint8_t PIN_CAN_RX;
-    uint8_t PIN_CAN_TX;
-    struct
-    {
-        uint8_t PIN_MOSI;
-        uint8_t PIN_MISO;
-        uint8_t PIN_SCK;
-        uint8_t PIN_CS;
-        uint8_t PIN_INT;
-        uint8_t IC_MHZ;
-    } CAN_SPI;
-    struct {
-        String DEVICENAME;
-        bool USE_PIN;
-        String PIN;
-    } CAN_BLUETOOTH;
+    DriverUARTConfig CAN_UART;
+    DriverSPIConfig CAN_SPI;
+    DriverBluetoothConfig CAN_BLUETOOTH;
     uint16_t CAN_SPEED_KBPS;
     String CAN_MQTT_TOPIC_NAME;
     bool CAN_READONLY_ENABLED;

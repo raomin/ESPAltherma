@@ -260,7 +260,7 @@ bool DriverMCP2515::getRate(const uint8_t mhz, const uint16_t speed, CanBitRate 
   return found;
 }
 
-DriverMCP2515::DriverMCP2515()
+DriverMCP2515::DriverMCP2515(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig) : CANDriver(bus, speed, driverConfig)
 {
   self = this;
 
