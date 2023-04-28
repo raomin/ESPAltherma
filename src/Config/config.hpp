@@ -4,32 +4,11 @@
 #include <stdint.h>
 #include <LittleFS.h>
 #include "parameterDef.hpp"
-#include "commandDef.hpp"
 #include "ArduinoJson.h"
-#include "CAN/BusConfigTypes.hpp"
+#include "CAN/CANConfig.hpp"
 
 #define CONFIG_FILE "/config.json"
 #define MODELS_CONFIG_SIZE 1024*10
-
-enum class CAN_ICTypes : uint8_t {
-    None,
-    MCP2515,
-    ELM327,
-    SJA1000
-};
-
-enum class CAN_ICBus : uint8_t {
-    None,
-    SPI,
-    UART,
-    BT
-};
-
-enum class CAN_PollMode : uint8_t {
-    Disabled,
-    Passiv,
-    Auto
-};
 
 enum class X10AProtocol : uint8_t {
     I,

@@ -1,8 +1,7 @@
 #include "ELM327.hpp"
 
-DriverELM327::DriverELM327(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig) : CANDriver(bus, speed, driverConfig)
+DriverELM327::DriverELM327(const CAN_Config *CANConfig) : CANDriver(CANConfig)
 {
-
 }
 
 bool DriverELM327::ATCommandIsOK()
@@ -110,12 +109,12 @@ bool DriverELM327::write(const char *bytes, const size_t size)
 
 bool DriverELM327::initInterface()
 {
-    if(config->CAN_SPEED_KBPS > 500) {
+    if(CANConfig->CAN_SPEED_KBPS > 500) {
         debugSerial.println("CAN-Bus init failed! E1");
         return false;
     }
 
-    if(config->CAN_BUS == CAN_ICBus::BT) {
+    if(CANConfig->CAN_BUS == CAN_ICBus::BT) {
         #ifndef NO_BLUETOOTH
         BluetoothSerial* SerialBT = new BluetoothSerial();
         deleteNeeded = true;
@@ -125,14 +124,14 @@ bool DriverELM327::initInterface()
             return false;
         }
 
-        if(config->CAN_BLUETOOTH.USE_PIN) {
-            if(!SerialBT->setPin(config->CAN_BLUETOOTH.PIN.c_str())) {
+        if(CANConfig->CAN_BLUETOOTH.USE_PIN) {
+            if(!SerialBT->setPin(CANConfig->CAN_BLUETOOTH.PIN.c_str())) {
                 debugSerial.println("CAN-Bus init failed! BT - setPin failed");
                 return false;
             }
         }
 
-        if (!SerialBT->connect(config->CAN_BLUETOOTH.DEVICENAME)) {
+        if (!SerialBT->connect(CANConfig->CAN_BLUETOOTH.DEVICENAME)) {
             debugSerial.println("CAN-Bus init failed! BT - connect failed");
             return false;
         }
@@ -142,8 +141,8 @@ bool DriverELM327::initInterface()
         debugSerial.println("CAN-Bus init failed! BT - this firmware is not compiled with bluetooth");
         return false;
         #endif
-    } else if(config->CAN_BUS == CAN_ICBus::UART) {
-        Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, config->CAN_UART.PIN_RX, config->CAN_UART.PIN_TX);
+    } else if(CANConfig->CAN_BUS == CAN_ICBus::UART) {
+        Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, CANConfig->CAN_UART.PIN_RX, CANConfig->CAN_UART.PIN_TX);
         delay(100);
 
         if(!Serial1) {
@@ -163,7 +162,7 @@ bool DriverELM327::initInterface()
         return false;
     }
 
-    uint8_t dividor = 500 / config->CAN_SPEED_KBPS;
+    uint8_t dividor = 500 / CANConfig->CAN_SPEED_KBPS;
     char baudrateCmd[15];
     sprintf(baudrateCmd, "AT PP 2F SV %02x", dividor);
 

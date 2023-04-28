@@ -1,7 +1,7 @@
 #ifndef CAN_DRIVER_H
 #define CAN_DRIVER_H
 
-#include "Config/commandDef.hpp"
+#include "commandDef.hpp"
 #include "MQTT/mqtt.hpp"
 
 #define CAN_MESSAGE_TIMEOUT 4 // define timout in seconds for message send to get answer
@@ -38,9 +38,7 @@ protected:
     ulong lastTimeRunned = 0;
     bool sniffingEnabled = false;
     CanDriverMode currentMode;
-    CAN_ICBus bus;
-    uint16_t speed;
-    const void* driverConfig;
+    const CAN_Config* CANConfig;
 
     CanFrame* getCanFrameFromCommand(CommandDef* cmd, bool setValue, int value);
     void sniffCAN(uint32_t const, CanFrame const);
@@ -50,7 +48,7 @@ protected:
     void defaultInit();
 
 public:
-    CANDriver(const CAN_ICBus bus, const uint16_t speed, const void* driverConfig);
+    CANDriver(const CAN_Config* CANConfig);
     virtual bool initInterface() NOT_IMPLEMENTED;
     virtual void handleLoop();
     virtual void sendCommand(CommandDef *cmd, bool setValue = false, int value = 0) NOT_IMPLEMENTED;

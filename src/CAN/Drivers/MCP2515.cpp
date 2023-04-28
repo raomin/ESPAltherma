@@ -82,7 +82,7 @@ bool DriverMCP2515::getRate(const uint8_t mhz, const uint16_t speed, CanBitRate 
 
   if(mhz == 8)
   {
-    switch (config->CAN_SPEED_KBPS)
+    switch (CANConfig->CAN_SPEED_KBPS)
     {
     case 10:
       rate = CanBitRate::BR_10kBPS_8MHZ;
@@ -127,7 +127,7 @@ bool DriverMCP2515::getRate(const uint8_t mhz, const uint16_t speed, CanBitRate 
   }
   else if(mhz == 10)
   {
-    switch (config->CAN_SPEED_KBPS)
+    switch (CANConfig->CAN_SPEED_KBPS)
     {
     case 10:
       rate = CanBitRate::BR_10kBPS_10MHZ;
@@ -168,7 +168,7 @@ bool DriverMCP2515::getRate(const uint8_t mhz, const uint16_t speed, CanBitRate 
   }
   else if(mhz == 12)
   {
-    switch (config->CAN_SPEED_KBPS)
+    switch (CANConfig->CAN_SPEED_KBPS)
     {
     case 10:
       rate = CanBitRate::BR_10kBPS_12MHZ;
@@ -209,7 +209,7 @@ bool DriverMCP2515::getRate(const uint8_t mhz, const uint16_t speed, CanBitRate 
   }
   else if(mhz == 16)
   {
-    switch (config->CAN_SPEED_KBPS)
+    switch (CANConfig->CAN_SPEED_KBPS)
     {
     case 10:
       rate = CanBitRate::BR_10kBPS_16MHZ;
@@ -260,18 +260,18 @@ bool DriverMCP2515::getRate(const uint8_t mhz, const uint16_t speed, CanBitRate 
   return found;
 }
 
-DriverMCP2515::DriverMCP2515(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig) : CANDriver(bus, speed, driverConfig)
+DriverMCP2515::DriverMCP2515(const CAN_Config* CANConfig) : CANDriver(CANConfig)
 {
   self = this;
 
   mcp2515 = new ArduinoMCP2515([this]()
                               {
                                 SPI.beginTransaction(MCP2515x_SPI_SETTING);
-                                digitalWrite(config->CAN_SPI.PIN_CS, LOW);
+                                digitalWrite(this->CANConfig->CAN_SPI.PIN_CS, LOW);
                               },
                               [this]()
                               {
-                                digitalWrite(config->CAN_SPI.PIN_CS, HIGH);
+                                digitalWrite(this->CANConfig->CAN_SPI.PIN_CS, HIGH);
                                 SPI.endTransaction();
                               },
                               [this](uint8_t const dataByte) { return SPI.transfer(dataByte); },
@@ -294,7 +294,7 @@ bool DriverMCP2515::initInterface()
 {
   CanBitRate rate;
 
-  bool ratePossible = getRate(config->CAN_SPI.IC_MHZ, config->CAN_SPEED_KBPS, rate);
+  bool ratePossible = getRate(CANConfig->CAN_SPI.IC_MHZ, CANConfig->CAN_SPEED_KBPS, rate);
 
   if(!ratePossible) // test if we can write something to the MCP2515 (is a device connected?)
   {
@@ -303,17 +303,17 @@ bool DriverMCP2515::initInterface()
   }
 
   /* Setup SPI access */
-  SPI.begin(config->CAN_SPI.PIN_SCK,
-            config->CAN_SPI.PIN_MISO,
-            config->CAN_SPI.PIN_MOSI,
-            config->CAN_SPI.PIN_CS);
+  SPI.begin(CANConfig->CAN_SPI.PIN_SCK,
+            CANConfig->CAN_SPI.PIN_MISO,
+            CANConfig->CAN_SPI.PIN_MOSI,
+            CANConfig->CAN_SPI.PIN_CS);
 
-  pinMode(config->CAN_SPI.PIN_CS, OUTPUT);
-  digitalWrite(config->CAN_SPI.PIN_CS, HIGH);
+  pinMode(CANConfig->CAN_SPI.PIN_CS, OUTPUT);
+  digitalWrite(CANConfig->CAN_SPI.PIN_CS, HIGH);
 
   /* Attach interrupt handler to register MCP2515 signaled by taking INT low */
-  pinMode(config->CAN_SPI.PIN_INT, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(config->CAN_SPI.PIN_INT),
+  pinMode(CANConfig->CAN_SPI.PIN_INT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(CANConfig->CAN_SPI.PIN_INT),
                   []() IRAM_ATTR
                   {
                     self->handleInterrupt();

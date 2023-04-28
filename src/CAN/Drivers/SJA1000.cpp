@@ -1,8 +1,7 @@
 #include "SJA1000.hpp"
 
-DriverSJA1000::DriverSJA1000(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig) : CANDriver(bus, speed, driverConfig)
+DriverSJA1000::DriverSJA1000(const CAN_Config *CANConfig) : CANDriver(CANConfig)
 {
-
 }
 
 bool DriverSJA1000::getRate(const uint16_t speed, twai_timing_config_t &t_config)
@@ -68,7 +67,7 @@ bool DriverSJA1000::initInterface()
 {
     f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
-    bool ratePossible = getRate(config->CAN_SPEED_KBPS, t_config);
+    bool ratePossible = getRate(CANConfig->CAN_SPEED_KBPS, t_config);
 
     if(!ratePossible) {
         debugSerial.println("CAN-Bus init failed! E1");
@@ -138,15 +137,15 @@ bool DriverSJA1000::setMode(CanDriverMode mode)
 
     switch (mode) {
     case CanDriverMode::Normal:
-        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->CAN_UART.PIN_TX, (gpio_num_t)config->CAN_UART.PIN_RX, TWAI_MODE_NORMAL);
+        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)CANConfig->CAN_UART.PIN_TX, (gpio_num_t)CANConfig->CAN_UART.PIN_RX, TWAI_MODE_NORMAL);
         break;
 
     case CanDriverMode::Loopback:
-        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->CAN_UART.PIN_TX, (gpio_num_t)config->CAN_UART.PIN_RX, TWAI_MODE_NO_ACK);
+        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)CANConfig->CAN_UART.PIN_TX, (gpio_num_t)CANConfig->CAN_UART.PIN_RX, TWAI_MODE_NO_ACK);
         break;
 
     case CanDriverMode::ListenOnly:
-        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)config->CAN_UART.PIN_TX, (gpio_num_t)config->CAN_UART.PIN_RX, TWAI_MODE_LISTEN_ONLY);
+        g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)CANConfig->CAN_UART.PIN_TX, (gpio_num_t)CANConfig->CAN_UART.PIN_RX, TWAI_MODE_LISTEN_ONLY);
         break;
 
     default:

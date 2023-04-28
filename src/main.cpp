@@ -119,32 +119,22 @@ void setup()
   }
 
   if(config->CAN_ENABLED) {
-    void* driverConfig = nullptr;
+    CAN_Config* CANConfig = new CAN_Config;
+    CANConfig->CAN_AUTOPOLL_MODE = config->CAN_AUTOPOLL_MODE;
+    CANConfig->CAN_AUTOPOLL_TIME = config->CAN_AUTOPOLL_TIME;
+    CANConfig->CAN_BLUETOOTH = config->CAN_BLUETOOTH;
+    CANConfig->CAN_BUS = config->CAN_BUS;
+    CANConfig->CAN_IC = config->CAN_IC;
+    CANConfig->CAN_MQTT_TOPIC_NAME = config->CAN_MQTT_TOPIC_NAME;
+    CANConfig->CAN_READONLY_ENABLED = config->CAN_READONLY_ENABLED;
+    CANConfig->CAN_SNIFFING_ENABLED = config->CAN_SNIFFING_ENABLED;
+    CANConfig->CAN_SPEED_KBPS = config->CAN_SPEED_KBPS;
+    CANConfig->CAN_SPI = config->CAN_SPI;
+    CANConfig->CAN_UART = config->CAN_UART;
+    CANConfig->COMMANDS = config->COMMANDS;
+    CANConfig->COMMANDS_LENGTH = config->COMMANDS_LENGTH;
 
-    switch (config->CAN_IC) {
-      case CAN_ICTypes::MCP2515:
-          driverConfig = &config->CAN_SPI;
-          break;
-
-      case CAN_ICTypes::ELM327:
-          if(config->CAN_BUS == CAN_ICBus::UART) {
-            driverConfig = &config->CAN_UART;
-          } else if(config->CAN_BUS == CAN_ICBus::BT) {
-            driverConfig = &config->CAN_BLUETOOTH;
-          }
-          break;
-
-      case CAN_ICTypes::SJA1000:
-          driverConfig = &config->CAN_UART;
-          break;
-
-      default:
-          break;
-    }
-
-    if(driverConfig != nullptr) {
-        canBus_setup(config->CAN_IC, config->CAN_BUS, config->CAN_SPEED_KBPS, driverConfig);
-    }
+    canBus_setup(CANConfig);
   }
 
 #ifdef ARDUINO_M5Stick_C_Plus

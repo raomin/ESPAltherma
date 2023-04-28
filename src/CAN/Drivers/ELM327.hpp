@@ -24,7 +24,7 @@ private:
     Stream* Elm327Serial;
 
 public:
-    DriverELM327(const CAN_ICBus &bus, const uint16_t &speed, const void* driverConfig);
+    DriverELM327(const CAN_Config* CANConfig);
     bool initInterface();
     void handleLoop();
     void sendCommand(CommandDef* cmd, bool setValue = false, int value = 0);
