@@ -984,12 +984,20 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
 
     if (!runningVersion.hasVersionNr ||
         !updateVersion.hasVersionNr ||
-        runningVersion.Major <= updateVersion.Major ||
+         runningVersion.Major < updateVersion.Major ||
         (runningVersion.Major <= updateVersion.Major &&
-         runningVersion.Minor <= updateVersion.Minor) ||
+         runningVersion.Minor < updateVersion.Minor) ||
         (runningVersion.Major <= updateVersion.Major &&
          runningVersion.Minor <= updateVersion.Minor &&
-         runningVersion.Patch <= updateVersion.Patch)) {
+         runningVersion.Patch < updateVersion.Patch) ||
+        (runningVersion.Major <= updateVersion.Major &&
+         runningVersion.Minor <= updateVersion.Minor &&
+         runningVersion.Patch <= updateVersion.Patch &&
+         runningVersion.Build <  updateVersion.Build) ||
+        (runningVersion.Major = updateVersion.Major &&
+         runningVersion.Minor = updateVersion.Minor &&
+         runningVersion.Patch = updateVersion.Patch &&
+         runningVersion.Build = updateVersion.Build)) {
       updateVersionValid = true;
     }
   }
