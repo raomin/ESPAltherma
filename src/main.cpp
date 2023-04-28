@@ -119,22 +119,7 @@ void setup()
   }
 
   if(config->CAN_ENABLED) {
-    CAN_Config* CANConfig = new CAN_Config;
-    CANConfig->CAN_AUTOPOLL_MODE = config->CAN_AUTOPOLL_MODE;
-    CANConfig->CAN_AUTOPOLL_TIME = config->CAN_AUTOPOLL_TIME;
-    CANConfig->CAN_BLUETOOTH = config->CAN_BLUETOOTH;
-    CANConfig->CAN_BUS = config->CAN_BUS;
-    CANConfig->CAN_IC = config->CAN_IC;
-    CANConfig->CAN_MQTT_TOPIC_NAME = config->CAN_MQTT_TOPIC_NAME;
-    CANConfig->CAN_READONLY_ENABLED = config->CAN_READONLY_ENABLED;
-    CANConfig->CAN_SNIFFING_ENABLED = config->CAN_SNIFFING_ENABLED;
-    CANConfig->CAN_SPEED_KBPS = config->CAN_SPEED_KBPS;
-    CANConfig->CAN_SPI = config->CAN_SPI;
-    CANConfig->CAN_UART = config->CAN_UART;
-    CANConfig->COMMANDS = config->COMMANDS;
-    CANConfig->COMMANDS_LENGTH = config->COMMANDS_LENGTH;
-
-    canBus_setup(CANConfig);
+    canBus_setup(config->CAN_CONFIG);
   }
 
 #ifdef ARDUINO_M5Stick_C_Plus

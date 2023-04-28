@@ -27,7 +27,7 @@ public:
     DriverELM327(const CAN_Config* CANConfig);
     bool initInterface();
     void handleLoop();
-    void sendCommand(CommandDef* cmd, bool setValue = false, int value = 0);
+    void sendCommand(CANCommand* cmd, bool setValue = false, int value = 0);
     ~DriverELM327();
 };
 

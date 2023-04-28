@@ -1,7 +1,7 @@
 #ifndef CAN_DRIVER_H
 #define CAN_DRIVER_H
 
-#include "commandDef.hpp"
+#include "CANCommand.hpp"
 #include "MQTT/mqtt.hpp"
 
 #define CAN_MESSAGE_TIMEOUT 4 // define timout in seconds for message send to get answer
@@ -20,7 +20,7 @@ struct CMDSendInfo
 {
   bool pending = false;
   uint64_t timeMessageSend = 0;
-  CommandDef* cmd;
+  CANCommand* cmd;
 };
 
 enum class CanDriverMode : uint8_t
@@ -40,9 +40,9 @@ protected:
     CanDriverMode currentMode;
     const CAN_Config* CANConfig;
 
-    CanFrame* getCanFrameFromCommand(CommandDef* cmd, bool setValue, int value);
+    CanFrame* getCanFrameFromCommand(CANCommand* cmd, bool setValue, int value);
     void sniffCAN(uint32_t const, CanFrame const);
-    CommandDef* getCommandFromData(const uint8_t *data);
+    CANCommand* getCommandFromData(const uint8_t *data);
     int HPSU_toSigned(uint16_t value, char* unit);
     virtual bool setMode(CanDriverMode mode) NOT_IMPLEMENTED;
     void defaultInit();
@@ -51,7 +51,7 @@ public:
     CANDriver(const CAN_Config* CANConfig);
     virtual bool initInterface() NOT_IMPLEMENTED;
     virtual void handleLoop();
-    virtual void sendCommand(CommandDef *cmd, bool setValue = false, int value = 0) NOT_IMPLEMENTED;
+    virtual void sendCommand(CANCommand *cmd, bool setValue = false, int value = 0) NOT_IMPLEMENTED;
     void onDataRecieved(uint32_t const, CanFrame const);
     void listenOnly(bool value = true);
     void enableSniffing(bool value);

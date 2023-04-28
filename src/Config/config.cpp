@@ -11,11 +11,8 @@ Config::~Config()
         delete[] PARAMETERS;
     }
 
-    if(COMMANDS_LENGTH) {
-        for (size_t i = 0; i < COMMANDS_LENGTH; i++) {
-            delete COMMANDS[i];
-        }
-        delete[] COMMANDS;
+    if(CAN_ENABLED) {
+        delete CAN_CONFIG;
     }
 }
 
@@ -84,30 +81,85 @@ void readConfig()
     config->PIN_SG2 = configDoc["PIN_SG2"].as<uint8_t>();
     config->SG_RELAY_HIGH_TRIGGER = configDoc["SG_RELAY_HIGH_TRIGGER"].as<const bool>();
     config->CAN_ENABLED = configDoc["CAN_ENABLED"].as<const bool>();
-    config->CAN_IC = (CAN_ICTypes)configDoc["CAN_IC"].as<uint8_t>();
-    config->CAN_BUS = (CAN_ICBus)configDoc["CAN_BUS"].as<uint8_t>();
 
-    config->CAN_UART.PIN_RX = configDoc["UART"]["PIN_RX"].as<uint8_t>();
-    config->CAN_UART.PIN_TX = configDoc["UART"]["PIN_TX"].as<uint8_t>();
+    if(config->CAN_ENABLED) {
+        CAN_Config* CANConfig = new CAN_Config();
+        CANConfig->CAN_IC = (CAN_ICTypes)configDoc["CAN_IC"].as<uint8_t>();
+        CANConfig->CAN_BUS = (CAN_ICBus)configDoc["CAN_BUS"].as<uint8_t>();
 
-    config->CAN_SPI.PIN_MISO = configDoc["SPI"]["MISO"].as<uint8_t>();
-    config->CAN_SPI.PIN_MOSI = configDoc["SPI"]["MOSI"].as<uint8_t>();
-    config->CAN_SPI.PIN_SCK = configDoc["SPI"]["SCK"].as<uint8_t>();
-    config->CAN_SPI.PIN_CS = configDoc["SPI"]["CS"].as<uint8_t>();
-    config->CAN_SPI.PIN_INT = configDoc["SPI"]["INT"].as<uint8_t>();
-    config->CAN_SPI.IC_MHZ = configDoc["SPI"]["MHZ"].as<uint8_t>();
+        CANConfig->CAN_UART.PIN_RX = configDoc["UART"]["PIN_RX"].as<uint8_t>();
+        CANConfig->CAN_UART.PIN_TX = configDoc["UART"]["PIN_TX"].as<uint8_t>();
 
-    config->CAN_BLUETOOTH.DEVICENAME = (char *)configDoc["BLUETOOTH"]["DEVICENAME"].as<const char*>();
-    config->CAN_BLUETOOTH.USE_PIN = configDoc["BLUETOOTH"]["USE_PIN"].as<const bool>();
-    config->CAN_BLUETOOTH.PIN = (char *)configDoc["BLUETOOTH"]["PIN"].as<const char*>();
+        CANConfig->CAN_SPI.PIN_MISO = configDoc["SPI"]["MISO"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_MOSI = configDoc["SPI"]["MOSI"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_SCK = configDoc["SPI"]["SCK"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_CS = configDoc["SPI"]["CS"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_INT = configDoc["SPI"]["INT"].as<uint8_t>();
+        CANConfig->CAN_SPI.IC_MHZ = configDoc["SPI"]["MHZ"].as<uint8_t>();
 
-    config->CAN_SPEED_KBPS = configDoc["CAN_SPEED_KBPS"].as<uint16_t>();
-    config->CAN_MQTT_TOPIC_NAME = (char *)configDoc["CAN_MQTT_TOPIC_NAME"].as<const char*>();
-    config->CAN_READONLY_ENABLED = configDoc["CAN_READONLY_ENABLED"].as<const bool>();
-    config->CAN_SNIFFING_ENABLED = configDoc["CAN_SNIFFING_ENABLED"].as<const bool>();
-    config->CAN_AUTOPOLL_MODE = (CAN_PollMode)configDoc["CAN_AUTOPOLL_MODE"].as<uint8_t>();
-    if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
-        config->CAN_AUTOPOLL_TIME = configDoc["CAN_AUTOPOLL_TIME"].as<uint16_t>();
+        CANConfig->CAN_BLUETOOTH.DEVICENAME = (char *)configDoc["BLUETOOTH"]["DEVICENAME"].as<const char*>();
+        CANConfig->CAN_BLUETOOTH.USE_PIN = configDoc["BLUETOOTH"]["USE_PIN"].as<const bool>();
+        CANConfig->CAN_BLUETOOTH.PIN = (char *)configDoc["BLUETOOTH"]["PIN"].as<const char*>();
+
+        CANConfig->CAN_SPEED_KBPS = configDoc["CAN_SPEED_KBPS"].as<uint16_t>();
+        CANConfig->CAN_MQTT_TOPIC_NAME = (char *)configDoc["CAN_MQTT_TOPIC_NAME"].as<const char*>();
+        CANConfig->CAN_READONLY_ENABLED = configDoc["CAN_READONLY_ENABLED"].as<const bool>();
+        CANConfig->CAN_SNIFFING_ENABLED = configDoc["CAN_SNIFFING_ENABLED"].as<const bool>();
+        CANConfig->CAN_AUTOPOLL_MODE = (CAN_PollMode)configDoc["CAN_AUTOPOLL_MODE"].as<uint8_t>();
+        if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
+            CANConfig->CAN_AUTOPOLL_TIME = configDoc["CAN_AUTOPOLL_TIME"].as<uint16_t>();
+        }
+
+        JsonArray commands = configDoc["COMMANDS"].as<JsonArray>();
+        CANConfig->COMMANDS_LENGTH = commands.size();
+        CANConfig->COMMANDS = new CANCommand*[CANConfig->COMMANDS_LENGTH];
+
+        for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
+            JsonArray command = commands[i];
+
+            JsonArray commandBytes = command[CAN_COMMAND_INDEX_COMMAND];
+            byte commandArray[] = {
+                commandBytes[0],
+                commandBytes[1],
+                commandBytes[2],
+                commandBytes[3],
+                commandBytes[4],
+                commandBytes[5],
+                commandBytes[6]
+            };
+
+            CANCommandValueCode** valueCodes;
+            uint8_t valueCodeSize = 0;
+
+            if(command.size() > CAN_COMMAND_INDEX_VALUE_CODE) {
+                JsonObject valueCodeCommands = command[CAN_COMMAND_INDEX_VALUE_CODE].as<JsonObject>();
+                valueCodeSize = valueCodeCommands.size();
+                valueCodes = new CANCommandValueCode*[valueCodeSize];
+
+                uint8_t valueCodeCounter = 0;
+
+                for (JsonPair keyValue : valueCodeCommands) {
+                    valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
+                    valueCodeCounter++;
+                }
+            } else {
+                valueCodes = nullptr;
+            }
+
+            CANConfig->COMMANDS[i] = new CANCommand(
+                command[CAN_COMMAND_INDEX_NAME],
+                command[CAN_COMMAND_INDEX_LABEL],
+                commandArray,
+                command[CAN_COMMAND_INDEX_ID].as<const uint16_t>(),
+                command[CAN_COMMAND_INDEX_DIVISOR].as<const float>(),
+                command[CAN_COMMAND_INDEX_WRITABLE].as<const bool>(),
+                command[CAN_COMMAND_INDEX_UNIT],
+                command[CAN_COMMAND_INDEX_TYPE],
+                valueCodeSize,
+                valueCodes);
+        }
+
+        config->CAN_CONFIG = CANConfig;
     }
 
     JsonArray parameters = configDoc["PARAMETERS"].as<JsonArray>();
@@ -123,55 +175,6 @@ void readConfig()
             parameter[3].as<const int>(),
             parameter[4].as<const int>(),
             parameter[5]);
-    }
-
-    JsonArray commands = configDoc["COMMANDS"].as<JsonArray>();
-    config->COMMANDS_LENGTH = commands.size();
-    config->COMMANDS = new CommandDef*[config->COMMANDS_LENGTH];
-
-    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
-        JsonArray command = commands[i];
-
-        JsonArray commandBytes = command[COMMANDDEF_INDEX_COMMAND];
-        byte commandArray[] = {
-            commandBytes[0],
-            commandBytes[1],
-            commandBytes[2],
-            commandBytes[3],
-            commandBytes[4],
-            commandBytes[5],
-            commandBytes[6]
-        };
-
-        CommandDefValueCode** valueCodes;
-        uint8_t valueCodeSize = 0;
-
-        if(command.size() > COMMANDDEF_INDEX_VALUE_CODE) {
-            JsonObject valueCodeCommands = command[COMMANDDEF_INDEX_VALUE_CODE].as<JsonObject>();
-            valueCodeSize = valueCodeCommands.size();
-            valueCodes = new CommandDefValueCode*[valueCodeSize];
-
-            uint8_t valueCodeCounter = 0;
-
-            for (JsonPair keyValue : valueCodeCommands) {
-                valueCodes[valueCodeCounter] = new CommandDefValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
-                valueCodeCounter++;
-            }
-        } else {
-            valueCodes = nullptr;
-        }
-
-        config->COMMANDS[i] = new CommandDef(
-            command[COMMANDDEF_INDEX_NAME],
-            command[COMMANDDEF_INDEX_LABEL],
-            commandArray,
-            command[COMMANDDEF_INDEX_ID].as<const uint16_t>(),
-            command[COMMANDDEF_INDEX_DIVISOR].as<const float>(),
-            command[COMMANDDEF_INDEX_WRITABLE].as<const bool>(),
-            command[COMMANDDEF_INDEX_UNIT],
-            command[COMMANDDEF_INDEX_TYPE],
-            valueCodeSize,
-            valueCodes);
     }
 
     config->WEBUI_SELECTION_VALUES = (char *)configDoc["WEBUI_SELECTION_VALUES"].as<const char*>();
@@ -222,33 +225,62 @@ void saveConfig()
     configDoc["PIN_SG1"] = config->PIN_SG1;
     configDoc["PIN_SG2"] = config->PIN_SG2;
     configDoc["CAN_ENABLED"] = config->CAN_ENABLED;
-    configDoc["CAN_IC"] = (uint8_t)config->CAN_IC;
-    configDoc["CAN_BUS"] = (uint8_t)config->CAN_BUS;
 
-    JsonObject canUART = configDoc.createNestedObject("UART");
-    canUART["PIN_RX"] = config->CAN_UART.PIN_RX;
-    canUART["PIN_TX"] = config->CAN_UART.PIN_TX;
+    if(config->CAN_ENABLED) {
+        configDoc["CAN_IC"] = (uint8_t)config->CAN_CONFIG->CAN_IC;
+        configDoc["CAN_BUS"] = (uint8_t)config->CAN_CONFIG->CAN_BUS;
 
-    JsonObject canSPI = configDoc.createNestedObject("SPI");
-    canSPI["MISO"] = config->CAN_SPI.PIN_MISO;
-    canSPI["MOSI"] = config->CAN_SPI.PIN_MOSI;
-    canSPI["SCK"] = config->CAN_SPI.PIN_SCK;
-    canSPI["CS"] = config->CAN_SPI.PIN_CS;
-    canSPI["INT"] = config->CAN_SPI.PIN_INT;
-    canSPI["MHZ"] = config->CAN_SPI.IC_MHZ;
+        JsonObject canUART = configDoc.createNestedObject("UART");
+        canUART["PIN_RX"] = config->CAN_CONFIG->CAN_UART.PIN_RX;
+        canUART["PIN_TX"] = config->CAN_CONFIG->CAN_UART.PIN_TX;
 
-    JsonObject canBT = configDoc.createNestedObject("BLUETOOTH");
-    canBT["DEVICENAME"] = config->CAN_BLUETOOTH.DEVICENAME;
-    canBT["USE_PIN"] = config->CAN_BLUETOOTH.USE_PIN;
-    canBT["PIN"] = config->CAN_BLUETOOTH.PIN;
+        JsonObject canSPI = configDoc.createNestedObject("SPI");
+        canSPI["MISO"] = config->CAN_CONFIG->CAN_SPI.PIN_MISO;
+        canSPI["MOSI"] = config->CAN_CONFIG->CAN_SPI.PIN_MOSI;
+        canSPI["SCK"] = config->CAN_CONFIG->CAN_SPI.PIN_SCK;
+        canSPI["CS"] = config->CAN_CONFIG->CAN_SPI.PIN_CS;
+        canSPI["INT"] = config->CAN_CONFIG->CAN_SPI.PIN_INT;
+        canSPI["MHZ"] = config->CAN_CONFIG->CAN_SPI.IC_MHZ;
 
-    configDoc["CAN_SPEED_KBPS"] = config->CAN_SPEED_KBPS;
-    configDoc["CAN_MQTT_TOPIC_NAME"] = config->CAN_MQTT_TOPIC_NAME;
-    configDoc["CAN_READONLY_ENABLED"] = config->CAN_READONLY_ENABLED;
-    configDoc["CAN_SNIFFING_ENABLED"] = config->CAN_SNIFFING_ENABLED;
-    configDoc["CAN_AUTOPOLL_MODE"] = (uint8_t)config->CAN_AUTOPOLL_MODE;
-    if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
-        configDoc["CAN_AUTOPOLL_TIME"] = config->CAN_AUTOPOLL_TIME;
+        JsonObject canBT = configDoc.createNestedObject("BLUETOOTH");
+        canBT["DEVICENAME"] = config->CAN_CONFIG->CAN_BLUETOOTH.DEVICENAME;
+        canBT["USE_PIN"] = config->CAN_CONFIG->CAN_BLUETOOTH.USE_PIN;
+        canBT["PIN"] = config->CAN_CONFIG->CAN_BLUETOOTH.PIN;
+
+        configDoc["CAN_SPEED_KBPS"] = config->CAN_CONFIG->CAN_SPEED_KBPS;
+        configDoc["CAN_MQTT_TOPIC_NAME"] = config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
+        configDoc["CAN_READONLY_ENABLED"] = config->CAN_CONFIG->CAN_READONLY_ENABLED;
+        configDoc["CAN_SNIFFING_ENABLED"] = config->CAN_CONFIG->CAN_SNIFFING_ENABLED;
+        configDoc["CAN_AUTOPOLL_MODE"] = (uint8_t)config->CAN_CONFIG->CAN_AUTOPOLL_MODE;
+        if(config->CAN_CONFIG->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
+            configDoc["CAN_AUTOPOLL_TIME"] = config->CAN_CONFIG->CAN_AUTOPOLL_TIME;
+        }
+
+        JsonArray commands = configDoc.createNestedArray("COMMANDS");
+        for(size_t i = 0; i < config->CAN_CONFIG->COMMANDS_LENGTH; i++) {
+            JsonArray command = commands.createNestedArray();
+            command.add(config->CAN_CONFIG->COMMANDS[i]->name);
+            command.add(config->CAN_CONFIG->COMMANDS[i]->label);
+
+            JsonArray commandBytes = command.createNestedArray();
+            for (uint8_t j = 0; j < CAN_COMMAND_BYTE_LENGTH; j++) {
+                commandBytes.add(config->CAN_CONFIG->COMMANDS[i]->command[j]);
+            }
+
+            command.add(config->CAN_CONFIG->COMMANDS[i]->id);
+            command.add(config->CAN_CONFIG->COMMANDS[i]->divisor);
+            command.add(config->CAN_CONFIG->COMMANDS[i]->writable);
+            command.add(config->CAN_CONFIG->COMMANDS[i]->unit);
+            command.add(config->CAN_CONFIG->COMMANDS[i]->type);
+
+            if(config->CAN_CONFIG->COMMANDS[i]->valueCodeSize > 0) {
+                JsonObject valueCodeObject = command.createNestedObject();
+
+                for(uint8_t j = 0; j < config->CAN_CONFIG->COMMANDS[i]->valueCodeSize; j++) {
+                    valueCodeObject[config->CAN_CONFIG->COMMANDS[i]->valueCode[j]->key] = config->CAN_CONFIG->COMMANDS[i]->valueCode[j]->value;
+                }
+            }
+        }
     }
 
     configDoc["SG_RELAY_HIGH_TRIGGER"] = config->SG_RELAY_HIGH_TRIGGER;
@@ -262,32 +294,6 @@ void saveConfig()
         parameter.add(config->PARAMETERS[i]->dataSize);
         parameter.add(config->PARAMETERS[i]->dataType);
         parameter.add(config->PARAMETERS[i]->label);
-    }
-
-    JsonArray commands = configDoc.createNestedArray("COMMANDS");
-    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
-        JsonArray command = commands.createNestedArray();
-        command.add(config->COMMANDS[i]->name);
-        command.add(config->COMMANDS[i]->label);
-
-        JsonArray commandBytes = command.createNestedArray();
-        for (uint8_t j = 0; j < COMMAND_BYTE_LENGTH; j++) {
-            commandBytes.add(config->COMMANDS[i]->command[j]);
-        }
-
-        command.add(config->COMMANDS[i]->id);
-        command.add(config->COMMANDS[i]->divisor);
-        command.add(config->COMMANDS[i]->writable);
-        command.add(config->COMMANDS[i]->unit);
-        command.add(config->COMMANDS[i]->type);
-
-        if(config->COMMANDS[i]->valueCodeSize > 0) {
-            JsonObject valueCodeObject = command.createNestedObject();
-
-            for(uint8_t j = 0; j < config->COMMANDS[i]->valueCodeSize; j++) {
-                valueCodeObject[config->COMMANDS[i]->valueCode[j]->key] = config->COMMANDS[i]->valueCode[j]->value;
-            }
-        }
     }
 
     configDoc["WEBUI_SELECTION_VALUES"] = config->WEBUI_SELECTION_VALUES;

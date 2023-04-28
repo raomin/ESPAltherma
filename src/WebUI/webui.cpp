@@ -84,8 +84,10 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
         "\"pin_cooling\": 0,"
         "\"pin_sg1\": 32,"
         "\"pin_sg2\": 33,"
-        "\"pin_can_rx\": 32,"
-        "\"pin_can_tx\": 33,"
+        "\"uart\": {"
+          "\"pin_rx\": 32,"
+          "\"pin_tx\": 33"
+        "},"
         "\"spi\": {"
           "\"mosi\": 26,"
           "\"miso\": 0,"
@@ -140,8 +142,10 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
         "\"pin_cooling\": 14,"
         "\"pin_sg1\": 32,"
         "\"pin_sg2\": 33,"
-        "\"pin_can_rx\": 4,"
-        "\"pin_can_tx\": 5,"
+        "\"uart\": {"
+          "\"pin_rx\": 4,"
+          "\"pin_tx\": 5"
+        "},"
         "\"spi\": {"
           "\"mosi\": 23,"
           "\"miso\": 19,"
@@ -172,24 +176,30 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
 
   response += "\"Version\": \"";
 
+  char versionText[48] = "";
+
   if(version.hasVersionNr) {
-    response += version.Major;
-    response += ".";
-    response += version.Minor;
-    response += ".";
-    response += version.Patch;
-    response += "-";
+    snprintf(versionText + strlen(versionText), sizeof(versionText) - strlen(versionText), "%i.%i.%i", version.Major, version.Minor, version.Patch);
+
+    if(version.hasBuildNr || version.hasCommitNr) {
+      strncat(versionText, "-", sizeof(versionText) - strlen(versionText));
+    }
   }
 
   if(version.hasBuildNr) {
-    response += version.Build;
-    response += "-";
+    snprintf(versionText + strlen(versionText), sizeof(versionText) - strlen(versionText), "%i-", version.Build);
+
+    if(version.hasCommitNr) {
+      strncat(versionText, "-", sizeof(versionText) - strlen(versionText));
+    }
   }
 
   if(version.hasCommitNr) {
-    response += version.Extra;
-    response += "\"}";
+    snprintf(versionText + strlen(versionText), sizeof(versionText) - strlen(versionText), "%s", version.Extra);
   }
+
+  response.concat(versionText);
+  response += "\"}";
 
   request->send(200, "application/json", response);
 }
@@ -731,42 +741,110 @@ void onSaveConfig(AsyncWebServerRequest *request)
 
   if(config->CAN_ENABLED)
   {
-    config->CAN_IC = canICTypes;
-    config->CAN_BUS = canICBus;
+    CAN_Config* CANConfig = new CAN_Config();
+    CANConfig->CAN_IC = canICTypes;
+    CANConfig->CAN_BUS = canICBus;
 
-    if(config->CAN_BUS == CAN_ICBus::SPI)
+    if(CANConfig->CAN_BUS == CAN_ICBus::SPI)
     {
-      config->CAN_SPI.PIN_MISO = request->getParam("pin_can_spi_miso", true)->value().toInt();
-      config->CAN_SPI.PIN_MOSI = request->getParam("pin_can_spi_mosi", true)->value().toInt();
-      config->CAN_SPI.PIN_SCK = request->getParam("pin_can_spi_sck", true)->value().toInt();
-      config->CAN_SPI.PIN_CS = request->getParam("pin_can_spi_cs", true)->value().toInt();
-      config->CAN_SPI.PIN_INT = request->getParam("pin_can_spi_int", true)->value().toInt();
-      config->CAN_SPI.IC_MHZ = request->getParam("pin_can_spi_mhz", true)->value().toInt();
+      CANConfig->CAN_SPI.PIN_MISO = request->getParam("pin_can_spi_miso", true)->value().toInt();
+      CANConfig->CAN_SPI.PIN_MOSI = request->getParam("pin_can_spi_mosi", true)->value().toInt();
+      CANConfig->CAN_SPI.PIN_SCK = request->getParam("pin_can_spi_sck", true)->value().toInt();
+      CANConfig->CAN_SPI.PIN_CS = request->getParam("pin_can_spi_cs", true)->value().toInt();
+      CANConfig->CAN_SPI.PIN_INT = request->getParam("pin_can_spi_int", true)->value().toInt();
+      CANConfig->CAN_SPI.IC_MHZ = request->getParam("pin_can_spi_mhz", true)->value().toInt();
     }
-    else if(config->CAN_BUS == CAN_ICBus::UART)
+    else if(CANConfig->CAN_BUS == CAN_ICBus::UART)
     {
-      config->CAN_UART.PIN_RX = request->getParam("pin_can_uart_rx", true)->value().toInt();
-      config->CAN_UART.PIN_TX = request->getParam("pin_can_uart_tx", true)->value().toInt();
+      CANConfig->CAN_UART.PIN_RX = request->getParam("pin_can_uart_rx", true)->value().toInt();
+      CANConfig->CAN_UART.PIN_TX = request->getParam("pin_can_uart_tx", true)->value().toInt();
     }
-    else if(config->CAN_BUS == CAN_ICBus::BT)
+    else if(CANConfig->CAN_BUS == CAN_ICBus::BT)
     {
-      config->CAN_BLUETOOTH.DEVICENAME = (char *)request->getParam("pin_can_bt_devicename", true)->value().c_str();
-      config->CAN_BLUETOOTH.USE_PIN = request->hasParam("pin_can_bt_use_pin", true);
-      if(config->CAN_BLUETOOTH.USE_PIN) {
-        config->CAN_BLUETOOTH.PIN = (char *)request->getParam("pin_can_bt_pin", true)->value().c_str();
+      CANConfig->CAN_BLUETOOTH.DEVICENAME = (char *)request->getParam("pin_can_bt_devicename", true)->value().c_str();
+      CANConfig->CAN_BLUETOOTH.USE_PIN = request->hasParam("pin_can_bt_use_pin", true);
+      if(CANConfig->CAN_BLUETOOTH.USE_PIN) {
+        CANConfig->CAN_BLUETOOTH.PIN = (char *)request->getParam("pin_can_bt_pin", true)->value().c_str();
       }
     }
 
-    config->CAN_SPEED_KBPS = request->getParam("can_speed_kbps", true)->value().toInt();
-    config->CAN_MQTT_TOPIC_NAME = (char *)request->getParam("can_mqtt_topic_name", true)->value().c_str();
-    config->CAN_READONLY_ENABLED = request->hasParam("can_readonly_enabled", true);
-    config->CAN_SNIFFING_ENABLED = request->hasParam("can_sniffing_enabled", true);
-    config->CAN_AUTOPOLL_MODE = (CAN_PollMode)request->getParam("can_autopoll_mode", true)->value().toInt();
+    CANConfig->CAN_SPEED_KBPS = request->getParam("can_speed_kbps", true)->value().toInt();
+    CANConfig->CAN_MQTT_TOPIC_NAME = (char *)request->getParam("can_mqtt_topic_name", true)->value().c_str();
+    CANConfig->CAN_READONLY_ENABLED = request->hasParam("can_readonly_enabled", true);
+    CANConfig->CAN_SNIFFING_ENABLED = request->hasParam("can_sniffing_enabled", true);
+    CANConfig->CAN_AUTOPOLL_MODE = (CAN_PollMode)request->getParam("can_autopoll_mode", true)->value().toInt();
 
-    if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
+    if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
     {
-      config->CAN_AUTOPOLL_TIME = request->getParam("can_autopoll_time", true)->value().toInt();
+      CANConfig->CAN_AUTOPOLL_TIME = request->getParam("can_autopoll_time", true)->value().toInt();
     }
+
+    if(request->hasParam("definedCommands", true))
+    {
+      DynamicJsonDocument jsonCommands(MODELS_CONFIG_SIZE);
+      deserializeJson(jsonCommands, request->getParam("definedCommands", true)->value());
+      JsonArray commandsArray = jsonCommands.as<JsonArray>();
+
+      CANConfig->COMMANDS_LENGTH = commandsArray.size();
+      CANConfig->COMMANDS = new CANCommand*[CANConfig->COMMANDS_LENGTH];
+
+      int counter = 0;
+      for (JsonArray value : commandsArray)
+      {
+        JsonArray commandBytes = value[CAN_COMMAND_INDEX_COMMAND];
+        byte commandArray[] = {
+            commandBytes[0].as<const byte>(),
+            commandBytes[1].as<const byte>(),
+            commandBytes[2].as<const byte>(),
+            commandBytes[3].as<const byte>(),
+            commandBytes[4].as<const byte>(),
+            commandBytes[5].as<const byte>(),
+            commandBytes[6].as<const byte>()
+        };
+
+        CANCommandValueCode** valueCodes;
+        uint8_t valueCodeSize = 0;
+
+        if(value.size() > CAN_COMMAND_INDEX_VALUE_CODE)
+        {
+          JsonObject valueCodeCommands = value[CAN_COMMAND_INDEX_VALUE_CODE].as<JsonObject>();
+          valueCodeSize = valueCodeCommands.size();
+          valueCodes = new CANCommandValueCode*[valueCodeSize];
+
+          uint8_t valueCodeCounter = 0;
+
+          for (JsonPair keyValue : valueCodeCommands) {
+            valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
+            valueCodeCounter++;
+          }
+        }
+        else
+        {
+          valueCodes = nullptr;
+        }
+
+        CANConfig->COMMANDS[counter] = new CANCommand(
+          value[CAN_COMMAND_INDEX_NAME],
+          value[CAN_COMMAND_INDEX_LABEL],
+          commandArray,
+          value[CAN_COMMAND_INDEX_ID].as<const uint16_t>(),
+          value[CAN_COMMAND_INDEX_DIVISOR].as<const float>(),
+          value[CAN_COMMAND_INDEX_WRITABLE].as<const bool>(),
+          value[CAN_COMMAND_INDEX_UNIT],
+          value[CAN_COMMAND_INDEX_TYPE],
+          valueCodeSize,
+          valueCodes);
+
+        counter++;
+      }
+    }
+    else
+    {
+      CANConfig->COMMANDS_LENGTH = 0;
+      CANConfig->COMMANDS = nullptr;
+    }
+
+    config->CAN_CONFIG = CANConfig;
   }
 
   if(request->hasParam("definedParameters", true))
@@ -795,71 +873,6 @@ void onSaveConfig(AsyncWebServerRequest *request)
   {
     config->PARAMETERS_LENGTH = 0;
     config->PARAMETERS = nullptr;
-  }
-
-  if(request->hasParam("definedCommands", true))
-  {
-    DynamicJsonDocument jsonCommands(MODELS_CONFIG_SIZE);
-    deserializeJson(jsonCommands, request->getParam("definedCommands", true)->value());
-    JsonArray commandsArray = jsonCommands.as<JsonArray>();
-
-    config->COMMANDS_LENGTH = commandsArray.size();
-    config->COMMANDS = new CommandDef*[config->COMMANDS_LENGTH];
-
-    int counter = 0;
-    for (JsonArray value : commandsArray)
-    {
-      JsonArray commandBytes = value[COMMANDDEF_INDEX_COMMAND];
-      byte commandArray[] = {
-          commandBytes[0].as<const byte>(),
-          commandBytes[1].as<const byte>(),
-          commandBytes[2].as<const byte>(),
-          commandBytes[3].as<const byte>(),
-          commandBytes[4].as<const byte>(),
-          commandBytes[5].as<const byte>(),
-          commandBytes[6].as<const byte>()
-      };
-
-      CommandDefValueCode** valueCodes;
-      uint8_t valueCodeSize = 0;
-
-      if(value.size() > COMMANDDEF_INDEX_VALUE_CODE)
-      {
-        JsonObject valueCodeCommands = value[COMMANDDEF_INDEX_VALUE_CODE].as<JsonObject>();
-        valueCodeSize = valueCodeCommands.size();
-        valueCodes = new CommandDefValueCode*[valueCodeSize];
-
-        uint8_t valueCodeCounter = 0;
-
-        for (JsonPair keyValue : valueCodeCommands) {
-          valueCodes[valueCodeCounter] = new CommandDefValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
-          valueCodeCounter++;
-        }
-      }
-      else
-      {
-        valueCodes = nullptr;
-      }
-
-      config->COMMANDS[counter] = new CommandDef(
-        value[COMMANDDEF_INDEX_NAME],
-        value[COMMANDDEF_INDEX_LABEL],
-        commandArray,
-        value[COMMANDDEF_INDEX_ID].as<const uint16_t>(),
-        value[COMMANDDEF_INDEX_DIVISOR].as<const float>(),
-        value[COMMANDDEF_INDEX_WRITABLE].as<const bool>(),
-        value[COMMANDDEF_INDEX_UNIT],
-        value[COMMANDDEF_INDEX_TYPE],
-        valueCodeSize,
-        valueCodes);
-
-      counter++;
-    }
-  }
-  else
-  {
-    config->COMMANDS_LENGTH = 0;
-    config->COMMANDS = nullptr;
   }
 
   StaticJsonDocument<WEBUI_SELECTION_VALUE_SIZE> webuiSelectionValues;

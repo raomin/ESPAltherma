@@ -4,7 +4,7 @@
 // https://github.com/ahermann86/fhemHPSU
 // https://github.com/zanac/pyHPSU
 
-CanFrame* CANDriver::getCanFrameFromCommand(CommandDef* cmd, bool setValue, int value)
+CanFrame* CANDriver::getCanFrameFromCommand(CANCommand* cmd, bool setValue, int value)
 {
   CanFrame* frame = new CanFrame();
 
@@ -81,7 +81,7 @@ CanFrame* CANDriver::getCanFrameFromCommand(CommandDef* cmd, bool setValue, int 
   }
   else
   {
-    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
+    for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
     {
       if(cmdSendInfos[i]->cmd == cmd)
       {
@@ -129,7 +129,7 @@ void CANDriver::handleLoop()
 
   uint64_t currentMillis = millis();
 
-  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
   {
     if(cmdSendInfos[i]->pending == true && currentMillis - cmdSendInfos[i]->timeMessageSend >= CAN_MESSAGE_TIMEOUT * 1000)
     {
@@ -138,19 +138,19 @@ void CANDriver::handleLoop()
     }
   }
 
-  if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
+  if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
   {
     ulong currentTime = millis();
 
-    if(currentTime - lastTimeRunned >= config->CAN_AUTOPOLL_TIME * 1000)
+    if(currentTime - lastTimeRunned >= CANConfig->CAN_AUTOPOLL_TIME * 1000)
     {
       debugSerial.printf("CAN Poll Mode Auto Reading: %lu\n", currentTime);
 
-      for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
+      for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
       {
         if(cmdSendInfos[i]->pending == false)
         {
-          sendCommand(config->COMMANDS[i], false);
+          sendCommand(CANConfig->COMMANDS[i], false);
         }
       }
 
@@ -181,15 +181,15 @@ void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame
 
   bool extended = frame.data[2] == 0xFA;
 
-  CommandDef* recievedCommand = getCommandFromData(frame.data);
+  CANCommand* recievedCommand = getCommandFromData(frame.data);
 
   // if we got a message that we shouldnt handle, skip it
   if(recievedCommand == nullptr)
     return;
 
-  if(config->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
+  if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
   {
-    for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
+    for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
     {
       if(cmdSendInfos[i]->cmd == recievedCommand)
       {
@@ -316,43 +316,43 @@ void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame
 
   if(config->MQTT_USE_ONETOPIC)
   {
-    client.publish((config->MQTT_TOPIC_NAME + config->MQTT_ONETOPIC_NAME + config->CAN_MQTT_TOPIC_NAME + recievedCommand->label).c_str(), valueCodeKey.c_str());
+    client.publish((config->MQTT_TOPIC_NAME + config->MQTT_ONETOPIC_NAME + CANConfig->CAN_MQTT_TOPIC_NAME + recievedCommand->label).c_str(), valueCodeKey.c_str());
   }
   else
   {
-    client.publish((config->MQTT_TOPIC_NAME + config->CAN_MQTT_TOPIC_NAME + recievedCommand->label).c_str(), valueCodeKey.c_str());
+    client.publish((config->MQTT_TOPIC_NAME + CANConfig->CAN_MQTT_TOPIC_NAME + recievedCommand->label).c_str(), valueCodeKey.c_str());
   }
 
   debugSerial.printf("CAN Data recieved %s: %s\n", recievedCommand->label, valueCodeKey.c_str());
 }
 
 
-CommandDef* CANDriver::getCommandFromData(const uint8_t *data)
+CANCommand* CANDriver::getCommandFromData(const uint8_t *data)
 {
   bool extended = data[2] == 0xFA;
-  CommandDef* recievedCommand = nullptr;
+  CANCommand* recievedCommand = nullptr;
 
-  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
   {
     //Byte 3 == FA
     //31 00 FA 0B D1 00 00   <- $CANMsg
     //      |------| -> len: 3 byte
     //      ^pos: 2
     if(extended &&
-       config->COMMANDS[i]->command[2] == data[2] &&
-       config->COMMANDS[i]->command[3] == data[3] &&
-       config->COMMANDS[i]->command[4] == data[4])
+       CANConfig->COMMANDS[i]->command[2] == data[2] &&
+       CANConfig->COMMANDS[i]->command[3] == data[3] &&
+       CANConfig->COMMANDS[i]->command[4] == data[4])
     {
-      recievedCommand = config->COMMANDS[i];
+      recievedCommand = CANConfig->COMMANDS[i];
       break;
     }
     //Byte 3 != FA
     //31 00 05 00 00 00 00   <- $CANMsg
     //      || -> len: 1 byte
     //      ^pos: 2
-    else if(!extended && config->COMMANDS[i]->command[2] == data[2])
+    else if(!extended && CANConfig->COMMANDS[i]->command[2] == data[2])
     {
-      recievedCommand = config->COMMANDS[i];
+      recievedCommand = CANConfig->COMMANDS[i];
       break;
     }
   }
@@ -393,12 +393,12 @@ void CANDriver::handleMQTTSetRequest(const String &label, const char *payload, c
 
   const int payloadAsInt = atoi(payload);
 
-  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++)
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
   {
-    if(config->COMMANDS[i]->writable && strcmp(config->COMMANDS[i]->name, label.c_str()) == 0)
+    if(CANConfig->COMMANDS[i]->writable && strcmp(CANConfig->COMMANDS[i]->name, label.c_str()) == 0)
     {
       debugSerial.printf("CAN: Got MQTT SET request for %s, %08x\n", label.c_str(), payloadAsInt);
-      sendCommand(config->COMMANDS[i], true, payloadAsInt);
+      sendCommand(CANConfig->COMMANDS[i], true, payloadAsInt);
       return;
     }
   }
@@ -408,23 +408,23 @@ void CANDriver::handleMQTTSetRequest(const String &label, const char *payload, c
 
 void CANDriver::defaultInit()
 {
-  cmdSendInfos = new CMDSendInfo*[config->COMMANDS_LENGTH];
-  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
+  cmdSendInfos = new CMDSendInfo*[CANConfig->COMMANDS_LENGTH];
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
     cmdSendInfos[i] = new CMDSendInfo();
-    cmdSendInfos[i]->cmd = config->COMMANDS[i];
+    cmdSendInfos[i]->cmd = CANConfig->COMMANDS[i];
   }
 
   callbackCAN = [this](const String label, const char *payload, const uint32_t length) { handleMQTTSetRequest(label, payload, length); };
 
   canInited = true;
 
-  listenOnly(config->CAN_READONLY_ENABLED);
+  listenOnly(CANConfig->CAN_READONLY_ENABLED);
 
   debugSerial.println("CAN-Bus inited");
 }
 
 CANDriver::~CANDriver() {
-  for(size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
     delete cmdSendInfos[i];
   }
   delete[] cmdSendInfos;

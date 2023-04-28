@@ -2,7 +2,7 @@
 #define BUS_CONFIG_TYPES_H
 
 #include <Arduino.h>
-#include "commandDef.hpp"
+#include "CANCommand.hpp"
 
 enum class CAN_ICTypes : uint8_t {
     None,
@@ -58,7 +58,9 @@ struct CAN_Config
     CAN_PollMode CAN_AUTOPOLL_MODE;
     uint16_t CAN_AUTOPOLL_TIME;
     size_t COMMANDS_LENGTH;
-    CommandDef** COMMANDS;
+    CANCommand** COMMANDS;
+
+    ~CAN_Config();
 };
 
 #endif

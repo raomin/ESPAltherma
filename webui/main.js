@@ -131,8 +131,8 @@ async function resetToDefaults()
     document.getElementById('pin_cooling').value = boardDefaults['pin_cooling'];
     document.getElementById('pin_sg1').value = boardDefaults['pin_sg1'];
     document.getElementById('pin_sg2').value = boardDefaults['pin_sg2'];
-    document.getElementById('pin_can_uart_rx').value = boardDefaults['pin_can_rx'];
-    document.getElementById('pin_can_uart_tx').value = boardDefaults['pin_can_tx'];
+    document.getElementById('pin_can_uart_rx').value = boardDefaults['uart']['pin_rx'];
+    document.getElementById('pin_can_uart_tx').value = boardDefaults['uart']['pin_tx'];
     document.getElementById('pin_can_spi_mosi').value = boardDefaults['spi']['mosi'];
     document.getElementById('pin_can_spi_miso').value = boardDefaults['spi']['miso'];
     document.getElementById('pin_can_spi_sck').value = boardDefaults['spi']['sck'];
@@ -250,8 +250,8 @@ async function loadConfig()
             else if(data['CAN_BUS'] == 2)
             {
                 canBusPrefix = 'uart_';
-                document.getElementById('pin_can_uart_rx').value = data['PIN_CAN_RX'];
-                document.getElementById('pin_can_uart_tx').value = data['PIN_CAN_TX'];
+                document.getElementById('pin_can_uart_rx').value = data['UART']['PIN_RX'];
+                document.getElementById('pin_can_uart_tx').value = data['UART']['PIN_TX'];
             }
             else if(data['CAN_BUS'] == 3)
             {

@@ -216,7 +216,7 @@ bool DriverELM327::setID(const uint16_t id)
     return true;
 }
 
-void DriverELM327::sendCommand(CommandDef* cmd, bool setValue, int value)
+void DriverELM327::sendCommand(CANCommand* cmd, bool setValue, int value)
 {
     if(currentMode == CanDriverMode::ListenOnly)
         return;
@@ -227,7 +227,7 @@ void DriverELM327::sendCommand(CommandDef* cmd, bool setValue, int value)
 
     // convert command to hex string
     char command[16];
-    for(uint8_t i = 0; i < COMMAND_BYTE_LENGTH; i++) {
+    for(uint8_t i = 0; i < CAN_COMMAND_BYTE_LENGTH; i++) {
         sprintf(command + (i*2), "%02x", cmd->command[i]);
     }
 

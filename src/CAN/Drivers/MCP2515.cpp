@@ -336,7 +336,7 @@ bool DriverMCP2515::initInterface()
   return true;
 }
 
-void DriverMCP2515::sendCommand(CommandDef* cmd, bool setValue, int value)
+void DriverMCP2515::sendCommand(CANCommand* cmd, bool setValue, int value)
 {
   if(currentMode == CanDriverMode::ListenOnly)
     return;

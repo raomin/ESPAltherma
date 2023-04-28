@@ -50,21 +50,9 @@ struct Config
     uint8_t PIN_SG2;
     bool SG_RELAY_HIGH_TRIGGER;
     bool CAN_ENABLED;
-    CAN_ICTypes CAN_IC;
-    CAN_ICBus CAN_BUS;
-    DriverUARTConfig CAN_UART;
-    DriverSPIConfig CAN_SPI;
-    DriverBluetoothConfig CAN_BLUETOOTH;
-    uint16_t CAN_SPEED_KBPS;
-    String CAN_MQTT_TOPIC_NAME;
-    bool CAN_READONLY_ENABLED;
-    bool CAN_SNIFFING_ENABLED;
-    CAN_PollMode CAN_AUTOPOLL_MODE;
-    uint16_t CAN_AUTOPOLL_TIME;
+    CAN_Config* CAN_CONFIG;
     size_t PARAMETERS_LENGTH;
     ParameterDef** PARAMETERS;
-    size_t COMMANDS_LENGTH;
-    CommandDef** COMMANDS;
     String WEBUI_SELECTION_VALUES;
 
     ~Config();

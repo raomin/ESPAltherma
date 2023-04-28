@@ -26,7 +26,7 @@ void canBus_setup(const CAN_Config* CANConfig)
         return;
     }
 
-    driver->enableSniffing(config->CAN_SNIFFING_ENABLED);
+    driver->enableSniffing(CANConfig->CAN_SNIFFING_ENABLED);
 }
 
 void canBus_loop()

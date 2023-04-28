@@ -79,7 +79,7 @@ bool DriverSJA1000::initInterface()
     return true;
 }
 
-void DriverSJA1000::sendCommand(CommandDef* cmd, bool setValue, int value)
+void DriverSJA1000::sendCommand(CANCommand* cmd, bool setValue, int value)
 {
     if(currentMode == CanDriverMode::ListenOnly)
         return;

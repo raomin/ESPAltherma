@@ -103,8 +103,10 @@ void reconnectMqtt()
   subscribeHeatingTopic = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_HEATING;
   subscribeCoolingTopic = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_COOLING;
   subscribeSGTopic      = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_SG;
-  subscribeCANTopic     = config->MQTT_TOPIC_NAME + "SET/" + config->CAN_MQTT_TOPIC_NAME;
   subscribePowerTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_POWER;
+  if(config->CAN_ENABLED) {
+    subscribeCANTopic   = config->MQTT_TOPIC_NAME + "SET/" + config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
+  }
 
   publishHeatingTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_HEATING;
   publishCoolingTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_COOLING;
