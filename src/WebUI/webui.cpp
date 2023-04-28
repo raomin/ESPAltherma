@@ -982,8 +982,10 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
     SemanticVersion runningVersion(appRunning.version);
     SemanticVersion updateVersion(appUpdate.version);
 
+        // if current or update version are dev-version (no version nr)
     if (!runningVersion.hasVersionNr ||
         !updateVersion.hasVersionNr ||
+        // or if new version is higher than old one
          runningVersion.Major < updateVersion.Major ||
         (runningVersion.Major <= updateVersion.Major &&
          runningVersion.Minor < updateVersion.Minor) ||
@@ -994,10 +996,12 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
          runningVersion.Minor <= updateVersion.Minor &&
          runningVersion.Patch <= updateVersion.Patch &&
          runningVersion.Build <  updateVersion.Build) ||
+        // or if new version is equal
         (runningVersion.Major = updateVersion.Major &&
          runningVersion.Minor = updateVersion.Minor &&
          runningVersion.Patch = updateVersion.Patch &&
          runningVersion.Build = updateVersion.Build)) {
+      // --> accept update
       updateVersionValid = true;
     }
   }
