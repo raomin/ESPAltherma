@@ -12,6 +12,8 @@ void canBus_setup(const CAN_Config* CANConfig);
 
 void canBus_loop();
 
+String canBus_readAllCommands();
+
 void canBus_stop();
 
 #endif

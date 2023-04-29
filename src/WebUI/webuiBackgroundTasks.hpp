@@ -21,33 +21,6 @@ struct WebUIScanX10ARegister {
     String Params;
 };
 
-struct WebUIScanCANRegister {
-    CAN_ICTypes CAN_IC;
-    CAN_ICBus CAN_BUS;
-    struct
-    {
-        uint8_t PIN_CAN_RX;
-        uint8_t PIN_CAN_TX;
-    } CAN_UART;
-    struct
-    {
-        uint8_t PIN_MOSI;
-        uint8_t PIN_MISO;
-        uint8_t PIN_SCK;
-        uint8_t PIN_CS;
-        uint8_t PIN_INT;
-        uint8_t IC_MHZ;
-    } CAN_SPI;
-    struct {
-        String DEVICENAME;
-        bool USE_PIN;
-        String PIN;
-    } CAN_BLUETOOTH;
-    uint16_t CAN_SPEED_KBPS;
-    int16_t KBPS;
-    String Params;
-};
-
 enum ValueLoadState {
     NotLoading,
     Pending,
@@ -56,7 +29,7 @@ enum ValueLoadState {
 };
 
 extern WebUIScanX10ARegister webuiScanX10ARegisterConfig;
-extern WebUIScanCANRegister webuiScanCANRegisterConfig;
+extern CAN_Config* webuiScanCANRegisterConfig;
 extern ValueLoadState valueX10ALoadState;
 extern ValueLoadState valueCANLoadState;
 extern ValueLoadState wifiLoadState;

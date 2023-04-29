@@ -4,6 +4,8 @@
 // https://github.com/ahermann86/fhemHPSU
 // https://github.com/zanac/pyHPSU
 
+String** resultBuffer;
+
 CanFrame* CANDriver::getCanFrameFromCommand(CANCommand* cmd, bool setValue, int value)
 {
   CanFrame* frame = new CanFrame();
@@ -127,16 +129,7 @@ void CANDriver::handleLoop()
   if(!canInited)
       return;
 
-  uint64_t currentMillis = millis();
-
-  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
-  {
-    if(cmdSendInfos[i]->pending == true && currentMillis - cmdSendInfos[i]->timeMessageSend >= CAN_MESSAGE_TIMEOUT * 1000)
-    {
-      cmdSendInfos[i]->pending = false;
-      debugSerial.printf("CAN Timeout for message: %s\n", cmdSendInfos[i]->cmd->label);
-    }
-  }
+  checkPendingMessages();
 
   if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
   {
@@ -157,6 +150,43 @@ void CANDriver::handleLoop()
       lastTimeRunned = currentTime;
     }
   }
+}
+
+String CANDriver::readAllCommands()
+{
+  CANDataToString = true;
+
+  resultBuffer = new String*[CANConfig->COMMANDS_LENGTH];
+
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
+    currentDataToStringIndex = i;
+    resultBuffer[i] = nullptr;
+    sendCommand(CANConfig->COMMANDS[i], false);
+
+    while(cmdSendInfos[i]->pending) {
+      checkPendingMessages();
+      delay(5);
+    }
+  }
+
+  DynamicJsonDocument resultDoc(CANConfig->COMMANDS_LENGTH*JSON_OBJECT_SIZE(2));
+  JsonArray obj = resultDoc.to<JsonArray>();
+
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
+    if(resultBuffer[i] != nullptr) {
+      obj.add(resultBuffer[i]->c_str());
+      delete resultBuffer[i];
+    } else {
+      obj.add("");
+    }
+  }
+  delete[] resultBuffer;
+
+  CANDataToString = false;
+
+  String result;
+  serializeJson(resultDoc, result);
+  return result;
 }
 
 void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame)
@@ -187,7 +217,7 @@ void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame
   if(recievedCommand == nullptr)
     return;
 
-  if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
+  if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto || CANDataToString)
   {
     for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
     {
@@ -314,6 +344,11 @@ void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame
       }
   }
 
+  if(CANDataToString) {
+    resultBuffer[currentDataToStringIndex] = new String(valueCodeKey);
+    return;
+  }
+
   if(config->MQTT_USE_ONETOPIC)
   {
     client.publish((config->MQTT_TOPIC_NAME + config->MQTT_ONETOPIC_NAME + CANConfig->CAN_MQTT_TOPIC_NAME + recievedCommand->label).c_str(), valueCodeKey.c_str());
@@ -370,13 +405,10 @@ void CANDriver::listenOnly(bool value)
 
 int CANDriver::HPSU_toSigned(uint16_t value, char* unit)
 {
-  if(strcmp(unit, "deg") == 0 || strcmp(unit, "value_code_signed") == 0)
-  {
+  if(strcmp(unit, "deg") == 0 || strcmp(unit, "value_code_signed") == 0) {
     int newValue = value & 0xFFFF;
     return (newValue ^ 0x8000) - 0x8000;
-  }
-  else
-  {
+  } else {
     return value;
   }
 }
@@ -393,10 +425,8 @@ void CANDriver::handleMQTTSetRequest(const String &label, const char *payload, c
 
   const int payloadAsInt = atoi(payload);
 
-  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
-  {
-    if(CANConfig->COMMANDS[i]->writable && strcmp(CANConfig->COMMANDS[i]->name, label.c_str()) == 0)
-    {
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
+    if(CANConfig->COMMANDS[i]->writable && strcmp(CANConfig->COMMANDS[i]->name, label.c_str()) == 0) {
       debugSerial.printf("CAN: Got MQTT SET request for %s, %08x\n", label.c_str(), payloadAsInt);
       sendCommand(CANConfig->COMMANDS[i], true, payloadAsInt);
       return;
@@ -421,6 +451,18 @@ void CANDriver::defaultInit()
   listenOnly(CANConfig->CAN_READONLY_ENABLED);
 
   debugSerial.println("CAN-Bus inited");
+}
+
+void CANDriver::checkPendingMessages()
+{
+  uint64_t currentMillis = millis();
+
+  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
+    if(cmdSendInfos[i]->pending == true && currentMillis - cmdSendInfos[i]->timeMessageSend >= CAN_MESSAGE_TIMEOUT * 1000) {
+      cmdSendInfos[i]->pending = false;
+      debugSerial.printf("CAN Timeout for message: %s\n", cmdSendInfos[i]->cmd->label);
+    }
+  }
 }
 
 CANDriver::~CANDriver() {

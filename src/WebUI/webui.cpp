@@ -603,68 +603,8 @@ void onSaveConfig(AsyncWebServerRequest *request)
     return;
   }
 
-  if(request->hasParam("can_enabled", true) && (!request->hasParam("can_ic_type", true) ||!request->hasParam("can_speed_kbps", true)))
-  {
-    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus IC Type or CAN-Speed");
-    return;
-  }
-
-  CAN_ICBus canICBus = CAN_ICBus::None;
-  CAN_ICTypes canICTypes = CAN_ICTypes::None;
-
-  if(request->hasParam("can_enabled", true))
-  {
-    String ICType = request->getParam("can_ic_type", true)->value();
-
-    if(ICType.startsWith("uart_")) {
-      canICBus = CAN_ICBus::UART;
-    } else if(ICType.startsWith("spi_")) {
-      canICBus = CAN_ICBus::SPI;
-    } else if(ICType.startsWith("bt_")) {
-      canICBus = CAN_ICBus::BT;
-    } else {
-      request->send(422, "text/plain", "Invalid CAN IC/Chip communication type given");
-      return;
-    }
-
-    ICType = ICType.substring(ICType.indexOf('_') + 1);
-
-    if(ICType == "mcp2515") {
-      canICTypes = CAN_ICTypes::MCP2515;
-    } else if(ICType == "elm327") {
-      canICTypes = CAN_ICTypes::ELM327;
-    } else if(ICType == "sja1000") {
-      canICTypes = CAN_ICTypes::SJA1000;
-    } else {
-      request->send(422, "text/plain", "Invalid CAN IC/Chip type given");
-      return;
-    }
-  }
-
-  if(request->hasParam("can_enabled", true) && canICBus == CAN_ICBus::UART &&
-     (!request->hasParam("pin_can_uart_rx", true) || !request->hasParam("pin_can_uart_tx", true)))
-  {
-    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus UART");
-    return;
-  }
-
-  if(request->hasParam("can_enabled", true) && canICBus == CAN_ICBus::SPI &&
-     (!request->hasParam("pin_can_spi_mosi", true) ||
-      !request->hasParam("pin_can_spi_miso", true) ||
-      !request->hasParam("pin_can_spi_cs", true) ||
-      !request->hasParam("pin_can_spi_sck", true) ||
-      !request->hasParam("pin_can_spi_int", true) ||
-      !request->hasParam("pin_can_spi_mhz", true)))
-  {
-    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus SPI");
-    return;
-  }
-
-  if(request->hasParam("can_enabled", true) && canICBus == CAN_ICBus::BT &&
-     (!request->hasParam("pin_can_bt_devicename", true) ||
-      (request->hasParam("pin_can_bt_use_pin", true) && !request->hasParam("pin_can_bt_pin", true))))
-  {
-    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus Bluetooth");
+  CAN_Config* CANConfig = nullptr;
+  if(request->hasParam("can_enabled", true) && !handleCAN(request, CANConfig)) {
     return;
   }
 
@@ -718,6 +658,7 @@ void onSaveConfig(AsyncWebServerRequest *request)
   config->COOLING_ENABLED = request->hasParam("cooling_enabled", true);
   config->SG_ENABLED = request->hasParam("sg_enabled", true);
   config->CAN_ENABLED = request->hasParam("can_enabled", true);
+  config->CAN_CONFIG = CANConfig;
 
   if(config->X10A_ENABLED)
   {
@@ -737,114 +678,6 @@ void onSaveConfig(AsyncWebServerRequest *request)
     config->PIN_SG1 = request->getParam("pin_sg1", true)->value().toInt();
     config->PIN_SG2 = request->getParam("pin_sg2", true)->value().toInt();
     config->SG_RELAY_HIGH_TRIGGER = request->hasParam("sg_relay_trigger", true);
-  }
-
-  if(config->CAN_ENABLED)
-  {
-    CAN_Config* CANConfig = new CAN_Config();
-    CANConfig->CAN_IC = canICTypes;
-    CANConfig->CAN_BUS = canICBus;
-
-    if(CANConfig->CAN_BUS == CAN_ICBus::SPI)
-    {
-      CANConfig->CAN_SPI.PIN_MISO = request->getParam("pin_can_spi_miso", true)->value().toInt();
-      CANConfig->CAN_SPI.PIN_MOSI = request->getParam("pin_can_spi_mosi", true)->value().toInt();
-      CANConfig->CAN_SPI.PIN_SCK = request->getParam("pin_can_spi_sck", true)->value().toInt();
-      CANConfig->CAN_SPI.PIN_CS = request->getParam("pin_can_spi_cs", true)->value().toInt();
-      CANConfig->CAN_SPI.PIN_INT = request->getParam("pin_can_spi_int", true)->value().toInt();
-      CANConfig->CAN_SPI.IC_MHZ = request->getParam("pin_can_spi_mhz", true)->value().toInt();
-    }
-    else if(CANConfig->CAN_BUS == CAN_ICBus::UART)
-    {
-      CANConfig->CAN_UART.PIN_RX = request->getParam("pin_can_uart_rx", true)->value().toInt();
-      CANConfig->CAN_UART.PIN_TX = request->getParam("pin_can_uart_tx", true)->value().toInt();
-    }
-    else if(CANConfig->CAN_BUS == CAN_ICBus::BT)
-    {
-      CANConfig->CAN_BLUETOOTH.DEVICENAME = (char *)request->getParam("pin_can_bt_devicename", true)->value().c_str();
-      CANConfig->CAN_BLUETOOTH.USE_PIN = request->hasParam("pin_can_bt_use_pin", true);
-      if(CANConfig->CAN_BLUETOOTH.USE_PIN) {
-        CANConfig->CAN_BLUETOOTH.PIN = (char *)request->getParam("pin_can_bt_pin", true)->value().c_str();
-      }
-    }
-
-    CANConfig->CAN_SPEED_KBPS = request->getParam("can_speed_kbps", true)->value().toInt();
-    CANConfig->CAN_MQTT_TOPIC_NAME = (char *)request->getParam("can_mqtt_topic_name", true)->value().c_str();
-    CANConfig->CAN_READONLY_ENABLED = request->hasParam("can_readonly_enabled", true);
-    CANConfig->CAN_SNIFFING_ENABLED = request->hasParam("can_sniffing_enabled", true);
-    CANConfig->CAN_AUTOPOLL_MODE = (CAN_PollMode)request->getParam("can_autopoll_mode", true)->value().toInt();
-
-    if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
-    {
-      CANConfig->CAN_AUTOPOLL_TIME = request->getParam("can_autopoll_time", true)->value().toInt();
-    }
-
-    if(request->hasParam("definedCommands", true))
-    {
-      DynamicJsonDocument jsonCommands(MODELS_CONFIG_SIZE);
-      deserializeJson(jsonCommands, request->getParam("definedCommands", true)->value());
-      JsonArray commandsArray = jsonCommands.as<JsonArray>();
-
-      CANConfig->COMMANDS_LENGTH = commandsArray.size();
-      CANConfig->COMMANDS = new CANCommand*[CANConfig->COMMANDS_LENGTH];
-
-      int counter = 0;
-      for (JsonArray value : commandsArray)
-      {
-        JsonArray commandBytes = value[CAN_COMMAND_INDEX_COMMAND];
-        byte commandArray[] = {
-            commandBytes[0].as<const byte>(),
-            commandBytes[1].as<const byte>(),
-            commandBytes[2].as<const byte>(),
-            commandBytes[3].as<const byte>(),
-            commandBytes[4].as<const byte>(),
-            commandBytes[5].as<const byte>(),
-            commandBytes[6].as<const byte>()
-        };
-
-        CANCommandValueCode** valueCodes;
-        uint8_t valueCodeSize = 0;
-
-        if(value.size() > CAN_COMMAND_INDEX_VALUE_CODE)
-        {
-          JsonObject valueCodeCommands = value[CAN_COMMAND_INDEX_VALUE_CODE].as<JsonObject>();
-          valueCodeSize = valueCodeCommands.size();
-          valueCodes = new CANCommandValueCode*[valueCodeSize];
-
-          uint8_t valueCodeCounter = 0;
-
-          for (JsonPair keyValue : valueCodeCommands) {
-            valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
-            valueCodeCounter++;
-          }
-        }
-        else
-        {
-          valueCodes = nullptr;
-        }
-
-        CANConfig->COMMANDS[counter] = new CANCommand(
-          value[CAN_COMMAND_INDEX_NAME],
-          value[CAN_COMMAND_INDEX_LABEL],
-          commandArray,
-          value[CAN_COMMAND_INDEX_ID].as<const uint16_t>(),
-          value[CAN_COMMAND_INDEX_DIVISOR].as<const float>(),
-          value[CAN_COMMAND_INDEX_WRITABLE].as<const bool>(),
-          value[CAN_COMMAND_INDEX_UNIT],
-          value[CAN_COMMAND_INDEX_TYPE],
-          valueCodeSize,
-          valueCodes);
-
-        counter++;
-      }
-    }
-    else
-    {
-      CANConfig->COMMANDS_LENGTH = 0;
-      CANConfig->COMMANDS = nullptr;
-    }
-
-    config->CAN_CONFIG = CANConfig;
   }
 
   if(request->hasParam("definedParameters", true))
@@ -997,10 +830,10 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
          runningVersion.Patch <= updateVersion.Patch &&
          runningVersion.Build <  updateVersion.Build) ||
         // or if new version is equal
-        (runningVersion.Major = updateVersion.Major &&
-         runningVersion.Minor = updateVersion.Minor &&
-         runningVersion.Patch = updateVersion.Patch &&
-         runningVersion.Build = updateVersion.Build)) {
+        (runningVersion.Major == updateVersion.Major &&
+         runningVersion.Minor == updateVersion.Minor &&
+         runningVersion.Patch == updateVersion.Patch &&
+         runningVersion.Build == updateVersion.Build)) {
       // --> accept update
       updateVersionValid = true;
     }
@@ -1130,24 +963,176 @@ void onLoadCANValuesResult(AsyncWebServerRequest *request)
   valueCANLoadResponse = "";
 
   valueCANLoadState = NotLoading;
+
+  delete webuiScanCANRegisterConfig;
+}
+
+bool handleCAN(AsyncWebServerRequest *request, CAN_Config* CANConfig)
+{
+  if(!request->hasParam("can_ic_type", true) || !request->hasParam("can_speed_kbps", true)) {
+    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus IC Type or CAN-Speed");
+    return false;
+  }
+
+  CAN_ICBus canICBus = CAN_ICBus::None;
+  CAN_ICTypes canICTypes = CAN_ICTypes::None;
+
+  String ICType = request->getParam("can_ic_type", true)->value();
+
+  if(ICType.startsWith("uart_")) {
+    canICBus = CAN_ICBus::UART;
+  } else if(ICType.startsWith("spi_")) {
+    canICBus = CAN_ICBus::SPI;
+  } else if(ICType.startsWith("bt_")) {
+    canICBus = CAN_ICBus::BT;
+  } else {
+    request->send(422, "text/plain", "Invalid CAN IC/Chip communication type given");
+    return false;
+  }
+
+  ICType = ICType.substring(ICType.indexOf('_') + 1);
+
+  if(ICType == "mcp2515") {
+    canICTypes = CAN_ICTypes::MCP2515;
+  } else if(ICType == "elm327") {
+    canICTypes = CAN_ICTypes::ELM327;
+  } else if(ICType == "sja1000") {
+    canICTypes = CAN_ICTypes::SJA1000;
+  } else {
+    request->send(422, "text/plain", "Invalid CAN IC/Chip type given");
+    return false;
+  }
+
+  if(canICBus == CAN_ICBus::UART &&
+    (!request->hasParam("pin_can_uart_rx", true) || !request->hasParam("pin_can_uart_tx", true)))
+  {
+    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus UART");
+    return false;
+  }
+
+  if(canICBus == CAN_ICBus::SPI &&
+     (!request->hasParam("pin_can_spi_mosi", true) ||
+      !request->hasParam("pin_can_spi_miso", true) ||
+      !request->hasParam("pin_can_spi_cs", true) ||
+      !request->hasParam("pin_can_spi_sck", true) ||
+      !request->hasParam("pin_can_spi_int", true) ||
+      !request->hasParam("pin_can_spi_mhz", true)))
+  {
+    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus SPI");
+    return false;
+  }
+
+  if(canICBus == CAN_ICBus::BT &&
+     (!request->hasParam("pin_can_bt_devicename", true) ||
+      (request->hasParam("pin_can_bt_use_pin", true) && !request->hasParam("pin_can_bt_pin", true))))
+  {
+    request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus Bluetooth");
+    return false;
+  }
+
+  CANConfig = new CAN_Config();
+  CANConfig->CAN_IC = canICTypes;
+  CANConfig->CAN_BUS = canICBus;
+
+  if(CANConfig->CAN_BUS == CAN_ICBus::SPI) {
+    CANConfig->CAN_SPI.PIN_MISO = request->getParam("pin_can_spi_miso", true)->value().toInt();
+    CANConfig->CAN_SPI.PIN_MOSI = request->getParam("pin_can_spi_mosi", true)->value().toInt();
+    CANConfig->CAN_SPI.PIN_SCK = request->getParam("pin_can_spi_sck", true)->value().toInt();
+    CANConfig->CAN_SPI.PIN_CS = request->getParam("pin_can_spi_cs", true)->value().toInt();
+    CANConfig->CAN_SPI.PIN_INT = request->getParam("pin_can_spi_int", true)->value().toInt();
+    CANConfig->CAN_SPI.IC_MHZ = request->getParam("pin_can_spi_mhz", true)->value().toInt();
+  } else if(CANConfig->CAN_BUS == CAN_ICBus::UART) {
+    CANConfig->CAN_UART.PIN_RX = request->getParam("pin_can_uart_rx", true)->value().toInt();
+    CANConfig->CAN_UART.PIN_TX = request->getParam("pin_can_uart_tx", true)->value().toInt();
+  } else if(CANConfig->CAN_BUS == CAN_ICBus::BT) {
+    CANConfig->CAN_BLUETOOTH.DEVICENAME = (char *)request->getParam("pin_can_bt_devicename", true)->value().c_str();
+    CANConfig->CAN_BLUETOOTH.USE_PIN = request->hasParam("pin_can_bt_use_pin", true);
+    if(CANConfig->CAN_BLUETOOTH.USE_PIN) {
+      CANConfig->CAN_BLUETOOTH.PIN = (char *)request->getParam("pin_can_bt_pin", true)->value().c_str();
+    }
+  }
+
+  CANConfig->CAN_SPEED_KBPS = request->getParam("can_speed_kbps", true)->value().toInt();
+  CANConfig->CAN_MQTT_TOPIC_NAME = (char *)request->getParam("can_mqtt_topic_name", true)->value().c_str();
+  CANConfig->CAN_READONLY_ENABLED = request->hasParam("can_readonly_enabled", true);
+  CANConfig->CAN_SNIFFING_ENABLED = request->hasParam("can_sniffing_enabled", true);
+  CANConfig->CAN_AUTOPOLL_MODE = (CAN_PollMode)request->getParam("can_autopoll_mode", true)->value().toInt();
+
+  if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
+    CANConfig->CAN_AUTOPOLL_TIME = request->getParam("can_autopoll_time", true)->value().toInt();
+  }
+
+  if(request->hasParam("definedCommands", true)) {
+    DynamicJsonDocument jsonCommands(MODELS_CONFIG_SIZE);
+    deserializeJson(jsonCommands, request->getParam("definedCommands", true)->value());
+    JsonArray commandsArray = jsonCommands.as<JsonArray>();
+
+    CANConfig->COMMANDS_LENGTH = commandsArray.size();
+    CANConfig->COMMANDS = new CANCommand*[CANConfig->COMMANDS_LENGTH];
+
+    int counter = 0;
+    for (JsonArray value : commandsArray) {
+      JsonArray commandBytes = value[CAN_COMMAND_INDEX_COMMAND];
+      byte commandArray[] = {
+          commandBytes[0].as<const byte>(),
+          commandBytes[1].as<const byte>(),
+          commandBytes[2].as<const byte>(),
+          commandBytes[3].as<const byte>(),
+          commandBytes[4].as<const byte>(),
+          commandBytes[5].as<const byte>(),
+          commandBytes[6].as<const byte>()
+      };
+
+      CANCommandValueCode** valueCodes;
+      uint8_t valueCodeSize = 0;
+
+      if(value.size() > CAN_COMMAND_INDEX_VALUE_CODE) {
+        JsonObject valueCodeCommands = value[CAN_COMMAND_INDEX_VALUE_CODE].as<JsonObject>();
+        valueCodeSize = valueCodeCommands.size();
+        valueCodes = new CANCommandValueCode*[valueCodeSize];
+
+        uint8_t valueCodeCounter = 0;
+
+        for (JsonPair keyValue : valueCodeCommands) {
+          valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
+          valueCodeCounter++;
+        }
+      } else {
+        valueCodes = nullptr;
+      }
+
+      CANConfig->COMMANDS[counter] = new CANCommand(
+        value[CAN_COMMAND_INDEX_NAME],
+        value[CAN_COMMAND_INDEX_LABEL],
+        commandArray,
+        value[CAN_COMMAND_INDEX_ID].as<const uint16_t>(),
+        value[CAN_COMMAND_INDEX_DIVISOR].as<const float>(),
+        value[CAN_COMMAND_INDEX_WRITABLE].as<const bool>(),
+        value[CAN_COMMAND_INDEX_UNIT],
+        value[CAN_COMMAND_INDEX_TYPE],
+        valueCodeSize,
+        valueCodes);
+
+      counter++;
+    }
+  } else {
+    CANConfig->COMMANDS_LENGTH = 0;
+    CANConfig->COMMANDS = nullptr;
+  }
+
+  return true;
 }
 
 void onLoadCANValues(AsyncWebServerRequest *request)
 {
-  if(!request->hasParam("KBPS", true) || !request->hasParam("PARAMS", true))
-  {
-    request->send(422, "text/plain", "Missing parameters KBPS or PARAMS");
-    return;
-  }
-
-  if(valueCANLoadState != NotLoading)
-  {
+  if(valueCANLoadState != NotLoading) {
     request->send(202, "text/plain", "Value loading in progress");
     return;
   }
 
-  webuiScanCANRegisterConfig.KBPS = request->getParam("KBPS", true)->value().toInt();
-  webuiScanCANRegisterConfig.Params = request->getParam("PARAMS", true)->value();
+  if(!handleCAN(request, webuiScanCANRegisterConfig)) {
+    return;
+  }
 
   valueCANLoadState = Pending;
 

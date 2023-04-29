@@ -1,7 +1,7 @@
 #include "webuiBackgroundTasks.hpp"
 
 WebUIScanX10ARegister webuiScanX10ARegisterConfig;
-WebUIScanCANRegister webuiScanCANRegisterConfig;
+CAN_Config* webuiScanCANRegisterConfig;
 ValueLoadState valueX10ALoadState = NotLoading;
 ValueLoadState valueCANLoadState = NotLoading;
 ValueLoadState wifiLoadState = NotLoading;
@@ -92,7 +92,27 @@ void webuiScanCANRegister()
 
   valueCANLoadState = Loading;
 
-  // TODO fill datas
+  bool CANWasInited = config->CAN_ENABLED;
+
+  debugSerial.printf("Starting new can connection with");
+  debugSerial.println("Waiting for registry scan to finish...");
+
+  debugSerial.println("Starting registry scan...");
+
+  canBus_setup(webuiScanCANRegisterConfig);
+
+  debugSerial.println("Fetching and reading values");
+
+  valueCANLoadResponse = canBus_readAllCommands();
+
+  if(CANWasInited) {
+    debugSerial.println("Restoring original CAN connection");
+    canBus_setup(config->CAN_CONFIG);
+  } else {
+    canBus_stop();
+  }
+
+  debugSerial.println("Finished registry scan");
 
   valueCANLoadState = LoadingFinished;
 }

@@ -4,6 +4,8 @@ static CANDriver *driver = nullptr;
 
 void canBus_setup(const CAN_Config* CANConfig)
 {
+    canBus_stop();
+
     switch (CANConfig->CAN_IC)
     {
     case CAN_ICTypes::MCP2515:
@@ -33,6 +35,14 @@ void canBus_loop()
 {
     if(driver != nullptr)
         driver->handleLoop();
+}
+
+String canBus_readAllCommands()
+{
+    if(driver != nullptr)
+        return driver->readAllCommands();
+
+    return "";
 }
 
 void canBus_stop()

@@ -39,6 +39,8 @@ protected:
     bool sniffingEnabled = false;
     CanDriverMode currentMode;
     const CAN_Config* CANConfig;
+    bool CANDataToString = false;
+    size_t currentDataToStringIndex;
 
     CanFrame* getCanFrameFromCommand(CANCommand* cmd, bool setValue, int value);
     void sniffCAN(uint32_t const, CanFrame const);
@@ -46,11 +48,13 @@ protected:
     int HPSU_toSigned(uint16_t value, char* unit);
     virtual bool setMode(CanDriverMode mode) NOT_IMPLEMENTED;
     void defaultInit();
+    void checkPendingMessages();
 
 public:
     CANDriver(const CAN_Config* CANConfig);
     virtual bool initInterface() NOT_IMPLEMENTED;
     virtual void handleLoop();
+    virtual String readAllCommands();
     virtual void sendCommand(CANCommand *cmd, bool setValue = false, int value = 0) NOT_IMPLEMENTED;
     void onDataRecieved(uint32_t const, CanFrame const);
     void listenOnly(bool value = true);

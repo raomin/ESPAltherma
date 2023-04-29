@@ -94,6 +94,8 @@ void onUpdate(AsyncWebServerRequest *request);
 
 void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
 
+bool handleCAN(AsyncWebServerRequest *request, CAN_Config* CANConfig);
+
 void onUploadCANFile(AsyncWebServerRequest *request);
 
 void WebUI_Init();
