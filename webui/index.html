@@ -586,7 +586,7 @@
 
               <input type="button" onclick="addSelectedCanCommands()" value="Add to selected commands">
               <input type="button" onclick="addCanCommands()" value="Add all commands">
-              <button id="loadCommandsTable" onclick="alert('Not yet implemented')">Load command values</button>
+              <button id="loadFileCommandsTable" onclick="beginLoadCANData('fileCommandsTable')">Load command values</button>
             </div>
             <div class="parametersSection">
               <label for="selectedCommandsTable">Selected Commands:</label>
@@ -610,7 +610,7 @@
 
               <input type="button" onclick="removeSelectedCommands()" value="Remove from selected commands" />
               <input type="button" onclick="clearCommands()" value="Remove all commands" />
-              <button id="loadSelectedCommandsTable" onclick="alert('Not yet implemented')">Load command values</button>
+              <button id="loadSelectedCommandsTable" onclick="beginLoadCANData('selectedCommandsTable')">Load command values</button>
             </div>
           </div>
           <div class="customParameterSection">

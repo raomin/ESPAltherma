@@ -263,7 +263,6 @@ void onLoadCommands(AsyncWebServerRequest *request)
 
 void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t* data, size_t len, bool final)
 {
-  String logmessage;
   String fsFilename;
 
   if (!index)
@@ -273,26 +272,22 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
       fsFilename = "/P" + String(millis()) + ".json";
     } while (LittleFS.exists(fsFilename));
 
-    logmessage = "Upload Start: " + String(filename);
     // open the file on first call and store the file handle in the request object
     request->_tempFile = LittleFS.open(fsFilename, "w");
-    debugSerial.println(logmessage);
+    debugSerial.printf("Upload Start: %s\n", filename.c_str());
   }
 
   if (len)
   {
     // stream the incoming chunk to the opened file
     request->_tempFile.write(data, len);
-    logmessage = "Writing file: " + String(filename) + " index=" + String(index) + " len=" + String(len);
-    debugSerial.println(logmessage);
+    debugSerial.printf("Writing file: %s index=%i len=%i\n", filename.c_str(), index, len);
   }
 
   if (final)
   {
     lastUploadFileName = "/" + String(request->_tempFile.name());
-
-    logmessage = "Upload Complete: " + String(filename) + ", size: " + String(index + len);
-    debugSerial.println(logmessage);
+    debugSerial.printf("Upload Complete: %s, size: %i\n", filename.c_str(), index + len);
 
     // close the file handle as the upload is now done
     request->_tempFile.close();
@@ -308,8 +303,7 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
     size_t newFileSize = modelsFile.size();
     modelsFile.close();
 
-    logmessage = "JSON Minify Complete: " + String(lastUploadFileName) + ", new size: " + String(newFileSize);
-    debugSerial.println(logmessage);
+    debugSerial.printf("JSON Minify Complete: %s, new size: %i\n", lastUploadFileName.c_str(), newFileSize);
   }
 }
 
@@ -317,7 +311,7 @@ void onUploadX10AFile(AsyncWebServerRequest *request)
 {
   if(!request->hasParam("file", true, true))
   {
-    request->send(422, "text/plain", "Missing parameter file");
+    request->send(422, "text/plain", "Missing X10A file");
     return;
   }
 
@@ -853,13 +847,20 @@ void onUploadCANFile(AsyncWebServerRequest *request)
 
   File canCommandsFile = LittleFS.open(CAN_COMMANDS_FILE, FILE_READ);
   DynamicJsonDocument canCommandsDoc(MODELS_DOC_SIZE);
-  deserializeJson(canCommandsDoc, canCommandsFile);
+  DeserializationError result;
+  if((result = deserializeJson(canCommandsDoc, canCommandsFile)).code() != DeserializationError::Code::Ok) {
+    debugSerial.printf("CAN Commands file read error: %i\n", result.code());
+    return;
+  };
   JsonArray canCommandsDocArr = canCommandsDoc.as<JsonArray>();
   canCommandsFile.close();
 
   File uploadFileFS = LittleFS.open(fsFilename, FILE_READ);
   DynamicJsonDocument uploadDoc(COMMANDS_DEFINITION_UPLOAD_SIZE);
-  deserializeJson(uploadDoc, uploadFileFS);
+  if((result = deserializeJson(uploadDoc, uploadFileFS)).code() != DeserializationError::Code::Ok) {
+    debugSerial.printf("CAN definition file read error: %i\n", result.code());
+    return;
+  };
   uploadFileFS.close();
 
   bool newModel = true;

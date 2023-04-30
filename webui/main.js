@@ -455,13 +455,8 @@ async function loadfWifiNetworksFinished()
     });;
 }
 
-async function sendConfigData(event)
+async function validateForm()
 {
-    event.preventDefault();
-
-    const form = document.getElementById("configForm");
-    const formData = new FormData(form);
-
     const standalone_wifi = document.getElementById('standalone_wifi').checked;
 
     if(!standalone_wifi)
@@ -657,8 +652,23 @@ async function sendConfigData(event)
         validationErrorField.focus();
         await sleep(100);
         alert("Please fill in all required fields!");
-        return;
+        return false;
     }
+
+    return true;
+}
+
+async function sendConfigData(event)
+{
+    event.preventDefault();
+
+    const form = document.getElementById("configForm");
+    const formData = new FormData(form);
+
+    let valid = await validateForm();
+
+    if(!valid)
+        return;
 
     formData.append("definedParameters", JSON.stringify(customParametersList));
 
@@ -1717,4 +1727,110 @@ function updateCANConfigDisplay()
     show('can_spi_config', !icType.startsWith('spi_'));
     show('can_uart_config', !icType.startsWith('uart_'));
     show('can_bt_config', !icType.startsWith('bt_'));
+}
+
+async function beginLoadCANData(tableId)
+{
+    let params;
+    if (tableId == 'selectedCommandsTable')
+        params = customCommandsList;
+    else
+        params = modelCommands;
+
+    let valid = await validateForm();
+
+    if(!valid)
+        return;
+
+    const form = document.getElementById("configForm");
+    const formData = new FormData(form);
+
+    const buttonId = 'load' + tableId.charAt(0).toUpperCase() + tableId.slice(1);
+    const buttonLoadValues = document.getElementById(buttonId);
+    buttonLoadValues.setAttribute('aria-busy', 'true');
+    buttonLoadValues.toggleAttribute('disabled');
+
+    await fetch('/can/loadValues', {
+        method: "POST",
+        body: formData
+    })
+    .then(function(response) {
+        if(response.status == 200)
+        {
+            fetchDataIntervalId = tableId;
+            fetchDataIntervalHandler = setInterval(finishLoadCANData, 5000);
+        }
+        else
+        {
+            response.text().then(function(text) {
+                alert("Begin fetching command values failed! Message: " + text);
+            })
+            .finally(function() {
+                buttonLoadValues.removeAttribute('aria-busy');
+                buttonLoadValues.toggleAttribute('disabled');
+            });
+        }
+    })
+    .catch(function(err) {
+        buttonLoadValues.removeAttribute('aria-busy');
+        buttonLoadValues.toggleAttribute('disabled');
+        alert('Begin fetching commands values failed! Message: ' + err);
+    });
+}
+
+async function finishLoadCANData()
+{
+    let params;
+    if (fetchDataIntervalId == 'selectedCommandsTable')
+        params = customCommandsList;
+    else
+        params = modelCommands;
+
+    const buttonId = 'load' + fetchDataIntervalId.charAt(0).toUpperCase() + fetchDataIntervalId.slice(1);
+    const buttonLoadValues = document.getElementById(buttonId);
+
+    await fetch('/can/loadValuesResult', {
+        method: "GET"
+    })
+    .then(function(response) {
+        if(response.status != 200)
+        {
+            throw new Error("A!" + response.text);
+        }
+
+        return response.json();
+    })
+    .then(function(data){
+        params.forEach((model, index) => {
+            model["value"] = data[index];
+        });
+
+        if (fetchDataIntervalId == 'selectedCommandsTable')
+        {
+            customCommandsList = params;
+            updateCommandsTable(fetchDataIntervalId, customCommandsList);
+        }
+        else
+        {
+            modelCommands = params;
+            updateCommandsTable(fetchDataIntervalId, modelCommands);
+        }
+
+        clearInterval(fetchDataIntervalHandler);
+        buttonLoadValues.removeAttribute('aria-busy');
+        buttonLoadValues.toggleAttribute('disabled');
+    })
+    .catch(function(err) {
+        if(err.message.startsWith("A!"))
+        {
+            console.log(err.message.slice(2));
+        }
+        else
+        {
+            clearInterval(fetchDataIntervalHandler);
+            buttonLoadValues.removeAttribute('aria-busy');
+            buttonLoadValues.toggleAttribute('disabled');
+            alert('Fetching commands values failed! Message: ' + err);
+        }
+    });
 }
