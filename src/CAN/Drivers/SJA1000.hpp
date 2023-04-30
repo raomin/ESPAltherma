@@ -2,7 +2,7 @@
 #define DRIVER_SJA1000_H
 
 #include "driver/twai.h"
-#include "CAN/CANDriver.hpp"
+#include "CAN/Driver.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
 

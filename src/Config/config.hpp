@@ -5,7 +5,7 @@
 #include <LittleFS.h>
 #include "parameterDef.hpp"
 #include "ArduinoJson.h"
-#include "CAN/CANConfig.hpp"
+#include "CAN/Config.hpp"
 
 #define CONFIG_FILE "/config.json"
 #define MODELS_CONFIG_SIZE 1024*10

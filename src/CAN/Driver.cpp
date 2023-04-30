@@ -1,4 +1,4 @@
-#include "CANDriver.hpp"
+#include "Driver.hpp"
 
 // tranlated from fhemHPSU and pyHPSU github project.
 // https://github.com/ahermann86/fhemHPSU
@@ -164,12 +164,12 @@ String CANDriver::readAllCommands()
     sendCommand(CANConfig->COMMANDS[i], false);
 
     while(cmdSendInfos[i]->pending) {
-      checkPendingMessages();
       delay(5);
+      checkPendingMessages();
     }
   }
 
-  DynamicJsonDocument resultDoc(CANConfig->COMMANDS_LENGTH*JSON_OBJECT_SIZE(2));
+  DynamicJsonDocument resultDoc(CANConfig->COMMANDS_LENGTH*JSON_ARRAY_SIZE(2));
   JsonArray obj = resultDoc.to<JsonArray>();
 
   for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {

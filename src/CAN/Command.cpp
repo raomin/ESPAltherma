@@ -1,4 +1,4 @@
-#include "CANCommand.hpp"
+#include "Command.hpp"
 
 CANCommandValueCode::CANCommandValueCode(String keyp, String valuep) : key(keyp), value(valuep)
 {

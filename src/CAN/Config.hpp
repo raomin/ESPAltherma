@@ -2,7 +2,7 @@
 #define BUS_CONFIG_TYPES_H
 
 #include <Arduino.h>
-#include "CANCommand.hpp"
+#include "Command.hpp"
 
 enum class CAN_ICTypes : uint8_t {
     None,
