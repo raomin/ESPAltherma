@@ -7,7 +7,7 @@
 #include "Config/parameterDef.hpp"
 #include "arrayFunctions.hpp"
 #include "X10A/comm.hpp"
-#include "X10a/converters.hpp"
+#include "X10A/converters.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
 
