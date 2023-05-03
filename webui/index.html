@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>ESPAltherma Config</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" type="text/css" href="pico.min.css">
+  <link rel="stylesheet" type="text/css" href="main.css">
+  <script src="md5.min.js"></script>
+  <script src="main.js"></script>
+</head>
+<body>
+  <main class="container">
+    <dialog id="loading-dialog" open>
+      <article aria-busy="true">
+        Loading, please wait...
+      </article>
+    </dialog>
+    <header><h1>ESPAltherma Config</h1></header>
+    <nav>
+      <ul id="nav-main" style="overflow-x: auto">
+        <li><a href="#" data-link="form-network" role="button">Network</a></li>
+        <li><a href="#" data-link="form-mqtt">MQTT</a></li>
+        <li><a href="#" data-link="form-pins">Pins</a></li>
+        <li id="nav-x10a" class="hidden"><a href="#" data-link="form-x10a">X10A-Bus</a></li>
+        <li id="nav-can" class="hidden"><a href="#" data-link="form-can">CAN-Bus</a></li>
+        <li><a href="#" data-link="form-export-import">Export/Import</a></li>
+        <li><a href="#" data-link="form-update">Update</a></li>
+      </ul>
+      <ul>
+        <li><a href="/webserial" role="button" class="outline" target="_blank">Web Serial</a></li>
+      </ul>
+    </nav>
+    <form id="configForm" action="/saveConfig" method="post">
+      <article id="form-network" role="tab">
+        <label for="standalone_wifi" >
+          <input type="checkbox" id="standalone_wifi" name="standalone_wifi" role="switch" onclick="updateWifiFields()"/>
+          Use standalone WiFi
+        </label>
+        <div class="grid">
+          <div>
+            <label for="ssid">WIFI SSID:</label>
+            <input type="text" id="ssid" name="ssid"/>
+          </div>
+
+          <label for="ssid_select" id="ssidSelectLabel">
+            Select a Wifi in range
+            <div class="grid-wifi"  >
+              <div class="container-wifilist">
+                  <select id="ssid_select" name="ssid_select">
+                    <option value="" disabled selected>Select Wifi...</option>
+                  </select>
+              </div>
+              <div class="container-refreshBtn">
+                <a href="#" role="button" id="btnWifiListRefresh">&#x21bb;</a>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <label for="ssid_password">WIFI Password:</label>
+        <input type="password" id="ssid_password" name="ssid_password"/>
+        <small>Leave empty for open networks</small>
+
+        <label for="ssid_staticip" >
+          <input type="checkbox" id="ssid_staticip" name="ssid_staticip" role="switch" onclick="show('staticip');"/>
+          WIFI use static IP
+        </label>
+
+        <article id="staticip" class="hidden">
+          <div>
+            <label for="ssid_ip">WIFI IP:</label>
+            <input type="text" id="ssid_ip" name="ssid_ip"/>
+
+            <label for="ssid_subnet">WIFI Subnet:</label>
+            <input type="text" id="ssid_subnet" name="ssid_subnet"/>
+
+            <label for="ssid_gateway">WIFI Gateway:</label>
+            <input type="text" id="ssid_gateway" name="ssid_gateway"/>
+
+            <label for="primary_dns">Primary DNS:</label>
+            <input type="text" id="primary_dns" name="primary_dns"/>
+            <small>Optional</small>
+
+            <label for="secondary_dns">Secondary DNS:</label>
+            <input type="text" id="secondary_dns" name="secondary_dns"/>
+            <small>Optional</small>
+        </article>
+      </article>
+      <article id="form-mqtt" role="tab" style="display: none;">
+        <label for="mqtt_server">MQTT Server:</label>
+        <input type="text" id="mqtt_server" name="mqtt_server"/>
+
+        <label for="mqtt_username">MQTT Username:</label>
+        <input type="text" id="mqtt_username" name="mqtt_username"/>
+
+        <label for="mqtt_password">MQTT Password:</label>
+        <input type="password" id="mqtt_password" name="mqtt_password"/>
+
+        <label for="mqtt_topic_name">MQTT Topic Name:</label>
+        <input type="text" id="mqtt_topic_name" name="mqtt_topic_name"/>
+        <small>Needs to end with a slash</small>
+
+        <label for="mqtt_jsontable" >
+          <input type="checkbox" id="mqtt_jsontable" name="mqtt_jsontable" role="switch"/>
+          MQTT use JSON Table
+        </label>
+
+        <label for="mqtt_use_onetopic" >
+          <input type="checkbox" id="mqtt_use_onetopic" name="mqtt_use_onetopic" role="switch" onclick="show('onetopic');"/>
+          MQTT one Topic
+        </label>
+
+        <article id="onetopic" class="hidden">
+          <label for="mqtt_onetopic_name">MQTT one Topic:</label>
+          <input type="text" id="mqtt_onetopic_name" name="mqtt_onetopic_name"/>
+          <small>Needs to end with a slash</small>
+        </article>
+
+        <label for="mqtt_port">MQTT Port:</label>
+        <input type="number" id="mqtt_port" name="mqtt_port" min="0" max="65535"/>
+
+        <label for="frequency">
+          Frequency:
+          <select id="frequency" name="frequency">
+            <option value="10000">10 sec</option>
+            <option value="15000">15 sec</option>
+            <option value="30000">30 sec</option>
+            <option value="60000">1 min</option>
+            <option value="300000">5 min</option>
+            <option value="600000">10 min</option>
+          </select>
+        </label>
+      </article>
+      <article id="form-pins" role="tab" style="display: none;">
+
+        <label for="pin_enable_config">
+          PIN CONFIG PAGE:
+          <select id="pin_enable_config" name="pin_enable_config" data-pins></select>
+          <small>If the given pinnumber gets connected to ground, ESPAltherma will reboot again in the standalone wifi mode.</small>
+        </label>
+
+        <label for="x10a_enabled" >
+          <input type="checkbox" id="x10a_enabled" name="x10a_enabled" role="switch" onclick="show('x10a');show('nav-x10a');"/>
+          X10A enabled
+        </label>
+
+        <article id="x10a" class="hidden">
+          <div class="grid">
+            <label for="pin_rx">
+              PIN RX
+              <select id="pin_rx" name="pin_rx" data-pins></select>
+            </label>
+
+            <label for="pin_tx">
+              PIN TX
+              <select id="pin_tx" name="pin_tx" data-pins></select>
+            </label>
+          </div>
+        </article>
+
+        <label for="heating_enabled" >
+          <input type="checkbox" id="heating_enabled" name="heating_enabled" role="switch" onclick="show('heating');"/>
+          Heating enabled
+        </label>
+
+        <article id="heating" class="hidden">
+          <label for="pin_heating">
+            PIN HEATING
+            <select id="pin_heating" name="pin_heating" data-pins>
+            </select>
+          </label>
+        </article>
+
+        <label for="cooling_enabled" >
+          <input type="checkbox" id="cooling_enabled" name="cooling_enabled" role="switch" onclick="show('cooling');"/>
+          Cooling enabled
+        </label>
+
+        <article id="cooling" class="hidden">
+          <label for="pin_cooling">
+            PIN COOLING
+            <select id="pin_cooling" name="pin_cooling" data-pins>
+            </select>
+          </label>
+        </article>
+
+        <label for="sg_enabled" >
+          <input type="checkbox" id="sg_enabled" name="sg_enabled" role="switch" onclick="show('smartgrid');"/>
+          SmartGrid enabled
+        </label>
+
+        <article id="smartgrid" class="hidden">
+          <div class="grid">
+            <label for="pin_sg1">
+              PIN SG1
+              <select id="pin_sg1" name="pin_sg1" data-pins></select>
+            </label>
+
+            <label for="pin_sg2">
+              PIN SG2
+              <select id="pin_sg2" name="pin_sg2" data-pins></select>
+            </label>
+          </div>
+
+          <label for="sg_relay_trigger" >
+            <input type="checkbox" id="sg_relay_trigger" name="sg_relay_trigger" role="switch"/>
+            SG Relay high trigger
+          </label>
+          <small>Enable if the relay gets enabled when output is high on SG Pins</small>
+        </article>
+
+        <label for="can_enabled" >
+          <input type="checkbox" id="can_enabled" name="can_enabled" role="switch" onclick="show('can_pins');show('nav-can');"/>
+          CAN-Bus enabled
+        </label>
+
+        <article id="can_pins" class="hidden">
+          <p>Please select a CAN Communication Chip.</p>
+          <p>
+            Please be aware that the <b>ESP32 internal SJA1000 Chip has some restrictions.</b>
+            The CAN-Controller only supports bitrates under 25kbps if the ESP32 has Revision 2 or above.
+            If you want to use this CAN Controller with lower Bitrates, please use a precompilled ESP-IDF for Revision 2 or above with this firmware.
+            By default, the ESP-IDF is precompilled for Revision 1.
+          </p>
+
+          <label for="can_ic_type">CAN communication done with:</label>
+          <select id="can_ic_type" name="can_ic_type" onchange="updateCANConfigDisplay()">
+            <option value="">Please select</option>
+            <option value="spi_mcp2515">External MCP2515 via SPI</option>
+            <option value="uart_elm327">External ELM327 via UART</option>
+            <option value="uart_sja1000">SJA1000 with external transciever</option>
+          </select>
+
+          <div id="can_spi_config" class="hidden">
+            SPI Config:
+            <div class="grid">
+              <label for="pin_can_spi_mosi">
+                PIN MOSI:
+                <select id="pin_can_spi_mosi" name="pin_can_spi_mosi" data-pins></select>
+              </label>
+
+              <label for="pin_can_spi_miso">
+                PIN MISO
+                <select id="pin_can_spi_miso" name="pin_can_spi_miso" data-pins></select>
+              </label>
+            </div>
+            <div class="grid">
+              <label for="pin_can_spi_cs">
+                PIN Chip select
+                <select id="pin_can_spi_cs" name="pin_can_spi_cs" data-pins></select>
+              </label>
+
+              <label for="pin_can_spi_sck">
+                PIN SCK
+                <select id="pin_can_spi_sck" name="pin_can_spi_sck" data-pins></select>
+              </label>
+            </div>
+            <div class="grid">
+              <label for="pin_can_spi_int">
+                PIN Interrupt
+                <select id="pin_can_spi_int" name="pin_can_spi_int" data-pins></select>
+              </label>
+
+              <label for="pin_can_spi_mhz">
+                IC MHZ
+                <select id="pin_can_spi_mhz" name="pin_can_spi_mhz">
+                  <option value="8">8 mhz</option>
+                  <option value="10">10 mhz</option>
+                  <option value="12">12 mhz</option>
+                  <option value="16">16 mhz</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div id="can_uart_config" class="hidden">
+            UART Config:
+            <div class="grid">
+              <label for="pin_can_uart_rx">
+                PIN CAN RX
+                <select id="pin_can_uart_rx" name="pin_can_uart_rx" data-pins></select>
+              </label>
+
+              <label for="pin_can_uart_tx">
+                PIN CAN TX
+                <select id="pin_can_uart_tx" name="pin_can_uart_tx" data-pins></select>
+              </label>
+            </div>
+          </div>
+        </article>
+      </article>
+      <article id="form-x10a" role="tab" style="display: none;">
+        <label for="x10a_protocol">
+          Protocol
+          <select id="x10a_protocol" name="x10a_protocol">
+            <option value="0">Protocol I</option>
+            <option value="1">Protocol S</option>
+          </select>
+        </label>
+        <div class="grid">
+          <div>
+            <label for="model">Model:</label>
+            <select id="model" name="model" onchange="refreshLanguages()">
+              <option value="" selected>Select a model...</option>
+            </select>
+
+            <label for="language">Language:</label>
+            <select id="language" name="language" onchange="updatePresets()">
+              <option value="" selected>Select a language...</option>
+            </select>
+
+            <label for="language">Preset Parameters:</label>
+            <select id="presetParameters" name="presetParameters" onchange="updateParameters()">
+              <option value="" selected>Select a preset...</option>
+            </select>
+          </div>
+          <div>
+            <label for="parametersFile">Upload Parameters file:</label>
+            <input type="file" id="parametersFile" accept=".json" name="parametersFile"/>
+            <small>Add a model config file to the predefined model list</small>
+
+            <input type="button" onclick="uploadX10AFile()" value="Upload">
+          </div>
+        </div>
+
+        <article id="containerCustomParameters">
+          <div class="grid">
+            <div id="selectModelParametersSection" class="parametersSection hidden">
+              <label for="parametersTable">Parameters:</label>
+              <figure >
+                <table id="parametersTable">
+                  <tr>
+                    <td>Name</td>
+                    <td>RegID</td>
+                    <td>Offset</td>
+                    <td>ConvID</td>
+                    <td>Data size</td>
+                    <td>Data type</td>
+                    <td>Value</td>
+                  </tr>
+                </table>
+              </figure>
+
+              <input type="button" onclick="addSelectedPredefinedParameters()" value="Add to selected parameters">
+              <input type="button" onclick="addPredefinedParameters()" value="Add all parameters">
+              <button id="loadParametersTable" onclick="beginLoadData('parametersTable')">Load model values</button>
+            </div>
+            <div class="parametersSection">
+              <label for="selectedParametersTable">Selected Parameters:</label>
+              <figure>
+                <table id="selectedParametersTable">
+                  <tr>
+                    <td>Name</td>
+                    <td>RegID</td>
+                    <td>Offset</td>
+                    <td>ConvID</td>
+                    <td>Data size</td>
+                    <td>Data type</td>
+                    <td>Value</td>
+                  </tr>
+                </table>
+              </figure>
+
+              <input type="button" onclick="removeSelectedCustomParameters()" value="Remove from selected parameters" />
+              <input type="button" onclick="clearCustomParameters()" value="Remove all parameters" />
+              <button id="loadSelectedParametersTable" onclick="beginLoadData('selectedParametersTable')">Load parameter values</button>
+            </div>
+          </div>
+          <div class="customParameterSection">
+            <details>
+              <summary role="button">Add custom Parameter</summary>
+              <p>
+                <div class="grid">
+                  <div>
+                    <label for="regid">RegID:</label>
+                    <input type="number" id="regid" name="regid" min="0" max="127"/>
+                  </div>
+                  <div>
+                    <label for="offset">Offset:</label>
+                    <input type="number" id="offset" name="offset" min="0" max="31"/>
+                  </div>
+                  <div >
+                    <label for="convid">ConvID:</label>
+                    <select id="convid" name="convid">
+                      <option value="100">100</option>
+                      <option value="101">101</option>
+                      <option value="102">102</option>
+                      <option value="103">103</option>
+                      <option value="104">104</option>
+                      <option value="105">105</option>
+                      <option value="106">106</option>
+                      <option value="107">107</option>
+                      <option value="108">108</option>
+                      <option value="109">109</option>
+                      <option value="110">110</option>
+                      <option value="111">111</option>
+                      <option value="112">112</option>
+                      <option value="113">113</option>
+                      <option value="114">114</option>
+                      <option value="115">115</option>
+                      <option value="116">116</option>
+                      <option value="117">117</option>
+                      <option value="118">118</option>
+                      <option value="119">119</option>
+                      <option value="151">151</option>
+                      <option value="152">152</option>
+                      <option value="153">153</option>
+                      <option value="154">154</option>
+                      <option value="155">155</option>
+                      <option value="156">156</option>
+                      <option value="157">157</option>
+                      <option value="158">158</option>
+                      <option value="200">200</option>
+                      <option value="201">201</option>
+                      <option value="203">203</option>
+                      <option value="204">204</option>
+                      <option value="211">211</option>
+                      <option value="217">217</option>
+                      <option value="300">300</option>
+                      <option value="301">301</option>
+                      <option value="302">302</option>
+                      <option value="303">303</option>
+                      <option value="304">304</option>
+                      <option value="305">305</option>
+                      <option value="306">306</option>
+                      <option value="307">307</option>
+                      <option value="315">315</option>
+                      <option value="316">316</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="dataSize">Data size:</label>
+                    <select id="dataSize" name="dataSize">
+                      <option value="0">0</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="dataType">Data type:</label>
+                    <select id="dataType" name="dataType">
+                      <option value="-1">-1</option>
+                      <option value="0">0</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label for="dataName">Data name:</label>
+                <input type="text" id="dataName" name="dataName"/>
+
+                <input type="button" onclick="addCustomParameter()" value="Add">
+              </p>
+            </details>
+          </div>
+        </article>
+      </article>
+      <article id="form-can" role="tab" style="display: none;">
+        <label for="can_speed_kbps">CAN-Bus Speed in kbps:</label>
+        <select id="can_speed_kbps" name="can_speed_kbps">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="125">125</option>
+          <option value="250">250</option>
+          <option value="500">500</option>
+          <option value="800">800</option>
+          <option value="1000">1000</option>
+        </select>
+
+        <label for="can_mqtt_topic_name">CAN Topic Name:</label>
+        <input type="text" id="can_mqtt_topic_name" name="can_mqtt_topic_name"/>
+        <small>Needs to end with a slash. CAN Values can be recieved and setted over MQTT with this topic name + the label of the command. For Setting a value, "SET/" is added before the topic name</small>
+
+        <label for="can_readonly_enabled" >
+          <input type="checkbox" id="can_readonly_enabled" name="can_readonly_enabled" role="switch"/>
+          CAN Read-only mode
+        </label>
+        <small>ESPAltherma is only allowed to listen to the CAN-Bus, no writting allowed. Ensures no problems or crashes are created on CAN-Bus by writting wrong data signals</small>
+
+        <label for="can_sniffing_enabled" >
+          <input type="checkbox" id="can_sniffing_enabled" name="can_sniffing_enabled" role="switch"/>
+          CAN Sniffing enabled
+        </label>
+        <small>Output all CAN-Bus data on Serial/WebSerial</small>
+
+
+        <!-- Radios -->
+        <fieldset id="fieldset_autopoll">
+          <legend>Poll mode</legend>
+          <div class="grid">
+            <div>
+              <label for="can_autopoll_mode_disabled">
+              <input type="radio" id="can_autopoll_mode_disabled" name="can_autopoll_mode" value="0" onchange="show('can_autopoll', !document.getElementById('can_autopoll_mode_auto').checked)">
+              Disabled
+            </label>
+            </div>
+            <div>
+              <label for="can_autopoll_mode_passiv">
+                <input type="radio" id="can_autopoll_mode_passiv" name="can_autopoll_mode" value="1" onchange="show('can_autopoll', !document.getElementById('can_autopoll_mode_auto').checked)">
+                Passiv
+              </label>
+              <small>Get values when other devices request it</small>
+            </div>
+            <div>
+              <label for="can_autopoll_mode_auto">
+                <input type="radio" id="can_autopoll_mode_auto" name="can_autopoll_mode" value="2" onchange="show('can_autopoll', !document.getElementById('can_autopoll_mode_auto').checked)">
+                Auto
+              </label>
+              <small>Request values each X seconds</small>
+            </div>
+          </div>
+        </fieldset>
+
+        <article id="can_autopoll" class="hidden">
+          <label for="can_autopoll_time">
+            Poll time in seconds
+            <input type="number" id="can_autopoll_time" name="can_autopoll_time" min="0" max="65535"/>
+          </label>
+        </article>
+
+        <div class="grid">
+          <div>
+            <label for="canModel">Model:</label>
+            <select id="canModel" name="canModel" onchange="updateCanLanguages()">
+              <option value="" selected>Select a model...</option>
+            </select>
+
+            <label for="canLanguage">Language:</label>
+            <select id="canLanguage" name="canLanguage" onchange="updateCanCommands()">
+              <option value="" selected>Select a language...</option>
+            </select>
+          </div>
+          <div>
+            <label for="canFileUpload">Upload CAN-Bus definition file:</label>
+            <input type="file" id="canFileUpload" accept=".json" name="canFileUpload"/>
+            <small>Add a commands file for the CAN-Bus</small>
+
+            <input type="button" onclick="uploadCANFile()" value="Upload">
+          </div>
+        </div>
+
+        <article id="containerCanBusCommands">
+          <div class="grid">
+            <div id="selectCanBusCommandSection" class="parametersSection hidden">
+              <label for="fileCommandsTable">Available Commands:</label>
+              <figure >
+                <table id="fileCommandsTable">
+                  <tr>
+                    <td>Label</td>
+                    <td>?</td>
+                    <td>Command</td>
+                    <td>ID</td>
+                    <td>Divisor</td>
+                    <td>Writable</td>
+                    <td>Unit</td>
+                    <td>Type</td>
+                    <td>Name</td>
+                    <td>Value Code</td>
+                    <td>Value</td>
+                  </tr>
+                </table>
+              </figure>
+
+              <input type="button" onclick="addSelectedCanCommands()" value="Add to selected commands">
+              <input type="button" onclick="addCanCommands()" value="Add all commands">
+              <button id="loadCommandsTable" onclick="alert('Not yet implemented')">Load command values</button>
+            </div>
+            <div class="parametersSection">
+              <label for="selectedCommandsTable">Selected Commands:</label>
+              <figure>
+                <table id="selectedCommandsTable">
+                  <tr>
+                    <td>Label</td>
+                    <td>?</td>
+                    <td>Command</td>
+                    <td>ID</td>
+                    <td>Divisor</td>
+                    <td>Writable</td>
+                    <td>Unit</td>
+                    <td>Type</td>
+                    <td>Name</td>
+                    <td>Value Code</td>
+                    <td>Value</td>
+                  </tr>
+                </table>
+              </figure>
+
+              <input type="button" onclick="removeSelectedCommands()" value="Remove from selected commands" />
+              <input type="button" onclick="clearCommands()" value="Remove all commands" />
+              <button id="loadSelectedCommandsTable" onclick="alert('Not yet implemented')">Load command values</button>
+            </div>
+          </div>
+          <div class="customParameterSection">
+            <details>
+              <summary role="button">Add custom command</summary>
+              <p>
+                <label for="canDataName">Name:</label>
+                <input type="text" id="canDataName" name="canDataName"/>
+
+                <label for="canDataLabel">Label:</label>
+                <input type="text" id="canDataLabel" name="canDataLabel"/>
+
+                <label for="canDataCommand">Command:</label>
+                <input type="text" id="canDataCommand" name="canDataCommand"/>
+
+                <div class="grid">
+                  <div>
+                    <label for="canDataID">ID:</label>
+                    <select id="canDataID" name="canDataID">
+                      <option value="190">190</option>
+                      <option value="310">310</option>
+                      <option value="610">610</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="canDataDivisor">Divisor:</label>
+                    <select id="canDataDivisor" name="canDataDivisor">
+                      <option value="0.1">0.1</option>
+                      <option value="1">1</option>
+                      <option value="10">10</option>
+                      <option value="100">100</option>
+                      <option value="1000">1000</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="canDataWriteable">Writeable:</label>
+                    <input type="checkbox" id="canDataWriteable" name="canDataWriteable" />
+                  </div>
+                  <div >
+                    <label for="canDataUnit">Unit:</label>
+                    <select id="canDataUnit" name="canDataUnit">
+                      <option value="deg">deg</option>
+                      <option value="bool">bool</option>
+                      <option value="percent">percent</option>
+                      <option value="int">int</option>
+                      <option value="bar">bar</option>
+                      <option value="hour">hour</option>
+                      <option value="kwh">kwh</option>
+                      <option value="KW">KW</option>
+                      <option value="w">w</option>
+                    </select>
+                  </div>
+                  <div >
+                    <label for="canDataType">Type:</label>
+                    <select id="canDataType" name="canDataType">
+                      <option value="int">int</option>
+                      <option value="longint">longint</option>
+                      <option value="float">float</option>
+                      <option value="value">value</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label for="canDataValueCode">Value Code: <a href="#" role="button" id="linkAddValueCode" style="padding: 2pt; padding-bottom: 0pt; padding-top: 0pt;">+</a><a href="#" role="button" id="linkRemoveValueCode" style="margin-left: 3pt; padding: 4pt; padding-bottom: 0pt; padding-top: 0pt;">-</a></label>
+                <div id="canDataValueCode">&nbsp;</div>
+
+                <input type="button" onclick="addCustomCanCommand(event)" value="Add">
+              </p>
+            </details>
+          </div>
+        </article>
+      </article>
+      <article id="form-export-import" role="tab" style="display: none;">
+        <div class="grid">
+          <div>
+            <a href="/exportConfig" target="_blank" role="button" id="config-export">Export Config</a>
+          </div>
+          <div>
+            <input type="file" id="configFile" accept=".json" name="configFile" />
+            <input type="button" onclick="uploadConfig()" value="Import Config">
+            <div id="importStatusDisplay"></div>
+          </div>
+        </div>
+      </article>
+      <article id="form-update" role="tab" style="display: none;">
+        <h3>Update</h3>
+        <p>
+            Select Filetype of the Over-the-Air Update:
+            <fieldset>
+              <label for="firmware">
+                <input type="radio" id="firmware" name="updateType" value="firmware" checked>
+                Firmware
+              </label>
+              <label for="filesystem">
+                <input type="radio" id="filesystem" name="updateType" value="filesystem">
+                Filesystem
+              </label>
+            </fieldset>
+
+            <label for="updateFile">Select file:
+              <input type="file" id="updateFile" name="updateFile" accept=".bin,.bin.gz">
+            </label>
+
+            <p><input type="button" id="startUpdate" value="Start update"/></p>
+            <div id="progressDisplay" class="hidden"><div>Progress: </div><div id="otaProgress">0%</div></div>
+            <div id="oatErrorDisplay" class="hidden" style="color: red;"></div>
+        </p>
+      </article>
+      <p><input type="submit" id="submit" value="SAVE CONFIG" role="button" /></p>
+    </form>
+  </main>
+</body>
+</html>

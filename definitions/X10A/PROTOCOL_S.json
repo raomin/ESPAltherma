@@ -1,0 +1,34 @@
+{
+    "Comment": "This file is a definition file for the older protocol S devices.",
+    "Model": "Protocol S",
+    "Language": "English",
+    "Presets": {
+    },
+    "Parameters": [
+        [ 80,   0,  103,    2,  -1, "HP Sensor(kgcm2)"],
+        [ 80,   2,  103,    2,  -1, "LP Sensor(kgcm2)"],
+        [ 83,   0,  152,    2,  -1, "EV (pls)"],
+        [ 83,   2,  164,    1,  -1, "Outdoor Fan (Upper)(rps)"],
+        [ 83,   3,  164,    1,  -1, "Outdoor Fan (Lower)(rps)"],
+        [ 83,   4,  200,    1,  -1, "INV Comp. Frequency(Hz)"],
+        [ 83,   5,  200,    1,  -1, "Comp. Preheat"],
+        [ 83,   6,  200,    1,  -1, "52C Output"],
+        [ 83,   8,  200,    1,  -1, "20R (SV) Output"],
+        [ 83,   7,  200,    1,  -1, "20S (4-way) Output"],
+        [ 83,   10, 200,    1,  -1, "Crankcase Heater"],
+        [ 83,   11, 200,    1,  -1, "Ener-Cut Output"],
+        [ 84,   0,  103,    2,  -1, "Indoor Suction Air Temp.(C)"],
+        [ 84,   2,  103,    2,  -1, "Indoor Heat Exchanger Temp.(C)"],
+        [ 84,   4,  103,    2,  -1, "Outdoor air temp.(C)"],
+        [ 84,   6,  103,    2,  -1, "Outdoor heat exchanger temp.(C)"],
+        [ 84,   8,  109,    2,  -1, "Discharge pipe temp.(C)"],
+        [ 84,   10, 103,    2,  -1, "Fin Temp.(C)"],
+        [ 84,   12, 312,    1,  -1, "Delta-Tr(deg)"],
+        [ 84,   13, 151,    1,  -1, "R/C Setpoint(C)"],
+        [ 85,   0,  201,    1,  -1, "Operation Mode"],
+        [ 85,   1,  204,    1,  -1, "Error Code"],
+        [ 85,   2,  204,    1,  -1, "Thermo Off Error"],
+        [ 85,   3,  204,    1,  -1, "Warning Code"],
+        [ 85,   4,  204,    1,  -1, "Caution Code"]
+    ]
+}

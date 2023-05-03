@@ -3,10 +3,11 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-src/setup.h
 private/
+build/
+webui/*.gz
 .vscode/settings.json
+sdkconfig.*
 contrib/ldd_decoder/bin/
 contrib/ldd_decoder/obj/
 contrib/ldd_decoder/label_defines.*
-src/my_setup.h

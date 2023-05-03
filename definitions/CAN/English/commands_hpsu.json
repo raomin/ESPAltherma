@@ -1,0 +1,741 @@
+{
+  "Model": "HPSU",
+  "Language": "English",
+  "Commands": [
+    {
+      "name": "t_hs",
+      "label": "T-HS",
+      "description": "The current temperature (TVBH) of the heat generator is displayed in C."
+    },
+    {
+      "name": "t_hs_set",
+      "label": "T-HS Setpoint",
+      "description": "The current Inflow target temperature of the heat generator is displayed in C"
+    },
+    {
+      "name": "water_pressure",
+      "label": "Water Pressure",
+      "description": "The current water pressure is displayed in bar."
+    },
+    {
+      "name": "t_ext",
+      "label": "T-Outside",
+      "description": "The average external temperature is displayed C."
+    },
+    {
+      "name": "t_dhw",
+      "label": "T-DHW",
+      "description": "The current temperature of the hot water storage tank is displayed in C. If there is no hot water function activated, --- is displayed."
+    },
+    {
+      "name": "t_dhw_set",
+      "label": "T-DHW Setpoint",
+      "description": "The current target hot water temperature is displayed in C. If there is no hot water function activated, --- is displayed. The current set value is here always the maximum value of all relevant demands for this hot water circuit"
+    },
+    {
+      "name": "t_return",
+      "label": "T-Return",
+      "description": "The current return flow temperature of the heat generator is displayed in C. If there is no relevant sensor connected to the heat generator, --- is displayed."
+    },
+    {
+      "name": "flow_rate",
+      "label": "Flow Rate",
+      "description": "The filtered value of the current volume flow in litres per hour"
+    },
+    {
+      "name": "t_hc",
+      "label": "T-HC",
+      "description": "The inflow temperature in the direct heating circuit is displayed in C."
+    },
+    {
+      "name": "t_hc_set",
+      "label": "T-HC Setpoint",
+      "description": "The set temperature of the flow in the direct heating circuit is displayed in C."
+    },
+    {
+      "name": "status_pump",
+      "label": "Status HS Pump",
+      "description": "The current status of the internal heat circulation pump in the ROTEX HPSU compact is displayed."
+    },
+    {
+      "name": "runtime_comp",
+      "label": "Runtime Compressor",
+      "description": "The running time of the refrigerant compressor is displayed in h."
+    },
+    {
+      "name": "runtime_pump",
+      "label": "Runtime Pump",
+      "description": "The running time of the internal heating circulation pump is displayed in h."
+    },
+    {
+      "name": "posmix",
+      "label": "Mixer Position",
+      "description": "The current position of the 3UV DHW 3-way switch valve is displayed. 0%: position A (room heating) 100%: position B (domestic hot water generation)"
+    },
+    {
+      "name": "qboh",
+      "label": "Qboh",
+      "description": "The amount of heat in the additional heat generator for hot water generation is displayed in kWh."
+    },
+    {
+      "name": "qchhp",
+      "label": "Qchhp",
+      "description": "The amount of heat in the additional heat generator for heating mode is displayed in kWh."
+    },
+    {
+      "name": "qsc",
+      "label": "Qsc",
+      "description": "The quantity of heat in the heat pump for cooling is displayed in kWh."
+    },
+    {
+      "name": "qch",
+      "label": "Qch",
+      "description": "The quantity of heat in the heat pump for heating is displayed in kWh."
+    },
+    {
+      "name": "qwp",
+      "label": "QWP",
+      "description": "The total amount of heat in the heat pump is displayed in kWh."
+    },
+    {
+      "name": "qdhw",
+      "label": "Qdhw",
+      "description": "The quantity of heat for hot water generation is displayed in kWh."
+    },
+    {
+      "name": "sw_vers_01",
+      "label": "Version SW 1",
+      "description": "Version SW 1"
+    },
+    {
+      "name": "sw_vers_02",
+      "label": "Version SW 2",
+      "description": "Version SW 2"
+    },
+    {
+      "name": "sw_vers_03",
+      "label": "Version SW 3",
+      "description": "Version SW 3"
+    },
+    {
+      "name": "mode_01",
+      "label": "Modo ?",
+      "description": "Modo Rotex"
+    },
+    {
+      "name": "tvbh2",
+      "label": "TVBH2 [C]",
+      "description": "Current heating inflow temperature or temp. after heating support heat exchanger (tV,BH)."
+    },
+    {
+      "name": "tliq2",
+      "label": "Tliq2 [C]",
+      "description": "Current coolant temperature (tliq2)."
+    },
+    {
+      "name": "tr2",
+      "label": "TR2 [C]",
+      "description": "Current heating return flow temperature, secondary sensor (tR2)."
+    },
+    {
+      "name": "ta2",
+      "label": "TA2 [C]",
+      "description": "Actual outdoor temperature (measured by temperature sensor of the external heat pump)"
+    },
+    {
+      "name": "tdhw2",
+      "label": "Tdhw2 [C]",
+      "description": "Current temperature in domestic hot water storage tank, secondary sensor (tDHW2)."
+    },
+    {
+      "name": "quiet",
+      "label": "quiet",
+      "description": "Shows the status of the whisper mode."
+    },
+    {
+      "name": "mode",
+      "label": "Mode",
+      "description": "Current mode of the heat pump: ---: No heating or cooling demand : Heating : Cooling : Domestic hot water generation : Automatic defrosting function active"
+    },
+    {
+      "name": "pump",
+      "label": "Pump",
+      "description": "Actual output of the internal heating circulation pump in %"
+    },
+    {
+      "name": "ext",
+      "label": "Ext",
+      "description": "Current energy mode of the heat pump: LT: EVU function HT/NT active and low tariff. HT: EVU function HT/NT active and high tariff. SGN: EVU function SMART GRID active, normal mode. SG1: EVU function SMART GRID active, disconnection: no heat pump operation, no frost protection function. SG2: EVU function SMART GRID active, switchon recommendation, mode with higher set temperatures, cheap power. SG3: EVU function SMART GRID active, switchon command and storage tank charging to 70 C, cheap power - - -: No external mode active, heat pump works in normal mode."
+    },
+    {
+      "name": "ehs",
+      "label": "EHS",
+      "description": "Current output of the backup heater in kW"
+    },
+    {
+      "name": "rt",
+      "label": "RT",
+      "description": "Parameter [Room thermostat] / [Interlink fct]"
+    },
+    {
+      "name": "bpv",
+      "label": "BPV",
+      "description": "Current position of the mixing valve 3UVB1 (100% = A, 0% = B)"
+    },
+    {
+      "name": "t_v1",
+      "label": "TV",
+      "description": "Current inflow temperature after the plate heat exchanger (tV1)"
+    },
+    {
+      "name": "t_dhw1",
+      "label": "Tdhw",
+      "description": "Current temperature in domestic hot water storage tank (tDHW1)"
+    },
+    {
+      "name": "t_vbh",
+      "label": "TVBH",
+      "description": "Current heating inflow temperature or temp. after heating support heat exchanger (tV,BH)"
+    },
+    {
+      "name": "t_outdoor_ot1",
+      "label": "TA",
+      "description": "Actual outdoor temperature (measured by optional temperature sensor RoCon OT1)"
+    },
+    {
+      "name": "t_r1",
+      "label": "TR",
+      "description": "Current heating return flow temperature (tR1)"
+    },
+    {
+      "name": "v1",
+      "label": "V",
+      "description": "Actual volume flow (flow rate) in the heating system"
+    },
+    {
+      "name": "t_room1_setpoint",
+      "label": "T Room 1 Setpoint",
+      "description": "Setpoint 1 value"
+    },
+    {
+      "name": "t_room2_setpoint",
+      "label": "T Room 2 Setpoint",
+      "description": "Setpoint 1 value"
+    },
+    {
+      "name": "t_room3_setpoint",
+      "label": "T Room 3 Setpoint",
+      "description": "Setpoint 1 value"
+    },
+    {
+      "name": "heat_slope",
+      "label": "Heat-Slope",
+      "description": "Heat Slope"
+    },
+    {
+      "name": "t_dhw_setpoint1",
+      "label": "T-ACS nom 1",
+      "description": "Nominal value of the hot water temperature in C, which is valid for the first ignition cycle"
+    },
+    {
+      "name": "t_dhw_setpoint2",
+      "label": "T-ACS nom 2",
+      "description": "Nominal value of the hot water temperature in C, which is valid for the second ignition cycle"
+    },
+    {
+      "name": "t_dhw_setpoint3",
+      "label": "T-ACS nom 3",
+      "description": "Nominal value of the hot water temperature in C, which is valid for the third ignition cycle"
+    },
+    {
+      "name": "hyst_hp",
+      "label": "Hyst HP",
+      "description": "Switching threshold hot water charging. Setting of the temperature difference to which the temperature in the domestic hot water storage tank compared to the current target hot water temperature [T-DHW Setpoint] can drop before the heat pump is switched on to provide hot water"
+    },
+    {
+      "name": "t_flow_cooling",
+      "label": "T-Flow Cooling",
+      "description": "Setting the cooling inflow target temperature (fixed value) when cooling mode is active"
+    },
+    {
+      "name": "error",
+      "label": "error",
+      "description": "errorcode"
+    },
+    {
+      "name": "outdoor_type",
+      "label": "Outdoor type",
+      "description": "Type exterior heat pump unit"
+    },
+    {
+      "name": "indoor_unit",
+      "label": "Indoor unit",
+      "description": "Type of interior heat pump unit"
+    },
+    {
+      "name": "func_heating",
+      "label": "Function Heating",
+      "description": "Setting as to whether there is an additional heat generator (WEZ) for hot water generation and heating support"
+    },
+    {
+      "name": "hzu",
+      "label": "HUZ",
+      "description": "Heating support from domestic hot water storage tanks when the minimum temperature is exceeded"
+    },
+    {
+      "name": "equi_func",
+      "label": "Equilibrium Function",
+      "description": "The bivalence function is relevant for operation of the optional ancillary heater based on a backup demand (room heating operation)"
+    },
+    {
+      "name": "smart_grid",
+      "label": "SMART GRID",
+      "description": "Smart Grid"
+    },
+    {
+      "name": "modus_sg",
+      "label": "Mode SG",
+      "description": "Only if parameter [SMART GRID] = 1:Used for a possible target temperature increase in the case of aSMART GRID start command"
+    },
+    {
+      "name": "ht_nt_func",
+      "label": "HT/NT Function",
+      "description": "Setting which specifies which heat sources are switched off when the standard signal is received from the energy supply company (EVU) in the case of the customer having an off-peak tariff network connection"
+    },
+    {
+      "name": "ht_nt_contact",
+      "label": "HT/NT Contact",
+      "description": "Specifies whether the HT/NT input is an NC or NO contact"
+    },
+    {
+      "name": "room_therm",
+      "label": "Room thermostat",
+      "description": "Configuration of a room thermostat connected to the port J16 on the ROTEX HPSU compact using potential-free contacts"
+    },
+    {
+      "name": "interlink",
+      "label": "Interlink fct",
+      "description": "Configuration for systems operating with 2 different inflow target temperatures"
+    },
+    {
+      "name": "air_purge",
+      "label": "Air Purge",
+      "description": "Activation of automatic bleeding of the ROTEX HPSU compact and the connected heating circuit"
+    },
+    {
+      "name": "max_perf_pump",
+      "label": "Max Perform Pump",
+      "description": "Upper limit for modulation of the pump output"
+    },
+    {
+      "name": "min_perf_pump",
+      "label": "Min Perform Pump",
+      "description": "Lower limit for modulation of the pump output"
+    },
+    {
+      "name": "outside_conf",
+      "label": "Outside Config",
+      "description": "Configuration of the optional external temperature sensor RoCon OT1"
+    },
+    {
+      "name": "storage_conf",
+      "label": "Storage Config",
+      "description": "Configuration of water heating"
+    },
+    {
+      "name": "pres_conf",
+      "label": "Pressure Config",
+      "description": "Configuring the sensor for assessment of the system water pressure"
+    },
+    {
+      "name": "out_temp_adapt",
+      "label": "Outside Temp Adap",
+      "description": "Individual adapting for the measured value of the outdoor temperature relevant for the Controller"
+    },
+    {
+      "name": "power_dhw",
+      "label": "Power DHW",
+      "description": "Heating output of electric auxiliary heater for hot water generation"
+    },
+    {
+      "name": "buh_s1_pow",
+      "label": "BUH s1 power",
+      "description": "Heat capacity of the ancillary electric heater in Stage 1 heating support"
+    },
+    {
+      "name": "buh_s2_pow",
+      "label": "BUH s2 power",
+      "description": "Heat capacity of the ancillary electric heater in Stage 2 heating support"
+    },
+    {
+      "name": "power_biv",
+      "label": "Power BIV",
+      "description": "Setting limits the output of the heating support"
+    },
+    {
+      "name": "tdiff_dhw_ch",
+      "label": "TDiff-DHW CH",
+      "description": "TDiff-DHW CH"
+    },
+    {
+      "name": "t_vbh1_max",
+      "label": "T vbh1 max",
+      "description": "Setting limits the inflow temperature (measured at tV, BH) with active heating support function"
+    },
+    {
+      "name": "equi_temp",
+      "label": "Equilibrium Temp",
+      "description": "Setting affects the operation of the potential-free AUX switching contact (toggle switch utput A) defined in the parameter [AUX Fct]"
+    },
+    {
+      "name": "quiet_mode",
+      "label": "Quiet Mode",
+      "description": "Mode for low-noise operation with reduced output"
+    },
+    {
+      "name": "aux_fct",
+      "label": "AUX Fct",
+      "description": "Setting assigns the switching conditions to the potential-free AUX contact (toggle switch output A)"
+    },
+    {
+      "name": "aux_time",
+      "label": "AUX time",
+      "description": "AUX switching contact (A) switches with a delay when the switching condition is pending for longer than the set time"
+    },
+    {
+      "name": "t_dhw_1_min",
+      "label": "T-DHW 1 min",
+      "description": "Switching threshold storage tank temperature (Tdhw) for AUX switching contact (see parameter [AUX Fct])"
+    },
+    {
+      "name": "delta_t_ch",
+      "label": "Delta-T CH",
+      "description": "Set outdoor temperature spread The ROTEX HPSU compact heating circulation pump controls the flow rate in order to achieve the set spread between the inflow target temperature and the return flow temperature (tV, BH - tR1)"
+    },
+    {
+      "name": "v_var",
+      "label": "V var",
+      "description": "Current minimum necessary volume flow in the system (calculated value, not configurable)"
+    },
+    {
+      "name": "t_flow_ch_adj",
+      "label": "T-Flow CH adj",
+      "description": "Only when parameter [Interlink fct] = On. With a closed cooling RT switching contact, the inflow target temperature is increased by the set value"
+    },
+    {
+      "name": "t_flow_cool_adj",
+      "label": "T-Flow Cooling adj",
+      "description": "Only when parameter [Interlink fct] = On. With a closed cooling RT switching contact, the cooling inflow target temperature is reduced by the set value"
+    },
+    {
+      "name": "min_pressure",
+      "label": "Min Pressure",
+      "description": "Defines the minimum water pressure"
+    },
+    {
+      "name": "max_pressure",
+      "label": "Max Pressure",
+      "description": "Defines the maximum water pressure"
+    },
+    {
+      "name": "setpoint_pressure",
+      "label": "Set Point Pressure",
+      "description": "Defines the set water pressure"
+    },
+    {
+      "name": "max_pressure_drop",
+      "label": "Max Pressuredrop",
+      "description": "Defines the maximum acceptable pressure drop in the heating system"
+    },
+    {
+      "name": "hc_func",
+      "label": "HC Function",
+      "description": "Setting defines the type of inflow temperature control"
+    },
+    {
+      "name": "t_frost_protect",
+      "label": "T-Frost Protect",
+      "description": "0=No frost protection of the heating circuit, Otherwise: If the outside temperature falls below the programmed value, the system switches into the frost protection mode (switches the pumps on). The function ceases once the outside temperature has risen to the set value +1 K"
+    },
+    {
+      "name": "insulation",
+      "label": "Insulation",
+      "description": "Setting the insulation standard of the building. This affects the way the heating curve and the heating times automatically adapt to the outside temperature."
+    },
+    {
+      "name": "screed",
+      "label": "Screed",
+      "description": "Function for screed drying"
+    },
+    {
+      "name": "t_screed_day1",
+      "label": "Temp screed day 1",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day2",
+      "label": "Temp screed day 2",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day3",
+      "label": "Temp screed day 3",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day4",
+      "label": "Temp screed day 4",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day5",
+      "label": "Temp screed day 5",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day6",
+      "label": "Temp screed day 6",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day7",
+      "label": "Temp screed day 7",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day8",
+      "label": "Temp screed day 8",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day9",
+      "label": "Temp screed day 9",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day10",
+      "label": "Temp screed day 10",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day11",
+      "label": "Temp screed day 11",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day12",
+      "label": "Temp screed day 12",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day13",
+      "label": "Temp screed day 13",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day14",
+      "label": "Temp screed day 14",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day15",
+      "label": "Temp screed day 15",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day16",
+      "label": "Temp screed day 16",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day17",
+      "label": "Temp screed day 17",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day18",
+      "label": "Temp screed day 18",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day19",
+      "label": "Temp screed day 19",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day20",
+      "label": "Temp screed day 20",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day21",
+      "label": "Temp screed day 21",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day22",
+      "label": "Temp screed day 22",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day23",
+      "label": "Temp screed day 23",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day24",
+      "label": "Temp screed day 24",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day25",
+      "label": "Temp screed day 25",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day26",
+      "label": "Temp screed day 26",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day27",
+      "label": "Temp screed day 27",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_screed_day28",
+      "label": "Temp screed day 28",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_out_lim_day",
+      "label": "T-Outside lim day",
+      "description": "Setting the procedural program for screed heating. An individual inflow temperature can be set for each day for a maximum period of 28 days. The end of the screed programme is defined by the 1st. Day at target value setting"
+    },
+    {
+      "name": "t_out_lim_night",
+      "label": "T-Outside lim night",
+      "description": "Parameter for setting the heating limit for \"Switch-off\" of the heating circuit during economy mode"
+    },
+    {
+      "name": "t_flow_day",
+      "label": "T-Flow Day",
+      "description": "Setting the inflow target temperature for the heating circuit during the heating time when in operating mode: \"Automatic 1\", \"Automatic 2\", \"Heating"
+    },
+    {
+      "name": "t_flow_night",
+      "label": "T-Flow night",
+      "description": "Setting the inflow target temperature for the heating circuit during the setback time when in operating mode: \"Automatic 1\", \"Automatic 2\", \"Reducing"
+    },
+    {
+      "name": "max_t_flow",
+      "label": "Max T-Flow",
+      "description": "The inflow temperature determined for the heating circuit is limited to the maximum value set here"
+    },
+    {
+      "name": "min_t_flow",
+      "label": "Min T-Flow",
+      "description": "The inflow temperature determined for the heating circuit is limited to the minimum value set here"
+    },
+    {
+      "name": "hc_adapt",
+      "label": "HC Adaption",
+      "description": "HC Adapation"
+    },
+    {
+      "name": "start_tout_cool",
+      "label": "Start T-Out Cooling",
+      "description": "Setting from which outside temperature the cooling operation with the highest cooling infeed target temperature"
+    },
+    {
+      "name": "max_tout_cool",
+      "label": "Max T-Out Cooling",
+      "description": "Setting to determine from which outdoor temperature the lowest cooling flow temperature"
+    },
+    {
+      "name": "t_flow_cool_start",
+      "label": "T-Flow Cooling start",
+      "description": "Setting the cooling inflow target temperature at the start of cooling mode"
+    },
+    {
+      "name": "t_flow_cool_max",
+      "label": "T-Flow Cooling max",
+      "description": "Setting the minimum cooling inflow target temperature. This is kept constant relative to the outside temperature"
+    },
+    {
+      "name": "min_t_flow_cool",
+      "label": "Min T-Flow Cooling",
+      "description": "Setting the absolute lower limit of the cooling inflow target temperature. The limitation is effective if a lower cooling inflow target temperature is determined based on other parameter settings"
+    },
+    {
+      "name": "t_flow_cool",
+      "label": "T-Flow Cooling",
+      "description": "Setting the cooling inflow target temperature (fixed value) when cooling mode is active"
+    },
+    {
+      "name": "cool_setpoint_adj",
+      "label": "Cooling Setpoint adj",
+      "description": "Parallel displacement of the cooling characteristic curve to match the set value"
+    },
+    {
+      "name": "circ_pump_dhw",
+      "label": "Circl-Pump DHW",
+      "description": "Setting for activating a circulation pump"
+    },
+    {
+      "name": "circ_pump_interval",
+      "label": "Circl-Pump Interval",
+      "description": "Setting the interval control for an optional circulation pump"
+    },
+    {
+      "name": "anti_leg_day",
+      "label": "Anti-Legionella day",
+      "description": "Setting the day for the thermal disinfection of the circulating tank"
+    },
+    {
+      "name": "anti_leg_time",
+      "label": "Anti-Legionella time",
+      "description": "Setting the start time of the thermal disinfection of the hot water circulating tank"
+    },
+    {
+      "name": "anti_leg_temp",
+      "label": "Anti-Legionella temp",
+      "description": "Setting the hot water target temperature during thermal disinfection of the hot water circulating tank"
+    },
+    {
+      "name": "max_dhw_loading",
+      "label": "Max DHW loading",
+      "description": "Setting limits the time period for hot water generation to the set target value"
+    },
+    {
+      "name": "dhw_off_time",
+      "label": "DHW Off Time",
+      "description": "Setting the block time following completion or interruption of a hot water generation cycle. New demand of hot water generation is satisfied only after expiry of this block time"
+    },
+    {
+      "name": "one_hot_water",
+      "label": "1x Hot Water",
+      "description": "Start of the one-off heating up of the hot water and the set value [T-DHW Setpoint 1], independent of the heating programmes"
+    },
+    {
+      "name": "timer_boh",
+      "label": "Timer BOH",
+      "description": "Delay time after which the reserve heating may support the heat pump in hot water charging"
+    },
+    {
+      "name": "t_reduced",
+      "label": "T-Reduced",
+      "description": "Target room temperature for the setback times for the permanent timer programmes [Automatic 1] and [Automatic 2]"
+    },
+    {
+      "name": "t_absence",
+      "label": "T-Absence",
+      "description": "Target room temperature for the setback times for the temporary timer programmes  [Away] and [Vacation]"
+    },
+    {
+      "name": "t_room",
+      "label": "T-Room",
+      "description": "Room temperature measured by an optional Rocon U1 room station"
+    }
+  ]
+}

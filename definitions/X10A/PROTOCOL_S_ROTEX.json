@@ -1,0 +1,40 @@
+{
+    "Comment": [
+        "This file is a definition file for Rotex heat pump, technically looking like protocol S, but not using the same mapping.",
+        "Confirmed working for Rotex RDLQ014AA6V3."
+    ],
+    "Model": "Protocol S Rotex",
+    "Language": "English",
+    "Presets": {
+    },
+    "Parameters": [
+        [ "// 0x50 not supported by RDLQ014AA6V3" ],
+
+        [ "// 0x53 seems to be a collection of booleans" ],
+        [ 83,   0,  200,    1,  -1, "Circulation pump"],
+        [ 83,   3,  200,    1,  -1, "External heater?"],
+        [ 83,   5,  200,    1,  -1, "Priority to domestic water"],
+        [ 83,   6,  200,    1,  -1, "Burner inhibit from solaris"],
+
+
+        [ "// Testing stuff...." ],
+        [ 84,   0,  153,    2,  -1, "Refrig. Temp. liquid side(C)"],
+        [ 84,   2,  153,    2,  -1, "Inlet water temp.(C)"],
+        [ 84,   4,  153,    2,  -1, "Outlet Water Temp.(C)"],
+        [ 84,   6,  153,    2,  -1, "D(C)"],
+        [ 84,   8,  153,    2,  -1, "DHW tank temp.(C)"],
+        [ 84,   10, 103,    2,  -1, "F(C)"],
+        [ "// Byte 12 seems to be a 1 byte value, evolving during day in continuous way" ],
+        [ "// 0x1b mid-day, 0x24 mid night -> some delta temp??" ],
+        [ 84,   12, 101,    1,  -1, "Delta-Tr(deg)"],
+        [ 84,   13, 151,    1,  -1, "R/C Setpoint(C)"],
+
+        [ 85,   0,  201,    1,  -1, "Operation Mode"],
+        [ 85,   1,  204,    1,  -1, "Error Code"],
+        [ 85,   2,  204,    1,  -1, "Thermo Off Error"],
+        [ 85,   3,  204,    1,  -1, "Warning Code"],
+        [ 85,   4,  204,    1,  -1, "Caution Code"],
+        [ "// TODO: seems to reply on 0x56 as well, but not used by dchecker..." ],
+        [ 86,   0, 103,     2,  -1, "????"]
+    ]
+}

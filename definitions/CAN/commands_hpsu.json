@@ -1,0 +1,1463 @@
+{
+	"version" : "2.0",
+	"commands":{
+		"t_hs" : { 
+			"name" : "t_hs", 
+			"command" : "31 00 FA 01 D6 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_hs_set" : { 
+			"name" : "t_hs_set", 
+			"command" : "31 00 02 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"water_pressure" : { 
+			"name" : "water_pressure", 
+			"command" : "31 00 1C 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "1000", 
+			"writable" : "false", 
+			"unit" : "bar",
+			"type" : "float"
+		},
+		"t_ext" : { 
+			"name" : "t_ext", 
+			"command" : "61 00 FA 0A 0C 00 00", 
+			"id" : "310", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_dhw" : { 
+			"name" : "t_dhw", 
+			"command" : "31 00 0E 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_dhw_set" : { 
+			"name" : "t_dhw_set", 
+			"command" : "31 00 03 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_return" : { 
+			"name" : "t_return", 
+			"command" : "31 00 16 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"flow_rate" : { 
+			"name" : "flow_rate", 
+			"command" : "31 00 FA 01 DA 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "lh",
+			"type" : "longint"
+		},
+		"t_hc" : { 
+			"name" : "t_hc", 
+			"command" : "C1 00 0F 00 00 00 00", 
+			"id" : "610", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_hc_set" : { 
+			"name" : "t_hc_set", 
+			"command" : "61 00 04 00 00 00 00", 
+			"id" : "310", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"status_pump" : { 
+			"name" : "status_pump", 
+			"command" : "31 00 FA 0A 8C 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "off"
+			}
+		},
+		"runtime_comp" : { 
+			"name" : "runtime_comp", 
+			"command" : "31 00 FA 06 A5 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "hour",
+			"type" : "longint"
+		},
+		"runtime_pump" : { 
+			"name" : "runtime_pump", 
+			"command" : "31 00 FA 06 A4 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "longint",
+			"type" : "longint"
+		},
+		"posmix" : { 
+			"name" : "posmix", 
+			"command" : "31 00 FA 06 9B 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "percent",
+			"type" : "longint"
+		},
+		"qboh" : { 
+			"name" : "qboh", 
+			"command" : "31 00 FA 09 1C 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "kwh",
+			"type" : "longint"
+		},
+		"qchhp" : { 
+			"name" : "qchhp", 
+			"command" : "31 00 FA 09 20 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "kwh",
+			"type" : "longint"
+		},
+		"qsc" : { 
+			"name" : "qsc", 
+			"command" : "31 00 FA 06 A6 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "kwh",
+			"type" : "longint"
+		},
+		"qch" : { 
+			"name" : "qch", 
+			"command" : "31 00 FA 06 A7 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "",
+			"type" : "longint"
+		},
+		"qwp" : { 
+			"name" : "qwp", 
+			"command" : "31 00 FA 09 30 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "kwh",
+			"type" : "longint"
+		},
+		"qdhw" : { 
+			"name" : "qdhw", 
+			"command" : "31 00 FA 09 2C 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "kwh",
+			"type" : "longint"
+		},
+		"sw_vers_01" : { 
+			"name" : "sw_vers_01", 
+			"command" : "31 00 FA 01 99 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "",
+			"type" : "longint"
+		},
+		"sw_vers_02" : { 
+			"name" : "sw_vers_02", 
+			"command" : "31 00 FA C0 B4 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "",
+			"type" : "longint"
+		},
+		"sw_vers_03" : { 
+			"name" : "sw_vers_03", 
+			"command" : "31 00 FA 02 4B 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "",
+			"type" : "longint"
+		},
+		"mode_01" : { 
+			"name" : "mode_01", 
+			"command" : "31 00 FA 01 12 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "",
+			"type" : "int",
+			"value_code" : {
+				"standby" : "1",
+				"heat" : "3",
+				"sink" : "4", 
+				"summer" : "5",
+				"cool" : "17",
+				"auto 1" : "11",
+				"auto 2" : "12"
+			}
+		},
+		"tvbh2" : { 
+			"name" : "tvbh2", 
+			"command" : "31 00 FA C1 02", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"tliq2" : { 
+			"name" : "tliq2", 
+			"command" : "31 00 FA C1 03", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"tr2" : { 
+			"name" : "tr2", 
+			"command" : "31 00 FA C1 04", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"ta2" : { 
+			"name" : "ta2", 
+			"command" : "31 00 FA C1 05", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"tdhw2" : { 
+			"name" : "tdhw2", 
+			"command" : "31 00 FA C1 06", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"quiet" : { 
+			"name" : "quiet", 
+			"command" : "31 00 FA C1 07", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"activated" :"1",
+				"only at night" : "2"
+			}
+		},
+		"mode" : { 
+			"name" : "mode", 
+			"command" : "31 00 FA C0 F6", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "longint",
+			"type" : "longint",
+			"value_code" : {
+				"standby" :"0",
+				"heating" : "1",
+				"cooling" : "2", 
+				"3": "3"
+			}
+		},
+		"pump" : { 
+			"name" : "pump", 
+			"command" : "31 00 FA C0 F7", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "percent",
+			"type" : "longint"
+		},
+		"ext" : { 
+			"name" : "ext", 
+			"command" : "31 00 FA C0 F8", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "longint",
+			"type" : "longint"
+		},
+		"ehs" : { 
+			"name" : "ehs", 
+			"command" : "31 00 FA C0 F9", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "kwh",
+			"type" : "longint"
+		},
+		"rt" : { 
+			"name" : "rt", 
+			"command" : "31 00 FA C0 FA", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "longint",
+			"type" : "longint"
+		},
+		"bpv" : { 
+			"name" : "bpv", 
+			"command" : "31 00 FA C0 FB", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "percent",
+			"type" : "longint"
+		},
+		"t_v1" : { 
+			"name" : "t_v1", 
+			"command" : "31 00 FA C0 FC", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_dhw1" : { 
+			"name" : "t_dhw1", 
+			"command" : "31 00 FA C0 FD", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_vbh" : { 
+			"name" : "t_vbh", 
+			"command" : "31 00 FA C0 FE", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_outdoor_ot1" : { 
+			"name" : "t_outdoor_ot1", 
+			"command" : "31 00 FA C0 FF", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_r1" : { 
+			"name" : "t_r1", 
+			"command" : "31 00 FA C1 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"v1" : { 
+			"name" : "v1", 
+			"command" : "31 00 FA C1 01", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "lh",
+			"type" : "longint"
+		},
+		"t_room1_setpoint" : { 
+			"name" : "t_room1_setpoint", 
+			"command" : "31 00 05 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_room2_setpoint" : { 
+			"name" : "t_room2_setpoint", 
+			"command" : "31 00 06 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_room3_setpoint" : { 
+			"name" : "t_room3_setpoint", 
+			"command" : "31 00 07 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"heat_slope" : { 
+			"name" : "heat_slope", 
+			"command" : "31 00 FA 01 0E 00 00", 
+			"id" : "190", 
+			"divisor" : "100", 
+			"writable" : "true", 
+			"unit" : "",
+			"type" : "float"
+		},
+		"t_dhw_setpoint1" : { 
+			"name" : "t_dhw_setpoint1", 
+			"command" : "31 00 13 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_dhw_setpoint2" : { 
+			"name" : "t_dhw_setpoint2", 
+			"command" : "31 00 FA 0A 06 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_dhw_setpoint3" : { 
+			"name" : "t_dhw_setpoint3", 
+			"command" : "31 00 FA 01 3E 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"hyst_hp" : { 
+			"name" : "hyst_hp", 
+			"command" : "31 00 FA 06 91 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_flow_cooling" : { 
+			"name" : "t_flow_cooling", 
+			"command" : "31 00 FA 03 DD 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"error" : { 
+			"name" : "error", 
+			"command" : "31 00 FA 13 88 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "false", 
+			"unit" : "",
+			"type" : "value"
+		},
+		"outdoor_type" : { 
+			"name" : "outdoor_type", 
+			"command" : "31 00 FA 06 9A 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "KW",
+			"type" : "value",
+			"value_code" : {
+				" " : "0",
+				"4" : "1",
+				"6" : "2",
+				"8" : "3", 
+				"11" : "4",
+				"14" : "5",
+				"16" : "6"
+			}
+		},
+		"indoor_unit" : { 
+			"name" : "indoor_unit", 
+			"command" : "31 00 FA 06 99 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				" " : "0",
+				"304" : "1",
+				"308" : "2",
+				"508" : "3",
+				"516" : "4"
+			}
+		},
+		"func_heating" : { 
+			"name" : "func_heating", 
+			"command" : "A1 00 FA 06 D2 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "int",
+			"type" : "value"
+		},
+		"hzu" : { 
+			"name" : "hzu", 
+			"command" : "31 00 FA 06 6C 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "1"
+			}
+		},
+		"equi_func" : { 
+			"name" : "equi_func", 
+			"command" : "A1 00 FA 06 D3 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" :"0",
+				"on" : "1"
+			}
+		},
+		"smart_grid" : { 
+			"name" : "smart_grid", 
+			"command" : "31 00 FA 06 93 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "1"
+			}
+		},
+		"modus_sg" : { 
+			"name" : "modus_sg", 
+			"command" : "31 00 FA 06 94 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"comfort" : "0",
+				"standard" : "1",
+				"eco" : "2"
+			}
+		},
+		"ht_nt_func" : { 
+			"name" : "ht_nt_func", 
+			"command" : "31 00 FA 06 6F 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"deactivated" : "0",
+				"compressor off" : "1",
+				"compressor off, reserve heating off" : "2",
+				"all off" : "3"
+			}
+		},
+		"ht_nt_contact" : { 
+			"name" : "ht_nt_contact", 
+			"command" : "31 00 FA 06 70 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"NO" : "0",
+				"NC" : "1"
+			}
+		},
+		"room_therm" : { 
+			"name" : "room_therm", 
+			"command" : "31 00 FA 06 78 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "1"
+			}
+		},
+		"interlink" : { 
+			"name" : "interlink", 
+			"command" : "31 00 FA 06 79 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "1"
+			}
+		},
+		"air_purge" : { 
+			"name" : "air_purge", 
+			"command" : "31 00 FA 06 95 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off": "0",
+				"on" : "1"
+			}
+		},
+		"max_perf_pump" : { 
+			"name" : "max_perf_pump", 
+			"command" : "31 00 FA 06 7E 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "percent",
+			"type" : "longint"
+		},
+		"min_perf_pump" : { 
+			"name" : "min_perf_pump", 
+			"command" : "31 00 FA 06 7F 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "percent",
+			"type" : "longint"
+		},
+		"outside_conf" : { 
+			"name" : "outside_conf", 
+			"command" : "31 00 FA 09 61 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "sval",
+			"type" : "value",
+			"value_code" : {
+				"off" : "4",
+				"on" : "5"
+			}
+		},
+		"storage_conf" : { 
+			"name" : "storage_conf", 
+			"command" : "31 00 FA 09 61 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "sval",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"thermostat" : "2",
+				"sensor" : "4"
+			}
+		},
+		"pres_conf" : { 
+			"name" : "pres_conf", 
+			"command" : "31 00 FA 09 61 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "sval",
+			"type" : "value",
+			"value_code" : {
+				"off" : "10244",
+				"on" : "26628"
+			}
+		},
+		"out_temp_adapt" : { 
+			"name" : "out_temp_adapt", 
+			"command" : "61 00 FA 0C 1F 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"power_dhw" : { 
+			"name" : "power_dhw", 
+			"command" : "31 00 FA 06 68 00 00", 
+			"id" : "190", 
+			"divisor" : "0.1", 
+			"writable" : "true", 
+			"unit" : "w",
+			"type" : "longint"
+		},
+		"buh_s1_pow" : { 
+			"name" : "buh_s1_pow", 
+			"command" : "31 00 FA 06 69 00 00", 
+			"id" : "190", 
+			"divisor" : "0.1", 
+			"writable" : "true", 
+			"unit" : "w",
+			"type" : "longint"
+		},
+		"buh_s2_pow" : { 
+			"name" : "buh_s2_pow", 
+			"command" : "31 00 FA 06 6A 00 00", 
+			"id" : "190", 
+			"divisor" : "0.1", 
+			"writable" : "true", 
+			"unit" : "w",
+			"type" : "longint"
+		},
+		"power_biv" : { 
+			"name" : "power_biv", 
+			"command" : "31 00 FA 06 6B 00 00", 
+			"id" : "190", 
+			"divisor" : "0.1", 
+			"writable" : "true", 
+			"unit" : "w",
+			"type" : "longint"
+		},
+		"tdiff_dhw_ch" : { 
+			"name" : "tdiff_dhw_ch", 
+			"command" : "31 00 FA 06 6D 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "",
+			"type" : "longint"
+		},
+		"t_vbh1_max" : { 
+			"name" : "t_vbh1_max", 
+			"command" : "31 00 FA 06 6E 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"equi_temp" : { 
+			"name" : "equi_temp", 
+			"command" : "A1 00 FA 06 D4 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"quiet_mode" : { 
+			"name" : "quiet_mode", 
+			"command" : "31 00 FA 06 96 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "1",
+				"only at night" : "2"
+			}
+		},
+		"aux_fct" : { 
+			"name" : "aux_fct", 
+			"command" : "31 00 FA 06 96 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value"
+		},
+		"aux_time" : { 
+			"name" : "aux_time", 
+			"command" : "31 00 FA 06 72 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "sec",
+			"type" : "longint"
+		},
+		"t_dhw_1_min" : { 
+			"name" : "t_dhw_1_min", 
+			"command" : "31 00 FA 06 73 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"delta_t_ch" : { 
+			"name" : "delta_t_ch", 
+			"command" : "31 00 FA 06 83 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"v_var" : { 
+			"name" : "v_var", 
+			"command" : "31 00 FA 06 9C 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "false", 
+			"unit" : "lh",
+			"type" : "longint"
+		},
+		"t_flow_ch_adj" : { 
+			"name" : "t_flow_ch_adj", 
+			"command" : "31 00 FA 06 A0 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_flow_cool_adj" : { 
+			"name" : "t_flow_cool_adj", 
+			"command" : "31 00 FA 06 A1 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"min_pressure" : { 
+			"name" : "min_pressure", 
+			"command" : "31 00 FA 07 28 00 00", 
+			"id" : "190", 
+			"divisor" : "1000", 
+			"writable" : "true", 
+			"unit" : "bar",
+			"type" : "float"
+		},
+		"max_pressure" : { 
+			"name" : "max_pressure", 
+			"command" : "31 00 FA 07 27 00 00", 
+			"id" : "190", 
+			"divisor" : "1000", 
+			"writable" : "true", 
+			"unit" : "bar",
+			"type" : "float"
+		},
+		"setpoint_pressure" : { 
+			"name" : "setpoint_pressure", 
+			"command" : "31 00 FA 07 25 00 00", 
+			"id" : "190", 
+			"divisor" : "1000", 
+			"writable" : "true", 
+			"unit" : "bar",
+			"type" : "float"
+		},
+		"max_pressure_drop" : { 
+			"name" : "max_pressure_drop", 
+			"command" : "31 00 FA 07 26 00 00", 
+			"id" : "190", 
+			"divisor" : "1000", 
+			"writable" : "true", 
+			"unit" : "bar",
+			"type" : "float"
+		},
+		"hc_func" : { 
+			"name" : "hc_func", 
+			"command" : "61 00 FA 01 41 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"weather controlled" : "0",
+				"fixed value" : "1"
+			}
+		},
+		"t_frost_protect" : { 
+			"name" : "t_frost_protect", 
+			"command" : "61 00 FA 0A 00 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "longint"
+		},
+		"insulation" : { 
+			"name" : "insulation", 
+			"command" : "61 00 FA 01 0C 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"low" : "512",
+				"normal" : "1024",
+				"good" : "2048",
+				"very good" : "3072"
+			}
+		},
+		"screed" : { 
+			"name" : "screed", 
+			"command" : "61 00 FA 01 1A 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "256"
+			}
+		},
+		"t_screed_day1" : { 
+			"name" : "screed_day1", 
+			"command" : "61 00 FA 0B B9 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day2" : { 
+			"name" : "screed_day2", 
+			"command" : "61 00 FA 0B BA 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day3" : { 
+			"name" : "screed_day3", 
+			"command" : "61 00 FA 0B BB 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day4" : { 
+			"name" : "screed_day4", 
+			"command" : "61 00 FA 0B BC 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day5" : { 
+			"name" : "screed_day5", 
+			"command" : "61 00 FA 0B BD 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day6" : { 
+			"name" : "screed_day6", 
+			"command" : "61 00 FA 0B BE 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day7" : { 
+			"name" : "screed_day7", 
+			"command" : "61 00 FA 0B BD 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day8" : { 
+			"name" : "screed_day8", 
+			"command" : "61 00 FA 0B C0 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day9" : { 
+			"name" : "screed_day9", 
+			"command" : "61 00 FA 0B C1 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day10" : { 
+			"name" : "screed_day10", 
+			"command" : "61 00 FA 0B C2 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day11" : { 
+			"name" : "screed_day11", 
+			"command" : "61 00 FA 0B C3 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day12" : { 
+			"name" : "screed_day12", 
+			"command" : "61 00 FA 0B C4 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day13" : { 
+			"name" : "screed_day13", 
+			"command" : "61 00 FA 0B C5 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day14" : { 
+			"name" : "screed_day14", 
+			"command" : "61 00 FA 0B C6 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day15" : { 
+			"name" : "screed_day15", 
+			"command" : "61 00 FA 0B C7 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day16" : { 
+			"name" : "screed_day16", 
+			"command" : "61 00 FA 0B C8 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day17" : { 
+			"name" : "screed_day17", 
+			"command" : "61 00 FA 0B C9 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day18" : { 
+			"name" : "screed_day18", 
+			"command" : "61 00 FA 0B CA 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day19" : { 
+			"name" : "screed_day19", 
+			"command" : "61 00 FA 0B CB 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day20" : { 
+			"name" : "screed_day20", 
+			"command" : "61 00 FA 0B CC 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day21" : { 
+			"name" : "screed_day21", 
+			"command" : "61 00 FA 0B CD 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day22" : { 
+			"name" : "screed_day22", 
+			"command" : "61 00 FA 0B CD 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day23" : { 
+			"name" : "screed_day23", 
+			"command" : "61 00 FA 0B CF 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day24" : { 
+			"name" : "screed_day24", 
+			"command" : "61 00 FA 0B D0 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day25" : { 
+			"name" : "screed_day25", 
+			"command" : "61 00 FA 0B D1 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day26" : { 
+			"name" : "screed_day26", 
+			"command" : "61 00 FA 0B D2 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day27" : { 
+			"name" : "screed_day27", 
+			"command" : "61 00 FA 0B D3 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_screed_day28" : { 
+			"name" : "screed_day28", 
+			"command" : "61 00 FA 0B D4 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_out_lim_day" : { 
+			"name" : "t_out_lim_day", 
+			"command" : "61 00 FA 01 16 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_out_lim_night" : { 
+			"name" : "t_out_lim_night", 
+			"command" : "61 00 FA 01 17 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_flow_day" : { 
+			"name" : "t_flow_day", 
+			"command" : "61 00 FA 01 29 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_flow_night" : { 
+			"name" : "t_flow_night", 
+			"command" : "61 00 FA 01 2A 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"max_t_flow" : { 
+			"name" : "max_t_flow", 
+			"command" : "61 00 28 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"min_t_flow" : { 
+			"name" : "min_t_flow", 
+			"command" : "61 00 FA 01 2B 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"hc_adapt" : { 
+			"name" : "hc_adapt", 
+			"command" : "61 00 FA 01 15 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" :"256"
+			}
+		},
+		"start_tout_cool" : { 
+			"name" : "start_tout_cool", 
+			"command" : "61 00 FA 13 5B 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"max_tout_cool" : { 
+			"name" : "max_tout_cool", 
+			"command" : "61 00 FA 13 5C 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_flow_cool_start" : { 
+			"name" : "t_flow_cool_start", 
+			"command" : "61 00 FA 13 5D 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_flow_cool_max" : { 
+			"name" : "t_flow_cool_max", 
+			"command" : "61 00 FA 13 5E 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"min_t_flow_cool" : { 
+			"name" : "min_t_flow_cool", 
+			"command" : "61 00 FA 13 63 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_flow_cool" : { 
+			"name" : "t_flow_cool", 
+			"command" : "61 00 FA 03 DD 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"cool_setpoint_adj" : { 
+			"name" : "cool_setpoint_adj", 
+			"command" : "61 00 FA 13 59 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"circ_pump_dhw" : { 
+			"name" : "circ_pump_dhw", 
+			"command" : "31 00 FA 01 82 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"on" : "1"
+			}
+		},
+		"circ_pump_interval" : { 
+			"name" : "circ_pump_interval", 
+			"command" : "31 00 FA 06 5E 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value"
+		},
+		"anti_leg_day" : { 
+			"name" : "anti_leg_day", 
+			"command" : "31 00 FA 01 01 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off" : "0",
+				"monday" : "256",
+				"tuesday" : "512",
+				"wednesday" : "768",
+				"thursday" : "1024",
+				"friday" : "1280",
+				"saturday" : "1536",
+				"sunday" : "1792",
+				"everyday" : "2048"
+			}
+		},
+		"anti_leg_time" : { 
+			"name" : "anti_leg_time", 
+			"command" : "31 00 FA FD F4 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value"
+		},
+		"anti_leg_temp" : { 
+			"name" : "anti_leg_temp", 
+			"command" : "31 00 FA 05 87 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"max_dhw_loading" : { 
+			"name" : "max_dhw_loading", 
+			"command" : "31 00 FA 01 80 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "min",
+			"type" : "longint"
+		},
+		"dhw_off_time" : { 
+			"name" : "dhw_off_time", 
+			"command" : "31 00 FA 4E 3F 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "",
+			"type" : "float"
+		},
+		"one_hot_water" : { 
+			"name" : "one_hot_water", 
+			"command" : "31 00 FA 01 44 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "longint",
+			"type" : "value",
+			"value_code" : {
+				"off": "0",
+				"on" : "1"
+			}
+		},
+		"timer_boh" : { 
+			"name" : "timer_boh", 
+			"command" : "31 00 FA 06 92 00 00", 
+			"id" : "190", 
+			"divisor" : "1", 
+			"writable" : "true", 
+			"unit" : "min",
+			"type" : "longint"
+		},
+		"t_reduced" : { 
+			"name" : "t_reduced", 
+			"command" : "61 00 08 00 00 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_absence" : { 
+			"name" : "t_absence", 
+			"command" : "61 00 FA 01 3D 00 00", 
+			"id" : "190", 
+			"divisor" : "10", 
+			"writable" : "true", 
+			"unit" : "deg",
+			"type" : "float"
+		},
+		"t_room" :{
+			"name" : "t_room",
+			"command" : "81 00 FA 00 11 00 00",
+			"id" : "190",
+			"divisor" : "10",
+			"writable" : "false",
+			"unit" : "deg",
+			"type" : "float"
+		}
+	}
+}
