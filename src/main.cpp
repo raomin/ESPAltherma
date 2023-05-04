@@ -13,7 +13,7 @@ void extraLoop()
   if(config->CAN_ENABLED)
     canBus_loop();
 
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
+#ifdef ARDUINO_M5Stick_C
   if (M5.BtnA.wasPressed()) { // turn back ON screen
     M5.Axp.ScreenBreath(12);
     LCDTimeout = millis() + 30000;
@@ -34,7 +34,7 @@ void extraLoop()
 
 void setupScreen()
 {
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
+#ifdef ARDUINO_M5Stick_C
   M5.begin();
   M5.Axp.EnableCoulombcounter();
   M5.Lcd.setRotation(1);

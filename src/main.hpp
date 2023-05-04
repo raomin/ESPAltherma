@@ -17,7 +17,7 @@
 #include "arrayFunctions.hpp"
 #include "restart.hpp"
 
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
+#ifdef ARDUINO_M5Stick_C
 long LCDTimeout = 40000; // Keep screen ON for 40s then turn off. ButtonA will turn it On again.
 #endif
 

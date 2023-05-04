@@ -15,6 +15,7 @@
 #include "arrayFunctions.hpp"
 #include "webuiBackgroundTasks.hpp"
 #include "SemanticVersion.hpp"
+#include "Config/boardDefaults.hpp"
 
 #define MODELS_FILE "/models.json"
 #define CAN_COMMANDS_FILE "/CANCommands.json"
@@ -45,58 +46,6 @@ enum class LoopRunStatus : uint8_t {
 };
 
 extern LoopRunStatus mainLoopStatus;
-
-bool formatDefaultFS();
-
-void onWifiLoadNetworks(AsyncWebServerRequest *request);
-
-void onWifiLoadFinished(AsyncWebServerRequest *request);
-
-void onLoadBoardInfo(AsyncWebServerRequest *request);
-
-void onIndex(AsyncWebServerRequest *request);
-
-void onRequestPicoCSS(AsyncWebServerRequest *request);
-
-void onRequestMainCSS(AsyncWebServerRequest *request);
-
-void onRequestMainJS(AsyncWebServerRequest *request);
-
-void onRequestMD5JS(AsyncWebServerRequest *request);
-
-void onFormat(AsyncWebServerRequest *request);
-
-void onLoadModels(AsyncWebServerRequest *request);
-
-void onLoadCommands(AsyncWebServerRequest *request);
-
-void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t* data, size_t len, bool final);
-
-void onUploadX10AFile(AsyncWebServerRequest *request);
-
-void onUploadConfigFile(AsyncWebServerRequest *request);
-
-void onLoadValuesResult(AsyncWebServerRequest *request);
-
-void onLoadValues(AsyncWebServerRequest *request);
-
-void onLoadModel(AsyncWebServerRequest *request);
-
-void onLoadCommand(AsyncWebServerRequest *request);
-
-void onLoadConfig(AsyncWebServerRequest *request);
-
-void onExportConfig(AsyncWebServerRequest *request);
-
-void onSaveConfig(AsyncWebServerRequest *request);
-
-void onUpdate(AsyncWebServerRequest *request);
-
-void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-
-bool handleCAN(AsyncWebServerRequest *request, CAN_Config* CANConfig);
-
-void onUploadCANFile(AsyncWebServerRequest *request);
 
 void WebUI_Init();
 
