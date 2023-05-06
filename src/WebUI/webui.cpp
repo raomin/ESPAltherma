@@ -70,7 +70,7 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
 
   SemanticVersion version(app_info.version);
 
-  response += "\"Version\": \"";
+  response += ",\"Version\": \"";
 
   char versionText[48] = "";
 
@@ -430,7 +430,7 @@ void onExportConfig(AsyncWebServerRequest *request)
   request->send(response);
 }
 
-bool handleCAN(AsyncWebServerRequest *request, CAN_Config* CANConfig)
+bool handleCAN(AsyncWebServerRequest *request, CAN_Config** CANConfigPointer)
 {
   if(!request->hasParam("can_ic_type", true) || !request->hasParam("can_speed_kbps", true)) {
     request->send(422, "text/plain", "Missing parameter(s) for CAN-Bus IC Type or CAN-Speed");
@@ -493,9 +493,11 @@ bool handleCAN(AsyncWebServerRequest *request, CAN_Config* CANConfig)
     return false;
   }
 
-  CANConfig = new CAN_Config();
+  CAN_Config* CANConfig = new CAN_Config();
   CANConfig->CAN_IC = canICTypes;
   CANConfig->CAN_BUS = canICBus;
+
+  *CANConfigPointer = CANConfig;
 
   if(CANConfig->CAN_BUS == CAN_ICBus::SPI) {
     CANConfig->CAN_SPI.PIN_MISO = request->getParam("pin_can_spi_miso", true)->value().toInt();
@@ -650,7 +652,7 @@ void onSaveConfig(AsyncWebServerRequest *request)
   }
 
   CAN_Config* CANConfig = nullptr;
-  if(request->hasParam("can_enabled", true) && !handleCAN(request, CANConfig)) {
+  if(request->hasParam("can_enabled", true) && !handleCAN(request, &CANConfig)) {
     return;
   }
 
@@ -1027,7 +1029,7 @@ void onLoadCANValues(AsyncWebServerRequest *request)
     return;
   }
 
-  if(!handleCAN(request, webuiScanCANRegisterConfig)) {
+  if(!handleCAN(request, &webuiScanCANRegisterConfig)) {
     return;
   }
 

@@ -84,33 +84,34 @@ void readConfig()
 
     if(config->CAN_ENABLED) {
         CAN_Config* CANConfig = new CAN_Config();
-        CANConfig->CAN_IC = (CAN_ICTypes)configDoc["CAN_IC"].as<uint8_t>();
-        CANConfig->CAN_BUS = (CAN_ICBus)configDoc["CAN_BUS"].as<uint8_t>();
+        JsonObject configCANDoc = configDoc["CAN_CONFIG"];
+        CANConfig->CAN_IC = (CAN_ICTypes)configCANDoc["CAN_IC"].as<uint8_t>();
+        CANConfig->CAN_BUS = (CAN_ICBus)configCANDoc["CAN_BUS"].as<uint8_t>();
 
-        CANConfig->CAN_UART.PIN_RX = configDoc["UART"]["PIN_RX"].as<uint8_t>();
-        CANConfig->CAN_UART.PIN_TX = configDoc["UART"]["PIN_TX"].as<uint8_t>();
+        CANConfig->CAN_UART.PIN_RX = configCANDoc["UART"]["PIN_RX"].as<uint8_t>();
+        CANConfig->CAN_UART.PIN_TX = configCANDoc["UART"]["PIN_TX"].as<uint8_t>();
 
-        CANConfig->CAN_SPI.PIN_MISO = configDoc["SPI"]["MISO"].as<uint8_t>();
-        CANConfig->CAN_SPI.PIN_MOSI = configDoc["SPI"]["MOSI"].as<uint8_t>();
-        CANConfig->CAN_SPI.PIN_SCK = configDoc["SPI"]["SCK"].as<uint8_t>();
-        CANConfig->CAN_SPI.PIN_CS = configDoc["SPI"]["CS"].as<uint8_t>();
-        CANConfig->CAN_SPI.PIN_INT = configDoc["SPI"]["INT"].as<uint8_t>();
-        CANConfig->CAN_SPI.IC_MHZ = configDoc["SPI"]["MHZ"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_MISO = configCANDoc["SPI"]["MISO"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_MOSI = configCANDoc["SPI"]["MOSI"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_SCK = configCANDoc["SPI"]["SCK"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_CS = configCANDoc["SPI"]["CS"].as<uint8_t>();
+        CANConfig->CAN_SPI.PIN_INT = configCANDoc["SPI"]["INT"].as<uint8_t>();
+        CANConfig->CAN_SPI.IC_MHZ = configCANDoc["SPI"]["MHZ"].as<uint8_t>();
 
-        CANConfig->CAN_BLUETOOTH.DEVICENAME = (char *)configDoc["BLUETOOTH"]["DEVICENAME"].as<const char*>();
-        CANConfig->CAN_BLUETOOTH.USE_PIN = configDoc["BLUETOOTH"]["USE_PIN"].as<const bool>();
-        CANConfig->CAN_BLUETOOTH.PIN = (char *)configDoc["BLUETOOTH"]["PIN"].as<const char*>();
+        CANConfig->CAN_BLUETOOTH.DEVICENAME = (char *)configCANDoc["BLUETOOTH"]["DEVICENAME"].as<const char*>();
+        CANConfig->CAN_BLUETOOTH.USE_PIN = configCANDoc["BLUETOOTH"]["USE_PIN"].as<const bool>();
+        CANConfig->CAN_BLUETOOTH.PIN = (char *)configCANDoc["BLUETOOTH"]["PIN"].as<const char*>();
 
-        CANConfig->CAN_SPEED_KBPS = configDoc["CAN_SPEED_KBPS"].as<uint16_t>();
-        CANConfig->CAN_MQTT_TOPIC_NAME = (char *)configDoc["CAN_MQTT_TOPIC_NAME"].as<const char*>();
-        CANConfig->CAN_READONLY_ENABLED = configDoc["CAN_READONLY_ENABLED"].as<const bool>();
-        CANConfig->CAN_SNIFFING_ENABLED = configDoc["CAN_SNIFFING_ENABLED"].as<const bool>();
-        CANConfig->CAN_AUTOPOLL_MODE = (CAN_PollMode)configDoc["CAN_AUTOPOLL_MODE"].as<uint8_t>();
+        CANConfig->CAN_SPEED_KBPS = configCANDoc["CAN_SPEED_KBPS"].as<uint16_t>();
+        CANConfig->CAN_MQTT_TOPIC_NAME = (char *)configCANDoc["CAN_MQTT_TOPIC_NAME"].as<const char*>();
+        CANConfig->CAN_READONLY_ENABLED = configCANDoc["CAN_READONLY_ENABLED"].as<const bool>();
+        CANConfig->CAN_SNIFFING_ENABLED = configCANDoc["CAN_SNIFFING_ENABLED"].as<const bool>();
+        CANConfig->CAN_AUTOPOLL_MODE = (CAN_PollMode)configCANDoc["CAN_AUTOPOLL_MODE"].as<uint8_t>();
         if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
-            CANConfig->CAN_AUTOPOLL_TIME = configDoc["CAN_AUTOPOLL_TIME"].as<uint16_t>();
+            CANConfig->CAN_AUTOPOLL_TIME = configCANDoc["CAN_AUTOPOLL_TIME"].as<uint16_t>();
         }
 
-        JsonArray commands = configDoc["COMMANDS"].as<JsonArray>();
+        JsonArray commands = configCANDoc["COMMANDS"].as<JsonArray>();
         CANConfig->COMMANDS_LENGTH = commands.size();
         CANConfig->COMMANDS = new CANCommand*[CANConfig->COMMANDS_LENGTH];
 
@@ -227,14 +228,15 @@ void saveConfig()
     configDoc["CAN_ENABLED"] = config->CAN_ENABLED;
 
     if(config->CAN_ENABLED) {
-        configDoc["CAN_IC"] = (uint8_t)config->CAN_CONFIG->CAN_IC;
-        configDoc["CAN_BUS"] = (uint8_t)config->CAN_CONFIG->CAN_BUS;
+        JsonObject CANConfig = configDoc.createNestedObject("CAN_CONFIG");
+        CANConfig["CAN_IC"] = (uint8_t)config->CAN_CONFIG->CAN_IC;
+        CANConfig["CAN_BUS"] = (uint8_t)config->CAN_CONFIG->CAN_BUS;
 
-        JsonObject canUART = configDoc.createNestedObject("UART");
+        JsonObject canUART = CANConfig.createNestedObject("UART");
         canUART["PIN_RX"] = config->CAN_CONFIG->CAN_UART.PIN_RX;
         canUART["PIN_TX"] = config->CAN_CONFIG->CAN_UART.PIN_TX;
 
-        JsonObject canSPI = configDoc.createNestedObject("SPI");
+        JsonObject canSPI = CANConfig.createNestedObject("SPI");
         canSPI["MISO"] = config->CAN_CONFIG->CAN_SPI.PIN_MISO;
         canSPI["MOSI"] = config->CAN_CONFIG->CAN_SPI.PIN_MOSI;
         canSPI["SCK"] = config->CAN_CONFIG->CAN_SPI.PIN_SCK;
@@ -242,21 +244,21 @@ void saveConfig()
         canSPI["INT"] = config->CAN_CONFIG->CAN_SPI.PIN_INT;
         canSPI["MHZ"] = config->CAN_CONFIG->CAN_SPI.IC_MHZ;
 
-        JsonObject canBT = configDoc.createNestedObject("BLUETOOTH");
+        JsonObject canBT = CANConfig.createNestedObject("BLUETOOTH");
         canBT["DEVICENAME"] = config->CAN_CONFIG->CAN_BLUETOOTH.DEVICENAME;
         canBT["USE_PIN"] = config->CAN_CONFIG->CAN_BLUETOOTH.USE_PIN;
         canBT["PIN"] = config->CAN_CONFIG->CAN_BLUETOOTH.PIN;
 
-        configDoc["CAN_SPEED_KBPS"] = config->CAN_CONFIG->CAN_SPEED_KBPS;
-        configDoc["CAN_MQTT_TOPIC_NAME"] = config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
-        configDoc["CAN_READONLY_ENABLED"] = config->CAN_CONFIG->CAN_READONLY_ENABLED;
-        configDoc["CAN_SNIFFING_ENABLED"] = config->CAN_CONFIG->CAN_SNIFFING_ENABLED;
-        configDoc["CAN_AUTOPOLL_MODE"] = (uint8_t)config->CAN_CONFIG->CAN_AUTOPOLL_MODE;
+        CANConfig["CAN_SPEED_KBPS"] = config->CAN_CONFIG->CAN_SPEED_KBPS;
+        CANConfig["CAN_MQTT_TOPIC_NAME"] = config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
+        CANConfig["CAN_READONLY_ENABLED"] = config->CAN_CONFIG->CAN_READONLY_ENABLED;
+        CANConfig["CAN_SNIFFING_ENABLED"] = config->CAN_CONFIG->CAN_SNIFFING_ENABLED;
+        CANConfig["CAN_AUTOPOLL_MODE"] = (uint8_t)config->CAN_CONFIG->CAN_AUTOPOLL_MODE;
         if(config->CAN_CONFIG->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto) {
-            configDoc["CAN_AUTOPOLL_TIME"] = config->CAN_CONFIG->CAN_AUTOPOLL_TIME;
+            CANConfig["CAN_AUTOPOLL_TIME"] = config->CAN_CONFIG->CAN_AUTOPOLL_TIME;
         }
 
-        JsonArray commands = configDoc.createNestedArray("COMMANDS");
+        JsonArray commands = CANConfig.createNestedArray("COMMANDS");
         for(size_t i = 0; i < config->CAN_CONFIG->COMMANDS_LENGTH; i++) {
             JsonArray command = commands.createNestedArray();
             command.add(config->CAN_CONFIG->COMMANDS[i]->name);

@@ -20,8 +20,6 @@ void webuiScanX10ARegister()
   bool serialX10AWasInited = SerialX10A;
 
   debugSerial.printf("Starting new serial connection with pins RX: %u, TX: %u\n", webuiScanX10ARegisterConfig.PinRx, webuiScanX10ARegisterConfig.PinTx);
-  debugSerial.println("Waiting for registry scan to finish...");
-
   debugSerial.println("Starting registry scan...");
 
   X10AInit(webuiScanX10ARegisterConfig.PinRx, webuiScanX10ARegisterConfig.PinTx);
@@ -94,9 +92,7 @@ void webuiScanCANRegister()
 
   bool CANWasInited = config->CAN_ENABLED;
 
-  debugSerial.printf("Starting new can connection with");
-  debugSerial.println("Waiting for registry scan to finish...");
-
+  debugSerial.printf("Starting new CAN connection with BUS: %i, IC: %i, KBPS: %i\n", (uint8_t)webuiScanCANRegisterConfig->CAN_BUS, (uint8_t)webuiScanCANRegisterConfig->CAN_IC, webuiScanCANRegisterConfig->CAN_SPEED_KBPS);
   debugSerial.println("Starting registry scan...");
 
   canBus_setup(webuiScanCANRegisterConfig);

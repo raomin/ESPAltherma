@@ -233,48 +233,50 @@ async function loadConfig()
             show('smartgrid');
         }
 
+        let convertedCommandsList = [];
         if(data['CAN_ENABLED'])
         {
+            let dataCANConfig = data['CAN_CONFIG'];
             let canBusPrefix = '';
             let canICType = '';
-            if(data['CAN_BUS'] == 1)
+            if(dataCANConfig['CAN_BUS'] == 1)
             {
                 canBusPrefix = 'spi_';
-                document.getElementById('pin_can_spi_mosi').value = data['SPI']['MOSI'];
-                document.getElementById('pin_can_spi_miso').value = data['SPI']['MISO'];
-                document.getElementById('pin_can_spi_sck').value = data['SPI']['SCK'];
-                document.getElementById('pin_can_spi_cs').value = data['SPI']['CS'];
-                document.getElementById('pin_can_spi_int').value = data['SPI']['INT'];
-                document.getElementById('pin_can_spi_mhz').value = data['SPI']['MHZ'];
+                document.getElementById('pin_can_spi_mosi').value = dataCANConfig['SPI']['MOSI'];
+                document.getElementById('pin_can_spi_miso').value = dataCANConfig['SPI']['MISO'];
+                document.getElementById('pin_can_spi_sck').value = dataCANConfig['SPI']['SCK'];
+                document.getElementById('pin_can_spi_cs').value = dataCANConfig['SPI']['CS'];
+                document.getElementById('pin_can_spi_int').value = dataCANConfig['SPI']['INT'];
+                document.getElementById('pin_can_spi_mhz').value = dataCANConfig['SPI']['MHZ'];
             }
-            else if(data['CAN_BUS'] == 2)
+            else if(dataCANConfig['CAN_BUS'] == 2)
             {
                 canBusPrefix = 'uart_';
-                document.getElementById('pin_can_uart_rx').value = data['UART']['PIN_RX'];
-                document.getElementById('pin_can_uart_tx').value = data['UART']['PIN_TX'];
+                document.getElementById('pin_can_uart_rx').value = dataCANConfig['UART']['PIN_RX'];
+                document.getElementById('pin_can_uart_tx').value = dataCANConfig['UART']['PIN_TX'];
             }
-            else if(data['CAN_BUS'] == 3)
+            else if(dataCANConfig['CAN_BUS'] == 3)
             {
                 canBusPrefix = 'bt_';
-                document.getElementById('pin_can_bt_devicename').value = data['BLUETOOTH']['DEVICENAME'];
-                document.getElementById('pin_can_bt_use_pin').checked = data['BLUETOOTH']['USE_PIN'];
+                document.getElementById('pin_can_bt_devicename').value = dataCANConfig['BLUETOOTH']['DEVICENAME'];
+                document.getElementById('pin_can_bt_use_pin').checked = dataCANConfig['BLUETOOTH']['USE_PIN'];
 
-                if(data['BLUETOOTH']['USE_PIN'])
+                if(dataCANConfig['BLUETOOTH']['USE_PIN'])
                 {
-                    document.getElementById('pin_can_bt_pin').value = data['BLUETOOTH']['PIN'];
+                    document.getElementById('pin_can_bt_pin').value = dataCANConfig['BLUETOOTH']['PIN'];
                     show('bt_use_pin');
                 }
             }
 
-            if(data['CAN_IC'] == 1)
+            if(dataCANConfig['CAN_IC'] == 1)
             {
                 canICType = 'mcp2515';
             }
-            else if(data['CAN_IC'] == 2)
+            else if(dataCANConfig['CAN_IC'] == 2)
             {
                 canICType = 'elm327';
             }
-            else if(data['CAN_IC'] == 3)
+            else if(dataCANConfig['CAN_IC'] == 3)
             {
                 canICType = 'sja1000';
             }
@@ -282,25 +284,50 @@ async function loadConfig()
             document.getElementById("can_ic_type").value = canBusPrefix + canICType;
             updateCANConfigDisplay();
 
-            document.getElementById('can_speed_kbps').value = data['CAN_SPEED_KBPS'];
-            document.getElementById('can_mqtt_topic_name').value = data['CAN_MQTT_TOPIC_NAME'];
-            document.getElementById('can_readonly_enabled').checked = data['CAN_READONLY_ENABLED'];
-            document.getElementById('can_sniffing_enabled').checked = data['CAN_SNIFFING_ENABLED'];
+            document.getElementById('can_speed_kbps').value = dataCANConfig['CAN_SPEED_KBPS'];
+            document.getElementById('can_mqtt_topic_name').value = dataCANConfig['CAN_MQTT_TOPIC_NAME'];
+            document.getElementById('can_readonly_enabled').checked = dataCANConfig['CAN_READONLY_ENABLED'];
+            document.getElementById('can_sniffing_enabled').checked = dataCANConfig['CAN_SNIFFING_ENABLED'];
 
-            switch(data['CAN_AUTOPOLL_MODE'])
+            switch(dataCANConfig['CAN_AUTOPOLL_MODE'])
             {
                 case 1: // passiv
                     document.getElementById('can_autopoll_mode_passiv').checked = true;
                     break;
                 case 2: // auto
                     document.getElementById('can_autopoll_mode_auto').checked = true;
-                    document.getElementById('can_autopoll_time').value = data['CAN_AUTOPOLL_TIME'];
+                    document.getElementById('can_autopoll_time').value = dataCANConfig['CAN_AUTOPOLL_TIME'];
                     show('can_autopoll');
                     break;
                 default: // dislabed
                     document.getElementById('can_autopoll_mode_disabled').checked = true;
                     break;
             }
+
+            dataCANConfig['COMMANDS'].forEach(command => {
+                let hexBytes = [];
+                command[2].forEach(intByte => {
+                    hexBytes.push(('0'+intByte.toString(16)).substr(-2).toUpperCase());
+                });
+
+                const dataArray = {
+                    "name":     command[0],
+                    "label":    command[1],
+                    "command":  hexBytes.join(' '),
+                    "id":       command[3].toString(),
+                    "divisor":  command[4].toString(),
+                    "writable": command[5].toString(),
+                    "unit":     command[6],
+                    "type":     command[7]
+                };
+
+                if(command[8] != null)
+                {
+                    dataArray["value_code"] = command[7];
+                }
+
+                convertedCommandsList.push(dataArray);
+            });
 
             show('can_pins');
             show('nav-can');
@@ -323,33 +350,6 @@ async function loadConfig()
         }
 
         customParametersList = data['PARAMETERS'];
-
-        let convertedCommandsList = [];
-        data['COMMANDS'].forEach(command => {
-            let hexBytes = [];
-            command[2].forEach(intByte => {
-                hexBytes.push(('0'+intByte.toString(16)).substr(-2).toUpperCase());
-            });
-
-            const dataArray = {
-                "name":    command[0],
-                "label":    command[1],
-                "command":  hexBytes.join(' '),
-                "id":       command[3].toString(),
-                "divisor":  command[4].toString(),
-                "writable": command[5].toString(),
-                "unit":     command[6],
-                "type":     command[7]
-            };
-
-            if(command[8] != null)
-            {
-                dataArray["value_code"] = command[7];
-            }
-
-            convertedCommandsList.push(dataArray);
-        });
-
         customCommandsList = convertedCommandsList;
 
         updateParametersTable('selectedParametersTable', customParametersList);
@@ -658,22 +658,10 @@ async function validateForm()
     return true;
 }
 
-async function sendConfigData(event)
+function definedCommandsToJSON(listToConvert)
 {
-    event.preventDefault();
-
-    const form = document.getElementById("configForm");
-    const formData = new FormData(form);
-
-    let valid = await validateForm();
-
-    if(!valid)
-        return;
-
-    formData.append("definedParameters", JSON.stringify(customParametersList));
-
     let convertedCommandsList = [];
-    customCommandsList.forEach(command => {
+    listToConvert.forEach(command => {
         const dataArray = [
             command["name"],
             command["label"],
@@ -698,7 +686,23 @@ async function sendConfigData(event)
         convertedCommandsList.push(dataArray);
     });
 
-    formData.append("definedCommands", JSON.stringify(convertedCommandsList));
+    return JSON.stringify(convertedCommandsList);
+}
+
+async function sendConfigData(event)
+{
+    event.preventDefault();
+
+    const form = document.getElementById("configForm");
+    const formData = new FormData(form);
+
+    let valid = await validateForm();
+
+    if(!valid)
+        return;
+
+    formData.append("definedParameters", JSON.stringify(customParametersList));
+    formData.append("definedCommands", definedCommandsToJSON(convertedCommandsList));
 
     await fetch(form.getAttribute('action'), {
         method: form.getAttribute('method'),
@@ -1151,7 +1155,7 @@ function clearCustomParameters()
     updateParametersTable('selectedParametersTable', customParametersList);
 }
 
-async function finishLoadData()
+async function finishLoadX10AData()
 {
     let params;
     if (fetchDataIntervalId == 'selectedParametersTable')
@@ -1208,7 +1212,7 @@ async function finishLoadData()
     });
 }
 
-async function beginLoadData(tableId)
+async function beginLoadX10AData(tableId)
 {
     let params;
     if (tableId == 'selectedParametersTable')
@@ -1245,7 +1249,7 @@ async function beginLoadData(tableId)
         if(response.status == 200)
         {
             fetchDataIntervalId = tableId;
-            fetchDataIntervalHandler = setInterval(finishLoadData, 5000);
+            fetchDataIntervalHandler = setInterval(finishLoadX10AData, 5000);
         }
         else
         {
@@ -1744,6 +1748,7 @@ async function beginLoadCANData(tableId)
 
     const form = document.getElementById("configForm");
     const formData = new FormData(form);
+    formData.append('definedCommands', definedCommandsToJSON(params));
 
     const buttonId = 'load' + tableId.charAt(0).toUpperCase() + tableId.slice(1);
     const buttonLoadValues = document.getElementById(buttonId);
