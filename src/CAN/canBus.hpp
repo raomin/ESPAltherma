@@ -8,7 +8,7 @@
 #include "CAN/Drivers/ELM327.hpp"
 #include "CAN/Drivers/SJA1000.hpp"
 
-void canBus_setup(const CAN_Config* CANConfig);
+bool canBus_setup(const CAN_Config* CANConfig);
 
 void canBus_loop();
 

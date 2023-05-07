@@ -1800,7 +1800,8 @@ async function finishLoadCANData()
     .then(function(response) {
         if(response.status != 200)
         {
-            throw new Error("A!" + response.text);
+            clearInterval(fetchDataIntervalHandler);
+            throw Error("A!" + response.text);
         }
 
         return response.json();

@@ -1014,8 +1014,13 @@ void onLoadCANValuesResult(AsyncWebServerRequest *request)
     return;
   }
 
-  request->send(200, "application/json", valueCANLoadResponse);
-  valueCANLoadResponse = "";
+  if(valueCANLoadResponse == "") {
+    request->send(404, "application/json", "CAN-Bus initialization with given parameter failed. Check if CAN config is correct.");
+    valueCANLoadResponse = "";
+  } else {
+    request->send(200, "application/json", valueCANLoadResponse);
+    valueCANLoadResponse = "";
+  }
 
   valueCANLoadState = NotLoading;
 

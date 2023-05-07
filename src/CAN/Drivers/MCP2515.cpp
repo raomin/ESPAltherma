@@ -352,6 +352,6 @@ void DriverMCP2515::sendCommand(CANCommand* cmd, bool setValue, int value)
 
 DriverMCP2515::~DriverMCP2515()
 {
-  delete mcp2515;
   self = nullptr;
+  delete mcp2515;
 }

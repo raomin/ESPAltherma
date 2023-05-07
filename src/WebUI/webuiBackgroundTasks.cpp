@@ -93,13 +93,14 @@ void webuiScanCANRegister()
   bool CANWasInited = config->CAN_ENABLED;
 
   debugSerial.printf("Starting new CAN connection with BUS: %i, IC: %i, KBPS: %i\n", (uint8_t)webuiScanCANRegisterConfig->CAN_BUS, (uint8_t)webuiScanCANRegisterConfig->CAN_IC, webuiScanCANRegisterConfig->CAN_SPEED_KBPS);
-  debugSerial.println("Starting registry scan...");
 
-  canBus_setup(webuiScanCANRegisterConfig);
-
-  debugSerial.println("Fetching and reading values");
-
-  valueCANLoadResponse = canBus_readAllCommands();
+  if(canBus_setup(webuiScanCANRegisterConfig)) {
+    debugSerial.println("Fetching and reading CAN values");
+    valueCANLoadResponse = canBus_readAllCommands();
+  } else {
+    // TODO give webui feedback that can init failed and config needs to be checked.
+    debugSerial.println("CAN connection failed!");
+  }
 
   if(CANWasInited) {
     debugSerial.println("Restoring original CAN connection");
@@ -108,7 +109,7 @@ void webuiScanCANRegister()
     canBus_stop();
   }
 
-  debugSerial.println("Finished registry scan");
+  debugSerial.println("Finished CAN scan");
 
   valueCANLoadState = LoadingFinished;
 }

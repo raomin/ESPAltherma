@@ -177,7 +177,8 @@ String CANDriver::readAllCommands()
       obj.add(resultBuffer[i]->c_str());
       delete resultBuffer[i];
     } else {
-      obj.add("");
+      // TODO highlight this result orange or red on webui
+      obj.add("[Timeout]");
     }
   }
   delete[] resultBuffer;
@@ -466,8 +467,10 @@ void CANDriver::checkPendingMessages()
 }
 
 CANDriver::~CANDriver() {
-  for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
-    delete cmdSendInfos[i];
+  if(canInited) {
+    for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
+      delete cmdSendInfos[i];
+    }
+    delete[] cmdSendInfos;
   }
-  delete[] cmdSendInfos;
 }
