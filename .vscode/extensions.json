@@ -5,6 +5,7 @@
         "platformio.platformio-ide"
     ],
     "unwantedRecommendations": [
+        "ms-dotnettools.csharp",
         "ms-vscode.cpptools-extension-pack"
     ]
 }

@@ -702,7 +702,7 @@ async function sendConfigData(event)
         return;
 
     formData.append("definedParameters", JSON.stringify(customParametersList));
-    formData.append("definedCommands", definedCommandsToJSON(convertedCommandsList));
+    formData.append("definedCommands", definedCommandsToJSON(customCommandsList));
 
     await fetch(form.getAttribute('action'), {
         method: form.getAttribute('method'),
