@@ -2,7 +2,7 @@
 #define CONVERTERS_H
 
 #include <string.h>
-#include "Config/parameterDef.hpp"
+#include "parameterDef.hpp"
 #include "debugSerial.hpp"
 
 namespace ESPAltherma

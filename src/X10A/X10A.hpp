@@ -11,6 +11,7 @@
 #include "debugSerial.hpp"
 #include "MQTT/mqtt.hpp"
 #include "arrayFunctions.hpp"
+#include "config.hpp"
 #include "comm.hpp"
 #include "main.hpp"
 
@@ -20,10 +21,12 @@ extern RegistryBuffer *registryBuffers;
 
 void X10AEnd();
 
-void initRegistries(RegistryBuffer** buffer, size_t& bufferSize, ParameterDef** parameters, const size_t parametersLength);
+void initRegistries(RegistryBuffer** buffer, size_t& bufferSize);
 
-void handleX10A(RegistryBuffer* buffer, const size_t& bufferSize, ParameterDef** parameters, const size_t parametersLength, const bool sendValuesViaMQTT, X10AProtocol protocol);
+void handleX10A(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT);
 
-void X10AInit(int8_t rxPin, int8_t txPin);
+void X10AInit(X10A_Config* X10AConfig);
+
+void X10A_loop();
 
 #endif

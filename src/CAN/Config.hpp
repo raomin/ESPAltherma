@@ -1,7 +1,7 @@
-#ifndef BUS_CONFIG_TYPES_H
-#define BUS_CONFIG_TYPES_H
+#ifndef CAN_CONFIG_H
+#define CAN_CONFIG_H
 
-#include <Arduino.h>
+#include "ArduinoC.hpp"
 #include "Command.hpp"
 
 enum class CAN_ICTypes : uint8_t {

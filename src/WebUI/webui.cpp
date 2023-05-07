@@ -318,24 +318,72 @@ void onLoadValuesResult(AsyncWebServerRequest *request)
   valueX10ALoadState = NotLoading;
 }
 
-void onLoadValues(AsyncWebServerRequest *request)
+bool handleX10A(AsyncWebServerRequest *request, X10A_Config** X10AConfigPointer)
 {
-  if(!request->hasParam("PIN_RX", true) || !request->hasParam("PIN_TX", true) || !request->hasParam("PARAMS", true))
+  if(!request->hasParam("pin_rx", true) || !request->hasParam("pin_tx", true) || !request->hasParam("x10a_protocol", true) || !request->hasParam("frequency", true))
   {
-    request->send(422, "text/plain", "Missing parameters PIN_RX, PIN_TX or PARAMS");
-    return;
+    request->send(422, "text/plain", "Missing parameter(s) for X10A");
+    return false;
   }
 
-  if(valueX10ALoadState != NotLoading)
+  X10A_Config* X10AConfig = new X10A_Config();
+  *X10AConfigPointer = X10AConfig;
+
+  X10AConfig->PIN_RX = request->getParam("pin_rx", true)->value().toInt();
+  X10AConfig->PIN_TX = request->getParam("pin_tx", true)->value().toInt();
+  X10AConfig->X10A_PROTOCOL = (X10AProtocol)request->getParam("x10a_protocol", true)->value().toInt();
+  X10AConfig->FREQUENCY = request->getParam("frequency", true)->value().toInt();
+
+  if(request->hasParam("definedParameters", true))
   {
+    DynamicJsonDocument jsonParameters(MODELS_CONFIG_SIZE);
+    deserializeJson(jsonParameters, request->getParam("definedParameters", true)->value());
+    JsonArray parametersArray = jsonParameters.as<JsonArray>();
+
+    X10AConfig->PARAMETERS_LENGTH = parametersArray.size();
+    X10AConfig->PARAMETERS = new ParameterDef*[X10AConfig->PARAMETERS_LENGTH];
+
+    int counter = 0;
+    for (JsonArray value : parametersArray)
+    {
+      X10AConfig->PARAMETERS[counter] = new ParameterDef(
+        value[0].as<const int>(),
+        value[1].as<const int>(),
+        value[2].as<const int>(),
+        value[3].as<const int>(),
+        value[4].as<const int>(),
+        value[5]);
+      counter++;
+    }
+  }
+  else
+  {
+    X10AConfig->PARAMETERS_LENGTH = 0;
+    X10AConfig->PARAMETERS = nullptr;
+  }
+
+  StaticJsonDocument<WEBUI_SELECTION_VALUE_SIZE> webuiSelectionValues;
+  webuiSelectionValues["model"] = (char *)request->getParam("model", true)->value().c_str();
+  webuiSelectionValues["language"] = (char *)request->getParam("language", true)->value().c_str();
+  webuiSelectionValues["presetParameters"] = (char *)request->getParam("presetParameters", true)->value().c_str();
+
+  String serializedWebuiSelectionValues;
+  serializeJson(webuiSelectionValues, serializedWebuiSelectionValues);
+  X10AConfig->WEBUI_SELECTION_VALUES = (char *)serializedWebuiSelectionValues.c_str();
+
+  return true;
+}
+
+void onLoadValues(AsyncWebServerRequest *request)
+{
+  if(valueX10ALoadState != NotLoading) {
     request->send(202, "text/plain", "Value loading in progress");
     return;
   }
 
-  webuiScanX10ARegisterConfig.PinRx = request->getParam("PIN_RX", true)->value().toInt();
-  webuiScanX10ARegisterConfig.PinTx = request->getParam("PIN_TX", true)->value().toInt();
-  webuiScanX10ARegisterConfig.Protocol = (X10AProtocol)request->getParam("X10A_PROTOCOL", true)->value().toInt();
-  webuiScanX10ARegisterConfig.Params = request->getParam("PARAMS", true)->value();
+  if(!handleX10A(request, &webuiScanX10ARegisterConfig)) {
+    return;
+  }
 
   valueX10ALoadState = Pending;
 
@@ -609,7 +657,7 @@ void onSaveConfig(AsyncWebServerRequest *request)
     }
   }
 
-  if(!request->hasParam("mqtt_server", true) || !request->hasParam("mqtt_username", true) || !request->hasParam("mqtt_password", true) || !request->hasParam("mqtt_topic_name", true) || !request->hasParam("mqtt_port", true) || !request->hasParam("frequency", true))
+  if(!request->hasParam("mqtt_server", true) || !request->hasParam("mqtt_username", true) || !request->hasParam("mqtt_password", true) || !request->hasParam("mqtt_topic_name", true) || !request->hasParam("mqtt_port", true))
   {
     request->send(422, "text/plain", "Missing parameter(s) for MQTT!");
     return;
@@ -624,12 +672,6 @@ void onSaveConfig(AsyncWebServerRequest *request)
   if(!request->hasParam("pin_enable_config", true))
   {
     request->send(422, "text/plain", "Missing parameter pin to enable config");
-    return;
-  }
-
-  if(request->hasParam("x10a_enabled", true) && (!request->hasParam("pin_rx", true) || !request->hasParam("pin_tx", true) || !request->hasParam("x10a_protocol", true)))
-  {
-    request->send(422, "text/plain", "Missing parameter(s) for X10A");
     return;
   }
 
@@ -648,6 +690,11 @@ void onSaveConfig(AsyncWebServerRequest *request)
   if(request->hasParam("sg_enabled", true) && (!request->hasParam("pin_sg1", true) || !request->hasParam("pin_sg2", true)))
   {
     request->send(422, "text/plain", "Missing parameter(s) for SmartGrid");
+    return;
+  }
+
+  X10A_Config* X10AConfig = nullptr;
+  if(request->hasParam("x10a_enabled", true) && !handleX10A(request, &X10AConfig)) {
     return;
   }
 
@@ -698,22 +745,15 @@ void onSaveConfig(AsyncWebServerRequest *request)
   }
 
   config->MQTT_PORT = request->getParam("mqtt_port", true)->value().toInt();
-  config->FREQUENCY = request->getParam("frequency", true)->value().toInt();
   config->PIN_ENABLE_CONFIG = request->getParam("pin_enable_config", true)->value().toInt();
 
-  config->X10A_ENABLED = request->hasParam("x10a_enabled", true);
   config->HEATING_ENABLED = request->hasParam("heating_enabled", true);
   config->COOLING_ENABLED = request->hasParam("cooling_enabled", true);
   config->SG_ENABLED = request->hasParam("sg_enabled", true);
+  config->X10A_ENABLED = request->hasParam("x10a_enabled", true);
+  config->X10A_CONFIG = X10AConfig;
   config->CAN_ENABLED = request->hasParam("can_enabled", true);
   config->CAN_CONFIG = CANConfig;
-
-  if(config->X10A_ENABLED)
-  {
-    config->PIN_RX = request->getParam("pin_rx", true)->value().toInt();
-    config->PIN_TX = request->getParam("pin_tx", true)->value().toInt();
-    config->X10A_PROTOCOL = (X10AProtocol)request->getParam("x10a_protocol", true)->value().toInt();
-  }
 
   if(config->HEATING_ENABLED)
     config->PIN_HEATING = request->getParam("pin_heating", true)->value().toInt();
@@ -727,43 +767,6 @@ void onSaveConfig(AsyncWebServerRequest *request)
     config->PIN_SG2 = request->getParam("pin_sg2", true)->value().toInt();
     config->SG_RELAY_HIGH_TRIGGER = request->hasParam("sg_relay_trigger", true);
   }
-
-  if(request->hasParam("definedParameters", true))
-  {
-    DynamicJsonDocument jsonParameters(MODELS_CONFIG_SIZE);
-    deserializeJson(jsonParameters, request->getParam("definedParameters", true)->value());
-    JsonArray parametersArray = jsonParameters.as<JsonArray>();
-
-    config->PARAMETERS_LENGTH = parametersArray.size();
-    config->PARAMETERS = new ParameterDef*[config->PARAMETERS_LENGTH];
-
-    int counter = 0;
-    for (JsonArray value : parametersArray)
-    {
-      config->PARAMETERS[counter] = new ParameterDef(
-        value[0].as<const int>(),
-        value[1].as<const int>(),
-        value[2].as<const int>(),
-        value[3].as<const int>(),
-        value[4].as<const int>(),
-        value[5]);
-      counter++;
-    }
-  }
-  else
-  {
-    config->PARAMETERS_LENGTH = 0;
-    config->PARAMETERS = nullptr;
-  }
-
-  StaticJsonDocument<WEBUI_SELECTION_VALUE_SIZE> webuiSelectionValues;
-  webuiSelectionValues["model"] = (char *)request->getParam("model", true)->value().c_str();
-  webuiSelectionValues["language"] = (char *)request->getParam("language", true)->value().c_str();
-  webuiSelectionValues["presetParameters"] = (char *)request->getParam("presetParameters", true)->value().c_str();
-
-  String serializedWebuiSelectionValues;
-  serializeJson(webuiSelectionValues, serializedWebuiSelectionValues);
-  config->WEBUI_SELECTION_VALUES = (char *)serializedWebuiSelectionValues.c_str();
 
   saveConfig();
 

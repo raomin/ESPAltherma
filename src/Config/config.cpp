@@ -4,11 +4,8 @@ Config* config = nullptr;
 
 Config::~Config()
 {
-    if(PARAMETERS_LENGTH) {
-        for (size_t i = 0; i < PARAMETERS_LENGTH; i++) {
-            delete PARAMETERS[i];
-        }
-        delete[] PARAMETERS;
+    if(X10A_ENABLED) {
+        delete X10A_CONFIG;
     }
 
     if(CAN_ENABLED) {
@@ -66,12 +63,7 @@ void readConfig()
     }
 
     config->MQTT_PORT = configDoc["MQTT_PORT"].as<uint16_t>();
-    config->FREQUENCY = configDoc["FREQUENCY"].as<uint32_t>();
     config->PIN_ENABLE_CONFIG = configDoc["PIN_ENABLE_CONFIG"].as<uint8_t>();
-    config->X10A_ENABLED = configDoc["X10A_ENABLED"].as<const bool>();
-    config->PIN_RX = configDoc["PIN_RX"].as<uint8_t>();
-    config->PIN_TX = configDoc["PIN_TX"].as<uint8_t>();
-    config->X10A_PROTOCOL = (X10AProtocol)configDoc["X10A_PROTOCOL"].as<uint8_t>();
     config->HEATING_ENABLED = configDoc["HEATING_ENABLED"].as<const bool>();
     config->PIN_HEATING = configDoc["PIN_HEATING"].as<uint8_t>();
     config->COOLING_ENABLED = configDoc["COOLING_ENABLED"].as<const bool>();
@@ -80,7 +72,35 @@ void readConfig()
     config->PIN_SG1 = configDoc["PIN_SG1"].as<uint8_t>();
     config->PIN_SG2 = configDoc["PIN_SG2"].as<uint8_t>();
     config->SG_RELAY_HIGH_TRIGGER = configDoc["SG_RELAY_HIGH_TRIGGER"].as<const bool>();
+    config->X10A_ENABLED = configDoc["X10A_ENABLED"].as<const bool>();
     config->CAN_ENABLED = configDoc["CAN_ENABLED"].as<const bool>();
+
+    if(config->X10A_ENABLED) {
+        X10A_Config* X10AConfig = new X10A_Config();
+        JsonObject configX10ADoc = configDoc["X10A_CONFIG"];
+        X10AConfig->FREQUENCY = configX10ADoc["FREQUENCY"].as<uint32_t>();
+        X10AConfig->PIN_RX = configX10ADoc["PIN_RX"].as<uint8_t>();
+        X10AConfig->PIN_TX = configX10ADoc["PIN_TX"].as<uint8_t>();
+        X10AConfig->X10A_PROTOCOL = (X10AProtocol)configX10ADoc["X10A_PROTOCOL"].as<uint8_t>();
+        X10AConfig->WEBUI_SELECTION_VALUES = (char *)configX10ADoc["WEBUI_SELECTION_VALUES"].as<const char*>();
+
+        JsonArray parameters = configX10ADoc["PARAMETERS"].as<JsonArray>();
+        X10AConfig->PARAMETERS_LENGTH = parameters.size();
+        X10AConfig->PARAMETERS = new ParameterDef*[X10AConfig->PARAMETERS_LENGTH];
+
+        for(size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
+            JsonArray parameter = parameters[i];
+            X10AConfig->PARAMETERS[i] = new ParameterDef(
+                parameter[0].as<const int>(),
+                parameter[1].as<const int>(),
+                parameter[2].as<const int>(),
+                parameter[3].as<const int>(),
+                parameter[4].as<const int>(),
+                parameter[5]);
+        }
+
+        config->X10A_CONFIG = X10AConfig;
+    }
 
     if(config->CAN_ENABLED) {
         CAN_Config* CANConfig = new CAN_Config();
@@ -162,23 +182,6 @@ void readConfig()
 
         config->CAN_CONFIG = CANConfig;
     }
-
-    JsonArray parameters = configDoc["PARAMETERS"].as<JsonArray>();
-    config->PARAMETERS_LENGTH = parameters.size();
-    config->PARAMETERS = new ParameterDef*[config->PARAMETERS_LENGTH];
-
-    for(size_t i = 0; i < config->PARAMETERS_LENGTH; i++) {
-        JsonArray parameter = parameters[i];
-        config->PARAMETERS[i] = new ParameterDef(
-            parameter[0].as<const int>(),
-            parameter[1].as<const int>(),
-            parameter[2].as<const int>(),
-            parameter[3].as<const int>(),
-            parameter[4].as<const int>(),
-            parameter[5]);
-    }
-
-    config->WEBUI_SELECTION_VALUES = (char *)configDoc["WEBUI_SELECTION_VALUES"].as<const char*>();
 }
 
 void saveConfig()
@@ -212,12 +215,7 @@ void saveConfig()
     }
 
     configDoc["MQTT_PORT"] = config->MQTT_PORT;
-    configDoc["FREQUENCY"] = config->FREQUENCY;
     configDoc["PIN_ENABLE_CONFIG"] = config->PIN_ENABLE_CONFIG;
-    configDoc["X10A_ENABLED"] = config->X10A_ENABLED;
-    configDoc["PIN_RX"] = config->PIN_RX;
-    configDoc["PIN_TX"] = config->PIN_TX;
-    configDoc["X10A_PROTOCOL"] = (uint8_t)config->X10A_PROTOCOL;
     configDoc["HEATING_ENABLED"] = config->HEATING_ENABLED;
     configDoc["PIN_HEATING"] = config->PIN_HEATING;
     configDoc["COOLING_ENABLED"] = config->COOLING_ENABLED;
@@ -225,7 +223,29 @@ void saveConfig()
     configDoc["SG_ENABLED"] = config->SG_ENABLED;
     configDoc["PIN_SG1"] = config->PIN_SG1;
     configDoc["PIN_SG2"] = config->PIN_SG2;
+    configDoc["SG_RELAY_HIGH_TRIGGER"] = config->SG_RELAY_HIGH_TRIGGER;
+    configDoc["X10A_ENABLED"] = config->X10A_ENABLED;
     configDoc["CAN_ENABLED"] = config->CAN_ENABLED;
+
+    if(config->X10A_ENABLED) {
+        JsonObject X10AConfig = configDoc.createNestedObject("X10A_CONFIG");
+        X10AConfig["FREQUENCY"] = config->X10A_CONFIG->FREQUENCY;
+        X10AConfig["PIN_RX"] = config->X10A_CONFIG->PIN_RX;
+        X10AConfig["PIN_TX"] = config->X10A_CONFIG->PIN_TX;
+        X10AConfig["X10A_PROTOCOL"] = (uint8_t)config->X10A_CONFIG->X10A_PROTOCOL;
+        X10AConfig["WEBUI_SELECTION_VALUES"] = config->X10A_CONFIG->WEBUI_SELECTION_VALUES;
+
+        JsonArray parameters = X10AConfig.createNestedArray("PARAMETERS");
+        for(size_t i = 0; i < config->X10A_CONFIG->PARAMETERS_LENGTH; i++) {
+            JsonArray parameter = parameters.createNestedArray();
+            parameter.add(config->X10A_CONFIG->PARAMETERS[i]->registryID);
+            parameter.add(config->X10A_CONFIG->PARAMETERS[i]->offset);
+            parameter.add(config->X10A_CONFIG->PARAMETERS[i]->convid);
+            parameter.add(config->X10A_CONFIG->PARAMETERS[i]->dataSize);
+            parameter.add(config->X10A_CONFIG->PARAMETERS[i]->dataType);
+            parameter.add(config->X10A_CONFIG->PARAMETERS[i]->label);
+        }
+    }
 
     if(config->CAN_ENABLED) {
         JsonObject CANConfig = configDoc.createNestedObject("CAN_CONFIG");
@@ -284,21 +304,6 @@ void saveConfig()
             }
         }
     }
-
-    configDoc["SG_RELAY_HIGH_TRIGGER"] = config->SG_RELAY_HIGH_TRIGGER;
-
-    JsonArray parameters = configDoc.createNestedArray("PARAMETERS");
-    for(size_t i = 0; i < config->PARAMETERS_LENGTH; i++) {
-        JsonArray parameter = parameters.createNestedArray();
-        parameter.add(config->PARAMETERS[i]->registryID);
-        parameter.add(config->PARAMETERS[i]->offset);
-        parameter.add(config->PARAMETERS[i]->convid);
-        parameter.add(config->PARAMETERS[i]->dataSize);
-        parameter.add(config->PARAMETERS[i]->dataType);
-        parameter.add(config->PARAMETERS[i]->label);
-    }
-
-    configDoc["WEBUI_SELECTION_VALUES"] = config->WEBUI_SELECTION_VALUES;
 
     File configFile = LittleFS.open(CONFIG_FILE, FILE_WRITE);
     serializeJsonPretty(configDoc, Serial);

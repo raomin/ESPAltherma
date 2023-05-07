@@ -3,17 +3,12 @@
 
 #include <stdint.h>
 #include <LittleFS.h>
-#include "parameterDef.hpp"
 #include "ArduinoJson.h"
 #include "CAN/Config.hpp"
+#include "X10A/config.hpp"
 
 #define CONFIG_FILE "/config.json"
 #define MODELS_CONFIG_SIZE 1024*10
-
-enum class X10AProtocol : uint8_t {
-    I,
-    S
-};
 
 struct Config
 {
@@ -35,12 +30,9 @@ struct Config
     String MQTT_TOPIC_NAME;
     String MQTT_ONETOPIC_NAME;
     uint16_t MQTT_PORT;
-    uint32_t FREQUENCY;
     uint8_t PIN_ENABLE_CONFIG;
     bool X10A_ENABLED;
-    uint8_t PIN_RX;
-    uint8_t PIN_TX;
-    X10AProtocol X10A_PROTOCOL;
+    X10A_Config* X10A_CONFIG;
     bool HEATING_ENABLED;
     uint8_t PIN_HEATING;
     bool COOLING_ENABLED;
@@ -51,9 +43,6 @@ struct Config
     bool SG_RELAY_HIGH_TRIGGER;
     bool CAN_ENABLED;
     CAN_Config* CAN_CONFIG;
-    size_t PARAMETERS_LENGTH;
-    ParameterDef** PARAMETERS;
-    String WEBUI_SELECTION_VALUES;
 
     ~Config();
 };

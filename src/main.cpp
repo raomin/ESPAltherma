@@ -13,6 +13,9 @@ void extraLoop()
   if(config->CAN_ENABLED)
     canBus_loop();
 
+  if(config->X10A_ENABLED)
+    X10A_loop();
+
 #ifdef ARDUINO_M5Stick_C
   if (M5.BtnA.wasPressed()) { // turn back ON screen
     M5.Axp.ScreenBreath(12);
@@ -94,8 +97,8 @@ void setup()
   }
 
   if(config->X10A_ENABLED) {
-    X10AInit(config->PIN_RX, config->PIN_TX);
-    initRegistries(&registryBuffers, registryBufferSize, config->PARAMETERS, config->PARAMETERS_LENGTH);
+    X10AInit(config->X10A_CONFIG);
+    initRegistries(&registryBuffers, registryBufferSize);
   }
 
   if(config->HEATING_ENABLED) {
@@ -163,8 +166,6 @@ void waitLoop(ulong ms)
 
 void loop()
 {
-  ulong loopStart = millis();
-
   if(mainLoopStatus == LoopRunStatus::Stopped)
     return;
 
@@ -187,14 +188,9 @@ void loop()
       reconnectMqtt();
     }
 
-    if(config->X10A_ENABLED) {
-      handleX10A(registryBuffers, registryBufferSize, config->PARAMETERS, config->PARAMETERS_LENGTH, true, config->X10A_PROTOCOL);
-    }
-
-    ulong loopEnd = config->FREQUENCY - millis() + loopStart;
-
-    debugSerial.printf("Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
-    waitLoop(loopEnd);
+    //debugSerial.printf("Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
+    //waitLoop(loopEnd);
+    waitLoop(1000);
   }
 
   if(mainLoopStatus == LoopRunStatus::Stopping)

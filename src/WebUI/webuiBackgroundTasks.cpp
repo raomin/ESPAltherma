@@ -1,6 +1,6 @@
 #include "webuiBackgroundTasks.hpp"
 
-WebUIScanX10ARegister webuiScanX10ARegisterConfig;
+X10A_Config* webuiScanX10ARegisterConfig;
 CAN_Config* webuiScanCANRegisterConfig;
 ValueLoadState valueX10ALoadState = NotLoading;
 ValueLoadState valueCANLoadState = NotLoading;
@@ -17,32 +17,16 @@ void webuiScanX10ARegister()
 
   valueX10ALoadState = Loading;
 
-  bool serialX10AWasInited = SerialX10A;
+  bool X10AWasInited = SerialX10A;
 
-  debugSerial.printf("Starting new serial connection with pins RX: %u, TX: %u\n", webuiScanX10ARegisterConfig.PinRx, webuiScanX10ARegisterConfig.PinTx);
-  debugSerial.println("Starting registry scan...");
+  debugSerial.printf("Starting new X10A connection with pins RX: %u, TX: %u\n", webuiScanX10ARegisterConfig->PIN_RX, webuiScanX10ARegisterConfig->PIN_TX);
 
-  X10AInit(webuiScanX10ARegisterConfig.PinRx, webuiScanX10ARegisterConfig.PinTx);
-
-  DynamicJsonDocument modelsDoc(MODELS_DOC_SIZE);
-  deserializeJson(modelsDoc, webuiScanX10ARegisterConfig.Params);
-  JsonArray modelsDocArr = modelsDoc.as<JsonArray>();
-
-  debugSerial.printf("Creating labelDefs %i\n", modelsDocArr.size());
-
-  size_t labelsSize = modelsDocArr.size();
-  ParameterDef **labelsToLoad = new ParameterDef*[labelsSize];
-
-  uint8_t counter = 0;
-  for (JsonArray model : modelsDocArr) {
-    labelsToLoad[counter] = new ParameterDef(model[0], model[1], model[2], model[3], model[4], model[5]);
-    counter++;
-  }
+  X10AInit(webuiScanX10ARegisterConfig);
 
   size_t loadRegistryBufferSize;
   RegistryBuffer *loadRegistryBuffers;
 
-  initRegistries(&loadRegistryBuffers, loadRegistryBufferSize, labelsToLoad, labelsSize);
+  initRegistries(&loadRegistryBuffers, loadRegistryBufferSize);
 
   if (loadRegistryBufferSize == 0) {
     valueX10ALoadState = LoadingFinished;
@@ -52,25 +36,20 @@ void webuiScanX10ARegister()
 
   debugSerial.println("Fetching Values");
 
-  handleX10A(loadRegistryBuffers, loadRegistryBufferSize, labelsToLoad, labelsSize, false, webuiScanX10ARegisterConfig.Protocol);
+  handleX10A(loadRegistryBuffers, loadRegistryBufferSize, false);
 
   debugSerial.println("Returning Values");
 
-  DynamicJsonDocument resultDoc(labelsSize*JSON_OBJECT_SIZE(2));
+  DynamicJsonDocument resultDoc(webuiScanX10ARegisterConfig->PARAMETERS_LENGTH*JSON_OBJECT_SIZE(2));
   JsonArray obj = resultDoc.to<JsonArray>();
 
-  for (uint8_t i = 0; i < labelsSize; i++) {
-    obj.add(labelsToLoad[i]->asString);
+  for (uint8_t i = 0; i < webuiScanX10ARegisterConfig->PARAMETERS_LENGTH; i++) {
+    obj.add(webuiScanX10ARegisterConfig->PARAMETERS[i]->asString);
   }
 
-  for (size_t i = 0; i < labelsSize; i++) {
-      delete labelsToLoad[i];
-  }
-  delete[] labelsToLoad;
-
-  if(serialX10AWasInited) {
+  if(X10AWasInited) {
     debugSerial.println("Restoring original X10A connection");
-    X10AInit(config->PIN_RX, config->PIN_TX);
+    X10AInit(config->X10A_CONFIG);
   } else {
     X10AEnd();
   }

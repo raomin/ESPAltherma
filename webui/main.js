@@ -1220,27 +1220,20 @@ async function beginLoadX10AData(tableId)
     else
         params = selectedModelParameters;
 
-    const pinRx = document.getElementById('pin_rx').value;
-    const pinTx = document.getElementById('pin_tx').value;
-    const x10aProtocol = document.getElementById('x10a_protocol').value;
+    let valid = await validateForm();
 
-    if( pinRx == '' || isNaN(pinRx) ||
-        pinTx == '' || isNaN(pinTx))
-    {
-        alert("Need valid PIN RX/TX to fetch values! Canceled");
+    if(!valid)
         return;
-    }
+
+    const form = document.getElementById("configForm");
+    const formData = new FormData(form);
+    formData.append('definedParameters', JSON.stringify(params));
 
     const buttonId = 'load' + tableId.charAt(0).toUpperCase() + tableId.slice(1);
     const buttonLoadValues = document.getElementById(buttonId);
     buttonLoadValues.setAttribute('aria-busy', 'true');
     buttonLoadValues.toggleAttribute('disabled');
 
-    const formData = new FormData();
-    formData.append("PIN_RX", pinRx);
-    formData.append("PIN_TX", pinTx);
-    formData.append("X10A_PROTOCOL", x10aProtocol);
-    formData.append('PARAMS', JSON.stringify(params));
     await fetch('/loadValues', {
         method: "POST",
         body: formData
