@@ -119,19 +119,7 @@
         </article>
 
         <label for="mqtt_port">MQTT Port:</label>
-        <input type="number" id="mqtt_port" name="mqtt_port" min="0" max="65535"/>
-
-        <label for="frequency">
-          Frequency:
-          <select id="frequency" name="frequency">
-            <option value="10000">10 sec</option>
-            <option value="15000">15 sec</option>
-            <option value="30000">30 sec</option>
-            <option value="60000">1 min</option>
-            <option value="300000">5 min</option>
-            <option value="600000">10 min</option>
-          </select>
-        </label>
+        <input type="number" id="mqtt_port" name="mqtt_port" min="0" max="65535"/>        
       </article>
       <article id="form-pins" role="tab" style="display: none;">
 
@@ -316,6 +304,19 @@
             <option value="1">Protocol S</option>
           </select>
         </label>
+        
+        <label for="frequency">
+          Frequency:
+          <select id="frequency" name="frequency">
+            <option value="10000">10 sec</option>
+            <option value="15000">15 sec</option>
+            <option value="30000">30 sec</option>
+            <option value="60000">1 min</option>
+            <option value="300000">5 min</option>
+            <option value="600000">10 min</option>
+          </select>
+        </label>
+
         <div class="grid">
           <div>
             <label for="model">Model:</label>

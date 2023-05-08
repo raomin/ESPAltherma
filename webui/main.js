@@ -194,8 +194,7 @@ async function loadConfig()
             show('onetopic');
         }
 
-        document.getElementById('mqtt_port').value = data['MQTT_PORT'];
-        document.getElementById('frequency').value = data['FREQUENCY'];
+        document.getElementById('mqtt_port').value = data['MQTT_PORT'];        
         document.getElementById('pin_enable_config').value = data['PIN_ENABLE_CONFIG'];
 
         document.getElementById('x10a_enabled').checked = data['X10A_ENABLED'];
@@ -206,9 +205,29 @@ async function loadConfig()
 
         if(data['X10A_ENABLED'])
         {
-            document.getElementById('pin_rx').value = data['PIN_RX'];
-            document.getElementById('pin_tx').value = data['PIN_TX'];
-            document.getElementById('x10a_protocol').value = data['X10A_PROTOCOL'];
+            let dataX10AConfig = data['X10A_CONFIG'];
+            document.getElementById('pin_rx').value = dataX10AConfig['PIN_RX'];
+            document.getElementById('pin_tx').value = dataX10AConfig['PIN_TX'];
+            document.getElementById('x10a_protocol').value = dataX10AConfig['X10A_PROTOCOL'];
+            document.getElementById('frequency').value = dataX10AConfig['FREQUENCY'];
+            
+            let webuiSelectionValues = JSON.parse(dataX10AConfig['WEBUI_SELECTION_VALUES']);
+            if(document.getElementById('model').querySelector('option[value="' + webuiSelectionValues['model'] + '"]'))
+            {
+                document.getElementById('model').value = webuiSelectionValues['model'];
+                await refreshLanguages();
+            }
+
+            if(document.getElementById('language').querySelector('option[value="' + webuiSelectionValues['language'] + '"]'))
+            {
+                document.getElementById('language').value = webuiSelectionValues['language'];
+                await updatePresets();
+
+                document.getElementById('presetParameters').value = webuiSelectionValues['presetParameters'];
+            }
+
+            customParametersList = dataX10AConfig['PARAMETERS'];
+
             show('x10a');
             show('nav-x10a');
         }
@@ -333,23 +352,6 @@ async function loadConfig()
             show('nav-can');
         }
 
-        let webuiSelectionValues = JSON.parse(data['WEBUI_SELECTION_VALUES']);
-
-        if(document.getElementById('model').querySelector('option[value="' + webuiSelectionValues['model'] + '"]'))
-        {
-            document.getElementById('model').value = webuiSelectionValues['model'];
-            await refreshLanguages();
-        }
-
-        if(document.getElementById('language').querySelector('option[value="' + webuiSelectionValues['language'] + '"]'))
-        {
-            document.getElementById('language').value = webuiSelectionValues['language'];
-            await updatePresets();
-
-            document.getElementById('presetParameters').value = webuiSelectionValues['presetParameters'];
-        }
-
-        customParametersList = data['PARAMETERS'];
         customCommandsList = convertedCommandsList;
 
         updateParametersTable('selectedParametersTable', customParametersList);
@@ -518,9 +520,6 @@ async function validateForm()
     const mqtt_port = document.getElementById('mqtt_port');
     mqtt_port.setAttribute('aria-invalid', mqtt_port.value == '' || mqtt_port.value < 0 || mqtt_port.value > 65535);
 
-    const frequency = document.getElementById('frequency');
-    frequency.setAttribute('aria-invalid', frequency.value == '');
-
     const pin_enable_config = document.getElementById('pin_enable_config');
     pin_enable_config.setAttribute('aria-invalid', pin_enable_config.value == '');
 
@@ -532,6 +531,9 @@ async function validateForm()
 
         const pin_tx = document.getElementById('pin_tx');
         pin_tx.setAttribute('aria-invalid', pin_tx.value == '');
+        
+        const frequency = document.getElementById('frequency');
+        frequency.setAttribute('aria-invalid', frequency.value == '');
     }
     else
     {
