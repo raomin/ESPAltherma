@@ -6,7 +6,7 @@
 #include <SoftwareSerial.h>
 #endif
 
-#include "RegistryBuffer.hpp"
+#include "registryBuffer.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
 #include "MQTT/mqtt.hpp"

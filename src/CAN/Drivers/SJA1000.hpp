@@ -1,8 +1,8 @@
 #ifndef DRIVER_SJA1000_H
 #define DRIVER_SJA1000_H
 
-#include "driver/twai.h"
-#include "CAN/Driver.hpp"
+#include <driver/twai.h>
+#include "CAN/driver.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
 

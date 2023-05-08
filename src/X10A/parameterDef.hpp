@@ -1,7 +1,7 @@
 #ifndef PARAMETERDEF_H
 #define PARAMETERDEF_H
 
-#include "ArduinoC.hpp"
+#include "arduinoC.hpp"
 
 struct ParameterDef
 {

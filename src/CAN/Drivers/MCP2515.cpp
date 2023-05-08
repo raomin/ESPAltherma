@@ -1,4 +1,4 @@
-#include "MCP2515.hpp"
+#include "mcp2515.hpp"
 
 using namespace MCP2515;
 

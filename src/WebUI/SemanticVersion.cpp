@@ -1,4 +1,4 @@
-#include "SemanticVersion.hpp"
+#include "semanticVersion.hpp"
 
 void SemanticVersion::parseVersion()
 {

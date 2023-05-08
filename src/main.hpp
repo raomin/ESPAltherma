@@ -3,16 +3,16 @@
 
 #include <PubSubClient.h>
 
-#include "ArduinoC.hpp"
+#include "arduinoC.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
 #include "X10A/converters.hpp"
 #include "X10A/comm.hpp"
+#include "X10A/x10a.hpp"
 #include "MQTT/mqtt.hpp"
 #include "WebUI/webui.hpp"
 #include "wireless.hpp"
 #include "persistence.hpp"
-#include "X10A/X10A.hpp"
 #include "CAN/canBus.hpp"
 #include "arrayFunctions.hpp"
 #include "restart.hpp"

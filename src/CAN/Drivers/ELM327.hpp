@@ -1,12 +1,12 @@
 #ifndef DRIVER_ELM327_H
 #define DRIVER_ELM327_H
 
-#include "ArduinoC.hpp"
-#include "CAN/Driver.hpp"
+#include "arduinoC.hpp"
+#include "CAN/driver.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"
 #ifndef NO_BLUETOOTH
-#include "BluetoothSerial.h"
+#include <BluetoothSerial.h>
 #endif
 
 #define ELM327_SERIAL_SPEED 38400

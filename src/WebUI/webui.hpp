@@ -3,18 +3,18 @@
 
 #include <LittleFS.h>
 #include <Update.h>
-#include "ESPAsyncWebServer.h"
+#include <ESPAsyncWebServer.h>
 #include <WebSerialLite.h>
 #include <esp_ota_ops.h>
-#include "esp_task_wdt.h"
-#include "ArduinoJson.h"
+#include <esp_task_wdt.h>
+#include <ArduinoJson.h>
 #include "X10A/comm.hpp"
 #include "Config/config.hpp"
 #include "wireless.hpp"
 #include "persistence.hpp"
 #include "arrayFunctions.hpp"
 #include "webuiBackgroundTasks.hpp"
-#include "SemanticVersion.hpp"
+#include "semanticVersion.hpp"
 #include "Config/boardDefaults.hpp"
 
 #define MODELS_FILE "/models.json"

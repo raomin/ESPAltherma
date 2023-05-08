@@ -1,4 +1,4 @@
-#include "SJA1000.hpp"
+#include "sja1000.hpp"
 
 DriverSJA1000::DriverSJA1000(const CAN_Config *CANConfig) : CANDriver(CANConfig)
 {

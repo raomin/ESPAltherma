@@ -1,4 +1,4 @@
-#include "X10A.hpp"
+#include "x10a.hpp"
 
 #ifdef ARDUINO_ARCH_ESP8266
 SoftwareSerial SerialX10A;

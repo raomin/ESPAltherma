@@ -1,7 +1,7 @@
 #ifndef CAN_DRIVER_H
 #define CAN_DRIVER_H
 
-#include "Command.hpp"
+#include "command.hpp"
 #include "MQTT/mqtt.hpp"
 
 #define CAN_MESSAGE_TIMEOUT 4 // define timout in seconds for message send to get answer

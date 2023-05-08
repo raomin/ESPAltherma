@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include <LittleFS.h>
-#include "ArduinoJson.h"
-#include "CAN/Config.hpp"
+#include <ArduinoJson.h>
+#include "CAN/config.hpp"
 #include "X10A/config.hpp"
 
 #define CONFIG_FILE "/config.json"

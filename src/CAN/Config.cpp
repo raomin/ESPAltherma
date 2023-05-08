@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include "config.hpp"
 
 CAN_Config::~CAN_Config()
 {

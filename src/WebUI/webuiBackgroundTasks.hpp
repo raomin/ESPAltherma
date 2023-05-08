@@ -1,13 +1,13 @@
 #ifndef WEBUI_BACKGROUND_TASKS_H
 #define WEBUI_BACKGROUND_TASKS_H
 
-#include "ArduinoC.hpp"
-#include "ArduinoJson.hpp"
+#include <ArduinoJson.hpp>
+#include "arduinoC.hpp"
 #include "arrayFunctions.hpp"
 #include "X10A/comm.hpp"
 #include "X10A/converters.hpp"
 #include "X10A/parameterDef.hpp"
-#include "X10A/X10A.hpp"
+#include "X10A/x10a.hpp"
 #include "X10A/config.hpp"
 #include "Config/config.hpp"
 #include "CAN/canBus.hpp"

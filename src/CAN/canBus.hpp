@@ -2,11 +2,11 @@
 #define CAN_BUS_H
 
 #include "debugSerial.hpp"
-#include "Config.hpp"
-#include "Driver.hpp"
-#include "CAN/Drivers/MCP2515.hpp"
-#include "CAN/Drivers/ELM327.hpp"
-#include "CAN/Drivers/SJA1000.hpp"
+#include "config.hpp"
+#include "driver.hpp"
+#include "CAN/Drivers/mcp2515.hpp"
+#include "CAN/Drivers/elm327.hpp"
+#include "CAN/Drivers/sja1000.hpp"
 
 bool canBus_setup(const CAN_Config* CANConfig);
 

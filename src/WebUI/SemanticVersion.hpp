@@ -1,7 +1,7 @@
 #ifndef SEMANTIC_VERSION_H
 #define SEMANTIC_VERSION_H
 
-#include "ArduinoC.hpp"
+#include "arduinoC.hpp"
 
 class SemanticVersion
 {
