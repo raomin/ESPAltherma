@@ -584,6 +584,10 @@ async function validateForm()
 
         const can_bus_type = can_ic_type.value.split('_')[0];
 
+        clearHiddenValidationResult("can_spi_config");
+        clearHiddenValidationResult("can_bt_config");
+        clearHiddenValidationResult("can_uart_config");
+
         if(can_bus_type == 'uart')
         {
             const pin_can_rx = document.getElementById('pin_can_uart_rx');
