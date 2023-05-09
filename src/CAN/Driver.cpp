@@ -447,6 +447,8 @@ void CANDriver::defaultInit()
 
   callbackCAN = [this](const String label, const char *payload, const uint32_t length) { handleMQTTSetRequest(label, payload, length); };
 
+  lastTimeRunned = -(CANConfig->CAN_AUTOPOLL_TIME * 1000);
+
   canInited = true;
 
   listenOnly(CANConfig->CAN_READONLY_ENABLED);

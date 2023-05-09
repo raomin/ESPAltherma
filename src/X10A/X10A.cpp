@@ -12,6 +12,7 @@ static X10A_Config* X10AConfig = nullptr;
 size_t registryBufferSize;
 RegistryBuffer *registryBuffers; // holds the registries to query and the last returned
 ulong lastTimeRunned = 0;
+HandleState handleState = HandleState::Stopped;
 
 void X10AEnd()
 {
@@ -47,6 +48,8 @@ void initRegistries(RegistryBuffer** buffer, size_t& bufferSize)
   }
 
   delete[] tempRegistryIDs;
+
+  lastTimeRunned = -(X10AConfig->FREQUENCY);
 }
 
 void handleX10A(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT)
@@ -105,17 +108,22 @@ void X10AInit(X10A_Config* X10AConfigToInit)
 
 void X10A_loop()
 {
+  if(handleState == HandleState::Running)
+    return;
+
   // TODO should be catched from main loop run
   ulong loopStart = millis();
 
-  if(loopStart - lastTimeRunned >= X10AConfig->FREQUENCY * 1000) {
-    debugSerial.printf("CAN Poll Mode Auto Reading: %lu\n", loopStart);
+  if(loopStart - lastTimeRunned >= X10AConfig->FREQUENCY) {
+    handleState = HandleState::Running;
+    debugSerial.printf("X10A started reading: %lu\n", loopStart);
 
     handleX10A(registryBuffers, registryBufferSize, true);
 
     ulong loopEnd = X10AConfig->FREQUENCY - millis() + loopStart;
 
-    debugSerial.printf("Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
+    debugSerial.printf("X10A Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
     lastTimeRunned = loopStart;
+    handleState = HandleState::Stopped;
   }
 }

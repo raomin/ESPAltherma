@@ -19,6 +19,11 @@ extern HardwareSerial SerialX10A;
 extern size_t registryBufferSize;
 extern RegistryBuffer *registryBuffers;
 
+enum HandleState : uint8_t {
+    Stopped,
+    Running
+};
+
 void X10AEnd();
 
 void initRegistries(RegistryBuffer** buffer, size_t& bufferSize);
