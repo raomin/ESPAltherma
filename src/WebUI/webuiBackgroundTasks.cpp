@@ -21,12 +21,12 @@ void webuiScanX10ARegister()
 
   debugSerial.printf("Starting new X10A connection with pins RX: %u, TX: %u\n", webuiScanX10ARegisterConfig->PIN_RX, webuiScanX10ARegisterConfig->PIN_TX);
 
-  X10AInit(webuiScanX10ARegisterConfig);
+  x10a_init(webuiScanX10ARegisterConfig);
 
   size_t loadRegistryBufferSize;
   RegistryBuffer *loadRegistryBuffers;
 
-  initRegistries(&loadRegistryBuffers, loadRegistryBufferSize);
+  x10a_initRegistries(&loadRegistryBuffers, loadRegistryBufferSize);
 
   if (loadRegistryBufferSize == 0) {
     valueX10ALoadState = LoadingFinished;
@@ -36,7 +36,7 @@ void webuiScanX10ARegister()
 
   debugSerial.println("Fetching Values");
 
-  handleX10A(loadRegistryBuffers, loadRegistryBufferSize, false);
+  x10a_handle(loadRegistryBuffers, loadRegistryBufferSize, false);
 
   debugSerial.println("Returning Values");
 
@@ -49,9 +49,9 @@ void webuiScanX10ARegister()
 
   if(X10AWasInited) {
     debugSerial.println("Restoring original X10A connection");
-    X10AInit(config->X10A_CONFIG);
+    x10a_init(config->X10A_CONFIG);
   } else {
-    X10AEnd();
+    x10a_end();
   }
 
   debugSerial.println("Finished registry scan");

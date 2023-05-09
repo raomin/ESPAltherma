@@ -14,7 +14,7 @@ RegistryBuffer *registryBuffers; // holds the registries to query and the last r
 ulong lastTimeRunned = 0;
 HandleState handleState = HandleState::Stopped;
 
-void X10AEnd()
+void x10a_end()
 {
   if(SerialX10A) {
     SerialX10A.end();
@@ -25,7 +25,7 @@ void X10AEnd()
   }
 }
 
-void initRegistries(RegistryBuffer** buffer, size_t& bufferSize)
+void x10a_initRegistries(RegistryBuffer** buffer, size_t& bufferSize)
 {
   // getting the list of registries to query from the selected values
   bufferSize = 0;
@@ -52,7 +52,7 @@ void initRegistries(RegistryBuffer** buffer, size_t& bufferSize)
   lastTimeRunned = -(X10AConfig->FREQUENCY);
 }
 
-void handleX10A(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT)
+void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT)
 {
   // querying all registries and store results
   for (size_t i = 0; i < bufferSize; i++) {
@@ -99,14 +99,14 @@ void handleX10A(RegistryBuffer* buffer, const size_t& bufferSize, const bool sen
   }
 }
 
-void X10AInit(X10A_Config* X10AConfigToInit)
+void x10a_init(X10A_Config* X10AConfigToInit)
 {
-  X10AEnd();
+  x10a_end();
   X10AConfig = X10AConfigToInit;
   SerialX10A.begin(9600, SERIAL_CONFIG, X10AConfig->PIN_RX, X10AConfig->PIN_TX);
 }
 
-void X10A_loop()
+void x10a_loop()
 {
   if(handleState == HandleState::Running)
     return;
@@ -118,7 +118,7 @@ void X10A_loop()
     handleState = HandleState::Running;
     debugSerial.printf("X10A started reading: %lu\n", loopStart);
 
-    handleX10A(registryBuffers, registryBufferSize, true);
+    x10a_handle(registryBuffers, registryBufferSize, true);
 
     ulong loopEnd = X10AConfig->FREQUENCY - millis() + loopStart;
 

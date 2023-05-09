@@ -24,14 +24,14 @@ enum HandleState : uint8_t {
     Running
 };
 
-void X10AEnd();
+void x10a_end();
 
-void initRegistries(RegistryBuffer** buffer, size_t& bufferSize);
+void x10a_initRegistries(RegistryBuffer** buffer, size_t& bufferSize);
 
-void handleX10A(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT);
+void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT);
 
-void X10AInit(X10A_Config* X10AConfig);
+void x10a_init(X10A_Config* X10AConfig);
 
-void X10A_loop();
+void x10a_loop();
 
 #endif

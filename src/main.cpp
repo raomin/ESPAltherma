@@ -14,7 +14,7 @@ void extraLoop()
     canBus_loop();
 
   if(config->X10A_ENABLED)
-    X10A_loop();
+    x10a_loop();
 
 #ifdef ARDUINO_M5Stick_C
   if (M5.BtnA.wasPressed()) { // turn back ON screen
@@ -97,8 +97,8 @@ void setup()
   }
 
   if(config->X10A_ENABLED) {
-    X10AInit(config->X10A_CONFIG);
-    initRegistries(&registryBuffers, registryBufferSize);
+    x10a_init(config->X10A_CONFIG);
+    x10a_initRegistries(&registryBuffers, registryBufferSize);
   }
 
   if(config->HEATING_ENABLED) {
