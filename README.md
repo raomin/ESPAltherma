@@ -96,7 +96,7 @@ If you are using an **ESP8266** select the `nodemcuv2` environement.
   
     ```c++
     ...
-    LabelDef PROGMEM labelDefs[] = {
+    LabelDef labelDefs[] = {
     //  {0x00,0,801,0,-1,"*Refrigerant type"},
     {0x60,0,304,1,-1,"Data Enable/Disable"}, //<-- This value will be queried and reported
     // {0x60,1,152,1,-1,"Indoor Unit Address"},
@@ -401,13 +401,15 @@ You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie reg
 
 ## ❤ Sponsors ❤
 
+<a href="https://github.com/qris">@qris (Chris Wilson)</a><br/>
+<a href="https://github.com/mauromorello">@mauromorello (Mauro Morello)</a><br/>
 <a href="https://github.com/kloni">@kloni (Tom Klonikowski)</a><br/>
+<a href="https://github.com/tarmor1">@tarmor1</a><br/>
+<a href="https://github.com/EvertJob">@EvertJob (toppe)</a><br/>
+<a href="https://github.com/FusisCaesar">@FusisCaesar</a><br/>
 <a href="https://github.com/freddydeschepper">@freddydeschepper</a><br/>
-<a href="https://github.com/qwirx">@qris (Chris Wilson)</a><br/>
-<a href="https://github.com/mauromorello">@mauromorello</a><br/>
-<a href="https://github.com/tarmor1">@tarmor1</a>
-<a href="https://github.com/EvertJob">@EvertJob (toppe)</a>
-
+<a href="https://github.com/Mychel60">Michael</a><br/>
+<a href="https://github.com/MovingLlama">@MovingLlama</a><br/>
 
 # License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)

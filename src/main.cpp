@@ -54,8 +54,9 @@ void updateValues(char regID)
     for (size_t j = 0; j < strlen(labels[i]->asString); j++)
     {
       char c = labels[i]->asString[j];
-      if (!isdigit(c) && c!='.'){
+      if (!isdigit(c) && c!='.' && !(c=='-' && j==0)){
         alpha = true;
+        break;
       }
     }
 
@@ -141,6 +142,8 @@ void setup_wifi()
     }
   #endif
 
+  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.begin(WIFI_SSID, WIFI_PWD);
   checkWifi();
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
