@@ -1,0 +1,45 @@
+#name: nightly build
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+              ~/.cache/pip
+              ~/.platformio/.cache
+              ~/components
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Git update submodule
+        run: git submodule update --init --recursive
+
+      - name: Build PlatformIO Project
+        run: pio run -e esp32_debug
+
+      - name: Build X10A definitions
+        run: python3 scripts/build_x10a_commands.py
+
+      - name: Build CAN definitions
+        run: python3 scripts/build_can_commands.py
+
+      - name: Move builded firmware to artifacts
+        run: mv .pio/build/esp32_debug/firmware.bin build/
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nightly-build
+          path: build
