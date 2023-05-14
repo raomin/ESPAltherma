@@ -4,6 +4,10 @@ bool doRestartInStandaloneWifi = false;
 
 uint16_t loopcount = 0;
 
+#ifdef ARDUINO_M5Stick_C
+long LCDTimeout = 40000; // Keep screen ON for 40s then turn off. ButtonA will turn it On again.
+#endif
+
 void extraLoop()
 {
   while(webOTAIsBusy) {}
