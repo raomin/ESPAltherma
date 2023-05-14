@@ -6,6 +6,10 @@ try:
     from jsmin import jsmin
 except ImportError:
     env.Execute("$PYTHONEXE -m pip install rcssmin htmlmin jsmin")
+finally:
+    import rcssmin
+    import htmlmin
+    from jsmin import jsmin
 
 import os
 import shutil
