@@ -20,8 +20,7 @@ jobs:
           path: |
               ~/.cache/pip
               ~/.platformio/.cache
-              build
-          key: ${{ runner.os }}-pio_${{ matrix.target }}
+          key: ${{ runner.os }}-pio
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
@@ -40,18 +39,25 @@ jobs:
 
       - name: Move builded firmware to artifacts
         run: mv .pio/build/${{ matrix.target }}/firmware.bin build/${{ matrix.target }}_nightly_firmware.bin
+      
+      - name: Archive build results of ${{ matrix.target }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: pio-build
+          path: build/*_firmware.bin
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
+
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v3
         with:
-          path:
-              build
-          key: ${{ runner.os }}-pio
-          restore-keys: ${{ runner.os }}-pio_
+          name: pio-build
+          path: build
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
@@ -80,6 +86,10 @@ jobs:
         with:
           name: nightly-build
           path: nightly-build.zip
+
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: pio-build
 
       - name: Update nightly release
         uses: pyTooling/Actions/releaser@r0
