@@ -56,8 +56,6 @@ void setup_wifi()
     }
   }
 
-  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
-  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.begin(config->SSID.c_str(), config->SSID_PASSWORD.c_str());
   checkWifi();
   debugSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
