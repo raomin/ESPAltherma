@@ -44,7 +44,6 @@ const char* const JSON_BOARD_DEFAULTS =
         "\"mqtt_onetopic_name\": \"OneATTR/\","
         "\"mqtt_port\": 1883"
       "}"
-    "}"
 #elif defined(ESP32)
       "\"Pins\": {"
         "\"0\": \"GPIO0 - ADC2_1,TOUCH1\","
