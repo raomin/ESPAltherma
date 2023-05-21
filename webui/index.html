@@ -119,13 +119,13 @@
         </article>
 
         <label for="mqtt_port">MQTT Port:</label>
-        <input type="number" id="mqtt_port" name="mqtt_port" min="0" max="65535"/>        
+        <input type="number" id="mqtt_port" name="mqtt_port" min="0" max="65535"/>
       </article>
       <article id="form-pins" role="tab" style="display: none;">
 
         <label for="pin_enable_config">
           PIN CONFIG PAGE:
-          <select id="pin_enable_config" name="pin_enable_config" data-pins></select>
+          <input id="pin_enable_config" name="pin_enable_config" data-pins />
           <small>If the given pinnumber gets connected to ground, ESPAltherma will reboot again in the standalone wifi mode.</small>
         </label>
 
@@ -138,12 +138,12 @@
           <div class="grid">
             <label for="pin_rx">
               PIN RX
-              <select id="pin_rx" name="pin_rx" data-pins></select>
+              <input id="pin_rx" name="pin_rx" data-pins />
             </label>
 
             <label for="pin_tx">
               PIN TX
-              <select id="pin_tx" name="pin_tx" data-pins></select>
+              <input id="pin_tx" name="pin_tx" data-pins />
             </label>
           </div>
         </article>
@@ -156,8 +156,7 @@
         <article id="heating" class="hidden">
           <label for="pin_heating">
             PIN HEATING
-            <select id="pin_heating" name="pin_heating" data-pins>
-            </select>
+            <input id="pin_heating" name="pin_heating" data-pins />
           </label>
         </article>
 
@@ -169,8 +168,7 @@
         <article id="cooling" class="hidden">
           <label for="pin_cooling">
             PIN COOLING
-            <select id="pin_cooling" name="pin_cooling" data-pins>
-            </select>
+            <input id="pin_cooling" name="pin_cooling" data-pins />
           </label>
         </article>
 
@@ -183,12 +181,12 @@
           <div class="grid">
             <label for="pin_sg1">
               PIN SG1
-              <select id="pin_sg1" name="pin_sg1" data-pins></select>
+              <input id="pin_sg1" name="pin_sg1" data-pins />
             </label>
 
             <label for="pin_sg2">
               PIN SG2
-              <select id="pin_sg2" name="pin_sg2" data-pins></select>
+              <input id="pin_sg2" name="pin_sg2" data-pins />
             </label>
           </div>
 
@@ -227,29 +225,29 @@
             <div class="grid">
               <label for="pin_can_spi_mosi">
                 PIN MOSI:
-                <select id="pin_can_spi_mosi" name="pin_can_spi_mosi" data-pins></select>
+                <input id="pin_can_spi_mosi" name="pin_can_spi_mosi" data-pins />
               </label>
 
               <label for="pin_can_spi_miso">
                 PIN MISO
-                <select id="pin_can_spi_miso" name="pin_can_spi_miso" data-pins></select>
+                <input id="pin_can_spi_miso" name="pin_can_spi_miso" data-pins />
               </label>
             </div>
             <div class="grid">
               <label for="pin_can_spi_cs">
                 PIN Chip select
-                <select id="pin_can_spi_cs" name="pin_can_spi_cs" data-pins></select>
+                <input id="pin_can_spi_cs" name="pin_can_spi_cs" data-pins />
               </label>
 
               <label for="pin_can_spi_sck">
                 PIN SCK
-                <select id="pin_can_spi_sck" name="pin_can_spi_sck" data-pins></select>
+                <input id="pin_can_spi_sck" name="pin_can_spi_sck" data-pins />
               </label>
             </div>
             <div class="grid">
               <label for="pin_can_spi_int">
                 PIN Interrupt
-                <select id="pin_can_spi_int" name="pin_can_spi_int" data-pins></select>
+                <input id="pin_can_spi_int" name="pin_can_spi_int" data-pins />
               </label>
 
               <label for="pin_can_spi_mhz">
@@ -285,12 +283,12 @@
             <div class="grid">
               <label for="pin_can_uart_rx">
                 PIN CAN RX
-                <select id="pin_can_uart_rx" name="pin_can_uart_rx" data-pins></select>
+                <input id="pin_can_uart_rx" name="pin_can_uart_rx" data-pins />
               </label>
 
               <label for="pin_can_uart_tx">
                 PIN CAN TX
-                <select id="pin_can_uart_tx" name="pin_can_uart_tx" data-pins></select>
+                <input id="pin_can_uart_tx" name="pin_can_uart_tx" data-pins />
               </label>
             </div>
           </div>
@@ -304,7 +302,7 @@
             <option value="1">Protocol S</option>
           </select>
         </label>
-        
+
         <label for="frequency">
           Frequency:
           <select id="frequency" name="frequency">

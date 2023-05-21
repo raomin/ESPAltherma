@@ -62,20 +62,17 @@ async function loadBoardDefaults()
     })
     .then(function(response) { return response.json(); })
     .then(function(data) {
-        const pinSelects = document.querySelectorAll('select[data-pins]');
+        const pinSelects = document.querySelectorAll('input[data-pins]');
 
-        const pins = data["Pins"];
+        pinSelects.forEach((input) => {
+            input.type = "number";
+            input.addEventListener('change', (event) => {
+                if(event.target.value == "") {
+                    event.target.value = event.target.defaultValue;
+                }
+            });
 
-        for (let key in pins) {
-            if (pins.hasOwnProperty(key)) {
-                pinSelects.forEach((select) => {
-                    const option = document.createElement("option");
-                    option.text = pins[key];
-                    option.value = key;
-                    select.add(option);
-                });
-            }
-        }
+        });
 
         boardDefaults = data['Default'];
         currentFirmwareVersion = data['Version'];
@@ -148,6 +145,10 @@ async function resetToDefaults()
     document.getElementById('mqtt_topic_name').value = boardDefaults['mqtt_topic_name'];
     document.getElementById('mqtt_onetopic_name').value = boardDefaults['mqtt_onetopic_name'];
     document.getElementById('mqtt_port').value = boardDefaults['mqtt_port'];
+
+    document.querySelectorAll('input[data-pins]').forEach((input) => {
+        input.defaultValue = input.value;
+    });
 }
 
 async function loadConfig()
@@ -652,6 +653,11 @@ async function validateForm()
         clearHiddenValidationResult("can_pins");
     }
 
+    const pinSelects = document.querySelectorAll('input[data-pins]');
+    pinSelects.forEach((input) => {
+        input.setAttribute('aria-invalid', input.value == '' || input.value < 0 || input.value > 255);
+    });
+
     const validationErrorField = document.querySelector('[aria-invalid="true"]');
     if(validationErrorField)
     {
@@ -699,14 +705,13 @@ async function sendConfigData(event)
 {
     event.preventDefault();
 
-    const form = document.getElementById("configForm");
-    const formData = new FormData(form);
-
     let valid = await validateForm();
 
     if(!valid)
         return;
 
+    const form = document.getElementById("configForm");
+    const formData = new FormData(form);
     formData.append("definedParameters", JSON.stringify(customParametersList));
     formData.append("definedCommands", definedCommandsToJSON(customCommandsList));
 
@@ -812,6 +817,7 @@ async function sendUpdate(event)
 function clearHiddenValidationResult(elementName)
 {
     document.getElementById(elementName).querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute('aria-invalid'));
+    document.getElementById(elementName).querySelectorAll("input[data-pins]").forEach((el) => el.value = el.defaultValue);
 }
 
 function sleep(ms) {
