@@ -224,6 +224,7 @@ void setup()
   mqttSerial.print("Setting up wifi...");
   setup_wifi();
   ArduinoOTA.setHostname("ESPAltherma");
+  ArduinoOTA.setTimeout(3000);
   ArduinoOTA.onStart([]() {
     busy = true;
   });
