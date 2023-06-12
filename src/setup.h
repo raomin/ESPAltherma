@@ -100,3 +100,6 @@
 #ifndef PROTOCOL
 #define PROTOCOL 'I'
 #endif
+
+// LED pin to use with WiFi indicator (if present)
+//#define PIN_LED 33
