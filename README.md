@@ -264,7 +264,7 @@ Eg. this template declares the 2 operation modes as entities, the DHW tank tempe
 ```yaml
 template:
   - unique_id: "espaltherma"  # will be prefixed to all unique IDs
-    sensors:
+    sensor:
     - name: "Operation mode"
       unique_id: "operation"
       state: "{{ state_attr('sensor.althermasensors','Operation Mode') }}"
