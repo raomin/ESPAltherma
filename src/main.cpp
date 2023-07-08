@@ -142,9 +142,7 @@ void setup_wifi()
     }
   #endif
 
-  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
-  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
-  WiFi.begin(WIFI_SSID, WIFI_PWD);
+  WiFi.begin(WIFI_SSID, WIFI_PWD, 0,0,true);
   checkWifi();
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
