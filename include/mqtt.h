@@ -91,7 +91,7 @@ void reconnectMqtt()
 #endif
 #ifdef PIN_PULSE
       // Pulse Meter
-      client.publish("homeassistant/select/espAltherma/pulse/config", "{\"availability\":[{\"topic\":\"espaltherma\/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_grid\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:meter-electric\",\"name\":\"EspAltherma Power Limitation\",\"command_topic\":\"espaltherma\/pulse\/set\",\"state_topic\":\"espaltherma\/pulse\/state\"}", true);
+      client.publish("homeassistant/number/espAltherma/pulse/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_grid\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:meter-electric\",\"name\":\"EspAltherma Power Limitation\",\"min\":0,\"max\":90000,\"mode\":\"box\",\"unit_of_measurement\":\"W\",\"command_topic\":\"espaltherma/pulse/set\",\"state_topic\":\"espaltherma/pulse/state\"}", true);
       client.subscribe("espaltherma/pulse/set");
       client.publish("espaltherma/pulse/state", "0");
 #endif
@@ -205,7 +205,9 @@ hw_timer_t * timerPulseEnd = NULL;
 // hardware timer callback for when the pulse should start
 void IRAM_ATTR onPulseStartTimer()
 {
-  // digitalWrite(LED_BUILTIN, HIGH);
+  #ifdef PULSE_LED_BUILTIN
+    digitalWrite(LED_BUILTIN, HIGH);
+  #endif
   digitalWrite(PIN_PULSE, HIGH);
 
   timerWrite(timerPulseEnd, 0);
@@ -217,7 +219,9 @@ void IRAM_ATTR onPulseStartTimer()
 // hardware timer callback when the pulse duration is over
 void IRAM_ATTR onPulseEndTimer()
 {
-  // digitalWrite(LED_BUILTIN, LOW);
+  #ifdef PULSE_LED_BUILTIN
+    digitalWrite(LED_BUILTIN, LOW);
+  #endif
   digitalWrite(PIN_PULSE, LOW);
 
   timerWrite(timerPulseStart, 0);

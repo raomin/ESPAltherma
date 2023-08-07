@@ -31,9 +31,8 @@
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions
-// TODO comment
-#define PIN_SG1 32// Pin connected to dry contact SG 1 relay (normally open)
-#define PIN_SG2 33// Pin connected to dry contact SG 2 relay (normally open)
+// #define PIN_SG1 32// Pin connected to dry contact SG 1 relay (normally open)
+// #define PIN_SG2 33// Pin connected to dry contact SG 2 relay (normally open)
 // Define if your SG relay board is Low or High triggered (signal pins)
 // Only uncomment one of them
 #define SG_RELAY_HIGH_TRIGGER
@@ -41,10 +40,10 @@
 
 //Pulse Meter control - Optional:
 //Uncomment and set to enable Pulse Meter mqtt functions
-// TODO commented by default
-#define PIN_PULSE 25// Pin connected to dry contact SG 1 relay (normally open)
+// #define PIN_PULSE 25// Pin connected to pulse meter relay
+// #define PULSE_LED_BUILTIN 1 // also pulse the build in LED
 #define PULSE_PER_kWh 1000  // match setting on HP (TODO hint for setting path)
-#define PULSE_DURATION_MS 100  // Duration of the pulse, decrease on very high energy settings (TODO give example)
+#define PULSE_DURATION_MS 200  // Duration of the pulse, decrease on very high energy settings (TODO give example)
 
 // DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
 #if defined(SG_RELAY_LOW_TRIGGER)

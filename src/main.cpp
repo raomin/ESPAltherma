@@ -212,6 +212,9 @@ void setup()
 #endif
 #ifdef PIN_PULSE
   pinMode(PIN_PULSE, OUTPUT);
+  #ifdef PULSE_LED_BUILTIN
+    pinMode(LED_BUILTIN, OUTPUT);
+  #endif
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
