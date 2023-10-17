@@ -158,7 +158,7 @@ LabelDef labelDefs[] = {
 //{0x62,1,152,1,-1,"Adresse des Innengeräts"},
 //{0x62,2,307,1,-1,"Nachheizen ein/aus"},
 //{0x62,2,306,1,-1,"Speicher Eco ein/aus"},
-//{0x62,2,305,1,-1,"Prerisc. serbatoio ON/OFF"},
+//{0x62,2,305,1,-1,"Speicher Komfort ON/OFF"},
 //{0x62,2,304,1,-1,"Hochleistungs-DHW-Betrieb. EIN/AUS"},
 //{0x62,2,303,1,-1,"Raumheizbetrieb EIN/AUS"},
 //{0x62,2,302,1,-1,"System AUS"},
