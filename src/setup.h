@@ -27,6 +27,8 @@
 #define TX_PIN    17// Pin connected to the RX pin of X10A
 #endif
 
+#define IO_EXPANDER         // use i2c port expander
+
 #define PIN_THERM 0// Pin connected to the thermostat relay (normally open)
 
 //Smart grid control - Optional:

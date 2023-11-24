@@ -18,6 +18,13 @@
 #include <ArduinoOTA.h>
 
 #include "setup.h" //<-- Configure your setup here
+
+#ifdef IO_EXPANDER
+  #include "PCA9554.h"
+  #include <Wire.h>
+  PCA9554 ioCon1(0x27);
+#endif
+
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"
@@ -198,15 +205,31 @@ void setup()
   Serial.begin(115200);
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
-  pinMode(PIN_THERM, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
+
+  #ifdef IO_EXPANDER
+    Wire.begin();
+    ioCon1.pinMode(PIN_THERM, OUTPUT);
+    ioCon1.digitalWrite(PIN_THERM, HIGH); 
+  #else
+    pinMode(PIN_THERM, OUTPUT);
+    digitalWrite(PIN_THERM, HIGH);
+  #endif
 
 #ifdef PIN_SG1
   //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
-  digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-  digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
-  pinMode(PIN_SG1, OUTPUT);
-  pinMode(PIN_SG2, OUTPUT);
+  #ifdef IO_EXPANDER
+    ioCon1.digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    ioCon1.digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    ioCon1.pinMode(PIN_SG1, OUTPUT);
+    ioCon1.pinMode(PIN_SG2, OUTPUT);
+  #else
+    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    pinMode(PIN_SG1, OUTPUT);
+    pinMode(PIN_SG2, OUTPUT);
+  #endif
+  
+
 
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
