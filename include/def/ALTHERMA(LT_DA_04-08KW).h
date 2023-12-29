@@ -35,7 +35,7 @@ LabelDef labelDefs[] = {
 //{0x10,1,300,1,-1,"Low noise control"},
 //{0x10,4,203,1,-1,"Error type"},
 //{0x10,5,204,1,-1,"Error Code"},
-//{0x10,6,114,2,1,"Target Evap. Temp."},
+//{0x10,6,114,2,1,"Target Discharge Temp."},
 //{0x10,8,114,2,1,"Target Cond. Temp."},
 //{0x10,10,307,1,-1,"Discharge Temp. Drop"},
 //{0x10,10,310,1,-1,"Discharge Temp. Protection Retry Qty"},
