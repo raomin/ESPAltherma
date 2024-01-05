@@ -269,21 +269,27 @@ public:
         case 401:
             dblData = (double)getSignedValue(data, num, 0);
             dblData = convertPress2Temp(dblData);
+            break;
         case 402:
             dblData = (double)getSignedValue(data, num, 1);
             dblData = convertPress2Temp(dblData);
+            break;
         case 403:
             dblData = (double)getSignedValue(data, num, 0) / 256.0;
             dblData = convertPress2Temp(dblData);
+            break;
         case 404:
             dblData = (double)getSignedValue(data, num, 1) / 256.0;
             dblData = convertPress2Temp(dblData);
+            break;
         case 405:
             dblData = (double)getSignedValue(data, num, 0) * 0.1;
             dblData = convertPress2Temp(dblData);
+            break;
         case 406:
             dblData = (double)getSignedValue(data, num, 1) * 0.1;
             dblData = convertPress2Temp(dblData);
+            break;
 
         default:
             // conversion is not available
