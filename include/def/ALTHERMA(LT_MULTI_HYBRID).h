@@ -1,6 +1,7 @@
 #include "labeldef.h"
-//  This file is a definition file for the ESPAtherma.
+//  This file is a definition file for ESPAtherma
 //  uncomment each value you want to query for your installation.
+
 
 LabelDef labelDefs[] = {
 //{0x00,0,801,0,-1,"*Refrigerant type"},
@@ -56,7 +57,7 @@ LabelDef labelDefs[] = {
 //{0x11,4,215,1,-1,"O/U EEPROM (10th digit)"},
 //{0x11,5,214,1,-1,"O/U EEPROM (11th digit)"},
 //{0x00,0,995,1,-1,"NextDataGrid"},
-//{0x20,0,105,2,1,"Outdoor air temp.(R1T)"},
+//{0x20,0,105,2,1,"R1T-Outdoor air temp."},
 //{0x20,2,105,2,1,"O/U Heat Exch. Temp."},
 //{0x20,4,105,2,1,"Discharge pipe temp."},
 //{0x20,6,105,2,1,"Suction pipe temp."},
@@ -155,7 +156,7 @@ LabelDef labelDefs[] = {
 //{0x62,0,307,1,-1,"Data Enable/Disable"},
 //{0x62,1,152,1,-1,"Indoor Unit Address"},
 //{0x62,2,307,1,-1,"Reheat ON/OFF"},
-//{0x62,2,306,1,-1,"Storage eco ON/OFF"},
+//{0x62,2,306,1,-1,"Storage ECO ON/OFF"},
 //{0x62,2,305,1,-1,"Storage comfort ON/OFF"},
 //{0x62,2,304,1,-1,"Powerful DHW Operation. ON/OFF"},
 //{0x62,2,303,1,-1,"Space heating Operation ON/OFF"},

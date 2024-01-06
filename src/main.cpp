@@ -17,7 +17,12 @@
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
-#include "setup.h" //<-- Configure your setup here
+#if __has_include("my_setup.h")
+#include "my_setup.h"
+#else
+#include "setup.h"
+#endif
+
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"

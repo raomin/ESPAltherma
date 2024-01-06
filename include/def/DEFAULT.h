@@ -1,6 +1,7 @@
 #include "labeldef.h"
-//  This file is a definition file for the ESPAtherma.
+//  This file is a definition file for ESPAtherma
 //  uncomment each value you want to query for your installation.
+
 
 LabelDef labelDefs[] = {
 //{0x00,0,801,0,-1,"*Refrigerant type"},
