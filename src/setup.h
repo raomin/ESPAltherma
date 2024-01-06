@@ -27,7 +27,21 @@
 #define TX_PIN    17// Pin connected to the RX pin of X10A
 #endif
 
+//Thermostat control - Optional:
 #define PIN_THERM 0// Pin connected to the thermostat relay (normally open)
+// Define if your THERM relay board is Low or High triggered (signal pins)
+// Only uncomment one of them
+//#define THERM_RELAY_HIGH_TRIGGER
+#define THERM_RELAY_LOW_TRIGGER
+
+// DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
+#if defined(THERM_RELAY_LOW_TRIGGER)
+#define THERM_RELAY_ACTIVE_STATE LOW
+#define THERM_RELAY_INACTIVE_STATE HIGH
+#else
+#define THERM_RELAY_ACTIVE_STATE HIGH
+#define THERM_RELAY_INACTIVE_STATE LOW
+#endif
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions

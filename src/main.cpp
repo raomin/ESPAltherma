@@ -269,8 +269,12 @@ void setup()
   Serial.begin(115200);
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
+
+#ifdef PIN_THERM
+  // Thermostat relay - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
+  digitalWrite(PIN_THERM, THERM_RELAY_INACTIVE_STATE);
   pinMode(PIN_THERM, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
+#endif
 
 #ifdef PIN_SG1
   //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
