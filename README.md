@@ -404,17 +404,13 @@ If this project is useful to you, and if you want, <b>[you can buy me a beer](ht
 
 You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie regular beers :)) and become an official supporter of ESPAltherma and get your badge on this page!
 
-## ❤ Sponsors ❤
+## ❤ Regular Sponsors ❤
 
-<a href="https://github.com/qris">@qris (Chris Wilson)</a><br/>
-<a href="https://github.com/mauromorello">@mauromorello (Mauro Morello)</a><br/>
-<a href="https://github.com/kloni">@kloni (Tom Klonikowski)</a><br/>
-<a href="https://github.com/tarmor1">@tarmor1</a><br/>
+<a href="https://github.com/gerione">@gerione</a><br/>
+<a href="https://github.com/kloni">@retrack (Antoine Coetsier)</a><br/>
 <a href="https://github.com/EvertJob">@EvertJob (toppe)</a><br/>
 <a href="https://github.com/FusisCaesar">@FusisCaesar</a><br/>
-<a href="https://github.com/freddydeschepper">@freddydeschepper</a><br/>
 <a href="https://github.com/Mychel60">Michael</a><br/>
-<a href="https://github.com/MovingLlama">@MovingLlama</a><br/>
 
 # License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
