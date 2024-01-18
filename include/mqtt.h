@@ -17,7 +17,12 @@ char jsonbuff[MAX_MSG_SIZE] = "[{\0";
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
 #endif
 
+#ifdef MQTT_ENCRYPTED
+#include <WiFiClientSecure.h>
+WiFiClientSecure espClient;
+#else
 WiFiClient espClient;
+#endif
 PubSubClient client(espClient);
 
 void sendValues()
