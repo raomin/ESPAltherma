@@ -26,8 +26,13 @@
 #define TX_PIN    26// Pin connected to the RX pin of X10A
 #else 
 //Default GPIO PINs for Serial2:
+#if defined(WT32_ETH01)
+#define RX_PIN    5// Pin connected to the TX pin of X10A
+#define TX_PIN    17// Pin connected to the RX pin of X10A
+#else
 #define RX_PIN    16// Pin connected to the TX pin of X10A 
 #define TX_PIN    17// Pin connected to the RX pin of X10A
+#endif
 #endif
 
 #define PIN_THERM 0// Pin connected to the thermostat relay (normally open)
