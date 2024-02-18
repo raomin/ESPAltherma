@@ -289,7 +289,7 @@ void setup()
   readEEPROM();//Restore previous state
   mqttSerial.print("Setting up wifi...");
   setup_wifi();
-  ArduinoOTA.setHostname("ESPAltherma");
+  ArduinoOTA.setHostname(HOSTNAME);
   ArduinoOTA.onStart([]() {
     busy = true;
   });
