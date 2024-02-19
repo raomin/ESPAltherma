@@ -14,7 +14,7 @@
 #endif
 #include <HardwareSerial.h>
 
-#ifdef M5Stack_PoE
+#ifdef ESPOE32
 #include <ETH.h>
 #define ETH_ADDR      1
 #define ETH_POWER     5
