@@ -1,3 +1,6 @@
+//Default device hostname:
+#define HOSTNAME "ESPAltherma"
+
 //Setup your credentials and mqtt info here:
 //only change the value between the " " leave the rest of the line untouched.
 #define WIFI_SSID "SSID"//**Your SSID here**
