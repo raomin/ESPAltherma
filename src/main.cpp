@@ -18,6 +18,14 @@
 #include <ETH.h>
 #endif
 
+#ifdef ESPOE32
+#include <ETH.h>
+#define ETH_ADDR      1
+#define ETH_POWER     5
+#define ETH_MDC       23
+#define ETH_MDIO      18
+#endif
+
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
@@ -175,7 +183,7 @@ void checkWifi()
   }
 }
 
-#ifdef WT32_ETH01
+#if defined(WT32_ETH01) || defined(ESPOE32)
 void WiFiEvent(WiFiEvent_t event)
 {
   switch (event) {
@@ -208,7 +216,11 @@ void WiFiEvent(WiFiEvent_t event)
 void setupEthernet()
 {
   WiFi.onEvent(WiFiEvent);
-  ETH.begin();
+  #ifdef WT32_ETH01
+    ETH.begin();
+  #elif ESPOE32
+    ETH.begin(ETH_ADDR, ETH_POWER, ETH_MDC, ETH_MDIO, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);
+  #endif
 
   if (ETH.linkUp()) {
     Serial.printf("Connected. IP Address: %s\n", ETH.localIP().toString().c_str());
@@ -334,7 +346,7 @@ void setup()
 
   EEPROM.begin(10);
   readEEPROM();//Restore previous state
-#ifdef WT32_ETH01
+#if defined(WT32_ETH01) || defined(ESPOE32)
   mqttSerial.print("Setting up ethernet...");
   setupEthernet();
 #else
