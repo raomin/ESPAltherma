@@ -25,7 +25,9 @@ void sendValues()
   Serial.printf("Sending values in MQTT.\n");
 #ifdef ARDUINO_M5Stick_C_Plus2
   //Add Power values
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\"", "M5BatV", M5.Power.getBatteryVoltage());
+  // getBatteryVoltage returns battery voltage [mV] as an int16_t
+  float batteryVoltage = (float) M5.Power.getBatteryVoltage() / 1000; // convert to V as a float
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
 #elif ARDUINO_M5Stick_C
   //Add M5 APX values
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
