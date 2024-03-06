@@ -304,11 +304,21 @@ void setup()
   });
   ArduinoOTA.begin();
 
-  client.setServer(MQTT_SERVER, MQTT_PORT);
+  #ifdef MQTT_ENCRYPTED
+  // Required to establish encrypted connections. 
+  // If you want to be more secure here, you can use the CA certificate to allow the wifi client to verify the other party. NOTE: If you use the CA certificate here, then you need to make sure to update it here regulary!
+  espClient.setInsecure();
+  espClient.setTimeout(5);
+  #endif
+
   client.setBufferSize(MAX_MSG_SIZE); //to support large json message
   client.setCallback(callback);
   client.setServer(MQTT_SERVER, MQTT_PORT);
-  mqttSerial.print("Connecting to MQTT server...");
+
+  auto timeout = espClient.getTimeout();
+  Serial.printf("Wifi client timeout: %d\n", timeout);
+
+  mqttSerial.printf("Connecting to MQTT server: %s:%d\n", MQTT_SERVER, MQTT_PORT);
   mqttSerial.begin(&client, "espaltherma/log");
   reconnectMqtt();
   mqttSerial.println("OK!");
