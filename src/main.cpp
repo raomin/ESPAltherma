@@ -90,6 +90,8 @@ void extraLoop()
 {
   client.loop();
   ArduinoOTA.handle();
+  // give interrupts time
+  vTaskDelay(0);
   while (busy)
   { //Stop processing during OTA
     ArduinoOTA.handle();
@@ -282,7 +284,12 @@ void setup()
   digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
   pinMode(PIN_SG1, OUTPUT);
   pinMode(PIN_SG2, OUTPUT);
-
+#endif
+#ifdef PIN_PULSE
+  pinMode(PIN_PULSE, OUTPUT);
+  #ifdef PULSE_LED_BUILTIN
+    pinMode(LED_BUILTIN, OUTPUT);
+  #endif
 #endif
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
