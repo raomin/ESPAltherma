@@ -48,7 +48,36 @@
 #define SG_RELAY_INACTIVE_STATE LOW
 #endif
 
-#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt 
+//Demand shapping control X85A - Optional:
+// X85A: 6 pin JST-PA connector on the main hydro PCB.
+// Location: https://user-images.githubusercontent.com/33467841/224312793-26cce7f9-5e20-4f7c-9964-dbac9e476d33.png
+// Pin 6: GND
+// Pin 5: L4
+// Pin 4: L3
+// Pin 3: L2
+// Pin 2: L1
+// Pin 1: ?? (probably 5v)
+// By connecting any limit pin to GND, it's limit (configurable on the main controller menu) is enabled.
+//Uncomment and set to enable X85A mqtt functions
+//#define PIN_L1 27// Pin connected to dry contact SG 1 relay (normally open)
+//#define PIN_L2 14// Pin connected to dry contact SG 2 relay (normally open)
+//#define PIN_L3 12// Pin connected to dry contact SG 2 relay (normally open)
+//#define PIN_L4 13// Pin connected to dry contact SG 2 relay (normally open)
+// Define if your SG relay board is Low or High triggered (signal pins)
+// Only uncomment one of them
+//#define X85A_RELAY_HIGH_TRIGGER
+//#define X85A_RELAY_LOW_TRIGGER
+
+// DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
+#if defined(X85A_RELAY_LOW_TRIGGER)
+#define X85A_RELAY_ACTIVE_STATE LOW
+#define X85A_RELAY_INACTIVE_STATE HIGH
+#else
+#define X85A_RELAY_ACTIVE_STATE HIGH
+#define X85A_RELAY_INACTIVE_STATE LOW
+#endif
+
+#define MAX_MSG_SIZE 5120//max size of the json message sent in mqtt 
 
 //Uncomment this line if the JSON message should be in a Json Table format []. Use only for IOBroker Vis. 
 //#define JSONTABLE
