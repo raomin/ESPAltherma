@@ -38,6 +38,12 @@
 #define SG_RELAY_HIGH_TRIGGER
 //#define SG_RELAY_LOW_TRIGGER
 
+// Safety relay - also called Prefered electric fare - Optional
+// If the safety relay is triggered, the heat pump will be stopped
+//uncomment and set to enable the safety relay
+#define SAFETY_RELAY_PIN 33// Pin connected to the safety relay. Triggered HIGH
+
+
 // DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
 #if defined(SG_RELAY_LOW_TRIGGER)
 #define SG_RELAY_ACTIVE_STATE LOW

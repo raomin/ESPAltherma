@@ -161,9 +161,9 @@ void checkWifi()
   {
     delay(500);
     Serial.print(".");
-    if (i++ == 120)
+    if (i++ == 240)
     {
-      Serial.printf("Tried connecting for 60 sec, rebooting now.");
+      Serial.printf("Tried connecting for 120 sec, rebooting now.");
       restart_board();
     }
   }
@@ -270,7 +270,12 @@ void setup()
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
-  digitalWrite(PIN_THERM, HIGH);
+  // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
+
+#ifdef SAFETY_RELAY_PIN
+  pinMode(SAFETY_RELAY_PIN, OUTPUT);
+  digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
+#endif
 
 #ifdef PIN_SG1
   //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
