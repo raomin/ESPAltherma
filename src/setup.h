@@ -14,11 +14,12 @@
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
+//#define MQTT_ENCRYPTED // uncomment if MQTT connection is encrypted via TLS
 
 #define FREQUENCY 30000 //query values every 30 sec
 
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
-//Values used when **M5StickC** or **M5STickCPlus** environment is selected:
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C_Plus2)
+// Values used when M5StickC, M5STickCPlus or M5Stick_C_Plus2 environment is selected:
 #define RX_PIN    36// Pin connected to the TX pin of X10A 
 #define TX_PIN    26// Pin connected to the RX pin of X10A
 #else 
