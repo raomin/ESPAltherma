@@ -7,8 +7,8 @@
 //#define WIFI_IP 192, 168, 0, 5
 //#define WIFI_SUBNET 255, 255, 255, 0
 //#define WIFI_GATEWAY 192, 168, 0, 1
-//#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //optional
-//#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //optional
+//#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //NOT optional
+//#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //NOT optional
 
 #define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
