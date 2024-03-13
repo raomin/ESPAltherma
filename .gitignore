@@ -11,3 +11,5 @@ sdkconfig.*
 contrib/ldd_decoder/bin/
 contrib/ldd_decoder/obj/
 contrib/ldd_decoder/label_defines.*
+managed_components/
+dependencies.lock
