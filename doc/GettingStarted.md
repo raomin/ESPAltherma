@@ -18,8 +18,8 @@ If you are using an **ESP8266** select the `nodemcuv2` environement.
 The parameter and command definitions are stored in a template format. To generate a fully useable .json file for upload and use on the X10A or CAN bus, please execute the following commands in the "PlatformIO Core CLI". Press `F1` and select -> `PlatformIO: Open PlatformIO Core CLI` to open the terminal, then enter the commands below:
 
 ```bash
-python scripts\build_x10a_commands.py
-python scripts\build_can_commands.py
+python scripts/build_x10a_commands.py
+python scripts/build_can_commands.py
 ```
 
 You will receive output indicating which files are generated. These generated files can be found in the `build` folder, along with a subfolder named either `CAN` or `X10A`. These files are ready for upload and use.
