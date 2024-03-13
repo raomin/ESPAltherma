@@ -4,35 +4,25 @@
 
 ## Step 1: Uploading the firmware from source code
 
-1. Download the repository folder and open it in PlatformIO.
+1. Download the repository folder and open it in PlatformIO. When opening the project all required components and plugins will be downloaded and installed by PlatformIO.
 
-2. Open a new terminal inside PlatformIO. Select the PlatformIO extension and click inside the "Quick Access" menu on `New Terminal` or press `F1` and select -> `PlatformIO: New Terminal`
-
-3. Enter following command into the terminal to download all configured submodules. This will download the LittleFS ESP-IDF component.
-
-```bash
-git submodule update --init --recursive
-```
-
-> **_NOTE:_**  If `git` command was nout found, please make sure you installed the git client. It can be downloaded [here](https://git-scm.com/downloads). After installation, please restart VS Code.
-
-4. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
+2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
 Click  ![end m5](images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](images/m5envv.png)
 For **M5StickCPlus** select **env:M5StickCPlus**
 If you are using an **ESP8266** select the `nodemcuv2` environement.
 
-5. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or press `F1` and select -> `PlatformIO: Upload`
+3. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or press `F1` and select -> `PlatformIO: Upload`
 
 ## <a id="section-generate-definition-files"></a>Step 2: Build X10A and CAN definition files
 
-The parameter and command definitions are hold in a template format. To generate a full useable .json file for upload and use on the X10A or CAN bus, please run following command on the terminal (alternatively select each file descriped below inside platformio with a `right mouse click` and select `Run Python File in Terminal`):
+The parameter and command definitions are stored in a template format. To generate a fully useable .json file for upload and use on the X10A or CAN bus, please execute the following commands in the "PlatformIO Core CLI". Press `F1` and select -> `PlatformIO: Open PlatformIO Core CLI` to open the terminal, then enter the commands below:
 
 ```bash
 python scripts\build_x10a_commands.py
 python scripts\build_can_commands.py
 ```
 
-You will get some output that shows witch files are generated. You will find those generated files in the `build` folder and a subfolder called `CAN` or `X10A`. This files are ready for upload and use.
+You will receive output indicating which files are generated. These generated files can be found in the `build` folder, along with a subfolder named either `CAN` or `X10A`. These files are ready for upload and use.
 
 ## Step 3: Configure/Setup your ESPAltherma
 
