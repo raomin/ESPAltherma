@@ -28,9 +28,6 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
-      - name: Git update submodule
-        run: git submodule update --init --recursive
-
       - name: Build PlatformIO Project
         run: pio run -e ${{ matrix.target }}
 
@@ -39,7 +36,7 @@ jobs:
 
       - name: Move builded firmware to artifacts
         run: mv .pio/build/${{ matrix.target }}/firmware.bin build/${{ matrix.target }}_nightly_firmware.bin
-      
+
       - name: Archive build results of ${{ matrix.target }}
         uses: actions/upload-artifact@v3
         with:
