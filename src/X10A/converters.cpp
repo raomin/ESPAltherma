@@ -139,8 +139,20 @@ void Converter::convert(ParameterDef *def, byte *data)
         case 158:
             dblData = (double)getUnsignedValue(data, num, 1) / 256.0 * 2.0;
             break;
+        case 161:
+            dblData = (double)getUnsignedValue(data, num, 1) * 0.5;
+            break;
+        case 162:
+            dblData = (double)(getUnsignedValue(data, num, 1) - 64) * 0.5;
+            break;
+        case 163:
+            dblData = (double)getUnsignedValue(data, num, 1) * 0.25;
+            break;
         case 164:
             dblData = (double)getUnsignedValue(data, num, 1) * 5;
+            break;
+        case 165:
+            dblData = (double)(getUnsignedValue(data, num, 0) & 16383);
             break;
         case 200:
             convertTable200(data, def->asString);
