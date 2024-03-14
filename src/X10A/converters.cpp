@@ -35,7 +35,7 @@ void Converter::convert(ParameterDef *def, byte *data)
             break;
         case 105:
             dblData = (double)getSignedValue(data, num, 0) * 0.1;
-            debugSerial.printf("%f\n", dblData);
+            // debugSerial.printf("%f\n", dblData);
             break;
         case 106:
             dblData = (double)getSignedValue(data, num, 1) * 0.1;
@@ -178,11 +178,9 @@ void Converter::convert(ParameterDef *def, byte *data)
         case 215:
         case 216:
 		{
-			/*byte num = data[0] >> 4;
+			byte num = data[0] >> 4;
 			byte num2 = (int)(data[0] & 0x0F);
-            sprintf(def->asString, "{0:X}{1:X}", num, num2);*/
-            // temp fix as statment abouve is not compiling. not sure what is intended to be printed
-            sprintf(def->asString, "%02X", data[0]);
+            sprintf(def->asString, "{0:%d}{1:%d}", num, num2);
             return;
 		}
 
