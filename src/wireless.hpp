@@ -26,4 +26,8 @@ void scan_wifi_delete_result();
 
 void scan_wifi();
 
+#ifdef ARDUINO_ARCH_ESP8266
+void get_wifi_bssid(const char *ssid, uint8_t *bssid, uint32_t *wifi_channel);
+#endif
+
 #endif

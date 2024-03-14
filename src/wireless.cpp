@@ -56,7 +56,21 @@ void setup_wifi()
     }
   }
 
-  WiFi.begin(config->SSID.c_str(), config->SSID_PASSWORD.c_str());
+  uint8_t *bssid = nullptr;
+  uint32_t wifi_channel = 0;
+#ifdef ARDUINO_ARCH_ESP8266
+  get_wifi_bssid(WIFI_SSID, bssid, &wifi_channel);
+#else //assume ESP32
+  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
+  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+#endif
+
+  if (bssid != nullptr) {
+    WiFi.begin(config->SSID.c_str(), config->SSID_PASSWORD.c_str(), wifi_channel, bssid);
+  } else {
+    WiFi.begin(config->SSID.c_str(), config->SSID_PASSWORD.c_str(), 0, 0, true);
+  }
+
   checkWifi();
   debugSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
@@ -88,3 +102,43 @@ void scan_wifi()
     delay(10);
   }
 }
+
+#ifdef ARDUINO_ARCH_ESP8266
+void get_wifi_bssid(const char *ssid, uint8_t *bssid, uint32_t *wifi_channel)
+{
+  bssid = nullptr;
+  int n = WiFi.scanNetworks(false, true);
+
+  if (n < 1) { // no networks found
+    return;
+  }
+
+  // sort networks on RSSI value
+  int indices[n];
+  for (int i = 0; i < n; i++) {
+    indices[i] = i;
+  }
+
+  for (int i = 0; i < n; i++) {
+    for (int j = i + 1; j < n; j++) {
+      if (WiFi.RSSI(indices[j]) > WiFi.RSSI(indices[i])) {
+        std::swap(indices[i], indices[j]);
+      }
+    }
+  }
+
+  // loop through result and match highest RSSI SSID
+  for (int i = 0; i < n; i++) {
+    char scan_ssid[33]; // ssid can be up to 32chars, => plus null term
+    strlcpy(scan_ssid, WiFi.SSID(indices[i]).c_str(), sizeof(scan_ssid));
+
+    if (strcmp(ssid, scan_ssid) == 0) {
+      if (WiFi.BSSID(indices[i]) != 0) {
+        bssid = WiFi.BSSID(indices[i]);
+        *wifi_channel = WiFi.channel();
+      }
+      return;
+    }
+  }
+}
+#endif
