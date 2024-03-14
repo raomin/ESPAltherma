@@ -9,6 +9,7 @@ HardwareSerial SerialX10A(1);
 #endif
 
 static X10A_Config* X10AConfig = nullptr;
+bool disableMQTTLogMessages;
 size_t registryBufferSize;
 RegistryBuffer *registryBuffers; // holds the registries to query and the last returned
 ulong lastTimeRunned = 0;
@@ -94,15 +95,16 @@ void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool se
     }
   }
 
-  if(sendValuesViaMQTT) {
+  if(sendValuesViaMQTT && !disableMQTTLogMessages) {
     sendValues(); // send the full json message
   }
 }
 
-void x10a_init(X10A_Config* X10AConfigToInit)
+void x10a_init(X10A_Config* X10AConfigToInit, const bool disableMQTTLogMessagesToInit)
 {
   x10a_end();
   X10AConfig = X10AConfigToInit;
+  disableMQTTLogMessages = disableMQTTLogMessagesToInit;
   SerialX10A.begin(9600, SERIAL_CONFIG, X10AConfig->PIN_RX, X10AConfig->PIN_TX);
 }
 

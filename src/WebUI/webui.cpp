@@ -745,6 +745,7 @@ void onSaveConfig(AsyncWebServerRequest *request)
   }
 
   config->MQTT_PORT = request->getParam("mqtt_port", true)->value().toInt();
+  config->MQTT_DISABLE_LOG_MESSAGES = request->hasParam("mqtt_disable_log_messages", true);
   config->PIN_ENABLE_CONFIG = request->getParam("pin_enable_config", true)->value().toInt();
 
   config->HEATING_ENABLED = request->hasParam("heating_enabled", true);

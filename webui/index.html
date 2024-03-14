@@ -111,7 +111,7 @@
           <input type="checkbox" id="mqtt_use_onetopic" name="mqtt_use_onetopic" role="switch" onclick="show('onetopic');"/>
           MQTT one Topic
         </label>
-
+        
         <article id="onetopic" class="hidden">
           <label for="mqtt_onetopic_name">MQTT one Topic:</label>
           <input type="text" id="mqtt_onetopic_name" name="mqtt_onetopic_name"/>
@@ -120,6 +120,11 @@
 
         <label for="mqtt_port">MQTT Port:</label>
         <input type="number" id="mqtt_port" name="mqtt_port" min="0" max="65535"/>
+
+        <label for="mqtt_disable_log_messages" >
+          <input type="checkbox" id="mqtt_disable_log_messages" name="mqtt_disable_log_messages" role="switch"/>
+          Disable log messages over MQTT
+        </label>
       </article>
       <article id="form-pins" role="tab" style="display: none;">
 

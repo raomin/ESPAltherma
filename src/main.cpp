@@ -101,7 +101,7 @@ void setup()
   }
 
   if(config->X10A_ENABLED) {
-    x10a_init(config->X10A_CONFIG);
+    x10a_init(config->X10A_CONFIG, config->MQTT_DISABLE_LOG_MESSAGES); // TODO: Correct place to use a MQTT config variable inside X10A??
     x10a_initRegistries(&registryBuffers, registryBufferSize);
   }
 

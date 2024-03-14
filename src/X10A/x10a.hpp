@@ -30,7 +30,7 @@ void x10a_initRegistries(RegistryBuffer** buffer, size_t& bufferSize);
 
 void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT);
 
-void x10a_init(X10A_Config* X10AConfig);
+void x10a_init(X10A_Config* X10AConfig, const bool disableMQTTLogMessagesToInit);
 
 void x10a_loop();
 
