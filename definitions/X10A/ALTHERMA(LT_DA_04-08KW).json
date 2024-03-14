@@ -38,7 +38,7 @@
         [ 16,    	1,   	300,   	1,   	-1,	"Low noise control"],
         [ 16,    	4,   	203,   	1,   	-1,	"Error type"],
         [ 16,    	5,   	204,   	1,   	-1,	"Error Code"],
-        [ 16,    	6,   	114,   	2,   	1,	"Target Evap. Temp."],
+        [ 16,    	6,   	114,   	2,   	1,	"Target Discharge Temp."],
         [ 16,    	8,   	114,   	2,   	1,	"Target Cond. Temp."],
         [ 16,    	10,   	307,   	1,   	-1,	"Discharge Temp. Drop"],
         [ 16,    	10,   	310,   	1,   	-1,	"Discharge Temp. Protection Retry Qty"],
