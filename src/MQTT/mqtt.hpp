@@ -2,6 +2,7 @@
 #define MQTT_H
 
 #include <PubSubClient.h>
+#include <WiFiClientSecure.h>
 #include "Config/config.hpp"
 #include "persistence.hpp"
 #include "restart.hpp"

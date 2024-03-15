@@ -1,6 +1,6 @@
 #include "mqtt.hpp"
 
-WiFiClient espClient;
+WiFiClientSecure espClient;
 PubSubClient client(espClient);
 
 String subscribeHeatingTopic = "";
@@ -24,6 +24,10 @@ std::function<void(const String &label, const char *payload, const uint32_t leng
 
 void initMQTT()
 {
+  // allow invalid SSL certificates on MQTT
+  espClient.setInsecure();
+  espClient.setTimeout(5);
+
   client.setServer(config->MQTT_SERVER.c_str(), config->MQTT_PORT);
   client.setBufferSize(MAX_MSG_SIZE); // to support large json message
   client.setCallback(callback);
