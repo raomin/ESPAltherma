@@ -20,12 +20,20 @@ void extraLoop()
   if(config->X10A_ENABLED)
     x10a_loop();
 
-#ifdef ARDUINO_M5Stick_C
+#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C)
   if (M5.BtnA.wasPressed()) { // turn back ON screen
     M5.Axp.ScreenBreath(12);
     LCDTimeout = millis() + 30000;
   } else if (LCDTimeout < millis()) { // turn screen off.
     M5.Axp.ScreenBreath(0);
+  }
+  M5.update();
+#elif defined(ARDUINO_M5Stick_C_Plus2)
+  if (M5.BtnA.wasPressed()) { // turn back ON screen
+    M5.Display.wakeup();
+    LCDTimeout = millis() + 30000;
+  } else if (LCDTimeout < millis()) { // turn screen off.
+    M5.Display.sleep();
   }
   M5.update();
 #endif
@@ -41,21 +49,36 @@ void extraLoop()
 
 void setupScreen()
 {
-#ifdef ARDUINO_M5Stick_C
+#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C)
   M5.begin();
   M5.Axp.EnableCoulombcounter();
   M5.Lcd.setRotation(1);
   M5.Axp.ScreenBreath(12);
   M5.Lcd.fillScreen(TFT_WHITE);
   M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
-  m5.Lcd.setTextDatum(MC_DATUM);
-  int xpos = M5.Lcd.width() / 2; // half the screen width
-  int ypos = M5.Lcd.height() / 2; // half the screen width
+  M5.Lcd.setTextDatum(MC_DATUM);
+  int xpos = M5.Lcd.width() / 2; // Half the screen width
+  int ypos = M5.Lcd.height() / 2; // Half the screen width
   M5.Lcd.setTextColor(TFT_DARKGREY);
-  M5.Lcd.drawString("ESPAltherma", xpos, ypos, 1);
+  M5.Lcd.drawString("ESPAltherma", xpos,ypos);
   delay(2000);
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setTextFont(1);
+  M5.Lcd.setTextColor(TFT_GREEN);
+#elif defined(ARDUINO_M5Stick_C_Plus2)
+  M5.begin();
+  M5.Lcd.setRotation(1);
+  M5.Lcd.setBrightness(127);
+  M5.Lcd.fillScreen(TFT_WHITE);
+  M5.Lcd.setFont(&FreeSansBold12pt7b);
+  M5.Lcd.setTextDatum(MC_DATUM);
+  int xpos = M5.Lcd.width() / 2; // half the screen width
+  int ypos = M5.Lcd.height() / 2; // half the screen width
+  M5.Lcd.setTextColor(TFT_DARKGREY);
+  M5.Lcd.drawString("ESPAltherma", xpos, ypos);
+  delay(2000);
+  M5.Lcd.fillScreen(TFT_BLACK);
+  M5.Lcd.setFont(&Font0);
   M5.Lcd.setTextColor(TFT_GREEN);
 #endif
 }
