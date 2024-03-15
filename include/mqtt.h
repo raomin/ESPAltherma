@@ -17,13 +17,23 @@ char jsonbuff[MAX_MSG_SIZE] = "[{\0";
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
 #endif
 
+#ifdef MQTT_ENCRYPTED
+#include <WiFiClientSecure.h>
+WiFiClientSecure espClient;
+#else
 WiFiClient espClient;
+#endif
 PubSubClient client(espClient);
 
 void sendValues()
 {
   Serial.printf("Sending values in MQTT.\n");
-#ifdef ARDUINO_M5Stick_C
+#ifdef ARDUINO_M5Stick_C_Plus2
+  //Add Power values
+  // getBatteryVoltage returns battery voltage [mV] as an int16_t
+  float batteryVoltage = (float) M5.Power.getBatteryVoltage() / 1000; // convert to V as a float
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
+#elif ARDUINO_M5Stick_C
   //Add M5 APX values
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
@@ -51,14 +61,14 @@ void saveEEPROM(uint8_t state){
 void readEEPROM(){
   if ('R' == EEPROM.read(EEPROM_CHK)){
     digitalWrite(PIN_THERM,EEPROM.read(EEPROM_STATE));
-    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == HIGH)? "Off":"On" );
+    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == PIN_THERM_ACTIVE_STATE)? "On":"Off" );
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
     EEPROM.write(EEPROM_CHK,'R');
-    EEPROM.write(EEPROM_STATE,HIGH);
+    EEPROM.write(EEPROM_STATE,!PIN_THERM_ACTIVE_STATE);
     EEPROM.commit();
-    digitalWrite(PIN_THERM,HIGH);
+    digitalWrite(PIN_THERM,!PIN_THERM_ACTIVE_STATE);
   }
 }
 
@@ -85,6 +95,13 @@ void reconnectMqtt()
       client.subscribe("espaltherma/sg/set");
       client.publish("espaltherma/sg/state", "0");
 #endif
+
+#ifdef SAFETY_RELAY_PIN
+      // Safety relay
+      client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SAFETY\",\"stat_t\":\"~/SAFETY_STATE\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
+      client.subscribe("espaltherma/SAFETY");
+#endif
+
 #ifndef PIN_SG1
       // Publish empty retained message so discovered entities are removed from HA
       client.publish("homeassistant/select/espAltherma/sg/config", "", true);
@@ -115,15 +132,15 @@ void callbackTherm(byte *payload, unsigned int length)
   // Ok I'm not super proud of this, but it works :p
   if (payload[1] == 'F')
   { //turn off
-    digitalWrite(PIN_THERM, HIGH);
-    saveEEPROM(HIGH);
+    digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
+    saveEEPROM(!PIN_THERM_ACTIVE_STATE);
     client.publish("espaltherma/STATE", "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
-    digitalWrite(PIN_THERM, LOW);
-    saveEEPROM(LOW);
+    digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
+    saveEEPROM(PIN_THERM_ACTIVE_STATE);
     client.publish("espaltherma/STATE", "ON", true);
     mqttSerial.println("Turned ON");
   }
@@ -184,6 +201,31 @@ void callbackSg(byte *payload, unsigned int length)
 }
 #endif
 
+#ifdef SAFETY_RELAY_PIN
+void callbackSafety(byte *payload, unsigned int length)
+{
+  payload[length] = '\0';
+
+  if (payload[0] == '0')
+  {
+    // Set Safety relay to OFF
+    digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
+    client.publish("espaltherma/SAFETY_STATE", "0", true);
+  }
+  else if (payload[0] == '1')
+  {
+    // Set Safety relay to ON
+    digitalWrite(SAFETY_RELAY_PIN, SAFETY_RELAY_ACTIVE_STATE);
+    client.publish("espaltherma/SAFETY_STATE", "1", true);
+  }
+  else
+  {
+    Serial.printf("Unknown message: %s\n", payload);
+  }
+}
+#endif
+
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
   Serial.printf("Message arrived [%s] : %s\n", topic, payload);
@@ -198,6 +240,13 @@ void callback(char *topic, byte *payload, unsigned int length)
     callbackSg(payload, length);
   }
 #endif
+#ifdef SAFETY_RELAY_PIN
+  else if (strcmp(topic, "espaltherma/SAFETY") == 0)
+  {
+    callbackSafety(payload, length);
+  }
+#endif
+
   else
   {
     Serial.printf("Unknown topic: %s\n", topic);

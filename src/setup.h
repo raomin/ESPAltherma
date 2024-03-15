@@ -10,18 +10,19 @@
 //#define WIFI_IP 192, 168, 0, 5
 //#define WIFI_SUBNET 255, 255, 255, 0
 //#define WIFI_GATEWAY 192, 168, 0, 1
-//#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //optional
-//#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //optional
+//#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //A DNS address is needed, even if it's not used 
+//#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //A DNS address is needed, even if it's not used
 
 #define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
+//#define MQTT_ENCRYPTED // uncomment if MQTT connection is encrypted via TLS
 
 #define FREQUENCY 30000 //query values every 30 sec
 
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
-//Values used when **M5StickC** or **M5STickCPlus** environment is selected:
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C_Plus2)
+// Values used when M5StickC, M5STickCPlus or M5Stick_C_Plus2 environment is selected:
 #define RX_PIN    36// Pin connected to the TX pin of X10A 
 #define TX_PIN    26// Pin connected to the RX pin of X10A
 #else 
@@ -45,6 +46,12 @@
 // Only uncomment one of them
 #define SG_RELAY_HIGH_TRIGGER
 //#define SG_RELAY_LOW_TRIGGER
+
+// Safety relay - also called Prefered electric fare - Optional
+// If the safety relay is triggered, the heat pump will be stopped
+//uncomment and set to enable the safety relay
+#define SAFETY_RELAY_PIN 33// Pin connected to the safety relay. Triggered HIGH
+
 
 // DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
 #if defined(SG_RELAY_LOW_TRIGGER)
