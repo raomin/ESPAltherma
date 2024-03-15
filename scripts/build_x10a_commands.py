@@ -36,6 +36,8 @@ for file in files_to_convert:
         if len(modelDefinition["Parameters"][idx]) == 1:
             modelDefinition["Parameters"].pop(idx)
         else:
+            # remove row index number
+            del modelDefinition["Parameters"][idx][0]
             idx += 1
 
     modelFileLanguageDir = os.path.join(buildDir, modelDefinition["Language"])
@@ -72,7 +74,7 @@ for file in files_to_convert:
 
         counter = 0
         for parameter in languageDefinition["Parameters"]:
-            modelDefinition["Parameters"][counter][5] = languageDefinition["Parameters"][counter]
+            modelDefinition["Parameters"][counter][5] = languageDefinition["Parameters"][counter][1]
             counter += 1
 
         if not os.path.exists(languageFileDir):

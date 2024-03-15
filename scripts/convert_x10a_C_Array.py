@@ -12,8 +12,9 @@ def parse_c_array(filename):
     with open(filename, 'r', encoding='utf-8') as file:
         lines = file.readlines()
         for line in lines:
-            matches = re.findall(r'0x([0-9a-fA-F]+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),"(.*?)"', line)
-            activated = not line.startswith("//")
+            trimedLine = line.strip()
+            matches = re.findall(r'0x([0-9a-fA-F]+),\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),\s*(-?\d+),\s*"(.*?)"', trimedLine)
+            activated = not trimedLine.startswith("//")
             for match in matches:
                 hex_value = hex_to_decimal(match[0])
                 decimal_values = [int(match[i]) for i in range(1, 5)]
@@ -31,37 +32,32 @@ def generateJson(name, language, label_defs):
     }},
     "Parameters": [
 '''
-    preset = []
+
     presetText = ""
-    for label_def in label_defs:
+    if len(label_defs[0]) > 2:
+        preset = []
+        for label_def in label_defs:
+            activated = label_def[1]
+            del label_def[1]
 
-        if len(label_def) == 2:
-            break
-
-        activated = label_def[1]
-        del label_def[1]
-
-        if activated:
-            preset.append(label_def[0])
-
-    if len(preset) > 0:
-        presetText += '        "Normal": [' + ', '.join(map(lambda x: str(x), preset)) + '],\n'
-
-    preset.clear()
-    lightValues = ["(R1T)", "(R2T)", "(R3T)", "(R4T)", "(R5T)", "(R6T)"]
-
-    for label_def in label_defs:
-        if len(label_def) == 2:
-            break
-
-        for textSearch in lightValues:
-            if textSearch in label_def[6]:
+            if activated:
                 preset.append(label_def[0])
 
-    if len(preset) > 0:
-        presetText += '        "Light": [' + ', '.join(map(lambda x: str(x), preset)) + '],\n'
+        if len(preset) > 0:
+            presetText += '        "Normal": [' + ', '.join(map(lambda x: str(x), preset)) + '],\n'
 
-    presetText = presetText[:-2]
+        preset.clear()
+        lightValues = ["(R1T)", "(R2T)", "(R3T)", "(R4T)", "(R5T)", "(R6T)"]
+
+        for label_def in label_defs:
+            for textSearch in lightValues:
+                if textSearch in label_def[6]:
+                    preset.append(label_def[0])
+
+        if len(preset) > 0:
+            presetText += '        "Light": [' + ', '.join(map(lambda x: str(x), preset)) + '],\n'
+
+        presetText = presetText[:-2]
 
     outputContent = jsonTemplateHeader.format(name, language, presetText)
     for label_def in label_defs:
@@ -103,7 +99,7 @@ def main():
                     return
 
                 for label_def in label_defs:
-                    del label_def[1:6]
+                    del label_def[1:7]
 
                 language = os.path.basename(os.path.normpath(root))
 
