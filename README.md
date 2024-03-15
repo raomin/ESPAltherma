@@ -37,7 +37,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
 ## Preview
 
-![](doc/images/screenshot.png)
+![screenshot](doc/images/screenshot.png)
 
 # Documentation
 
