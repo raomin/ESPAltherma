@@ -46,18 +46,31 @@ def main():
             filename = os.path.join(root, file)
 
             if file in founded_filenames:
-                print(f"File {file} already exists. Skipping {filename}")
+                label_defs, match_count = parse_c_array(filename)
+                if len(founded_filenames[file]) != match_count:
+                    print(f"Error: Missleading label defs count in file {filename}. Org count: {len(founded_filenames[file])}, language count: {match_count}")
+                    print(founded_filenames[file])
+                    return
+
+                for label_def in label_defs:
+                    del label_def[1:6]
 
                 if consoleOutput:
                     print(f"--- BEGIN Output LANGUAGE file '{filename}' ---")
-                    label_defs, match_count = parse_c_array(filename)
-
-                    if founded_filenames[file].count(label_defs) != match_count:
-                        print(f"Error: Missleasing label defs count in file {filename}. Org count: {label_defs.count(founded_filenames[file])}, language count: {match_count} ")
-                        print(founded_filenames[file])
-                        return
-
+                    for label_def in label_defs:
+                        print('[ ' + ',\t'.join(map(lambda x: str(x), label_def)) + '],')
                     print(f"--- END Output of LANGUAGE file '{filename}' ---")
+                else:
+                    last_folder_name = os.path.basename(os.path.normpath(root))
+                    output_path = os.path.join(targetDirectory, last_folder_name)
+                    output_file = os.path.join(output_path, file.split('.')[0] + '.json')
+
+                    if not os.path.exists(output_path):
+                        os.makedirs(output_path)
+
+                    with open(output_file, 'w', encoding='utf-8') as json_file:
+                        for label_def in label_defs:
+                            json_file.write('[ ' + ',\t'.join(map(lambda x: str(x), label_def)) + '],\n')
             else:
                 label_defs, match_count = parse_c_array(filename)
                 total_match_count += match_count
