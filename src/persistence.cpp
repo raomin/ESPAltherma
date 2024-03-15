@@ -23,6 +23,11 @@ void savePersistence()
     preferences.putUChar(NAME_STATE_COOLING, digitalRead(config->PIN_COOLING));
   else if(preferences.isKey(NAME_STATE_COOLING))
     preferences.remove(NAME_STATE_COOLING);
+
+  if(config->SAFETY_ENABLED)
+    preferences.putUChar(NAME_STATE_SAFETY, digitalRead(config->PIN_SAFETY));
+  else if(preferences.isKey(NAME_STATE_SAFETY))
+    preferences.remove(NAME_STATE_SAFETY);
 }
 
 void readPersistence()
@@ -44,6 +49,13 @@ void readPersistence()
       digitalWrite(config->PIN_COOLING, coolingState);
       debugSerial.printf("Restoring previous cooling state: %s\n", (coolingState == HIGH) ? "Off":"On" );
     }
+
+    if(config->SAFETY_ENABLED && preferences.isKey(NAME_STATE_SAFETY))
+    {
+      uint8_t safetyState = preferences.getUChar(NAME_STATE_SAFETY);
+      digitalWrite(config->PIN_SAFETY, safetyState);
+      debugSerial.printf("Restoring previous safety state: %s\n", (safetyState == HIGH) ? "On":"Off" );
+    }
   }
   else
   {
@@ -55,6 +67,9 @@ void readPersistence()
 
     if(config->COOLING_ENABLED)
       digitalWrite(config->PIN_COOLING, HIGH);
+
+    if(config->SAFETY_ENABLED)
+      digitalWrite(config->PIN_SAFETY, LOW);
 
     savePersistence();
   }

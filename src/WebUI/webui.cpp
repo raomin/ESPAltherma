@@ -755,6 +755,7 @@ void onSaveConfig(AsyncWebServerRequest *request)
   config->X10A_CONFIG = X10AConfig;
   config->CAN_ENABLED = request->hasParam("can_enabled", true);
   config->CAN_CONFIG = CANConfig;
+  config->SAFETY_ENABLED = request->hasParam("safety_enabled", true);
 
   if(config->HEATING_ENABLED)
     config->PIN_HEATING = request->getParam("pin_heating", true)->value().toInt();
@@ -768,6 +769,9 @@ void onSaveConfig(AsyncWebServerRequest *request)
     config->PIN_SG2 = request->getParam("pin_sg2", true)->value().toInt();
     config->SG_RELAY_HIGH_TRIGGER = request->hasParam("sg_relay_trigger", true);
   }
+
+  if(config->SAFETY_ENABLED)
+    config->PIN_SAFETY = request->getParam("pin_safety", true)->value().toInt();
 
   saveConfig();
 

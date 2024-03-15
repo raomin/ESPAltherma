@@ -111,7 +111,7 @@
           <input type="checkbox" id="mqtt_use_onetopic" name="mqtt_use_onetopic" role="switch" onclick="show('onetopic');"/>
           MQTT one Topic
         </label>
-        
+
         <article id="onetopic" class="hidden">
           <label for="mqtt_onetopic_name">MQTT one Topic:</label>
           <input type="text" id="mqtt_onetopic_name" name="mqtt_onetopic_name"/>
@@ -297,6 +297,18 @@
               </label>
             </div>
           </div>
+        </article>
+
+        <label for="safety_enabled" >
+          <input type="checkbox" id="safety_enabled" name="safety_enabled" role="switch" onclick="show('safety');"/>
+          Safety enabled
+        </label>
+
+        <article id="safety" class="hidden">
+          <label for="pin_safety">
+            PIN SAFETY
+            <input id="pin_safety" name="pin_safety" data-pins />
+          </label>
         </article>
       </article>
       <article id="form-x10a" role="tab" style="display: none;">

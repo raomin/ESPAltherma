@@ -75,6 +75,8 @@ void readConfig()
     config->SG_RELAY_HIGH_TRIGGER = configDoc["SG_RELAY_HIGH_TRIGGER"].as<const bool>();
     config->X10A_ENABLED = configDoc["X10A_ENABLED"].as<const bool>();
     config->CAN_ENABLED = configDoc["CAN_ENABLED"].as<const bool>();
+    config->SAFETY_ENABLED = configDoc["SAFETY_ENABLED"].as<const bool>();
+    config->PIN_SAFETY = configDoc["PIN_SAFETY"].as<uint8_t>();
 
     if(config->X10A_ENABLED) {
         X10A_Config* X10AConfig = new X10A_Config();
@@ -228,6 +230,8 @@ void saveConfig()
     configDoc["SG_RELAY_HIGH_TRIGGER"] = config->SG_RELAY_HIGH_TRIGGER;
     configDoc["X10A_ENABLED"] = config->X10A_ENABLED;
     configDoc["CAN_ENABLED"] = config->CAN_ENABLED;
+    configDoc["SAFETY_ENABLED"] = config->SAFETY_ENABLED;
+    configDoc["PIN_SAFETY"] = config->PIN_SAFETY;
 
     if(config->X10A_ENABLED) {
         JsonObject X10AConfig = configDoc.createNestedObject("X10A_CONFIG");

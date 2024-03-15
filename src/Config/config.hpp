@@ -43,6 +43,8 @@ struct Config
     uint8_t PIN_SG2;
     bool SG_RELAY_HIGH_TRIGGER;
     bool CAN_ENABLED;
+    bool SAFETY_ENABLED;
+    uint8_t PIN_SAFETY;
     CAN_Config* CAN_CONFIG;
 
     ~Config();

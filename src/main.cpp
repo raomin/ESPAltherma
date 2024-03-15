@@ -152,6 +152,11 @@ void setup()
     canBus_setup(config->CAN_CONFIG);
   }
 
+  if(config->SAFETY_ENABLED) {
+    pinMode(config->PIN_SAFETY, OUTPUT);
+    digitalWrite(config->PIN_SAFETY, LOW);
+  }
+
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
   gpio_pullup_dis(GPIO_NUM_25);

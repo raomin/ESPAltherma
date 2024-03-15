@@ -7,11 +7,13 @@ String subscribeHeatingTopic = "";
 String subscribeCoolingTopic = "";
 String subscribeSGTopic = "";
 String subscribeCANTopic = "";
+String subscribeSafetyTopic = "";
 String subscribePowerTopic = "";
 
 String publishHeatingTopic = "";
 String publishCoolingTopic = "";
 String publishSGTopic = "";
+String publishSafetyTopic = "";
 String publishPowerTopic = "";
 String publishAttrTopic = "";
 String publishLWTTopic = "";
@@ -116,10 +118,12 @@ void reconnectMqtt()
   if(config->CAN_ENABLED) {
     subscribeCANTopic   = config->MQTT_TOPIC_NAME + "SET/" + config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
   }
+  subscribeSafetyTopic = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_SAFETY;
 
   publishHeatingTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_HEATING;
   publishCoolingTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_COOLING;
   publishSGTopic        = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_SG;
+  publishSafetyTopic    = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_SAFETY;
   publishPowerTopic     = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_POWER;
   publishAttrTopic      = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_ATTR;
   publishLWTTopic       = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_LWT;
@@ -140,9 +144,9 @@ void reconnectMqtt()
       // TODO update homeassistant config to publish correct informations
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(publishLWTTopic.c_str(), "Online", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Heating\",\"cmd_t\":\"~/STATE/HEATING\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Cooling\",\"cmd_t\":\"~/STATE/COOLING\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma SmartGrid\",\"cmd_t\":\"~/STATE/SG\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Heating\",\"cmd_t\":\"~/SET/HEATING\",\"stat_t\":\"~/STATE/HEATING\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Cooling\",\"cmd_t\":\"~/SET/COOLING\",\"stat_t\":\"~/STATE/COOLING\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma SmartGrid\",\"cmd_t\":\"~/SET/SG\",\"stat_t\":\"~/STATE/SG\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
 
       // subscribe
       client.subscribe(subscribeHeatingTopic.c_str());
@@ -168,6 +172,12 @@ void reconnectMqtt()
       if(config->CAN_ENABLED) {
         client.subscribe((subscribeCANTopic + "#").c_str());
         debugSerial.println(subscribeCANTopic);
+      }
+
+      if(config->SAFETY_ENABLED) {
+        client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SET/SAFETY\",\"stat_t\":\"~/STATE/SAFETY\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
+        client.subscribe(subscribeSafetyTopic.c_str());
+        debugSerial.println(subscribeSafetyTopic);
       }
     } else {
       debugSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
@@ -276,6 +286,23 @@ void callbackSg(byte *payload, unsigned int length)
   }
 }
 
+void callbackSafety(byte *payload, unsigned int length)
+{
+  payload[length] = '\0';
+
+  if (payload[0] == '0') {
+    // Set Safety relay to OFF
+    digitalWrite(config->PIN_SAFETY, LOW);
+    client.publish(publishSafetyTopic.c_str(), "0", true);
+  } else if (payload[0] == '1') {
+    // Set Safety relay to ON
+    digitalWrite(config->PIN_SAFETY, HIGH);
+    client.publish(publishSafetyTopic.c_str(), "1", true);
+  } else {
+    Serial.printf("Unknown message: %s\n", payload);
+  }
+}
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
   char payloadText[length+1];
@@ -297,6 +324,8 @@ void callback(char *topic, byte *payload, unsigned int length)
   } else if (config->CAN_ENABLED && String(topic).startsWith(subscribeCANTopic)) {
     if(callbackCAN != nullptr)
       callbackCAN(String(topic).substring(subscribeCANTopic.length()), payloadText, length);
+  } else if (config->SAFETY_ENABLED && subscribeSafetyTopic == topic) {
+    callbackSafety(payload, length);
   } else {
     debugSerial.printf("Unknown topic: %s\n", topic);
   }

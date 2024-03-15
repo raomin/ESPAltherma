@@ -9,6 +9,7 @@
 #define NAME_INITED "Inited"
 #define NAME_STATE_HEATING "Heating"
 #define NAME_STATE_COOLING "Cooling"
+#define NAME_STATE_SAFETY "Safety"
 
 extern Preferences preferences;
 

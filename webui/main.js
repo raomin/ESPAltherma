@@ -128,6 +128,7 @@ async function resetToDefaults()
     document.getElementById('pin_cooling').value = boardDefaults['pin_cooling'];
     document.getElementById('pin_sg1').value = boardDefaults['pin_sg1'];
     document.getElementById('pin_sg2').value = boardDefaults['pin_sg2'];
+    document.getElementById('pin_safety').value = boardDefaults['pin_safety'];
     document.getElementById('pin_can_uart_rx').value = boardDefaults['uart']['pin_rx'];
     document.getElementById('pin_can_uart_tx').value = boardDefaults['uart']['pin_tx'];
     document.getElementById('pin_can_spi_mosi').value = boardDefaults['spi']['mosi'];
@@ -204,6 +205,7 @@ async function loadConfig()
         document.getElementById('cooling_enabled').checked = data['COOLING_ENABLED'];
         document.getElementById('sg_enabled').checked = data['SG_ENABLED'];
         document.getElementById('can_enabled').checked = data['CAN_ENABLED'];
+        document.getElementById('safety_enabled').checked = data['SAFETY_ENABLED'];
 
         if(data['X10A_ENABLED'])
         {
@@ -352,6 +354,12 @@ async function loadConfig()
 
             show('can_pins');
             show('nav-can');
+        }
+
+        if(data['SAFETY_ENABLED'])
+        {
+            document.getElementById('pin_safety').value = data['PIN_SAFETY'];
+            show('safety');
         }
 
         customCommandsList = convertedCommandsList;
@@ -652,6 +660,17 @@ async function validateForm()
     else
     {
         clearHiddenValidationResult("can_pins");
+    }
+
+    const safety_enabled = document.getElementById('safety_enabled');
+    if(safety_enabled.checked)
+    {
+        const pin_safety = document.getElementById('pin_safety');
+        pin_safety.setAttribute('aria-invalid', pin_safety.value == '');
+    }
+    else
+    {
+        clearHiddenValidationResult("safety");
     }
 
     const pinSelects = document.querySelectorAll('input[data-pins]');
