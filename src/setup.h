@@ -29,6 +29,7 @@
 #endif
 
 #define PIN_THERM 0// Pin connected to the thermostat relay (normally open)
+#define PIN_THERM_ACTIVE_STATE HIGH// State to trigger the thermostat relay
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions
