@@ -42,8 +42,9 @@
 
 // Safety relay - also called Prefered electric fare - Optional
 // If the safety relay is triggered, the heat pump will be stopped
-//uncomment and set to enable the safety relay
-#define SAFETY_RELAY_PIN 33// Pin connected to the safety relay. Triggered HIGH
+// uncomment and set to enable the safety relay
+// #define SAFETY_RELAY_PIN 33// Pin connected to the safety relay
+// #define SAFETY_RELAY_ACTIVE_STATE HIGH// Pin connected to the safety relay
 
 
 // DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
