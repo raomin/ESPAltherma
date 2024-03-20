@@ -53,7 +53,7 @@ void setupScreen()
   M5.begin();
   M5.Axp.EnableCoulombcounter();
   M5.Lcd.setRotation(1);
-  M5.Axp.ScreenBreath(12);
+  M5.Axp.ScreenBreath(127);
   M5.Lcd.fillScreen(TFT_WHITE);
   M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
   M5.Lcd.setTextDatum(MC_DATUM);
