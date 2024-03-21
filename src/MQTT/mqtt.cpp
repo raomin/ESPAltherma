@@ -13,16 +13,17 @@ String subscribePowerTopic = "";
 String publishHeatingTopic = "";
 String publishCoolingTopic = "";
 String publishSGTopic = "";
+String publishCANTopic = "";
 String publishSafetyTopic = "";
 String publishPowerTopic = "";
 String publishAttrTopic = "";
 String publishLWTTopic = "";
 
+int canTopicLength;
 char jsonbuff[MAX_MSG_SIZE];
+bool blockReconnects;
 uint8_t SG_RELAY_ACTIVE_STATE;
 uint8_t SG_RELAY_INACTIVE_STATE;
-
-std::function<void(const String &label, const char *payload, const uint32_t length)> callbackCAN;
 
 void initMQTT()
 {
@@ -32,7 +33,6 @@ void initMQTT()
 
   client.setServer(config->MQTT_SERVER.c_str(), config->MQTT_PORT);
   client.setBufferSize(MAX_MSG_SIZE); // to support large json message
-  client.setCallback(callback);
 
   createEmptyJSONBuffer();
 
@@ -102,11 +102,10 @@ void sendValues()
   createEmptyJSONBuffer();
 }
 
-void reconnectMqtt()
+void connectMqtt()
 {
-  //in case loopback as server is set, skip connecting (debug purpose)
-  if(config->MQTT_SERVER.compareTo("127.0.0.1") == 0 || config->MQTT_SERVER.compareTo("localhost") == 0)
-  {
+  if(config->MQTT_SERVER.compareTo("127.0.0.1") == 0 || config->MQTT_SERVER.compareTo("localhost") == 0) {
+    blockReconnects = true;
     debugSerial.print("Found loopback MQTT server, skiping connection...\n");
     return;
   }
@@ -115,10 +114,7 @@ void reconnectMqtt()
   subscribeCoolingTopic = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_COOLING;
   subscribeSGTopic      = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_SG;
   subscribePowerTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_POWER;
-  if(config->CAN_ENABLED) {
-    subscribeCANTopic   = config->MQTT_TOPIC_NAME + "SET/" + config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
-  }
-  subscribeSafetyTopic = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_SAFETY;
+  subscribeSafetyTopic  = config->MQTT_TOPIC_NAME + MQTT_TOPIC_SUB_SAFETY;
 
   publishHeatingTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_HEATING;
   publishCoolingTopic   = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_COOLING;
@@ -127,6 +123,27 @@ void reconnectMqtt()
   publishPowerTopic     = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_POWER;
   publishAttrTopic      = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_ATTR;
   publishLWTTopic       = config->MQTT_TOPIC_NAME + MQTT_TOPIC_PUB_LWT;
+
+  if(config->CAN_ENABLED) {
+    subscribeCANTopic   = config->MQTT_TOPIC_NAME + "SET/" + config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
+    canTopicLength      = subscribeCANTopic.length();
+
+    if(config->MQTT_USE_ONETOPIC) {
+      publishCANTopic = config->MQTT_TOPIC_NAME + config->MQTT_ONETOPIC_NAME + config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
+    } else {
+      publishCANTopic = config->MQTT_TOPIC_NAME + config->CAN_CONFIG->CAN_MQTT_TOPIC_NAME;
+    }
+  }
+
+  reconnectMqtt();
+}
+
+void reconnectMqtt()
+{
+  //in case loopback as server is set, skip connecting (debug purpose)
+  if(blockReconnects) {
+    return;
+  }
 
   // loop until we're reconnected
   int i = 0;
@@ -192,141 +209,71 @@ void reconnectMqtt()
   }
 }
 
-void callbackHeating(byte *payload, unsigned int length)
+MQTTSubscribeTopic getTopic(const char* topic)
 {
-  payload[length] = '\0';
-
-  // is it ON or OFF?
-  // ok I'm not super proud of this, but it works :p
-  if (payload[1] == 'F') {
-    // turn off
-    digitalWrite(config->PIN_HEATING, HIGH);
-    savePersistence();
-    client.publish(publishHeatingTopic.c_str(), "OFF", true);
-    debugSerial.println("Heating turned OFF");
-  } else if (payload[1] == 'N') {
-    // turn on
-    digitalWrite(config->PIN_HEATING, LOW);
-    savePersistence();
-    client.publish(publishHeatingTopic.c_str(), "ON", true);
-    debugSerial.println("Heating turned ON");
-  } else {
-    debugSerial.printf("Unknown message: %s\n", payload);
-  }
-}
-
-void callbackPower(byte *payload, unsigned int length)
-{
-  payload[length] = '\0';
-
-  if (payload[0] == 'R') {
-    // R(eset/eboot)
-    debugSerial.println("Rebooting");
-    delay(100);
-    restart_board();
-  } else {
-    debugSerial.printf("Unknown message: %s\n", payload);
-  }
-}
-
-void callbackCooling(byte *payload, unsigned int length)
-{
-  payload[length] = '\0';
-
-  // is it ON or OFF?
-  // ok I'm not super proud of this, but it works :p
-  if (payload[1] == 'F') {
-    // turn off
-    digitalWrite(config->PIN_COOLING, HIGH);
-    savePersistence();
-    client.publish(publishCoolingTopic.c_str(), "OFF", true);
-    debugSerial.println("Cooling turned OFF");
-  } else if (payload[1] == 'N') {
-    //turn on
-    digitalWrite(config->PIN_COOLING, LOW);
-    savePersistence();
-    client.publish(publishCoolingTopic.c_str(), "ON", true);
-    debugSerial.println("Cooling turned ON");
-  } else {
-    debugSerial.printf("Unknown message: %s\n", payload);
-  }
-}
-
-// Smartgrid callbacks
-void callbackSg(byte *payload, unsigned int length)
-{
-  payload[length] = '\0';
-
-  if (payload[0] == '0') {
-    // set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
-    digitalWrite(config->PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    digitalWrite(config->PIN_SG2, SG_RELAY_INACTIVE_STATE);
-    client.publish(publishSGTopic.c_str(), "0");
-    debugSerial.println("Set SG mode to 0 - Normal operation");
-  } else if (payload[0] == '1') {
-    // set SG 1 mode => SG1 = INACTIVE, SG2 = ACTIVE
-    digitalWrite(config->PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    digitalWrite(config->PIN_SG2, SG_RELAY_ACTIVE_STATE);
-    client.publish(publishSGTopic.c_str(), "1");
-    debugSerial.println("Set SG mode to 1 - Forced OFF");
-  } else if (payload[0] == '2') {
-    // set SG 2 mode => SG1 = ACTIVE, SG2 = INACTIVE
-    digitalWrite(config->PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    digitalWrite(config->PIN_SG2, SG_RELAY_INACTIVE_STATE);
-    client.publish(publishSGTopic.c_str(), "2");
-    debugSerial.println("Set SG mode to 2 - Recommended ON");
-  } else if (payload[0] == '3') {
-    // set SG 3 mode => SG1 = ACTIVE, SG2 = ACTIVE
-    digitalWrite(config->PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    digitalWrite(config->PIN_SG2, SG_RELAY_ACTIVE_STATE);
-    client.publish(publishSGTopic.c_str(), "3");
-    debugSerial.println("Set SG mode to 3 - Forced ON");
-  } else {
-    debugSerial.printf("Unknown message: %s\n", payload);
-  }
-}
-
-void callbackSafety(byte *payload, unsigned int length)
-{
-  payload[length] = '\0';
-
-  if (payload[0] == '0') {
-    // Set Safety relay to OFF
-    digitalWrite(config->PIN_SAFETY, LOW);
-    client.publish(publishSafetyTopic.c_str(), "0", true);
-  } else if (payload[0] == '1') {
-    // Set Safety relay to ON
-    digitalWrite(config->PIN_SAFETY, HIGH);
-    client.publish(publishSafetyTopic.c_str(), "1", true);
-  } else {
-    Serial.printf("Unknown message: %s\n", payload);
-  }
-}
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  char payloadText[length+1];
-  for (int i=0;i<length;i++) {
-    payloadText[i] = (char)payload[i];
-  }
-  payloadText[length] = '\0';
-
-  debugSerial.printf("Message arrived [%s] : %s\n", topic, payloadText);
-
   if (config->HEATING_ENABLED && subscribeHeatingTopic == topic) {
-    callbackHeating(payload, length);
+    return MQTTSubscribeTopic::Heating;
   } else if (config->COOLING_ENABLED && subscribeCoolingTopic == topic) {
-    callbackCooling(payload, length);
+    return MQTTSubscribeTopic::Cooling;
   } else if (subscribePowerTopic == topic) {
-    callbackPower(payload, length);
+    return MQTTSubscribeTopic::Power;
   } else if (config->SG_ENABLED && subscribeSGTopic == topic) {
-    callbackSg(payload, length);
+    return MQTTSubscribeTopic::SmartGrid;
   } else if (config->CAN_ENABLED && String(topic).startsWith(subscribeCANTopic)) {
-    if(callbackCAN != nullptr)
-      callbackCAN(String(topic).substring(subscribeCANTopic.length()), payloadText, length);
+    return MQTTSubscribeTopic::CAN;
   } else if (config->SAFETY_ENABLED && subscribeSafetyTopic == topic) {
-    callbackSafety(payload, length);
-  } else {
-    debugSerial.printf("Unknown topic: %s\n", topic);
+    return MQTTSubscribeTopic::Safety;
   }
+
+  return MQTTSubscribeTopic(0);
+}
+
+
+void mqttPublish(const MQTTPublishTopic topic, const char* payload)
+{
+  mqttPublish(topic, payload, nullptr, false);
+}
+
+
+
+void mqttPublish(const MQTTPublishTopic topic, const char* payload, const boolean retained)
+{
+  mqttPublish(topic, payload, nullptr, retained);
+}
+
+void mqttPublish(const MQTTPublishTopic topic, const char* payload, const char* label, const boolean retained)
+{
+  if (config->HEATING_ENABLED && MQTTPublishTopic::Heating == topic) {
+    client.publish(publishHeatingTopic.c_str(), payload, retained);
+  } else if (config->COOLING_ENABLED && MQTTPublishTopic::Cooling == topic) {
+    client.publish(publishCoolingTopic.c_str(), payload, retained);
+  } else if (MQTTPublishTopic::Power == topic) {
+    client.publish(publishPowerTopic.c_str(), payload, retained);
+  } else if (config->SG_ENABLED && MQTTPublishTopic::SmartGrid == topic) {
+    client.publish(publishSGTopic.c_str(), payload, retained);
+  } else if (config->SAFETY_ENABLED && MQTTPublishTopic::Safety == topic) {
+    client.publish(publishSafetyTopic.c_str(), payload, retained);
+  } else if (config->CAN_ENABLED && MQTTPublishTopic::CAN == topic) {
+    client.publish((publishCANTopic + label).c_str(), payload);
+  }
+}
+
+int mqttCANTopicLength()
+{
+  return canTopicLength;
+}
+
+bool mqttConnected()
+{
+  return client.connected();
+}
+
+void mqttLoop()
+{
+  client.loop();
+}
+
+void mqttSetCallback(MQTT_CALLBACK_SIGNATURE)
+{
+  client.setCallback(callback);
 }

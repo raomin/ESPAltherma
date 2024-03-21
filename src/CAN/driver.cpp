@@ -350,14 +350,7 @@ void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame
     return;
   }
 
-  if(config->MQTT_USE_ONETOPIC)
-  {
-    client.publish((config->MQTT_TOPIC_NAME + config->MQTT_ONETOPIC_NAME + CANConfig->CAN_MQTT_TOPIC_NAME + recievedCommand->label).c_str(), valueCodeKey.c_str());
-  }
-  else
-  {
-    client.publish((config->MQTT_TOPIC_NAME + CANConfig->CAN_MQTT_TOPIC_NAME + recievedCommand->label).c_str(), valueCodeKey.c_str());
-  }
+  mqttPublish(MQTTPublishTopic::CAN, valueCodeKey.c_str(), recievedCommand->label);
 
   debugSerial.printf("CAN Data recieved %s: %s\n", recievedCommand->label, valueCodeKey.c_str());
 }

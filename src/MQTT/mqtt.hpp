@@ -29,9 +29,26 @@
 extern char jsonbuff[MAX_MSG_SIZE];
 extern uint8_t SG_RELAY_ACTIVE_STATE;
 extern uint8_t SG_RELAY_INACTIVE_STATE;
-extern std::function<void(const String &label, const char *payload, const uint32_t length)> callbackCAN;
 
-extern PubSubClient client;
+enum class MQTTSubscribeTopic : uint8_t
+{
+  Heating = 1,
+  Cooling,
+  SmartGrid,
+  CAN,
+  Safety,
+  Power
+};
+
+enum class MQTTPublishTopic : uint8_t
+{
+  Heating = 1,
+  Cooling,
+  SmartGrid,
+  CAN,
+  Safety,
+  Power
+};
 
 void initMQTT();
 
@@ -41,13 +58,22 @@ void updateValues(ParameterDef *labelDef);
 
 void sendValues();
 
+void connectMqtt();
+
 void reconnectMqtt();
 
-void callbackHeating(byte *payload, unsigned int length);
+bool mqttConnected();
 
-//Smartgrid callbacks
-void callbackSg(byte *payload, unsigned int length);
+void mqttLoop();
 
-void callback(char *topic, byte *payload, unsigned int length);
+MQTTSubscribeTopic getTopic(const char* topic);
+
+void mqttPublish(const MQTTPublishTopic topic, const char* payload);
+void mqttPublish(const MQTTPublishTopic topic, const char* payload, const boolean retained);
+void mqttPublish(const MQTTPublishTopic topic, const char* payload, const char* label, const boolean retained);
+
+int mqttCANTopicLength();
+
+void mqttSetCallback(MQTT_CALLBACK_SIGNATURE);
 
 #endif

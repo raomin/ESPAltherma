@@ -12,7 +12,7 @@ void extraLoop()
 {
   while(webOTAIsBusy) {}
 
-  client.loop();
+  mqttLoop();
 
   if(config->CAN_ENABLED)
     canBus_loop();
@@ -174,7 +174,7 @@ void setup()
   attachInterrupt(config->PIN_ENABLE_CONFIG, restartInStandaloneWifi, FALLING);
 
   debugSerial.print("Connecting to MQTT server...\n");
-  reconnectMqtt();
+  connectMqtt();
   debugSerial.println("OK!");
 
   debugSerial.print("ESPAltherma started!\n");
@@ -216,7 +216,7 @@ void loop()
     webuiScanCANRegister();
     webuiScanWifi();
 
-    if (!client.connected()) { // (re)connect to MQTT if needed
+    if (!mqttConnected()) { // (re)connect to MQTT if needed
       reconnectMqtt();
     }
 

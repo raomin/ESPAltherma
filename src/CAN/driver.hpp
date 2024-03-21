@@ -3,6 +3,7 @@
 
 #include "command.hpp"
 #include "MQTT/mqtt.hpp"
+#include "MQTT/mqttCallbacks.hpp"
 
 #define CAN_MESSAGE_TIMEOUT 4 // define timout in seconds for message send to get answer
 #define NOT_IMPLEMENTED = 0
