@@ -126,7 +126,7 @@ void extraLoop()
     LCDTimeout = millis() + 30000;
     display_sleeping = false;
 
-  }else if (LCDTimeout < millis() & !display_sleeping){//Turn screen off.
+  }else if (LCDTimeout < millis() && !display_sleeping){//Turn screen off.
     M5.Lcd.sleep();
     M5.Lcd.setBrightness(0);
     display_sleeping = true;
