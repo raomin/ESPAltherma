@@ -175,6 +175,7 @@ void setup()
 
   debugSerial.print("Connecting to MQTT server...\n");
   connectMqtt();
+  mqttInitCallbacks();
   debugSerial.println("OK!");
 
   debugSerial.print("ESPAltherma started!\n");

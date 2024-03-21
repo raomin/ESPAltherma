@@ -22,6 +22,9 @@ String publishLWTTopic = "";
 int canTopicLength;
 char jsonbuff[MAX_MSG_SIZE];
 bool blockReconnects;
+uint8_t reconnectionAtempts;
+bool reconnectionInProgress = false;
+unsigned long reconnectStartMillis;
 uint8_t SG_RELAY_ACTIVE_STATE;
 uint8_t SG_RELAY_INACTIVE_STATE;
 
@@ -145,67 +148,70 @@ void reconnectMqtt()
     return;
   }
 
-  // loop until we're reconnected
-  int i = 0;
-  while (!client.connected()) {
-    debugSerial.print("Attempting MQTT connection with ID: ");
-
-    String id = "ESPAltherma-";
-    id += WiFi.macAddress().substring(6);
-
-    debugSerial.println(id);
-
-    if (client.connect(id.c_str(), config->MQTT_USERNAME.c_str(), config->MQTT_PASSWORD.c_str(), publishLWTTopic.c_str(), 0, true, "Offline")) {
-      debugSerial.println("connected!");
-
-      // TODO update homeassistant config to publish correct informations
-      client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
-      client.publish(publishLWTTopic.c_str(), "Online", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Heating\",\"cmd_t\":\"~/SET/HEATING\",\"stat_t\":\"~/STATE/HEATING\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Cooling\",\"cmd_t\":\"~/SET/COOLING\",\"stat_t\":\"~/STATE/COOLING\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma SmartGrid\",\"cmd_t\":\"~/SET/SG\",\"stat_t\":\"~/STATE/SG\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-
-      // subscribe
-      client.subscribe(subscribeHeatingTopic.c_str());
-      client.subscribe(subscribeCoolingTopic.c_str());
-      client.subscribe(subscribePowerTopic.c_str());
-
-      debugSerial.println("Subscribed to following topics:");
-      debugSerial.println(subscribeHeatingTopic);
-      debugSerial.println(subscribeCoolingTopic);
-      debugSerial.println(subscribePowerTopic);
-
-      if(config->SG_ENABLED) {
-        // Smart Grid
-        client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
-        client.subscribe(subscribeSGTopic.c_str());
-
-        debugSerial.println(subscribeSGTopic);
-      } else {
-        // Publish empty retained message so discovered entities are removed from HA
-        client.publish("homeassistant/select/espAltherma/sg/config", "", true);
-      }
-
-      if(config->CAN_ENABLED) {
-        client.subscribe((subscribeCANTopic + "#").c_str());
-        debugSerial.println(subscribeCANTopic);
-      }
-
-      if(config->SAFETY_ENABLED) {
-        client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SET/SAFETY\",\"stat_t\":\"~/STATE/SAFETY\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
-        client.subscribe(subscribeSafetyTopic.c_str());
-        debugSerial.println(subscribeSafetyTopic);
-      }
-    } else {
-      debugSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
-      unsigned long start = millis();
-      while (millis() < start + 5000) { }
-
-      if (i++ == 100) {
+  if(reconnectionInProgress) {
+    if(millis() - reconnectStartMillis >= 5000) {
+      reconnectionInProgress = false;
+      if (reconnectionAtempts++ == 100) {
         debugSerial.printf("Tried for 500 sec, rebooting now.");
         restart_board();
       }
     }
+    return;
+  }
+
+  // debug wifi connection info
+  String id = "Attempting MQTT connection with ID: ESPAltherma-";
+  id += WiFi.macAddress().substring(6);
+  debugSerial.println(id);
+
+  // try to connect
+  if (client.connect(id.c_str(), config->MQTT_USERNAME.c_str(), config->MQTT_PASSWORD.c_str(), publishLWTTopic.c_str(), 0, true, "Offline")) {
+    reconnectionInProgress = false;
+    reconnectionAtempts = 0;
+    debugSerial.println("connected!");
+
+    // TODO update homeassistant config to publish correct informations
+    client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/STATESENS\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
+    client.publish(publishLWTTopic.c_str(), "Online", true);
+    client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Heating\",\"cmd_t\":\"~/SET/HEATING\",\"stat_t\":\"~/STATE/HEATING\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+    client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma Cooling\",\"cmd_t\":\"~/SET/COOLING\",\"stat_t\":\"~/STATE/COOLING\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+    client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma SmartGrid\",\"cmd_t\":\"~/SET/SG\",\"stat_t\":\"~/STATE/SG\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+
+    // subscribe
+    client.subscribe(subscribeHeatingTopic.c_str());
+    client.subscribe(subscribeCoolingTopic.c_str());
+    client.subscribe(subscribePowerTopic.c_str());
+
+    debugSerial.println("Subscribed to following topics:");
+    debugSerial.println(subscribeHeatingTopic);
+    debugSerial.println(subscribeCoolingTopic);
+    debugSerial.println(subscribePowerTopic);
+
+    if(config->SG_ENABLED) {
+      // Smart Grid
+      client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
+      client.subscribe(subscribeSGTopic.c_str());
+
+      debugSerial.println(subscribeSGTopic);
+    } else {
+      // Publish empty retained message so discovered entities are removed from HA
+      client.publish("homeassistant/select/espAltherma/sg/config", "", true);
+    }
+
+    if(config->CAN_ENABLED) {
+      client.subscribe((subscribeCANTopic + "#").c_str());
+      debugSerial.println(subscribeCANTopic);
+    }
+
+    if(config->SAFETY_ENABLED) {
+      client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SET/SAFETY\",\"stat_t\":\"~/STATE/SAFETY\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
+      client.subscribe(subscribeSafetyTopic.c_str());
+      debugSerial.println(subscribeSafetyTopic);
+    }
+  } else {
+    debugSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
+    reconnectionInProgress = true;
+    reconnectStartMillis = millis();
   }
 }
 
@@ -228,13 +234,10 @@ MQTTSubscribeTopic getTopic(const char* topic)
   return MQTTSubscribeTopic(0);
 }
 
-
 void mqttPublish(const MQTTPublishTopic topic, const char* payload)
 {
   mqttPublish(topic, payload, nullptr, false);
 }
-
-
 
 void mqttPublish(const MQTTPublishTopic topic, const char* payload, const boolean retained)
 {
