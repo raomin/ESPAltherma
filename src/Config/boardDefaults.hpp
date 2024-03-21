@@ -3,7 +3,7 @@
 
 const char* const JSON_BOARD_DEFAULTS =
 
-#if defined(ARDUINO_M5Stick_C)
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
     "\"Default\": {"
       "\"pin_rx\": 36,"
       "\"pin_tx\": 26,"

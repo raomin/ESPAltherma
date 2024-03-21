@@ -17,7 +17,7 @@ DebugSerial::DebugSerial()
 
 size_t DebugSerial::write(const uint8_t *buffer, size_t size)
 {
-#ifdef ARDUINO_M5Stick_C
+#ifdef ARDUINO_M5Stick_C || defined(ARDUINO_M5Stack_Tough)
     if (M5.Lcd.getCursorY()+13>M5.Lcd.height()) {
         M5.Lcd.fillScreen(TFT_BLACK);
         M5.Lcd.setCursor(0,0);

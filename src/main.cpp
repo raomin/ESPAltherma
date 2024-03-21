@@ -3,8 +3,9 @@
 bool doRestartInStandaloneWifi = false;
 
 uint16_t loopcount = 0;
+bool display_sleeping;  
 
-#ifdef ARDUINO_M5Stick_C
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
 long LCDTimeout = 40000; // Keep screen ON for 40s then turn off. ButtonA will turn it On again.
 #endif
 
@@ -36,6 +37,19 @@ void extraLoop()
     M5.Display.sleep();
   }
   M5.update();
+#elif ARDUINO_M5Stack_Tough
+  if (M5.Touch.changed) { // Turn back ON screen
+    M5.Lcd.setBrightness(12);
+    M5.Lcd.wakeup();
+    LCDTimeout = millis() + 30000;
+    display_sleeping = false;
+
+  } else if (!display_sleeping && LCDTimeout < millis()) { // Turn screen off.
+    M5.Lcd.sleep();
+    M5.Lcd.setBrightness(0);
+    display_sleeping = true;
+  }
+  M5.update();
 #endif
 
   if(!doRestartInStandaloneWifi)
@@ -49,7 +63,7 @@ void extraLoop()
 
 void setupScreen()
 {
-#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C)
+#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
   M5.begin();
   M5.Axp.EnableCoulombcounter();
   M5.Lcd.setRotation(1);
