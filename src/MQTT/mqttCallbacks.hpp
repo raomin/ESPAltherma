@@ -1,5 +1,5 @@
-#ifndef MQTT_CALLBACKS
-#define MQTT_CALLBACKS
+#ifndef MQTT_CALLBACKS_H
+#define MQTT_CALLBACKS_H
 
 #include "mqtt.hpp"
 #include "restart.hpp"
