@@ -3,10 +3,11 @@
 bool doRestartInStandaloneWifi = false;
 
 uint16_t loopcount = 0;
-bool display_sleeping;  
 
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
-long LCDTimeout = 40000; // Keep screen ON for 40s then turn off. ButtonA will turn it On again.
+unsigned long LCDTimeout;
+bool LCDTimeoutRunning = true;
+#define LCD_TIMEOUT_CHECK (millis() - LCDTimeout) >= 30000
 #endif
 
 void extraLoop()
@@ -23,31 +24,34 @@ void extraLoop()
 
 #if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C)
   if (M5.BtnA.wasPressed()) { // turn back ON screen
-    M5.Axp.ScreenBreath(12);
-    LCDTimeout = millis() + 30000;
-  } else if (LCDTimeout < millis()) { // turn screen off.
-    M5.Axp.ScreenBreath(0);
+    LCDTimeoutRunning = true;
+    M5.Axp.ScreenSwitch(true);
+    LCDTimeout = millis();
+  } else if (LCDTimeoutRunning && LCD_TIMEOUT_CHECK) { // turn screen off.
+    M5.Axp.ScreenSwitch(false);
+    LCDTimeoutRunning = false;
   }
   M5.update();
 #elif defined(ARDUINO_M5Stick_C_Plus2)
   if (M5.BtnA.wasPressed()) { // turn back ON screen
+    LCDTimeoutRunning = true;
     M5.Display.wakeup();
-    LCDTimeout = millis() + 30000;
-  } else if (LCDTimeout < millis()) { // turn screen off.
+    LCDTimeout = millis();
+  } else if (LCDTimeoutRunning && LCD_TIMEOUT_CHECK) { // turn screen off.
     M5.Display.sleep();
+    LCDTimeoutRunning = false;
   }
   M5.update();
 #elif ARDUINO_M5Stack_Tough
   if (M5.Touch.changed) { // Turn back ON screen
-    M5.Lcd.setBrightness(12);
+    M5.Lcd.setBrightness(127);
     M5.Lcd.wakeup();
-    LCDTimeout = millis() + 30000;
-    display_sleeping = false;
-
-  } else if (!display_sleeping && LCDTimeout < millis()) { // Turn screen off.
+    LCDTimeout = millis();
+    LCDTimeoutRunning = true;
+  } else if (LCDTimeoutRunning && LCD_TIMEOUT_CHECK) { // Turn screen off.
     M5.Lcd.sleep();
     M5.Lcd.setBrightness(0);
-    display_sleeping = true;
+    LCDTimeoutRunning = false;
   }
   M5.update();
 #endif
@@ -67,7 +71,7 @@ void setupScreen()
   M5.begin();
   M5.Axp.EnableCoulombcounter();
   M5.Lcd.setRotation(1);
-  M5.Axp.ScreenBreath(127);
+  M5.Axp.ScreenSwitch(true);
   M5.Lcd.fillScreen(TFT_WHITE);
   M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
   M5.Lcd.setTextDatum(MC_DATUM);
