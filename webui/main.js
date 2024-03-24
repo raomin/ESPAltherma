@@ -198,6 +198,7 @@ async function loadConfig()
 
         document.getElementById('mqtt_port').value = data['MQTT_PORT'];
         document.getElementById('mqtt_disable_log_messages').checked = data['MQTT_DISABLE_LOG_MESSAGES'];
+        document.getElementById('mqtt_encrypted').checked = data['MQTT_ENCRYPTED'];
         document.getElementById('pin_enable_config').value = data['PIN_ENABLE_CONFIG'];
 
         document.getElementById('x10a_enabled').checked = data['X10A_ENABLED'];

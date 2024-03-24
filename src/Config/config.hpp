@@ -31,6 +31,7 @@ struct Config
     String MQTT_ONETOPIC_NAME;
     uint16_t MQTT_PORT;
     bool MQTT_DISABLE_LOG_MESSAGES;
+    bool MQTT_ENCRYPTED;
     uint8_t PIN_ENABLE_CONFIG;
     bool X10A_ENABLED;
     X10A_Config* X10A_CONFIG;

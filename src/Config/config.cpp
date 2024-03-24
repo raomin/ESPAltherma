@@ -64,6 +64,7 @@ void readConfig()
 
     config->MQTT_PORT = configDoc["MQTT_PORT"].as<uint16_t>();
     config->MQTT_DISABLE_LOG_MESSAGES = configDoc["MQTT_DISABLE_LOG_MESSAGES"].as<const bool>();
+    config->MQTT_ENCRYPTED = configDoc["MQTT_ENCRYPTED"].as<const bool>();
     config->PIN_ENABLE_CONFIG = configDoc["PIN_ENABLE_CONFIG"].as<uint8_t>();
     config->HEATING_ENABLED = configDoc["HEATING_ENABLED"].as<const bool>();
     config->PIN_HEATING = configDoc["PIN_HEATING"].as<uint8_t>();
@@ -219,6 +220,7 @@ void saveConfig()
 
     configDoc["MQTT_PORT"] = config->MQTT_PORT;
     configDoc["MQTT_DISABLE_LOG_MESSAGES"] = config->MQTT_DISABLE_LOG_MESSAGES;
+    configDoc["MQTT_ENCRYPTED"] = config->MQTT_ENCRYPTED;
     configDoc["PIN_ENABLE_CONFIG"] = config->PIN_ENABLE_CONFIG;
     configDoc["HEATING_ENABLED"] = config->HEATING_ENABLED;
     configDoc["PIN_HEATING"] = config->PIN_HEATING;
