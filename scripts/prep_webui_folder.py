@@ -52,33 +52,28 @@ for file in files_to_gzip:
             parsedJSFile = step.Template(js_file.read()).expand(namespace)
 
             if minify:
-                minified = jsmin(parsedJSFile)
-            else:
-                minified = parsedJSFile
+                parsedJSFile = jsmin(parsedJSFile)
 
         with open(tmpFile, 'w') as js_file:
-            js_file.write(minified)
+            js_file.write(parsedJSFile)
     elif extension == "html":
         with open(tmpFile,'r') as fileHandler:
-
             parsedHTMLFile = step.Template(fileHandler.read()).expand(namespace)
 
             if minify:
-                htmlContent = htmlmin.minify(parsedHTMLFile)
-            else:
-                htmlContent = parsedHTMLFile
+                parsedHTMLFile = htmlmin.minify(parsedHTMLFile)
 
         with open(tmpFile,'w') as fileHandler:
-            fileHandler.write(htmlContent)
+            fileHandler.write(parsedHTMLFile)
     elif extension == "css":
         with open(tmpFile,'r') as fileHandler:
+            parsedCSSLFile = step.Template(fileHandler.read()).expand(namespace)
+
             if minify:
-                minified = rcssmin.cssmin(fileHandler.read())
-            else:
-                minified = fileHandler.read()
+                parsedCSSLFile = rcssmin.cssmin(parsedCSSLFile)
 
         with open(tmpFile,'w') as fileHandler:
-            fileHandler.write(minified)
+            fileHandler.write(parsedCSSLFile)
 
     print('  GZipping file: ' + file)
     with open(tmpFile, "rb") as src, gzip.open(gzFile, 'wb') as dst:
