@@ -25,10 +25,10 @@ void extraLoop()
 #if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C)
   if (M5.BtnA.wasPressed()) { // turn back ON screen
     LCDTimeoutRunning = true;
-    M5.Axp.ScreenSwitch(true);
+    M5.Axp.ScreenBreath(12);
     LCDTimeout = millis();
   } else if (LCDTimeoutRunning && LCD_TIMEOUT_CHECK) { // turn screen off.
-    M5.Axp.ScreenSwitch(false);
+    M5.Axp.ScreenBreath(0);
     LCDTimeoutRunning = false;
   }
   M5.update();
@@ -71,7 +71,7 @@ void setupScreen()
   M5.begin();
   M5.Axp.EnableCoulombcounter();
   M5.Lcd.setRotation(1);
-  M5.Axp.ScreenSwitch(true);
+  M5.Axp.ScreenBreath(12);
   M5.Lcd.fillScreen(TFT_WHITE);
   M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
   M5.Lcd.setTextDatum(MC_DATUM);

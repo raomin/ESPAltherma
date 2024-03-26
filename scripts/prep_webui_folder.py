@@ -4,17 +4,25 @@ try:
     import rcssmin
     import htmlmin
     from jsmin import jsmin
+    import step
 except ImportError:
-    env.Execute("$PYTHONEXE -m pip install rcssmin htmlmin jsmin")
+    env.Execute("$PYTHONEXE -m pip install rcssmin htmlmin jsmin step-template")
 finally:
     import rcssmin
     import htmlmin
     from jsmin import jsmin
+    import step
 
 import os
 import shutil
 import glob
 import gzip
+
+cppDefines = env.ParseFlags(env['BUILD_FLAGS']).get('CPPDEFINES')
+namespace = {'platform': env['PIOPLATFORM']}
+
+for idx, define,  in enumerate( cppDefines):
+    namespace[define] = idx
 
 filetypes_to_gzip = ['js', 'html', 'css']
 
@@ -41,19 +49,24 @@ for file in files_to_gzip:
 
     if extension == "js":
         with open(tmpFile, 'r') as js_file:
+            parsedJSFile = step.Template(js_file.read()).expand(namespace)
+
             if minify:
-                minified = jsmin(js_file.read())
+                minified = jsmin(parsedJSFile)
             else:
-                minified = js_file.read()
+                minified = parsedJSFile
 
         with open(tmpFile, 'w') as js_file:
             js_file.write(minified)
     elif extension == "html":
         with open(tmpFile,'r') as fileHandler:
+
+            parsedHTMLFile = step.Template(fileHandler.read()).expand(namespace)
+
             if minify:
-                htmlContent = htmlmin.minify(fileHandler.read())
+                htmlContent = htmlmin.minify(parsedHTMLFile)
             else:
-                htmlContent = fileHandler.read()
+                htmlContent = parsedHTMLFile
 
         with open(tmpFile,'w') as fileHandler:
             fileHandler.write(htmlContent)
