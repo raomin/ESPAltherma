@@ -1,6 +1,8 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include "restart.h"
+#include "https.h"
+#include <string.h>
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
@@ -46,6 +48,10 @@ void sendValues()
   strcat(jsonbuff,"]");
 #endif
   client.publish(MQTT_attr, jsonbuff);
+  //M5.Lcd.println(jsonbuff); //Optional - prints the data to the screen if required
+  #ifdef HTTPS
+    posthttps(jsonbuff);
+  #endif
 #ifdef JSONTABLE
   strcpy(jsonbuff, "[{\0");
 #else
