@@ -72,13 +72,13 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
 {
   String response = "{";
   response.concat(JSON_BOARD_DEFAULTS);
+  response += ",\"Version\": \"";
 
+  #ifdef ARDUINO_ARCH_ESP32
   esp_app_desc_t app_info;
   esp_ota_get_partition_description(esp_ota_get_running_partition(), &app_info);
 
   SemanticVersion version(app_info.version);
-
-  response += ",\"Version\": \"";
 
   char versionText[48] = "";
 
@@ -103,6 +103,8 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
   }
 
   response.concat(versionText);
+  #endif
+
   response += "\"}";
 
   request->send(200, "application/json", response);
@@ -862,9 +864,13 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
   }
 
   if (final)
-  { // if the final flag is set then this is the last frame of data
+  { 
+    #if ARDUINO_ARCH_ESP32
+    // if the final flag is set then this is the last frame of data
     const esp_partition_t* updatePartition = esp_ota_get_next_update_partition(NULL);
     const esp_partition_t* runningPartition = esp_ota_get_running_partition();
+    #endif
+
     debugSerial.print("\n--> Update finished!\n");
     webOTAIsBusy = false;
     if (!Update.end(true))
@@ -873,6 +879,7 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
       return request->send(400, "text/plain", "Could not end OTA");
     }
 
+    #if ARDUINO_ARCH_ESP32
     esp_app_desc_t appRunning, appUpdate;
     esp_ota_get_partition_description(runningPartition, &appRunning);
     esp_ota_get_partition_description(updatePartition, &appUpdate);
@@ -902,6 +909,9 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
       // --> accept update
       updateVersionValid = true;
     }
+    #else
+    updateVersionValid = true;
+    #endif
   }
 }
 
@@ -994,16 +1004,35 @@ void onWebSerialCallback(const uint8_t *data, const size_t len)
 
   if(inputMessage == "freeMemory")
   {
+    #ifdef ARDUINO_ARCH_ESP8266
+    FSInfo fsInfo;
+    LittleFS.info(fsInfo);
+
+    uint32_t hfree;
+    uint32_t hmax;
+    uint8_t hfrag;
+    ESP.getHeapStats(&hfree, &hmax, &hfrag);
+    WebSerial.printf("Free memory: %d bytes\n", hfree);
+    WebSerial.printf("Free memory Heap: %d bytes\n", ESP.getFreeHeap());
+    WebSerial.printf("Max Heap: %d bytes\n", hmax);
+    WebSerial.printf("Fragmentation: %d\n", hfrag);
+    WebSerial.printf("LittleFS space used: %d/%d bytes\n", fsInfo.usedBytes, fsInfo.totalBytes);
+    #else
     WebSerial.printf("Heap size: %d bytes\n", ESP.getHeapSize());
     WebSerial.printf("Free memory: %d bytes\n", esp_get_free_heap_size());
     WebSerial.printf("Free memory Heap: %d bytes\n", ESP.getFreeHeap());
     WebSerial.printf("Lowest avaiable Memory: %d bytes\n", heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT));
     WebSerial.printf("LittleFS space used: %d/%d bytes\n", LittleFS.usedBytes(), LittleFS.totalBytes());
+    #endif
   }
   else if(inputMessage == "getFragmentation")
   {
     WebSerial.print(F("Fragmentation is: "));
+    #ifdef ARDUINO_ARCH_ESP8266
+    WebSerial.println(ESP.getHeapFragmentation());
+    #else
     WebSerial.println(100 - heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) * 100.0 / heap_caps_get_free_size(MALLOC_CAP_8BIT));
+    #endif
   }
 }
 

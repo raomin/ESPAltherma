@@ -119,12 +119,20 @@ void setup()
       return;
   }
 
+  #ifdef ARDUINO_ARCH_ESP8266
+  debugSerial.printf("ESP8266 Chip ID:%i\n", ESP.getFlashChipId());
+  debugSerial.printf("ESP8266 Real Size:%i\n", ESP.getFlashChipRealSize());
+  debugSerial.printf("ESP8266 Size: %i\n", ESP.getFlashChipSize());
+  debugSerial.printf("ESP8266 Speed%i\n", ESP.getFlashChipSpeed());
+  debugSerial.printf("ESP8266 Mode%i\n", ESP.getFlashChipMode());
+  #else
   esp_chip_info_t chip;
   esp_chip_info(&chip);
 
   debugSerial.printf("ESP32 Model: %i\n", chip.model);
   debugSerial.printf("ESP32 Revision: %i\n", chip.revision);
   debugSerial.printf("ESP32 Cores: %i\n", chip.cores);
+  #endif
 
   initPersistence();
 
