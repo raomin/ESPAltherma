@@ -12,7 +12,7 @@ void Converter::convert(ParameterDef *def, byte *data)
     double dblData = NAN;
 
     debugSerial.print("Converting from:");
-    for (size_t i = 0; i < num; i++) {
+    for (uint8_t i = 0; i < num; i++) {
         debugSerial.printf(" 0x%02x ", data[i]);
     }
 

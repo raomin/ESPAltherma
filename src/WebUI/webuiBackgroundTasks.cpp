@@ -109,7 +109,11 @@ void webuiScanWifi()
     JsonObject networkDetails = networksDoc.createNestedObject();
     networkDetails["SSID"] = lastWifiScanResults[i]->SSID;
     networkDetails["RSSI"] = lastWifiScanResults[i]->RSSI;
+    #ifdef ARDUINO_ARCH_ESP8266
+    networkDetails["EncryptionType"] = (lastWifiScanResults[i]->EncryptionType == ENC_TYPE_NONE) ? "":"*";
+    #else
     networkDetails["EncryptionType"] = (lastWifiScanResults[i]->EncryptionType == WIFI_AUTH_OPEN) ? "":"*";
+    #endif
   }
 
   scan_wifi_delete_result();

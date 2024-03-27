@@ -15,7 +15,12 @@
 #include "comm.hpp"
 #include "main.hpp"
 
+#ifdef ARDUINO_ARCH_ESP8266
+extern SoftwareSerial SerialX10A;
+#else
 extern HardwareSerial SerialX10A;
+#endif
+
 extern size_t registryBufferSize;
 extern RegistryBuffer *registryBuffers;
 
