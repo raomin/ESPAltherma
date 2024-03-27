@@ -1,5 +1,7 @@
 #include "sja1000.hpp"
 
+#ifndef ARDUINO_ARCH_ESP8266
+
 DriverSJA1000::DriverSJA1000(const CAN_Config *CANConfig) : CANDriver(CANConfig)
 {
 }
@@ -205,3 +207,5 @@ DriverSJA1000::~DriverSJA1000()
 {
     stopInterface();
 }
+
+#endif

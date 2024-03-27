@@ -30,13 +30,13 @@ size_t DebugSerial::write(const uint8_t *buffer, size_t size)
             webSerialBuffer = new String();
         }
 
-        webSerialBuffer->concat(buffer, size);
+        webSerialBuffer->concat(reinterpret_cast<const char*>(buffer), size);
 
         if(webSerialBuffer->length() > WEB_SERIAL_BUFFER_MAX_SIZE) {
             *webSerialBuffer = webSerialBuffer->substring(webSerialBuffer->length() - WEB_SERIAL_BUFFER_MAX_SIZE);
         }
     } else if(webSerialConnection && webSerialBuffer != nullptr) {
-        webSerialBuffer->concat(buffer, size);
+        webSerialBuffer->concat(reinterpret_cast<const char*>(buffer), size);
         WebSerial.print(*webSerialBuffer);
         *webSerialBuffer = "";
         delete webSerialBuffer;

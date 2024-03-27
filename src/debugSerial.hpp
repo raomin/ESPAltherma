@@ -2,7 +2,6 @@
 #define MQTT_SERIAL_H
 
 #include <PubSubClient.h>
-#include <WiFi.h>
 #include <WebSerialLite.h>
 #include <Stream.h>
 #include "arduinoC.hpp"

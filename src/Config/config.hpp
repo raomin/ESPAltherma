@@ -7,6 +7,12 @@
 #include "CAN/config.hpp"
 #include "X10A/config.hpp"
 
+#ifdef ARDUINO_ARCH_ESP8266
+#define FILE_READ       "r"
+#define FILE_WRITE      "w"
+#define FILE_APPEND     "a"
+#endif
+
 #define CONFIG_FILE "/config.json"
 #define MODELS_CONFIG_SIZE 1024*10
 

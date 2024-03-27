@@ -1,6 +1,7 @@
 #ifndef DRIVER_SJA1000_H
 #define DRIVER_SJA1000_H
 
+#ifndef ARDUINO_ARCH_ESP8266
 #include <driver/twai.h>
 #include "CAN/driver.hpp"
 #include "Config/config.hpp"
@@ -26,5 +27,7 @@ public:
   void handleLoop();
   ~DriverSJA1000();
 };
+
+#endif
 
 #endif

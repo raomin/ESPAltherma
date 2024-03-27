@@ -303,10 +303,14 @@ bool DriverMCP2515::initInterface()
   }
 
   /* Setup SPI access */
+  #ifdef ARDUINO_ARCH_ESP8266
+  SPI.begin();
+  #else
   SPI.begin(CANConfig->CAN_SPI.PIN_SCK,
-            CANConfig->CAN_SPI.PIN_MISO,
-            CANConfig->CAN_SPI.PIN_MOSI,
-            CANConfig->CAN_SPI.PIN_CS);
+        CANConfig->CAN_SPI.PIN_MISO,
+        CANConfig->CAN_SPI.PIN_MOSI,
+        CANConfig->CAN_SPI.PIN_CS);
+  #endif
 
   pinMode(CANConfig->CAN_SPI.PIN_CS, OUTPUT);
   digitalWrite(CANConfig->CAN_SPI.PIN_CS, HIGH);

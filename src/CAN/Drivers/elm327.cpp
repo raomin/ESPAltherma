@@ -142,7 +142,12 @@ bool DriverELM327::initInterface()
         return false;
         #endif
     } else if(CANConfig->CAN_BUS == CAN_ICBus::UART) {
+        #ifdef ARDUINO_ARCH_ESP8266
+        Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, SerialMode::SERIAL_FULL, CANConfig->CAN_UART.PIN_RX, CANConfig->CAN_UART.PIN_TX);
+        #else
         Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, CANConfig->CAN_UART.PIN_RX, CANConfig->CAN_UART.PIN_TX);
+        #endif
+
         delay(100);
 
         if(!Serial1) {

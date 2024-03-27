@@ -2,11 +2,17 @@
 #define WEBUI_H
 
 #include <LittleFS.h>
+
+#ifdef ARDUINO_ARCH_ESP8266
+#include <Updater.h>
+#else
 #include <Update.h>
-#include <ESPAsyncWebServer.h>
-#include <WebSerialLite.h>
 #include <esp_ota_ops.h>
 #include <esp_task_wdt.h>
+#endif
+
+#include <ESPAsyncWebServer.h>
+#include <WebSerialLite.h>
 #include <ArduinoJson.h>
 #include "X10A/comm.hpp"
 #include "Config/config.hpp"
