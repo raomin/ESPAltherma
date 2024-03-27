@@ -27,6 +27,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
     <li>Needs just an ESP32, no need for extra hardware. ESP8266 is also supported.</li>
     <li>Queries the Altherma for selected values at defined interval.</li>
     <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
+    <li>Converts and formalizes all values in a JSON message sent over HTTPS.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
     <li>Supports update OverTheAir</li>
     <li>Log messages in Serial + MQTT + Screen (m5StickC)</li>
