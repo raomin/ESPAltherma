@@ -1,8 +1,8 @@
 #include "config.hpp"
 
-Config* config = nullptr;
+ESPAlthermaConfig* config = nullptr;
 
-Config::~Config()
+ESPAlthermaConfig::~ESPAlthermaConfig()
 {
     if(X10A_ENABLED) {
         delete X10A_CONFIG;
@@ -18,7 +18,7 @@ void readConfig()
     if(config != nullptr)
         delete config;
 
-    config = new Config();
+    config = new ESPAlthermaConfig();
 
     if(!LittleFS.exists(CONFIG_FILE))
         return;

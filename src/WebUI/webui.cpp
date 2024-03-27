@@ -17,11 +17,19 @@ bool formatDefaultFS()
     return false;
 
   LittleFS.begin();
+  #ifdef ARDUINO_ARCH_ESP8266
+  File file = LittleFS.open(MODELS_FILE, FILE_WRITE);
+  #else
   File file = LittleFS.open(MODELS_FILE, FILE_WRITE, true);
+  #endif
   file.print("[]");
   file.close();
 
+  #ifdef ARDUINO_ARCH_ESP8266
+  file = LittleFS.open(CAN_COMMANDS_FILE, FILE_WRITE);
+  #else
   file = LittleFS.open(CAN_COMMANDS_FILE, FILE_WRITE, true);
+  #endif
   file.print("[]");
   file.close();
 
@@ -712,7 +720,7 @@ void onSaveConfig(AsyncWebServerRequest *request)
   if(config)
     delete config;
 
-  config = new Config();
+  config = new ESPAlthermaConfig();
   config->configStored = true;
   config->STANDALONE_WIFI = request->hasParam("standalone_wifi", true);
 

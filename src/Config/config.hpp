@@ -16,7 +16,7 @@
 #define CONFIG_FILE "/config.json"
 #define MODELS_CONFIG_SIZE 1024*10
 
-struct Config
+struct ESPAlthermaConfig
 {
     bool configStored;
     bool STANDALONE_WIFI;
@@ -54,10 +54,10 @@ struct Config
     uint8_t PIN_SAFETY;
     CAN_Config* CAN_CONFIG;
 
-    ~Config();
+    ~ESPAlthermaConfig();
 };
 
-extern Config* config;
+extern ESPAlthermaConfig* config;
 
 void readConfig();
 

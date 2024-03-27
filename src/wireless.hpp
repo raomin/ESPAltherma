@@ -17,7 +17,11 @@ struct WifiDetails
 {
   const String SSID;
   const int32_t RSSI;
+  #ifdef ARDUINO_ARCH_ESP8266
+  const uint8_t EncryptionType;
+  #else
   const wifi_auth_mode_t EncryptionType;
+  #endif
 };
 
 extern WifiDetails **lastWifiScanResults;
