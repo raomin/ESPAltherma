@@ -13,15 +13,18 @@
 #include "Config/config.hpp"
 #include "restart.hpp"
 
+
+#ifdef ARDUINO_ARCH_ESP8266
+#define ENCRYPTION_TYPE uint8_t
+#else
+#define ENCRYPTION_TYPE wifi_auth_mode_t
+#endif
+
 struct WifiDetails
 {
   const String SSID;
   const int32_t RSSI;
-  #ifdef ARDUINO_ARCH_ESP8266
-  const uint8_t EncryptionType;
-  #else
-  const wifi_auth_mode_t EncryptionType;
-  #endif
+  const ENCRYPTION_TYPE EncryptionType;
 };
 
 extern WifiDetails **lastWifiScanResults;

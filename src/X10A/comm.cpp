@@ -1,11 +1,5 @@
 #include "comm.hpp"
 
-#ifdef ARDUINO_ARCH_ESP8266
-#define SERIAL_FLUSH_TX_ONLY // empty, as SoftwareSerial.flush() takes no parameter
-#else
-#define SERIAL_FLUSH_TX_ONLY false
-#endif
-
 byte getCRC(byte *src, int len)
 {
   byte b = 0;

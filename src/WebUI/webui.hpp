@@ -2,15 +2,6 @@
 #define WEBUI_H
 
 #include <LittleFS.h>
-
-#ifdef ARDUINO_ARCH_ESP8266
-#include <Updater.h>
-#else
-#include <Update.h>
-#include <esp_ota_ops.h>
-#include <esp_task_wdt.h>
-#endif
-
 #include <ESPAsyncWebServer.h>
 #include <WebSerialLite.h>
 #include <ArduinoJson.h>
@@ -22,6 +13,20 @@
 #include "webuiBackgroundTasks.hpp"
 #include "semanticVersion.hpp"
 #include "Config/boardDefaults.hpp"
+
+#ifdef ARDUINO_ARCH_ESP8266
+#include <Updater.h>
+
+#define LittleFS_open(file, mode) LittleFS.open(file, mode)
+#define HEAP_FRAGMENTATION() ESP.getHeapFragmentation()
+#else
+#include <Update.h>
+#include <esp_ota_ops.h>
+#include <esp_task_wdt.h>
+
+#define LittleFS_open(file, mode) LittleFS.open(file, mode, true)
+#define HEAP_FRAGMENTATION() (100 - heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) * 100.0 / heap_caps_get_free_size(MALLOC_CAP_8BIT))
+#endif
 
 #if not __has_include("../webui/webfileHeaders.h")
 #define index_html_gz ""

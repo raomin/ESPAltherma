@@ -8,6 +8,12 @@
 #include "MQTT/mqtt.hpp"
 #include "Config/config.hpp"
 
+#ifdef ARDUINO_ARCH_ESP8266
+#define SPI_begin(pin_sck, pin_miso, pin_mosi, pin_cs) SPI.begin()
+#else
+#define SPI_begin(pin_sck, pin_miso, pin_mosi, pin_cs) SPI.begin(pin_sck, pin_miso, pin_mosi, pin_cs)
+#endif
+
 using namespace MCP2515;
 
 class DriverMCP2515 : public CANDriver

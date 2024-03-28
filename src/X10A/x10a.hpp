@@ -17,8 +17,12 @@
 
 #ifdef ARDUINO_ARCH_ESP8266
 extern SoftwareSerial SerialX10A;
+#define SERIAL_CONFIG (SWSERIAL_8E1)
+#define DEFINE_SerialX10A SoftwareSerial SerialX10A
 #else
 extern HardwareSerial SerialX10A;
+#define SERIAL_CONFIG (SERIAL_8E1)
+#define DEFINE_SerialX10A HardwareSerial SerialX10A(1)
 #endif
 
 extern size_t registryBufferSize;

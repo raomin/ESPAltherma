@@ -58,12 +58,13 @@ void setup_wifi()
 
   uint8_t *bssid = nullptr;
   uint32_t wifi_channel = 0;
-#ifdef ARDUINO_ARCH_ESP8266
+
+  #ifdef ARDUINO_ARCH_ESP8266
   get_wifi_bssid(config->SSID.c_str(), bssid, &wifi_channel);
-#else //assume ESP32
+  #else //assume ESP32
   WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
-#endif
+  #endif
 
   if (bssid != nullptr) {
     WiFi.begin(config->SSID.c_str(), config->SSID_PASSWORD.c_str(), wifi_channel, bssid);

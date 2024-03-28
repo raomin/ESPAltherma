@@ -17,6 +17,12 @@
 #include "arrayFunctions.hpp"
 #include "restart.hpp"
 
+#ifdef ARDUINO_ARCH_ESP8266
+#define LITTLEFS_BEGIN_PARAM
+#else
+#define LITTLEFS_BEGIN_PARAM true
+#endif
+
 void IRAM_ATTR restartInStandaloneWifi();
 
 void setup();

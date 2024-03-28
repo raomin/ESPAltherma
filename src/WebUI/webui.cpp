@@ -17,19 +17,11 @@ bool formatDefaultFS()
     return false;
 
   LittleFS.begin();
-  #ifdef ARDUINO_ARCH_ESP8266
-  File file = LittleFS.open(MODELS_FILE, FILE_WRITE);
-  #else
-  File file = LittleFS.open(MODELS_FILE, FILE_WRITE, true);
-  #endif
+  File file = LittleFS_open(MODELS_FILE, FILE_WRITE);
   file.print("[]");
   file.close();
 
-  #ifdef ARDUINO_ARCH_ESP8266
-  file = LittleFS.open(CAN_COMMANDS_FILE, FILE_WRITE);
-  #else
-  file = LittleFS.open(CAN_COMMANDS_FILE, FILE_WRITE, true);
-  #endif
+  file = LittleFS_open(CAN_COMMANDS_FILE, FILE_WRITE);
   file.print("[]");
   file.close();
 
@@ -835,17 +827,20 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
     }
 
     debugSerial.println(md5);
+    bool updateBeginSucceeded;
 
     #if defined(ESP8266)
         int cmd = (filename == "filesystem") ? U_FS : U_FLASH;
         Update.runAsync(true);
         size_t fsSize = ((size_t) &_FS_end - (size_t) &_FS_start);
         uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-        if (!Update.begin((cmd == U_FS)?fsSize:maxSketchSpace, cmd)){ // Start with max available size
+        updateBeginSucceeded = Update.begin((cmd == U_FS)?fsSize:maxSketchSpace, cmd); // Start with max available size
     #elif defined(ESP32)
         int cmd = (request->getParam("type", true)->value() == "filesystem") ? U_SPIFFS : U_FLASH;
-        if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) { // Start with max available size
+        updateBeginSucceeded = Update.begin(UPDATE_SIZE_UNKNOWN, cmd); // Start with max available size
     #endif
+
+    if (!updateBeginSucceeded) {
         Update.printError(Serial);
         return request->send(400, "text/plain", "OTA could not begin");
     }
@@ -996,7 +991,7 @@ void onWebSerialCallback(const uint8_t *data, const size_t len)
   WebSerial.println(F("Received Data..."));
 
   String inputMessage = "";
-  for(int i=0; i < len; i++){
+  for(size_t i=0; i < len; i++){
     inputMessage += char(data[i]);
   }
 
@@ -1028,11 +1023,7 @@ void onWebSerialCallback(const uint8_t *data, const size_t len)
   else if(inputMessage == "getFragmentation")
   {
     WebSerial.print(F("Fragmentation is: "));
-    #ifdef ARDUINO_ARCH_ESP8266
-    WebSerial.println(ESP.getHeapFragmentation());
-    #else
-    WebSerial.println(100 - heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) * 100.0 / heap_caps_get_free_size(MALLOC_CAP_8BIT));
-    #endif
+    WebSerial.println(HEAP_FRAGMENTATION());
   }
 }
 

@@ -16,6 +16,12 @@
 #define MODELS_DOC_SIZE 1024*10
 #define WIFI_DOC_SIZE 1024
 
+#ifdef ARDUINO_ARCH_ESP8266
+#define WIFI_TYPE_OPEN ENC_TYPE_NONE
+#else
+#define WIFI_TYPE_OPEN WIFI_AUTH_OPEN
+#endif
+
 enum ValueLoadState {
     NotLoading,
     Pending,

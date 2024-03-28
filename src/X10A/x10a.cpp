@@ -1,12 +1,6 @@
 #include "x10a.hpp"
 
-#ifdef ARDUINO_ARCH_ESP8266
-SoftwareSerial SerialX10A;
-#define SERIAL_CONFIG (SWSERIAL_8E1)
-#else
-HardwareSerial SerialX10A(1);
-#define SERIAL_CONFIG (SERIAL_8E1)
-#endif
+DEFINE_SerialX10A;
 
 static X10A_Config* X10AConfig = nullptr;
 bool disableMQTTLogMessages;

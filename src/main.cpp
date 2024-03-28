@@ -110,11 +110,7 @@ void setup()
 {
   Serial.begin(115200);
 
-  #ifdef ARDUINO_ARCH_ESP8266
-  if(!LittleFS.begin()) {
-  #else
-  if(!LittleFS.begin(true)) {
-  #endif
+  if(!LittleFS.begin(LITTLEFS_BEGIN_PARAM)) {
       Serial.println("An Error has occurred while mounting LittleFS");
       return;
   }

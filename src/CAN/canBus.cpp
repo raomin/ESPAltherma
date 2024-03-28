@@ -22,12 +22,12 @@ bool canBus_setup(const CAN_Config* CANConfig)
         result = driver->initInterface();
         break;
 
-#ifndef ARDUINO_ARCH_ESP8266
+    #ifndef ARDUINO_ARCH_ESP8266
     case CAN_ICTypes::SJA1000:
         driver = new DriverSJA1000(CANConfig);
         result = driver->initInterface();
         break;
-#endif
+    #endif
 
     default:
         debugSerial.println("No CAN Driver found");
