@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [esp32, esp32_debug_noBT, m5stickc, m5stack-tough, m5stickcplus, m5stickcplus2]
+        target: [esp32, esp32_debug_noBT, nodemcuv2, m5stickc, m5stack-tough, m5stickcplus, m5stickcplus2]
 
     steps:
       - uses: actions/checkout@v3

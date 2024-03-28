@@ -112,35 +112,35 @@ void onLoadBoardInfo(AsyncWebServerRequest *request)
 
 void onIndex(AsyncWebServerRequest *request)
 {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", indexHTML_start, indexHTML_end - indexHTML_start);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html_gz, index_html_gz_len);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
 }
 
 void onRequestPicoCSS(AsyncWebServerRequest *request)
 {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", picoCSS_start, picoCSS_end - picoCSS_start);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", pico_min_css_gz, pico_min_css_gz_len);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
 }
 
 void onRequestMainCSS(AsyncWebServerRequest *request)
 {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", mainCSS_start, mainCSS_end - mainCSS_start);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", main_css_gz, main_css_gz_len);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
 }
 
 void onRequestMainJS(AsyncWebServerRequest *request)
 {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", mainJS_start, mainJS_end - mainJS_start);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", main_js_gz, main_js_gz_len);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
 }
 
 void onRequestMD5JS(AsyncWebServerRequest *request)
 {
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", md5JS_start, md5JS_end - md5JS_start);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/javascript", md5_min_js_gz, md5_min_js_gz_len);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
 }
@@ -864,7 +864,7 @@ void handleUpdate(AsyncWebServerRequest *request, String filename, size_t index,
   }
 
   if (final)
-  { 
+  {
     #if ARDUINO_ARCH_ESP32
     // if the final flag is set then this is the last frame of data
     const esp_partition_t* updatePartition = esp_ota_get_next_update_partition(NULL);
