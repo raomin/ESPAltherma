@@ -229,7 +229,7 @@
             %if not isdef("NO_BLUETOOTH"):
             <option value="bt_elm327">External ELM327 via Bluetooth</option>
             %endif
-            %if isdef("ARDUINO_ARCH_ESP32"):
+            %if get("mcu") == "esp32":
             <option value="uart_sja1000">SJA1000 with external transciever</option>
             %endif
           </select>
