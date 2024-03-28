@@ -6,6 +6,7 @@
 private/
 build/
 webui/*.gz
+webui/*.h
 .vscode/settings.json
 sdkconfig.*
 contrib/ldd_decoder/bin/

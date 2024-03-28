@@ -23,6 +23,12 @@
 #include "semanticVersion.hpp"
 #include "Config/boardDefaults.hpp"
 
+#if not __has_include("../webui/webfileHeaders.h")
+#error Please run the PlatformIO prep-build script before compiling!
+#else
+#include "../webui/webfileHeaders.h"
+#endif
+
 #define MODELS_FILE "/models.json"
 #define CAN_COMMANDS_FILE "/CANCommands.json"
 #define MODEL_DEFINITION_DOC_SIZE 1024*25
