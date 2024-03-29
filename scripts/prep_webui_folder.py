@@ -19,7 +19,7 @@ import glob
 import gzip
 
 cppDefines = env.ParseFlags(env['BUILD_FLAGS']).get('CPPDEFINES')
-namespace = {'platform': env['PIOPLATFORM'], 'mcu': env['BOARD_MCU']}
+namespace = {'platform': env['PIOPLATFORM'], 'mcu': env.get('BOARD_MCU') or ""}
 
 for idx, define,  in enumerate( cppDefines):
     namespace[define] = idx

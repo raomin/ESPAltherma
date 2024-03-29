@@ -40,7 +40,7 @@
 #define md5_min_js_gz ""
 #define md5_min_js_gz_len 0
 
-#error missing FILES
+#warning Missing generated webfiles header
 #else
 #include "../build/webui/webfileHeaders.h"
 #endif

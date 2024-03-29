@@ -1,11 +1,20 @@
+#ifndef ARDUINO_H
+#define ARDUINO_H
+
 // Few defines to mimic Arduino framework
 #define PROGMEM
 typedef unsigned short ushort; /* System V compatibility */
 typedef unsigned int uint;     /* System V compatibility */
 typedef unsigned long ulong;   /* System V compatibility */
+typedef unsigned char byte;
 
 #include <string.h>
 #include <stdio.h>
+#include <string>
+
+using std::string;
+#define String string
+
 #ifndef HAVE_STRLCAT
 /*
  * '_cups_strlcat()' - Safely concatenate two strings.
@@ -96,3 +105,5 @@ public:
 };
 
 Print Serial;
+
+#endif

@@ -3,10 +3,11 @@
 #include <unity.h>
 
 // Few defines to mimic Arduino framework
-#include "arduino_to_native.h"
+#include "Arduino.h"
+#include "X10A/converters.hpp"
+//#include "def/PROTOCOL_S_ROTEX.h"
 
-#include "def/PROTOCOL_S_ROTEX.h"
-#include "converters.h"
+using ESPAltherma::Converter;
 
 void setUp(void)
 {
@@ -17,6 +18,7 @@ void tearDown(void)
 {
     // clean stuff up here
 }
+
 std::string decode_data(unsigned char *buff)
 {
     Converter converter;
