@@ -25,10 +25,23 @@ for idx, define,  in enumerate( cppDefines):
     namespace[define] = idx
 
 filetypes_to_gzip = ['js', 'html', 'css']
-
-print('Generating gzip webui files...')
-
 data_src_dir = os.path.join(env.get('PROJECT_DIR'), 'webui')
+build_src_dir = os.path.join(env.get('PROJECT_DIR'), 'build', 'webui')
+
+print('Cleaning up old builded webui files...')
+
+filesToDelete = glob.glob(os.path.join(build_src_dir, '*.*'))
+
+if not filesToDelete:
+    print('NOTHING TO CLEAN!')
+
+for file in filesToDelete:
+    print('  Delete file: ' + file)
+    os.remove(file)
+
+print('Finished cleaning up webui files...')
+
+print('Generating new webui files...')
 
 minify = env.get('BUILD_TYPE') != 'debug'
 
@@ -36,16 +49,21 @@ files_to_gzip = []
 for extension in filetypes_to_gzip:
     files_to_gzip.extend(glob.glob(os.path.join(data_src_dir, '*.' + extension)))
 
-print('  files to gzip: ' + str(files_to_gzip))
+print('  files to embedd: ' + str(files_to_gzip))
+
+if not os.path.exists(build_src_dir):
+    os.makedirs(build_src_dir)
 
 filesToIncludeInHeader = []
 
 for file in files_to_gzip:
-    print('  Minifying file: ' + file)
-    srcFile = os.path.join(data_src_dir, os.path.basename(file))
-    tmpFile = srcFile + ".tmp"
-    gzFile = srcFile + ".gz"
-    extension = file.split(".")[-1]
+    print('  Processing file: ' + file)
+    filename = os.path.basename(file)
+    srcFile = os.path.join(data_src_dir, filename)
+    buildDirFile = os.path.join(build_src_dir, filename)
+    tmpFile = buildDirFile + ".tmp"
+    gzFile = buildDirFile + ".gz"
+    extension = filename.split(".")[-1]
 
     shutil.copyfile(srcFile, tmpFile)
 
@@ -77,7 +95,6 @@ for file in files_to_gzip:
         with open(tmpFile,'w') as fileHandler:
             fileHandler.write(parsedCSSLFile)
 
-    print('  GZipping file: ' + file)
     with open(tmpFile, "rb") as src, gzip.open(gzFile, 'wb') as dst:
         dst.writelines(src)
 
@@ -103,8 +120,10 @@ for file in files_to_gzip:
 
         dst.write('\n};')
 
-with open(data_src_dir + "/webfileHeaders.h", 'w') as dst:
+mainHeader = os.path.join(build_src_dir, "webfileHeaders.h")
+print('Generating main header file: ' + mainHeader)
+with open(mainHeader, 'w') as dst:
     for file in filesToIncludeInHeader:
         dst.write('#include "' + file + '"\n')
 
-print('Finished generating gzip webui files!')
+print('Finished generating webui files!')

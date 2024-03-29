@@ -28,7 +28,7 @@
 #define HEAP_FRAGMENTATION() (100 - heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) * 100.0 / heap_caps_get_free_size(MALLOC_CAP_8BIT))
 #endif
 
-#if not __has_include("../webui/webfileHeaders.h")
+#if not __has_include("../build/webui/webfileHeaders.h")
 #define index_html_gz ""
 #define index_html_gz_len 0
 #define pico_min_css_gz ""
@@ -39,8 +39,10 @@
 #define main_js_gz_len 0
 #define md5_min_js_gz ""
 #define md5_min_js_gz_len 0
+
+#error missing FILES
 #else
-#include "../webui/webfileHeaders.h"
+#include "../build/webui/webfileHeaders.h"
 #endif
 
 #define MODELS_FILE "/models.json"
