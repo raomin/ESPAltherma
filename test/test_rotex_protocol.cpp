@@ -3,7 +3,7 @@
 #include <unity.h>
 
 // Few defines to mimic Arduino framework
-#include "Arduino.h"
+#include <ArduinoFake.h>
 #include "X10A/converters.hpp"
 //#include "def/PROTOCOL_S_ROTEX.h"
 
