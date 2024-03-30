@@ -175,14 +175,14 @@ void readConfig()
     }
 }
 
-void fillX10AParameters(JsonObject &jsonObject, X10A_Config *X10AConfig) {
+void fillX10AParameters(JsonObject &jsonObject, X10A_Config *config) {
   JsonArray parameters = jsonObject["PARAMETERS"].as<JsonArray>();
-  X10AConfig->PARAMETERS_LENGTH = parameters.size();
-  X10AConfig->PARAMETERS = new ParameterDef *[X10AConfig->PARAMETERS_LENGTH];
+  config->PARAMETERS_LENGTH = parameters.size();
+  config->PARAMETERS = new ParameterDef *[config->PARAMETERS_LENGTH];
 
-  for (size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
+  for (size_t i = 0; i < config->PARAMETERS_LENGTH; i++) {
     JsonArray parameter = parameters[i];
-    X10AConfig->PARAMETERS[i] = new ParameterDef(
+    config->PARAMETERS[i] = new ParameterDef(
         parameter[0].as<const int>(),
         parameter[1].as<const int>(),
         parameter[2].as<const int>(),
