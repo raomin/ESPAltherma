@@ -58,14 +58,21 @@ void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool se
     }
   }
 
-  for (size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
-    auto &&label = *X10AConfig->PARAMETERS[i];
+  x10a_convert_values(buffer, bufferSize, sendValuesViaMQTT);
 
-    for (size_t j = 0; j < bufferSize; j++)
-    {
+  if(sendValuesViaMQTT && !disableMQTTLogMessages) {
+    sendValues(); // send the full json message
+  }
+}
+
+void x10a_convert_values(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT) {
+  for (size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
+    auto&& label = *X10AConfig->PARAMETERS[i];
+
+    for (size_t j = 0; j < bufferSize; j++) {
       byte receivedRegistryID;
       uint8_t offset;
-      if(X10AConfig->X10A_PROTOCOL == X10AProtocol::S) {
+      if (X10AConfig->X10A_PROTOCOL == X10AProtocol::S) {
         receivedRegistryID = buffer[j].Buffer[0];
         offset = 1;
       } else {
@@ -73,24 +80,20 @@ void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool se
         offset = 3;
       }
 
-      if(buffer[j].Success && label.registryID == receivedRegistryID) {
-        byte *input = buffer[j].Buffer;
+      if (buffer[j].Success && label.registryID == receivedRegistryID) {
+        byte* input = buffer[j].Buffer;
         input += label.offset + offset;
 
-        converter.convert(&label, input); // convert buffer result of label offset to correct/usabel value
+        converter.convert(&label, input);  // convert buffer result of label offset to correct/usabel value
 
-        if(sendValuesViaMQTT) {
-          updateValues(&label); // send them in mqtt
-          waitLoop(500);        // wait .5sec between registries
+        if (sendValuesViaMQTT) {
+          updateValues(&label);  // send them in mqtt
+          waitLoop(500);         // wait .5sec between registries
         }
 
         break;
       }
     }
-  }
-
-  if(sendValuesViaMQTT && !disableMQTTLogMessages) {
-    sendValues(); // send the full json message
   }
 }
 

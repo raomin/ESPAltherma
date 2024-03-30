@@ -1,6 +1,7 @@
 #ifndef X10A_H
 #define X10A_H
 
+#ifndef UNIT_TEST
 #include <HardwareSerial.h>
 #ifdef ARDUINO_ARCH_ESP8266
 #include <SoftwareSerial.h>
@@ -14,6 +15,11 @@
 #include "config.hpp"
 #include "comm.hpp"
 #include "main.hpp"
+#else
+#include <SerialFake.h>
+#include "registryBuffer.hpp"
+#include "arrayFunctions.hpp"
+#endif
 
 #ifdef ARDUINO_ARCH_ESP8266
 extern SoftwareSerial SerialX10A;
@@ -38,6 +44,8 @@ void x10a_end();
 void x10a_initRegistries(RegistryBuffer** buffer, size_t& bufferSize);
 
 void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT);
+
+void x10a_convert_values(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT);
 
 void x10a_init(X10A_Config* X10AConfig, const bool disableMQTTLogMessagesToInit);
 

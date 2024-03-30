@@ -2,24 +2,48 @@
 #include <unity.h>
 
 // Few defines to mimic Arduino framework
+#include "X10A/config.hpp"
+#include "Config/config.hpp"
 #include "X10A/converters.hpp"
-//#include "def/PROTOCOL_S_ROTEX.h"
+#include "X10A/x10a.hpp"
 
-using ESPAltherma::Converter;
+#define X10AFile "../build/X10A/English/PROTOCOL_S_ROTEX.json"
+
+#if not __has_include(X10AFile)
+#error Run script "build_x10a_commands.py" before running test!
+#endif
+
+X10A_Config* X10AConfig = nullptr;
 
 void setUp(void)
 {
     ArduinoFakeReset();
+
+    X10AConfig = new X10A_Config();
+    X10AConfig->X10A_PROTOCOL = X10AProtocol::S;
+
+    FILE* x10aFile = fopen(X10AFile, "r");
+
+    DynamicJsonDocument configDoc(MODELS_CONFIG_SIZE);
+    deserializeJson(configDoc, x10aFile);
+    fclose(x10aFile);
+
+    JsonObject jsonObject = configDoc.as<JsonObject>();
+
+    fillX10AParameters(jsonObject, X10AConfig);
+    x10a_init(X10AConfig, true);
 }
 
 void tearDown(void)
 {
     // clean stuff up here
 }
-
+/*
 std::string decode_data(unsigned char *buff)
 {
-    Converter converter;
+    ESPAltherma::Converter converter;
+
+    converter.convert()
     converter.readRegistryValues(buff, 'S');
     LabelDef *labels[128];
     int num = 0;
@@ -30,11 +54,20 @@ std::string decode_data(unsigned char *buff)
         result << labels[i]->label << ": " << labels[i]->asString << "; ";
     }
     return result.str();
+}*/
+
+void makeAssert(const String label, const String value) {
+    for (size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
+        auto&& param = *X10AConfig->PARAMETERS[i];
+
+        if(param.label.equals(label)) {
+            TEST_ASSERT_EQUAL_STRING(value, label.asString);
+        }
+    }
 }
 
 void test_rotex_converter_53(void)
 {
-    Converter converter;
     /*
     Possible values for reg 0x53
 
@@ -46,18 +79,37 @@ void test_rotex_converter_53(void)
     0x53 0x01 0x00 0x00 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0xaa
 
     */
-    unsigned char buff[] = {0x53, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
-    auto result = decode_data(buff);
-    TEST_ASSERT_EQUAL_STRING("Circulation pump: ON; External heater?: ON; Priority to domestic water: OFF; Burner inhibit from solaris: OFF; ", result.c_str());
-    // std::cout << result << std::endl;
-    unsigned char buff2[] = {0x53, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
-    result = decode_data(buff2);
-    TEST_ASSERT_EQUAL_STRING("Circulation pump: ON; External heater?: OFF; Priority to domestic water: OFF; Burner inhibit from solaris: ON; ", result.c_str());
-    // std::cout << result << std::endl;
+    RegistryBuffer[] buffer = new RegistryBuffer[1];
+
+    RegistryBuffer* X10ABuffer1 = new RegistryBuffer();
+    X10ABuffer1->RegistryID = 0x53;
+    X10ABuffer1->Buffer = {0x53, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
+    X10ABuffer1->Success = true;
+
+    buffer[0] = X10ABuffer1;
+
+    x10a_convert_values(buffer, 1, false);
+    makeAssert("Circulation pump", "ON");
+    makeAssert("External heater?", "ON");
+    makeAssert("Priority to domestic water", "OFF");
+    makeAssert("Burner inhibit from solaris", "OFF");
+
+    RegistryBuffer* X10ABuffer2 = new RegistryBuffer();
+    X10ABuffer2->RegistryID = 0x53;
+    X10ABuffer2->Buffer = {0x53, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
+    X10ABuffer2->Success = true;
+
+    buffer[0] = X10ABuffer2;
+
+    x10a_convert_values(buffer, 1, false);
+    makeAssert("Circulation pump", "ON");
+    makeAssert("External heater?", "OFF");
+    makeAssert("Priority to domestic water", "OFF");
+    makeAssert("Burner inhibit from solaris", "ON");
 }
 
 void test_rotex_converter_54(void)
-{
+{   /*
     unsigned char buff[] = {0x54, 0x98, 0x1e, 0x70, 0x1f, 0x1c, 0x24, 0x1c, 0x24, 0xd8, 0x31, 0x01, 0x00, 0x24, 0x00, 0x00, 0x00, 0xb8};
     // auto result = decode_data(buff);
     // std::cout << result << std::endl;
@@ -80,6 +132,7 @@ void test_rotex_converter_54(void)
     // std::cout << decode_data(buff2) << std::endl;
     // std::cout << decode_data(buff3) << std::endl;
     // std::cout << decode_data(buff4) << std::endl;
+    */
 }
 
 int main(int argc, char **argv)

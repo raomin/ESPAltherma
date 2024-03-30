@@ -61,6 +61,8 @@ extern ESPAlthermaConfig* config;
 
 void readConfig();
 
+void fillX10AParameters(JsonObject &jsonObject, X10A_Config *X10AConfig);
+
 void saveConfig();
 
 #endif

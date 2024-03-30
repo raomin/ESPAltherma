@@ -88,20 +88,7 @@ void readConfig()
         X10AConfig->X10A_PROTOCOL = (X10AProtocol)configX10ADoc["X10A_PROTOCOL"].as<uint8_t>();
         X10AConfig->WEBUI_SELECTION_VALUES = (char *)configX10ADoc["WEBUI_SELECTION_VALUES"].as<const char*>();
 
-        JsonArray parameters = configX10ADoc["PARAMETERS"].as<JsonArray>();
-        X10AConfig->PARAMETERS_LENGTH = parameters.size();
-        X10AConfig->PARAMETERS = new ParameterDef*[X10AConfig->PARAMETERS_LENGTH];
-
-        for(size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
-            JsonArray parameter = parameters[i];
-            X10AConfig->PARAMETERS[i] = new ParameterDef(
-                parameter[0].as<const int>(),
-                parameter[1].as<const int>(),
-                parameter[2].as<const int>(),
-                parameter[3].as<const int>(),
-                parameter[4].as<const int>(),
-                parameter[5]);
-        }
+        fillX10AParameters(configX10ADoc, X10AConfig);
 
         config->X10A_CONFIG = X10AConfig;
     }
@@ -186,6 +173,23 @@ void readConfig()
 
         config->CAN_CONFIG = CANConfig;
     }
+}
+
+void fillX10AParameters(JsonObject &jsonObject, X10A_Config *X10AConfig) {
+  JsonArray parameters = jsonObject["PARAMETERS"].as<JsonArray>();
+  X10AConfig->PARAMETERS_LENGTH = parameters.size();
+  X10AConfig->PARAMETERS = new ParameterDef *[X10AConfig->PARAMETERS_LENGTH];
+
+  for (size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
+    JsonArray parameter = parameters[i];
+    X10AConfig->PARAMETERS[i] = new ParameterDef(
+        parameter[0].as<const int>(),
+        parameter[1].as<const int>(),
+        parameter[2].as<const int>(),
+        parameter[3].as<const int>(),
+        parameter[4].as<const int>(),
+        parameter[5]);
+  }
 }
 
 void saveConfig()
