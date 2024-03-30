@@ -1,5 +1,7 @@
 #include <ArduinoFake.h>
 #include <unity.h>
+#include <iostream>
+#include <fstream>
 
 // Few defines to mimic Arduino framework
 #include "X10A/config.hpp"
@@ -22,11 +24,12 @@ void setUp(void)
     X10AConfig = new X10A_Config();
     X10AConfig->X10A_PROTOCOL = X10AProtocol::S;
 
-    FILE* x10aFile = fopen(X10AFile, "r");
+    std::ifstream inputFile(X10AFile);
+    std::string jsonContent((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
+    inputFile.close();
 
     DynamicJsonDocument configDoc(MODELS_CONFIG_SIZE);
-    deserializeJson(configDoc, x10aFile);
-    fclose(x10aFile);
+    deserializeJson(configDoc, jsonContent);
 
     JsonObject jsonObject = configDoc.as<JsonObject>();
 
@@ -61,8 +64,23 @@ void makeAssert(const String label, const String value) {
         auto&& param = *X10AConfig->PARAMETERS[i];
 
         if(param.label.equals(label)) {
-            TEST_ASSERT_EQUAL_STRING(value, label.asString);
+            TEST_ASSERT_EQUAL_STRING(value.c_str(), param.asString);
         }
+    }
+}
+
+void overwriteBuffer(byte* buffer, byte* values)
+{
+    const int sizeValues = sizeof(values) / sizeof(values[0]);
+    const int sizeBuffer = sizeof(buffer) / sizeof(buffer[0]);
+
+    int i;
+    for (i = 0; i < sizeValues; ++i) {
+        buffer[i] = values[i];
+    }
+
+    for (; i < sizeBuffer; i++) {
+        buffer[i] = 0;
     }
 }
 
@@ -79,14 +97,15 @@ void test_rotex_converter_53(void)
     0x53 0x01 0x00 0x00 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0xaa
 
     */
-    RegistryBuffer[] buffer = new RegistryBuffer[1];
+    RegistryBuffer buffer[1];
 
-    RegistryBuffer* X10ABuffer1 = new RegistryBuffer();
-    X10ABuffer1->RegistryID = 0x53;
-    X10ABuffer1->Buffer = {0x53, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
-    X10ABuffer1->Success = true;
+    buffer[0].RegistryID = 0x53;
+    buffer[0].Success = true;
 
-    buffer[0] = X10ABuffer1;
+    byte buffer1[] = {0x53, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
+    byte buffer2[] = {0x53, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
+
+    overwriteBuffer(buffer[0].Buffer, buffer1);
 
     x10a_convert_values(buffer, 1, false);
     makeAssert("Circulation pump", "ON");
@@ -94,12 +113,7 @@ void test_rotex_converter_53(void)
     makeAssert("Priority to domestic water", "OFF");
     makeAssert("Burner inhibit from solaris", "OFF");
 
-    RegistryBuffer* X10ABuffer2 = new RegistryBuffer();
-    X10ABuffer2->RegistryID = 0x53;
-    X10ABuffer2->Buffer = {0x53, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
-    X10ABuffer2->Success = true;
-
-    buffer[0] = X10ABuffer2;
+    overwriteBuffer(buffer[0].Buffer, buffer2);
 
     x10a_convert_values(buffer, 1, false);
     makeAssert("Circulation pump", "ON");
