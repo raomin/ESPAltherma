@@ -1,9 +1,7 @@
-#include <iostream>
-#include <sstream>
+#include <ArduinoFake.h>
 #include <unity.h>
 
 // Few defines to mimic Arduino framework
-#include <ArduinoFake.h>
 #include "X10A/converters.hpp"
 //#include "def/PROTOCOL_S_ROTEX.h"
 
@@ -11,7 +9,7 @@ using ESPAltherma::Converter;
 
 void setUp(void)
 {
-    // set stuff up here
+    ArduinoFakeReset();
 }
 
 void tearDown(void)
