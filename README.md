@@ -1,5 +1,7 @@
 ![](doc/images/logo.png)
 
+Testing Github connection
+
 <hr/>
 
 <p align="center">
