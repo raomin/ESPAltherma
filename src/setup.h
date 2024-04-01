@@ -142,7 +142,7 @@
 #define HTTPS
 #if defined (HTTPS)
 #define HTTP_SERVER "https://emoncms.org/input/post"  //emoncms
-#define APIKEY "988b93471f1e9b4d179b81cf858b2249" //emoncms
+#define APIKEY "" //emoncms
 #define NODE "emontx" // node in emoncms
 
 // root certificate of emoncms.org - expires 2038
