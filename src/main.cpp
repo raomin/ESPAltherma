@@ -29,7 +29,9 @@
 #include "converters.h"
 #include "comm.h"
 #include "mqtt.h"
+#include "https.h"
 #include "restart.h"
+
 
 Converter converter;
 char registryIDs[32]; //Holds the registries to query
@@ -74,11 +76,22 @@ void updateValues(char regID)
 
     #else
     if (alpha){      
-
+      #ifdef MQTT
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
+      #endif
+      #ifdef HTTPS
+      snprintf(jsonbuffhttps + strlen(jsonbuffhttps), MAX_MSG_SIZE - strlen(jsonbuffhttps), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
+      #endif //HTTPS
+
     }
     else{//number, no quotes
+      #ifdef MQTT
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
+      #endif
+      #ifdef HTTPS
+      snprintf(jsonbuffhttps + strlen(jsonbuffhttps), MAX_MSG_SIZE - strlen(jsonbuffhttps), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
+      #endif //HTTPS
+
     }
     #endif
   }
@@ -307,7 +320,7 @@ void setup()
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
-  // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
+ // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
 
 #ifdef SAFETY_RELAY_PIN
   pinMode(SAFETY_RELAY_PIN, OUTPUT);
@@ -349,6 +362,7 @@ void setup()
   espClient.setTimeout(5);
   #endif
 
+  #ifdef MQTT
   client.setBufferSize(MAX_MSG_SIZE); //to support large json message
   client.setCallback(callback);
   client.setServer(MQTT_SERVER, MQTT_PORT);
@@ -361,8 +375,10 @@ void setup()
   reconnectMqtt();
   mqttSerial.println("OK!");
 
-  initRegistries();
   mqttSerial.print("ESPAltherma started!");
+  #endif //ifdef MQTT
+  
+  initRegistries();
 }
 
 void waitLoop(uint ms){
@@ -380,10 +396,13 @@ void loop()
   { //restart board if needed
     checkWifi();
   }
+  #ifdef MQTT
   if (!client.connected())
   { //(re)connect to MQTT if needed
     reconnectMqtt();
   }
+  #endif //ifdef MQTT
+
   //Querying all registries
   for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
   {
@@ -402,7 +421,14 @@ void loop()
       //waitLoop(500);//wait .5sec between registries
     }
   }
-  sendValues();//Send the full json message
+  #ifdef MQTT
+  sendValuesMQTT();//Send the full json message
   mqttSerial.printf("Done. Waiting %ld ms...", FREQUENCY - millis() + start);
+  #endif //MQTT
+  #ifdef HTTPS 
+  sendValuesHTTPS();
+  Serial.print("sending values from HTTPS");
+  #endif // HTTPS
   waitLoop(FREQUENCY - millis() + start);
+  
 }

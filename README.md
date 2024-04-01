@@ -1,5 +1,5 @@
 ![](doc/images/logo.png)
-Phil's fork
+
 <hr/>
 
 <p align="center">
