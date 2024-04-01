@@ -23,8 +23,6 @@
 
 #define FREQUENCY 30000 //query values every 30 sec
 
-// #define ARDUINO_M5Stick_C_Plus2 //phil added - might not be necessary as covered by platformio.ini file
-
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C_Plus2)
 // Values used when M5StickC, M5STickCPlus or M5Stick_C_Plus2 environment is selected:
 #define RX_PIN    36// Pin connected to the TX pin of X10A 
@@ -49,8 +47,9 @@
 
 // Safety relay - also called Prefered electric fare - Optional
 // If the safety relay is triggered, the heat pump will be stopped
-//uncomment and set to enable the safety relay
-//#define SAFETY_RELAY_PIN 33// Pin connected to the safety relay. Triggered HIGH
+// uncomment and set to enable the safety relay
+// #define SAFETY_RELAY_PIN 33// Pin connected to the safety relay
+// #define SAFETY_RELAY_ACTIVE_STATE HIGH// Pin connected to the safety relay
 
 
 // DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status
@@ -142,7 +141,7 @@
 #define HTTPS
 #if defined (HTTPS)
 #define HTTP_SERVER "https://emoncms.org/input/post"  //emoncms
-#define APIKEY "" //emoncms
+#define APIKEY " " //emoncms
 #define NODE "emontx" // node in emoncms
 
 // root certificate of emoncms.org - expires 2038
