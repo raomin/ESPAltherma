@@ -322,7 +322,7 @@ void setup()
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
- // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
+  // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
 
 #ifdef SAFETY_RELAY_PIN
   pinMode(SAFETY_RELAY_PIN, OUTPUT);

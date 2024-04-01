@@ -3,8 +3,8 @@
 
 //Setup your credentials and mqtt info here:
 //only change the value between the " " leave the rest of the line untouched.
-#define WIFI_SSID ""//**Your SSID here**
-#define WIFI_PWD ""//**Your password here** leave empty if open (bad!)
+#define WIFI_SSID "SSID"//**Your SSID here**
+#define WIFI_PWD "password"//**Your password here** leave empty if open (bad!)
 
 //Uncomment this to set a static IP instead of DHCP for the ESP (Separate by commas instead of dots)
 //#define WIFI_IP 192, 168, 0, 5
@@ -15,7 +15,7 @@
 
 //#define MQTT //We want to send MQTT messages to a MQTT Server (comment out if we don't)
 
-#define MQTT_SERVER "192.168.x.x"//**IP address here of your MQTT server**
+#define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
