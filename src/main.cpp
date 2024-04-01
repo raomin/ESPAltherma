@@ -29,7 +29,9 @@
 #include "converters.h"
 #include "comm.h"
 #include "mqtt.h"
+#ifdef HTTPS
 #include "https.h"
+#endif //HTTPS
 #include "restart.h"
 
 
