@@ -114,7 +114,9 @@ If you are using an **ESP8266** select the `nodemcuv2` environement.
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-5. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or press `F1` and select -> `PlatformIO: Upload`
+5. Decide on what format of BOOLEAN data is required for the destination. The default is "ON" and "OFF", however in converters.h there is the option to change this to "1" and "0" if the destination for the data requires this, by defining (uncommenting) the #define BOOLNUM statement.
+
+6. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or press `F1` and select -> `PlatformIO: Upload`
 
 ## Step 2: Connecting to the Heat pump
 

@@ -1,7 +1,7 @@
 // convert read registry value to the expected format based on convID
 #include <string.h>
 char buff[64];
-#define BOOLNUM // If defined (not commented out), convertTable 200 and 300 return the on/off signal as "1" or "0" rather than the default "ON" or "OFF"
+//#define BOOLNUM // If defined (not commented out), convertTable 200 and 300 return the on/off signal as "1" or "0" rather than the default "ON" or "OFF"
 
 class Converter
 {
