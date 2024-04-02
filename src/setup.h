@@ -13,7 +13,7 @@
 //#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //A DNS address is needed, even if it's not used 
 //#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //A DNS address is needed, even if it's not used
 
-//#define MQTT //We want to send MQTT messages to a MQTT Server (comment out if we don't)
+#define MQTT //We want to send MQTT messages to a MQTT Server (comment out if we don't)
 
 #define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
 #define MQTT_USERNAME ""//leave empty if not set (bad!)
@@ -89,7 +89,7 @@
 //#include "def/DEFAULT.h"
 
 //#include "def/Altherma(EBLA-EDLA D series 4-8kW Monobloc).h"
-#include "def/Altherma(EBLA-EDLA D series 9-16kW Monobloc).h"
+//#include "def/Altherma(EBLA-EDLA D series 9-16kW Monobloc).h"
 //#include "def/Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3).h"
 //#include "def/Altherma(EGSQH-A series 10kW GEO2).h"
 //#include "def/Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW).h"
@@ -138,7 +138,7 @@
 
 // HTTPS FUNCTIONS -------------------
 // Uncomment the below 'define HTTPS' to send HTTPS Messages
-#define HTTPS
+//#define HTTPS
 #if defined (HTTPS)
 #define HTTP_SERVER "https://emoncms.org/input/post"  //emoncms
 #define APIKEY " " //emoncms
@@ -180,6 +180,6 @@
 "L6KCq9NjRHDEjf8tM7qtj3u1cIiuPhnPQCjY/MiQu12ZIvVS5ljFH4gxQ+6IHdfG\n" \
 "jjxDah2nGN59PRbxYvnKkKj9\n" \
 "-----END CERTIFICATE-----"
-#endif
+#endif //HTTPS
 
 #endif //SETUP_H

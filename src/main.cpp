@@ -34,7 +34,6 @@
 #endif //HTTPS
 #include "restart.h"
 
-
 Converter converter;
 char registryIDs[32]; //Holds the registries to query
 bool busy = false;
