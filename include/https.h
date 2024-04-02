@@ -26,7 +26,9 @@ static WiFiClientSecure client;
 
   if (https.begin(client, HTTP_SERVER)) {
       Serial.print("[HTTPS] POST...\n");
+      #ifdef ARDUINO_M5Stick_C_Plus2
       M5.Lcd.print("[HTTPS] POST...\n");
+      #endif
       https.addHeader("Content-Type", "application/x-www-form-urlencoded");
     
     // start connection and send HTTP header
@@ -35,19 +37,25 @@ static WiFiClientSecure client;
     if (httpCode > 0) {
       // HTTP header has been send and Server response header has been handled
       Serial.printf("[HTTPS] POST... code: %d\n", httpCode);
+      #ifdef ARDUINO_M5Stick_C_Plus2
       M5.Lcd.printf("[HTTPS] POST... code: %d\n", httpCode);
+      #endif
       // file found at server
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
         // print server response payload
         String payload = https.getString();
         Serial.println(payload);
+        #ifdef ARDUINO_M5Stick_C_Plus2
         M5.Lcd.println(payload);
+        #endif
     }
 
   }
   else {
    Serial.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
+   #ifdef ARDUINO_M5Stick_C_Plus2
    M5.Lcd.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
+   #endif
   }
 
   https.end();
@@ -74,9 +82,11 @@ void sendValuesHTTPS()
   jsonbuffhttps[strlen(jsonbuffhttps) - 1] = '}';
 
   posthttps(jsonbuffhttps);
+  #ifdef ARDUINO_M5Stick_C_Plus2
   M5.Lcd.println(jsonbuffhttps); //Optional - prints the data to the screen if required
+  #endif
 
-  // wipes the jsonbuffhttps back to {null}
+  // wipes the jsonbuffhttps back to {null
   strcpy(jsonbuffhttps, "{\0");
 
 }
