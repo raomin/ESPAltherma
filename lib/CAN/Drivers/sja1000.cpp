@@ -2,6 +2,8 @@
 
 #ifndef ARDUINO_ARCH_ESP8266
 
+using namespace CAN;
+
 DriverSJA1000::DriverSJA1000(const CAN_Config *CANConfig) : CANDriver(CANConfig)
 {
 }

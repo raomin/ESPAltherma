@@ -1,6 +1,7 @@
 #include "converters.hpp"
 
 using ESPAltherma::Converter;
+using namespace X10A;
 
 Converter converter;
 
@@ -11,9 +12,9 @@ void Converter::convert(ParameterDef *def, byte *data)
     int num = def->dataSize;
     double dblData = NAN;
 
-    debugSerial.print("Converting from:");
+    debugStream->print("Converting from:");
     for (uint8_t i = 0; i < num; i++) {
-        debugSerial.printf(" 0x%02x ", data[i]);
+        debugStream->printf(" 0x%02x ", data[i]);
     }
 
     switch (convId)
@@ -35,7 +36,7 @@ void Converter::convert(ParameterDef *def, byte *data)
             break;
         case 105:
             dblData = (double)getSignedValue(data, num, 0) * 0.1;
-            // debugSerial.printf("%f\n", dblData);
+            // debugStream->printf("%f\n", dblData);
             break;
         case 106:
             dblData = (double)getSignedValue(data, num, 1) * 0.1;
@@ -244,12 +245,12 @@ void Converter::convert(ParameterDef *def, byte *data)
         sprintf(def->asString, "%g", dblData);
     }
 
-    debugSerial.printf("-> %s\n", def->asString);
+    debugStream->printf("-> %s\n", def->asString);
 }
 
 void Converter::convertTable300(byte *data, int tableID, char *ret)
 {
-    debugSerial.printf("Bin Conv %02x with tableID %d \n", data[0], tableID);
+    debugStream->printf("Bin Conv %02x with tableID %d \n", data[0], tableID);
     char b = 1;
     b = (char)(b << tableID % 10);
     if ((data[0] & b) > 0) {

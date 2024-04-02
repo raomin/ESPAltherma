@@ -1,7 +1,7 @@
 #ifndef REGISTRY_BUFFER_H
 #define REGISTRY_BUFFER_H
 
-#include "arduinoC.hpp"
+#include <Arduino.h>
 
 #define MAX_BUFFER_SIZE 32 //max bytes returned from X10A Port
 

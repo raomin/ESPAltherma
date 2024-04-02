@@ -4,6 +4,8 @@
 // https://github.com/ahermann86/fhemHPSU
 // https://github.com/zanac/pyHPSU
 
+using namespace CAN;
+
 String** resultBuffer;
 
 std::function<void(const char *label, const char* value)> callbackRecievedCommand;

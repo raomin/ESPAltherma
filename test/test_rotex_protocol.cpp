@@ -4,10 +4,7 @@
 #include <fstream>
 
 // Few defines to mimic Arduino framework
-#include "X10A/config.hpp"
-#include "Config/config.hpp"
-#include "X10A/converters.hpp"
-#include "X10A/x10a.hpp"
+#include <x10a.hpp>
 
 #define X10AFile "../build/X10A/English/PROTOCOL_S_ROTEX.json"
 

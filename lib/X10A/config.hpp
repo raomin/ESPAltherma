@@ -1,7 +1,7 @@
 #ifndef X10A_CONFIG_H
 #define X10A_CONFIG_H
 
-#include "arduinoC.hpp"
+#include <Arduino.h>
 #include "parameterDef.hpp"
 
 enum class X10AProtocol : uint8_t {

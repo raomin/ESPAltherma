@@ -3,7 +3,7 @@
 
 #include <string.h>
 #include "parameterDef.hpp"
-#include "debugSerial.hpp"
+#include "debugStream.hpp"
 
 namespace ESPAltherma
 {

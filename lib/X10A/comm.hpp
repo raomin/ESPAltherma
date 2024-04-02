@@ -1,10 +1,12 @@
 #ifndef COMM_H
 #define COMM_H
 
+#include <Arduino.h>
 #include <HardwareSerial.h>
-#include "arduinoC.hpp"
+#include "debugStream.hpp"
+#include "registryBuffer.hpp"
+#include "config.hpp"
 #include "x10a.hpp"
-#include "debugSerial.hpp"
 
 #define SER_TIMEOUT 300 // leave 300ms for the machine to answer
 

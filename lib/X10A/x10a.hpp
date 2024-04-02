@@ -1,25 +1,22 @@
 #ifndef X10A_H
 #define X10A_H
 
-#ifndef UNIT_TEST
+#ifdef UNIT_TEST
+#include <SerialFake.h>
+#endif
+
 #include <HardwareSerial.h>
 #ifdef ARDUINO_ARCH_ESP8266
 #include <SoftwareSerial.h>
 #endif
 
-#include "registryBuffer.hpp"
-#include "Config/config.hpp"
-#include "debugSerial.hpp"
-#include "MQTT/mqtt.hpp"
+#include "debugStream.hpp"
 #include "arrayFunctions.hpp"
+#include "registryBuffer.hpp"
+#include "parameterDef.hpp"
+#include "converters.hpp"
 #include "config.hpp"
 #include "comm.hpp"
-#include "main.hpp"
-#else
-#include <SerialFake.h>
-#include "registryBuffer.hpp"
-#include "arrayFunctions.hpp"
-#endif
 
 #ifdef ARDUINO_ARCH_ESP8266
 extern SoftwareSerial SerialX10A;
@@ -30,6 +27,10 @@ extern HardwareSerial SerialX10A;
 #define SERIAL_CONFIG (SERIAL_8E1)
 #define DEFINE_SerialX10A HardwareSerial SerialX10A(1)
 #endif
+
+extern std::function<void(const ulong ms)> callbackX10A_wait;
+extern std::function<void()> callbackX10A_sendValues;
+extern std::function<void(ParameterDef *labelDef)> callbackX10A_updateValues;
 
 extern size_t registryBufferSize;
 extern RegistryBuffer *registryBuffers;

@@ -1,5 +1,11 @@
 #include "x10a.hpp"
 
+using namespace X10A;
+
+std::function<void(const ulong ms)> callbackX10A_wait;
+std::function<void()> callbackX10A_sendValues;
+std::function<void(ParameterDef *labelDef)> callbackX10A_updateValues;
+
 DEFINE_SerialX10A;
 
 static X10A_Config* X10AConfig = nullptr;
@@ -31,7 +37,7 @@ void x10a_initRegistries(RegistryBuffer** buffer, size_t& bufferSize)
     auto &&label = *X10AConfig->PARAMETERS[i];
 
     if (!contains(tempRegistryIDs, X10AConfig->PARAMETERS_LENGTH, label.registryID)) {
-      debugSerial.printf("Adding registry 0x%2x to be queried.\n", label.registryID);
+      debugStream->printf("Adding registry 0x%2x to be queried.\n", label.registryID);
       tempRegistryIDs[bufferSize++] = label.registryID;
     }
   }
@@ -53,15 +59,15 @@ void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool se
   for (size_t i = 0; i < bufferSize; i++) {
     uint8_t tries = 0;
     while (tries++ < 3 && !queryRegistry(&buffer[i], X10AConfig->X10A_PROTOCOL)) {
-      debugSerial.println("Retrying...");
-      waitLoop(1000);
+      debugStream->println("Retrying...");
+      callbackX10A_wait(1000);
     }
   }
 
   x10a_convert_values(buffer, bufferSize, sendValuesViaMQTT);
 
   if(sendValuesViaMQTT && !disableMQTTLogMessages) {
-    sendValues(); // send the full json message
+    callbackX10A_sendValues(); // send the full json message
   }
 }
 
@@ -87,8 +93,8 @@ void x10a_convert_values(RegistryBuffer* buffer, const size_t& bufferSize, const
         converter.convert(&label, input);  // convert buffer result of label offset to correct/usabel value
 
         if (sendValuesViaMQTT) {
-          updateValues(&label);  // send them in mqtt
-          waitLoop(500);         // wait .5sec between registries
+          callbackX10A_updateValues(&label);  // send them in mqtt
+          callbackX10A_wait(500);         // wait .5sec between registries
         }
 
         break;
@@ -115,13 +121,13 @@ void x10a_loop()
 
   if(loopStart - lastTimeRunned >= X10AConfig->FREQUENCY) {
     handleState = HandleState::Running;
-    debugSerial.printf("X10A started reading: %lu\n", loopStart);
+    debugStream->printf("X10A started reading: %lu\n", loopStart);
 
     x10a_handle(registryBuffers, registryBufferSize, true);
 
     ulong loopEnd = X10AConfig->FREQUENCY - millis() + loopStart;
 
-    debugSerial.printf("X10A Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
+    debugStream->printf("X10A Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
     lastTimeRunned = loopStart;
     handleState = HandleState::Stopped;
   }

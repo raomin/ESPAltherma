@@ -1,5 +1,7 @@
 #include "elm327.hpp"
 
+using namespace CAN;
+
 DriverELM327::DriverELM327(const CAN_Config *CANConfig) : CANDriver(CANConfig)
 {
 }

@@ -1,6 +1,7 @@
 #include "mcp2515.hpp"
 
 using namespace MCP2515;
+using namespace CAN;
 
 DriverMCP2515* self;
 

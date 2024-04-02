@@ -1,5 +1,7 @@
 #include "comm.hpp"
 
+using namespace X10A;
+
 byte getCRC(byte *src, int len)
 {
   byte b = 0;
@@ -15,7 +17,7 @@ void logBuffer(byte *buffer, size_t len)
   for (size_t i = 0; i < len; i++) {
     sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
   }
-  debugSerial.print(bufflog);
+  debugStream->print(bufflog);
 }
 
 int get_reply_len(char regID, X10AProtocol protocol)
@@ -63,7 +65,7 @@ bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol)
   }
 
   // sending command to serial
-  debugSerial.printf("Querying register 0x%02x... ", registryBuffer->RegistryID);
+  debugStream->printf("Querying register 0x%02x... ", registryBuffer->RegistryID);
   SerialX10A.flush(SERIAL_FLUSH_TX_ONLY); // prevent possible pending info on the read
   SerialX10A.write((uint8_t*)prep, queryLength);
   ulong start = millis();
@@ -79,7 +81,7 @@ bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol)
       }
       if (len == 2 && registryBuffer->Buffer[0] == 0x15 && registryBuffer->Buffer[1] == 0xEA) {
         // HP didn't understand the command
-        debugSerial.println("Error 0x15 0xEA returned from HP");
+        debugStream->println("Error 0x15 0xEA returned from HP");
         delay(500);
         return false;
       }
@@ -87,9 +89,9 @@ bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol)
   }
   if (millis() >= (start + SER_TIMEOUT)) {
     if (len == 0) {
-      debugSerial.printf("Time out! Check connection\n");
+      debugStream->printf("Time out! Check connection\n");
     } else {
-      debugSerial.printf("ERR: Time out on register 0x%02x! got %d/%d bytes\n", registryBuffer->RegistryID, len, replyLen);
+      debugStream->printf("ERR: Time out on register 0x%02x! got %d/%d bytes\n", registryBuffer->RegistryID, len, replyLen);
       logBuffer(registryBuffer->Buffer, len);
     }
     delay(500);
@@ -99,13 +101,13 @@ bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol)
   registryBuffer->CRC = getCRC(registryBuffer->Buffer, len - 1);
   logBuffer(registryBuffer->Buffer, len);
   if (registryBuffer->CRC != registryBuffer->Buffer[len - 1]) {
-    debugSerial.println("Wrong CRC!");
-    debugSerial.printf("ERROR: Wrong CRC on register 0x%02x!", registryBuffer->RegistryID);
-    debugSerial.printf("Calculated 0x%2x but got 0x%2x\nnBuffer: ", registryBuffer->CRC, registryBuffer->Buffer[len - 1]);
+    debugStream->println("Wrong CRC!");
+    debugStream->printf("ERROR: Wrong CRC on register 0x%02x!", registryBuffer->RegistryID);
+    debugStream->printf("Calculated 0x%2x but got 0x%2x\nnBuffer: ", registryBuffer->CRC, registryBuffer->Buffer[len - 1]);
     logBuffer(registryBuffer->Buffer, len);
     return false;
   } else {
-    debugSerial.println(".. CRC OK!");
+    debugStream->println(".. CRC OK!");
     registryBuffer->Success = true;
     return true;
   }

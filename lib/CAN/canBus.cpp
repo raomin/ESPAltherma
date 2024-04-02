@@ -1,5 +1,7 @@
 #include "canBus.hpp"
 
+using namespace CAN;
+
 static CANDriver *driver = nullptr;
 
 bool canBus_setup(const CAN_Config* CANConfig)

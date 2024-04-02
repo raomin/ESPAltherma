@@ -1,5 +1,5 @@
 #include "debugStream.hpp"
 
-namespace CAN {
+namespace X10A {
     Stream* debugStream = nullptr;
 }
