@@ -175,6 +175,9 @@ void setup()
   }
 
   if(config->CAN_ENABLED) {
+    debugStream = &debugSerial;
+    callbackRecievedCommand = [](const char *label, const char *value) { mqttPublish(MQTTPublishTopic::CAN, value, label); };
+    callbackCAN = canBus_set;
     canBus_setup(config->CAN_CONFIG);
   }
 

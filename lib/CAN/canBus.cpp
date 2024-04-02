@@ -6,7 +6,7 @@ bool canBus_setup(const CAN_Config* CANConfig)
 {
     canBus_stop();
 
-    debugSerial.println("Starting new CAN Driver...");
+    debugStream->println("Starting new CAN Driver...");
 
     bool result = false;
 
@@ -30,7 +30,7 @@ bool canBus_setup(const CAN_Config* CANConfig)
     #endif
 
     default:
-        debugSerial.println("No CAN Driver found");
+        debugStream->println("No CAN Driver found");
         return result;
     }
 
@@ -46,6 +46,12 @@ void canBus_loop()
 {
     if(driver != nullptr)
         driver->handleLoop();
+}
+
+void canBus_set(const String label, const char *payload, const uint32_t length)
+{
+    if(driver != nullptr)
+        driver->handleMQTTSetRequest(label, payload, length);
 }
 
 String canBus_readAllCommands()

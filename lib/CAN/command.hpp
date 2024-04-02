@@ -1,7 +1,7 @@
 #ifndef CAN_COMMAND_H
 #define CAN_COMMAND_H
 
-#include "arduinoC.hpp"
+#include <Arduino.h>
 
 #define CAN_COMMAND_NAME_LENGTH 19
 #define CAN_COMMAND_LABEL_LENGTH 21

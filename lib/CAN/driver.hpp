@@ -1,12 +1,16 @@
 #ifndef CAN_DRIVER_H
 #define CAN_DRIVER_H
 
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include "debugStream.hpp"
 #include "command.hpp"
-#include "MQTT/mqtt.hpp"
-#include "MQTT/mqttCallbacks.hpp"
+#include "config.hpp"
 
 #define CAN_MESSAGE_TIMEOUT 4 // define timout in seconds for message send to get answer
 #define NOT_IMPLEMENTED = 0
+
+extern std::function<void(const char *label, const char* value)> callbackRecievedCommand;
 
 struct CanFrame
 {

@@ -6,6 +6,8 @@
 
 String** resultBuffer;
 
+std::function<void(const char *label, const char* value)> callbackRecievedCommand;
+
 CanFrame* CANDriver::getCanFrameFromCommand(CANCommand* cmd, bool setValue, int value)
 {
   CanFrame* frame = new CanFrame();
@@ -94,12 +96,12 @@ CanFrame* CANDriver::getCanFrameFromCommand(CANCommand* cmd, bool setValue, int 
     }
   }
 
-  debugSerial.printf("CAN: Transmiting ID(%i) ", frame->id);
+  debugStream->printf("CAN: Transmiting ID(%i) ", frame->id);
   for(uint8_t i = 0; i < frame->len; i++)
   {
-    debugSerial.printf("%02x ", frame->data[i]);
+    debugStream->printf("%02x ", frame->data[i]);
   }
-  debugSerial.println();
+  debugStream->println();
 
   return frame;
 }
@@ -117,7 +119,7 @@ void CANDriver::sniffCAN(const uint32_t timestamp_us, CanFrame const frame)
   for(uint8_t i = 0; i < frame.len; i++)
     sprintf(resultText + strlen(resultText), "%02X ", frame.data[i]);
 
-  debugSerial.println(resultText);
+  debugStream->println(resultText);
 }
 
 CANDriver::CANDriver(const CAN_Config* CANConfigArg) : CANConfig(CANConfigArg)
@@ -137,7 +139,7 @@ void CANDriver::handleLoop()
 
     if(currentTime - lastTimeRunned >= CANConfig->CAN_AUTOPOLL_TIME * 1000)
     {
-      debugSerial.printf("CAN Poll Mode Auto Reading: %lu\n", currentTime);
+      debugStream->printf("CAN Poll Mode Auto Reading: %lu\n", currentTime);
 
       for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++)
       {
@@ -350,9 +352,9 @@ void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame
     return;
   }
 
-  mqttPublish(MQTTPublishTopic::CAN, valueCodeKey.c_str(), recievedCommand->label);
+  callbackRecievedCommand(valueCodeKey.c_str(), recievedCommand->label);
 
-  debugSerial.printf("CAN Data recieved %s: %s\n", recievedCommand->label, valueCodeKey.c_str());
+  debugStream->printf("CAN Data recieved %s: %s\n", recievedCommand->label, valueCodeKey.c_str());
 }
 
 
@@ -421,13 +423,13 @@ void CANDriver::handleMQTTSetRequest(const String &label, const char *payload, c
 
   for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
     if(CANConfig->COMMANDS[i]->writable && strcmp(CANConfig->COMMANDS[i]->name, label.c_str()) == 0) {
-      debugSerial.printf("CAN: Got MQTT SET request for %s, %08x\n", label.c_str(), payloadAsInt);
+      debugStream->printf("CAN: Got MQTT SET request for %s, %08x\n", label.c_str(), payloadAsInt);
       sendCommand(CANConfig->COMMANDS[i], true, payloadAsInt);
       return;
     }
   }
 
-  debugSerial.printf("CAN: Got invalid MQTT SET request for %s\n", label.c_str());
+  debugStream->printf("CAN: Got invalid MQTT SET request for %s\n", label.c_str());
 }
 
 void CANDriver::defaultInit()
@@ -438,15 +440,13 @@ void CANDriver::defaultInit()
     cmdSendInfos[i]->cmd = CANConfig->COMMANDS[i];
   }
 
-  callbackCAN = [this](const String label, const char *payload, const uint32_t length) { handleMQTTSetRequest(label, payload, length); };
-
   lastTimeRunned = -(CANConfig->CAN_AUTOPOLL_TIME * 1000);
 
   canInited = true;
 
   listenOnly(CANConfig->CAN_READONLY_ENABLED);
 
-  debugSerial.println("CAN-Bus inited");
+  debugStream->println("CAN-Bus inited");
 }
 
 void CANDriver::checkPendingMessages()
@@ -456,7 +456,7 @@ void CANDriver::checkPendingMessages()
   for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
     if(cmdSendInfos[i]->pending == true && currentMillis - cmdSendInfos[i]->timeMessageSend >= CAN_MESSAGE_TIMEOUT * 1000) {
       cmdSendInfos[i]->pending = false;
-      debugSerial.printf("CAN Timeout for message: %s\n", cmdSendInfos[i]->cmd->label);
+      debugStream->printf("CAN Timeout for message: %s\n", cmdSendInfos[i]->cmd->label);
     }
   }
 }

@@ -3,10 +3,7 @@
 
 #include <SPI.h>
 #include <107-Arduino-MCP2515.h>
-#include "CAN/driver.hpp"
-#include "debugSerial.hpp"
-#include "MQTT/mqtt.hpp"
-#include "Config/config.hpp"
+#include "driver.hpp"
 
 #ifdef ARDUINO_ARCH_ESP8266
 #define SPI_begin(pin_sck, pin_miso, pin_mosi, pin_cs) SPI.begin()

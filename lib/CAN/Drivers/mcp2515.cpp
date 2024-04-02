@@ -31,7 +31,7 @@ bool DriverMCP2515::setMode(CanDriverMode mode)
 
 void DriverMCP2515::writeLoopbackTest()
 {
-  debugSerial.println("CAN running loopback test");
+  debugStream->println("CAN running loopback test");
 
   CanDriverMode modeBeforeTest = currentMode;
   setMode(CanDriverMode::Loopback);
@@ -60,7 +60,7 @@ void DriverMCP2515::writeLoopbackTest()
                 [this](CanFrame const frame)
                 {
                 if(!mcp2515->transmit(frame.id, frame.data, frame.len)) {
-                    debugSerial.println("ERROR TX");
+                    debugStream->println("ERROR TX");
                 }
                 delay(10);
                 });
@@ -298,7 +298,7 @@ bool DriverMCP2515::initInterface()
 
   if(!ratePossible) // test if we can write something to the MCP2515 (is a device connected?)
   {
-      debugSerial.println("CAN-Bus init failed! E1");
+      debugStream->println("CAN-Bus init failed! E1");
       return false;
   }
 
@@ -325,7 +325,7 @@ bool DriverMCP2515::initInterface()
   if(!setMode(CanDriverMode::Loopback)) // test if we can write something to the MCP2515 (is a device connected?)
   {
       SPI.end();
-      debugSerial.println("CAN-Bus init failed! E2");
+      debugStream->println("CAN-Bus init failed! E2");
       return false;
   }
 
@@ -344,7 +344,7 @@ void DriverMCP2515::sendCommand(CANCommand* cmd, bool setValue, int value)
   CanFrame* frame = getCanFrameFromCommand(cmd, setValue, value);
 
   if(!mcp2515->transmit(frame->id, frame->data, frame->len)) {
-    debugSerial.println("ERROR TX");
+    debugStream->println("ERROR TX");
   }
 
   delete frame;

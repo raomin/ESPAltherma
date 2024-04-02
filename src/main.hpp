@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <PubSubClient.h>
+#include <canBus.hpp>
 
 #include "arduinoC.hpp"
 #include "Config/config.hpp"
@@ -10,10 +11,10 @@
 #include "X10A/comm.hpp"
 #include "X10A/x10a.hpp"
 #include "MQTT/mqtt.hpp"
+#include "MQTT/mqttCallbacks.hpp"
 #include "WebUI/webui.hpp"
 #include "wireless.hpp"
 #include "persistence.hpp"
-#include "CAN/canBus.hpp"
 #include "arrayFunctions.hpp"
 #include "restart.hpp"
 

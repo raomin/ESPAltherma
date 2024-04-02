@@ -29,7 +29,7 @@ bool DriverELM327::setMode(CanDriverMode mode)
             listenOnly = false;
             write("AT E0", 5); // disable echo
             if(!ATCommandIsOK()) {
-                debugSerial.println("CAN-Bus setMode failed! E1");
+                debugStream->println("CAN-Bus setMode failed! E1");
                 return false;
             }
             break;
@@ -38,7 +38,7 @@ bool DriverELM327::setMode(CanDriverMode mode)
             listenOnly = false;
             write("AT E1", 5); // enable echo
             if(!ATCommandIsOK()) {
-                debugSerial.println("CAN-Bus setMode failed! E2");
+                debugStream->println("CAN-Bus setMode failed! E2");
                 return false;
             }
             break;
@@ -64,7 +64,7 @@ void DriverELM327::handleLoop()
         char c = Elm327Serial->read();
         if (c == '>') {
             if(received.length() > 8*2) {
-                debugSerial.printf("CAN-Bus receive error! Buffer: %s\n", received.c_str());
+                debugStream->printf("CAN-Bus receive error! Buffer: %s\n", received.c_str());
                 received = "";
                 continue;
             }
@@ -110,7 +110,7 @@ bool DriverELM327::write(const char *bytes, const size_t size)
 bool DriverELM327::initInterface()
 {
     if(CANConfig->CAN_SPEED_KBPS > 500) {
-        debugSerial.println("CAN-Bus init failed! E1");
+        debugStream->println("CAN-Bus init failed! E1");
         return false;
     }
 
@@ -120,25 +120,25 @@ bool DriverELM327::initInterface()
         deleteNeeded = true;
 
         if(!SerialBT->begin("ESPAltherma", true)) {
-            debugSerial.println("CAN-Bus init failed! BT - begin failed");
+            debugStream->println("CAN-Bus init failed! BT - begin failed");
             return false;
         }
 
         if(CANConfig->CAN_BLUETOOTH.USE_PIN) {
             if(!SerialBT->setPin(CANConfig->CAN_BLUETOOTH.PIN.c_str())) {
-                debugSerial.println("CAN-Bus init failed! BT - setPin failed");
+                debugStream->println("CAN-Bus init failed! BT - setPin failed");
                 return false;
             }
         }
 
         if (!SerialBT->connect(CANConfig->CAN_BLUETOOTH.DEVICENAME)) {
-            debugSerial.println("CAN-Bus init failed! BT - connect failed");
+            debugStream->println("CAN-Bus init failed! BT - connect failed");
             return false;
         }
 
         Elm327Serial = SerialBT;
         #else
-        debugSerial.println("CAN-Bus init failed! BT - this firmware is not compiled with bluetooth");
+        debugStream->println("CAN-Bus init failed! BT - this firmware is not compiled with bluetooth");
         return false;
         #endif
     } else if(CANConfig->CAN_BUS == CAN_ICBus::UART) {
@@ -147,19 +147,19 @@ bool DriverELM327::initInterface()
         delay(100);
 
         if(!Serial1) {
-            debugSerial.println("CAN-Bus init failed! UART - begin failed");
+            debugStream->println("CAN-Bus init failed! UART - begin failed");
             return false;
         }
 
         Elm327Serial = &Serial1;
     } else {
-        debugSerial.println("CAN-Bus init failed! E2 - not supported IC-Bus found");
+        debugStream->println("CAN-Bus init failed! E2 - not supported IC-Bus found");
         return false;
     }
 
     write("AT Z", 4);  // just reset ELM327
     if(!ATCommandIsOK()) {
-        debugSerial.println("CAN-Bus init failed! E3");
+        debugStream->println("CAN-Bus init failed! E3");
         return false;
     }
 
@@ -169,31 +169,31 @@ bool DriverELM327::initInterface()
 
     write(baudrateCmd, 14); // set given CAN-Bus baudrate
     if(!ATCommandIsOK()) {
-        debugSerial.println("CAN-Bus init failed! E4");
+        debugStream->println("CAN-Bus init failed! E4");
         return false;
     }
 
     write("AT PP 2F ON", 11); // Activate/save baud parameter
     if(!ATCommandIsOK()) {
-        debugSerial.println("CAN-Bus init failed! E5");
+        debugStream->println("CAN-Bus init failed! E5");
         return false;
     }
 
     write("AT R0", 5); // disable response waiting
     if(!ATCommandIsOK()) {
-        debugSerial.println("CAN-Bus init failed! E6");
+        debugStream->println("CAN-Bus init failed! E6");
         return false;
     }
 
     write("AT S0", 5); // disable spaces in return messages
     if(!ATCommandIsOK()) {
-        debugSerial.println("CAN-Bus init failed! E7");
+        debugStream->println("CAN-Bus init failed! E7");
         return false;
     }
 
     write("AT SP C", 7);
     if(!ATCommandIsOK()) {
-        debugSerial.println("CAN-Bus init failed! E8");
+        debugStream->println("CAN-Bus init failed! E8");
         return false;
     }
 
@@ -210,7 +210,7 @@ bool DriverELM327::setID(const uint16_t id)
     sprintf (message, "ATSH%X", id);
     write(message, 9);
     if(!ATCommandIsOK()) {
-        debugSerial.println("CAN-Bus setID failed!");
+        debugStream->println("CAN-Bus setID failed!");
         return false;
     }
 
@@ -233,7 +233,7 @@ void DriverELM327::sendCommand(CANCommand* cmd, bool setValue, int value)
     }
 
     if(!write(command, 16)) {
-        debugSerial.printf("CAN couldn't send command: %.16s\n", command);
+        debugStream->printf("CAN couldn't send command: %.16s\n", command);
     }
 
     delete frame;

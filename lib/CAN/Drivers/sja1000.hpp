@@ -3,9 +3,7 @@
 
 #ifndef ARDUINO_ARCH_ESP8266
 #include <driver/twai.h>
-#include "CAN/driver.hpp"
-#include "Config/config.hpp"
-#include "debugSerial.hpp"
+#include "driver.hpp"
 
 class DriverSJA1000 : public CANDriver
 {

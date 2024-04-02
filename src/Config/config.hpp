@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "CAN/config.hpp"
+#include <canBus.hpp>
 #include "X10A/config.hpp"
 
 #ifdef ARDUINO_ARCH_ESP8266
