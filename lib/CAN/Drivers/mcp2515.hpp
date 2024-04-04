@@ -1,15 +1,13 @@
 #ifndef DRIVER_MCP2515_H
 #define DRIVER_MCP2515_H
 
+#ifndef ARDUINO_ARCH_ESP8266
+
 #include <SPI.h>
 #include <107-Arduino-MCP2515.h>
 #include "driver.hpp"
 
-#ifdef ARDUINO_ARCH_ESP8266
-#define SPI_begin(pin_sck, pin_miso, pin_mosi, pin_cs) SPI.begin()
-#else
 #define SPI_begin(pin_sck, pin_miso, pin_mosi, pin_cs) SPI.begin(pin_sck, pin_miso, pin_mosi, pin_cs)
-#endif
 
 using namespace MCP2515;
 
@@ -29,5 +27,7 @@ public:
   void handleInterrupt();
   ~DriverMCP2515();
 };
+
+#endif
 
 #endif

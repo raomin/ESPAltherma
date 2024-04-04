@@ -1,5 +1,7 @@
 #include "mcp2515.hpp"
 
+#ifndef ARDUINO_ARCH_ESP8266
+
 using namespace MCP2515;
 using namespace CAN;
 
@@ -356,3 +358,5 @@ DriverMCP2515::~DriverMCP2515()
   self = nullptr;
   delete mcp2515;
 }
+
+#endif
