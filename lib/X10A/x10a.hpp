@@ -5,9 +5,16 @@
 #include <SerialFake.h>
 #endif
 
-#include <HardwareSerial.h>
 #ifdef ARDUINO_ARCH_ESP8266
 #include <SoftwareSerial.h>
+extern SoftwareSerial SerialX10A;
+#define SERIAL_CONFIG (SWSERIAL_8E1)
+#define DEFINE_SerialX10A SoftwareSerial SerialX10A
+#else
+#include <HardwareSerial.h>
+extern HardwareSerial SerialX10A;
+#define SERIAL_CONFIG (SERIAL_8E1)
+#define DEFINE_SerialX10A HardwareSerial SerialX10A(1)
 #endif
 
 #include "debugStream.hpp"
@@ -17,16 +24,6 @@
 #include "converters.hpp"
 #include "config.hpp"
 #include "comm.hpp"
-
-#ifdef ARDUINO_ARCH_ESP8266
-extern SoftwareSerial SerialX10A;
-#define SERIAL_CONFIG (SWSERIAL_8E1)
-#define DEFINE_SerialX10A SoftwareSerial SerialX10A
-#else
-extern HardwareSerial SerialX10A;
-#define SERIAL_CONFIG (SERIAL_8E1)
-#define DEFINE_SerialX10A HardwareSerial SerialX10A(1)
-#endif
 
 extern std::function<void(const ulong ms)> callbackX10A_wait;
 extern std::function<void()> callbackX10A_sendValues;
