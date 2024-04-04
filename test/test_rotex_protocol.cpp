@@ -1,10 +1,12 @@
-#include <ArduinoFake.h>
 #include <unity.h>
+#include <ArduinoFake.h>
 #include <iostream>
 #include <fstream>
+#include <ArduinoJson.h>
 
-// Few defines to mimic Arduino framework
-#include <x10a.hpp>
+#include "x10a.hpp"
+
+#define MODELS_CONFIG_SIZE 1024*10
 
 #define X10AFile "../build/X10A/English/PROTOCOL_S_ROTEX.json"
 

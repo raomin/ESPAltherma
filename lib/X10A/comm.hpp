@@ -2,7 +2,13 @@
 #define COMM_H
 
 #include <Arduino.h>
+
+#ifdef PIO_UNIT_TESTING
+#include <SerialFake.h>
+#else
 #include <HardwareSerial.h>
+#endif
+
 #include "debugStream.hpp"
 #include "registryBuffer.hpp"
 #include "config.hpp"
