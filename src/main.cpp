@@ -119,8 +119,8 @@ void setup()
   debugSerial.printf("ESP8266 Chip ID:%i\n", ESP.getFlashChipId());
   debugSerial.printf("ESP8266 Real Size:%i\n", ESP.getFlashChipRealSize());
   debugSerial.printf("ESP8266 Size: %i\n", ESP.getFlashChipSize());
-  debugSerial.printf("ESP8266 Speed%i\n", ESP.getFlashChipSpeed());
-  debugSerial.printf("ESP8266 Mode%i\n", ESP.getFlashChipMode());
+  debugSerial.printf("ESP8266 Speed: %i\n", ESP.getFlashChipSpeed());
+  debugSerial.printf("ESP8266 Mode: %i\n", ESP.getFlashChipMode());
   #else
   esp_chip_info_t chip;
   esp_chip_info(&chip);
