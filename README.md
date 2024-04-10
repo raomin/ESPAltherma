@@ -1,6 +1,5 @@
 ![](doc/images/logo.png)
 
-Testing Github connection
 
 <hr/>
 
@@ -337,6 +336,19 @@ When put in terms of ESPAltherma variables, the COP can be define as a sensor li
 }}
 {% else %} 0 {%endif%}"
 ```
+
+# HTTPS - Emoncms / OpenEnergyMonitor / HeatPumpMonitor
+
+## Background
+
+As many Daikin owners and installers are keen to use this platform to send data directly to the https://heatpumpmonitor.org/ site by https://openenergymonitor.org/ the addition of the HTTPS messaging was added as a feature. This removes the need to have an instance of HomeAssistant to receive the MQTT and re-send as HTTP to emoncms, the engine behind heatpumpmonitor.
+
+## Settings for Emoncms
+
+- in convertsers.h, BOOLNUM needs to be defined - this means that rather than ON or OFF being sent, the data is 0 or 1 which is what EMONCMS is expecting
+- in setup.h, HTTPS needs to be defined, as well as MQTT not being defined
+- also in setup.h, ONETOPIC_ONEVAL should not be defined.
+- APIKEY and NODE also need to be defined with your own values
 
 # FAQ
 
