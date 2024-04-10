@@ -345,7 +345,7 @@ As many Daikin owners and installers are keen to use this platform to send data 
 
 ## Settings for Emoncms
 
-- in convertsers.h, BOOLNUM needs to be defined - this means that rather than ON or OFF being sent, the data is 0 or 1 which is what EMONCMS is expecting
+- in converters.h, BOOLNUM needs to be defined - this means that rather than ON or OFF being sent, the data is 0 or 1 which is what EMONCMS is expecting
 - in setup.h, HTTPS needs to be defined, as well as MQTT not being defined
 - also in setup.h, ONETOPIC_ONEVAL should not be defined.
 - APIKEY and NODE also need to be defined with your own values
