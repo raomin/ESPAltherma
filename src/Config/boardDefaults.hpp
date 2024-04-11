@@ -33,7 +33,7 @@ const char* const JSON_BOARD_DEFAULTS =
       "\"mqtt_onetopic_name\": \"OneATTR/\","
       "\"mqtt_port\": 1883"
     "}"
-#elif defined(ESP32)
+#elif defined(ESP32) || defined(ESP8266)
     "\"Default\": {"
       "\"pin_rx\": 16,"
       "\"pin_tx\": 17,"
