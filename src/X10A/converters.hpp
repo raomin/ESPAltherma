@@ -1,7 +1,7 @@
 #ifndef CONVERTERS_H
 #define CONVERTERS_H
 
-#include <string.h>
+#include <Arduino.h>
 #include "parameterDef.hpp"
 #include "debugStream.hpp"
 

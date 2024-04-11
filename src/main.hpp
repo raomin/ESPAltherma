@@ -2,9 +2,9 @@
 #define MAIN_H
 
 #include <PubSubClient.h>
-#include <canBus.hpp>
-#include <x10a.hpp>
 
+#include "CAN/canBus.hpp"
+#include "X10A/x10a.hpp"
 #include "arduinoC.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"

@@ -1,9 +1,9 @@
 #ifndef DRIVER_SJA1000_H
 #define DRIVER_SJA1000_H
 
-#ifndef ARDUINO_ARCH_ESP8266
+#if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
 #include <driver/twai.h>
-#include "driver.hpp"
+#include "../driver.hpp"
 
 class DriverSJA1000 : public CANDriver
 {

@@ -1,28 +1,25 @@
 #ifndef X10A_H
 #define X10A_H
 
-#ifdef PIO_UNIT_TESTING
-#include <unity.h>
-#include <SerialFake.h>
-typedef unsigned long ulong;
-extern SerialFake SerialX10A;
-#define SERIAL_CONFIG (SWSERIAL_8E1)
-#define DEFINE_SerialX10A SerialFake SerialX10A
-#else
+#ifndef PIO_UNIT_TESTING
 
 #ifdef ARDUINO_ARCH_ESP8266
 #include <SoftwareSerial.h>
-extern SoftwareSerial SerialX10A;
+#define SERIAL_TYPE SoftwareSerial
 #define SERIAL_CONFIG (SWSERIAL_8E1)
-#define DEFINE_SerialX10A SoftwareSerial SerialX10A
+#define DEFINE_SerialX10A SERIAL_TYPE SerialX10A
 #else
 #include <HardwareSerial.h>
-extern HardwareSerial SerialX10A;
+#define SERIAL_TYPE HardwareSerial
 #define SERIAL_CONFIG (SERIAL_8E1)
-#define DEFINE_SerialX10A HardwareSerial SerialX10A(1)
-#endif
+#define DEFINE_SerialX10A SERIAL_TYPE SerialX10A(1)
 #endif
 
+#endif
+
+extern SERIAL_TYPE SerialX10A;
+
+#include <Arduino.h>
 #include "debugStream.hpp"
 #include "arrayFunctions.hpp"
 #include "registryBuffer.hpp"

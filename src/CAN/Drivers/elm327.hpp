@@ -1,8 +1,8 @@
 #ifndef DRIVER_ELM327_H
 #define DRIVER_ELM327_H
 
-#include "driver.hpp"
-#ifndef NO_BLUETOOTH
+#include "../driver.hpp"
+#if !defined(NO_BLUETOOTH) && !defined(PIO_UNIT_TESTING)
 #include <BluetoothSerial.h>
 #endif
 

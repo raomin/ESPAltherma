@@ -19,7 +19,7 @@ bool canBus_setup(const CAN_Config* CANConfig)
         result = driver->initInterface();
         break;
 
-    #ifndef ARDUINO_ARCH_ESP8266
+    #if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
     case CAN_ICTypes::MCP2515:
         driver = new DriverMCP2515(CANConfig);
         result = driver->initInterface();

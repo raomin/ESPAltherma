@@ -1,11 +1,11 @@
 #ifndef DRIVER_MCP2515_H
 #define DRIVER_MCP2515_H
 
-#ifndef ARDUINO_ARCH_ESP8266
+#if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
 
 #include <SPI.h>
 #include <107-Arduino-MCP2515.h>
-#include "driver.hpp"
+#include "../driver.hpp"
 
 #define SPI_begin(pin_sck, pin_miso, pin_mosi, pin_cs) SPI.begin(pin_sck, pin_miso, pin_mosi, pin_cs)
 

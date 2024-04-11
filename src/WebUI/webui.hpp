@@ -5,11 +5,10 @@
 #include <ESPAsyncWebServer.h>
 #include <WebSerialLite.h>
 #include <ArduinoJson.h>
-#include <x10a.hpp>
+#include "X10A/x10a.hpp"
 #include "Config/config.hpp"
 #include "wireless.hpp"
 #include "persistence.hpp"
-#include "arrayFunctions.hpp"
 #include "webuiBackgroundTasks.hpp"
 #include "semanticVersion.hpp"
 #include "Config/boardDefaults.hpp"
