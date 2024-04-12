@@ -1,5 +1,4 @@
-#ifndef PERSISTENCE_H
-#define PERSISTENCE_H
+#pragma once
 
 #include <Preferences.h>
 #include "Config/config.hpp"
@@ -20,5 +19,3 @@ void initPersistence();
 void savePersistence();
 
 void readPersistence();
-
-#endif

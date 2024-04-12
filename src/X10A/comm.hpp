@@ -1,5 +1,4 @@
-#ifndef COMM_H
-#define COMM_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -23,5 +22,3 @@
 #endif
 
 bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol);
-
-#endif

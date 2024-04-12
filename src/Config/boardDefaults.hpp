@@ -1,5 +1,4 @@
-#ifndef BOARD_DEFAULTS_H
-#define BOARD_DEFAULTS_H
+#pragma once
 
 const char* const JSON_BOARD_DEFAULTS =
 
@@ -67,5 +66,3 @@ const char* const JSON_BOARD_DEFAULTS =
     "\"Default\": {}"
 #endif
 ;
-
-#endif

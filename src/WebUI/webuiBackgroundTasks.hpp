@@ -1,5 +1,4 @@
-#ifndef WEBUI_BACKGROUND_TASKS_H
-#define WEBUI_BACKGROUND_TASKS_H
+#pragma once
 
 #include <ArduinoJson.hpp>
 #include "CAN/canBus.hpp"
@@ -37,5 +36,3 @@ extern String wifiLoadResponse;
 void webuiScanX10ARegister();
 void webuiScanCANRegister();
 void webuiScanWifi();
-
-#endif

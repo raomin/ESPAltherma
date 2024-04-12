@@ -1,10 +1,12 @@
-#include <unity.h>
-#include <ArduinoFake.h>
 #include <iostream>
 #include <fstream>
+#include <unity.h>
+#include <ArduinoFake.h>
 #include <ArduinoJson.h>
 
-class PrintF
+using namespace fakeit;
+
+struct PrintF : public StreamFake
 {
 public:
     PrintF() {}
@@ -19,7 +21,7 @@ public:
 #define DEFINE_SerialX10A SERIAL_TYPE SerialX10A
 typedef unsigned long ulong;
 
-#include "X10A/x10a.hpp"
+#include "X10A/x10a.cpp"
 
 #define MODELS_CONFIG_SIZE 1024*10
 
@@ -30,7 +32,6 @@ typedef unsigned long ulong;
 #endif
 
 X10A_Config* X10AConfig = nullptr;
-
 
 void setUp(void)
 {

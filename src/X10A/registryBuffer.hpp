@@ -1,5 +1,4 @@
-#ifndef REGISTRY_BUFFER_H
-#define REGISTRY_BUFFER_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -11,5 +10,3 @@ struct RegistryBuffer {
   bool Success;
   char CRC;
 };
-
-#endif

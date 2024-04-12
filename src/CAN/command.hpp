@@ -1,5 +1,4 @@
-#ifndef CAN_COMMAND_H
-#define CAN_COMMAND_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -42,5 +41,3 @@ struct CANCommand
     CANCommand( const char *namep, const char *labelp, byte commandp[CAN_COMMAND_BYTE_LENGTH], uint16_t idp, float divisorp, bool writablep, const char *unitp, const char *typep, const uint8_t valueCodeSizep, CANCommandValueCode** valueCodep);
     ~CANCommand();
 };
-
-#endif

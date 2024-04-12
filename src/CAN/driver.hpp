@@ -1,5 +1,4 @@
-#ifndef CAN_DRIVER_H
-#define CAN_DRIVER_H
+#pragma once
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -67,5 +66,3 @@ public:
     void handleMQTTSetRequest(const String &label, const char *payload, const uint32_t length);
     virtual ~CANDriver();
 };
-
-#endif

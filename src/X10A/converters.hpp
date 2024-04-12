@@ -1,5 +1,4 @@
-#ifndef CONVERTERS_H
-#define CONVERTERS_H
+#pragma once
 
 #include <Arduino.h>
 #include "parameterDef.hpp"
@@ -39,5 +38,3 @@ namespace ESPAltherma
 }
 
 extern ESPAltherma::Converter converter;
-
-#endif

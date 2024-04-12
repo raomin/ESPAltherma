@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef ARDUINO_M5Stick_C_Plus2
 #include <M5StickCPlus2.h>
 #elif ARDUINO_M5Stick_C_Plus

@@ -1,5 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once
 
 #include <PubSubClient.h>
 
@@ -28,4 +27,3 @@ void setup();
 void waitLoop(ulong ms);
 
 void loop();
-#endif

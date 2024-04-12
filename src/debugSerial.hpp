@@ -1,5 +1,4 @@
-#ifndef MQTT_SERIAL_H
-#define MQTT_SERIAL_H
+#pragma once
 
 #include <PubSubClient.h>
 #include <WebSerialLite.h>
@@ -69,5 +68,3 @@ public:
 };
 
 extern DebugSerial debugSerial;
-
-#endif

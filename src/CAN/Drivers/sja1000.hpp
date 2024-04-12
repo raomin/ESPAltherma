@@ -1,5 +1,4 @@
-#ifndef DRIVER_SJA1000_H
-#define DRIVER_SJA1000_H
+#pragma once
 
 #if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
 #include <driver/twai.h>
@@ -25,7 +24,5 @@ public:
   void handleLoop();
   ~DriverSJA1000();
 };
-
-#endif
 
 #endif

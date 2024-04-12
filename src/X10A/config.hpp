@@ -1,5 +1,4 @@
-#ifndef X10A_CONFIG_H
-#define X10A_CONFIG_H
+#pragma once
 
 #include <Arduino.h>
 #include "parameterDef.hpp"
@@ -21,5 +20,3 @@ struct X10A_Config
 
     ~X10A_Config();
 };
-
-#endif

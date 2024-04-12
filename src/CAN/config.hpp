@@ -1,5 +1,4 @@
-#ifndef CAN_CONFIG_H
-#define CAN_CONFIG_H
+#pragma once
 
 #include <Arduino.h>
 #include "command.hpp"
@@ -62,5 +61,3 @@ struct CAN_Config
 
     ~CAN_Config();
 };
-
-#endif

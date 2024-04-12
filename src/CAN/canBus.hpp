@@ -1,5 +1,4 @@
-#ifndef CAN_BUS_H
-#define CAN_BUS_H
+#pragma once
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -21,5 +20,3 @@ String canBus_readAllCommands();
 void canBus_fill_config(JsonObject &jsonObject, CAN_Config *config);
 
 void canBus_stop();
-
-#endif

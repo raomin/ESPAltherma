@@ -1,6 +1,4 @@
-#ifndef WIRELESS_H
-#define WIRELESS_H
-
+#pragma once
 
 #ifdef ARDUINO_ARCH_ESP8266
 #include <ESP8266WiFi.h>
@@ -42,6 +40,4 @@ void scan_wifi();
 
 #ifdef ARDUINO_ARCH_ESP8266
 void get_wifi_bssid(const char *ssid, uint8_t *bssid, uint32_t *wifi_channel);
-#endif
-
 #endif

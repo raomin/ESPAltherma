@@ -1,5 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include <stdint.h>
 #include <LittleFS.h>
@@ -62,5 +61,3 @@ extern ESPAlthermaConfig* config;
 void readConfig();
 
 void saveConfig();
-
-#endif

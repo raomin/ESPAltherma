@@ -1,5 +1,4 @@
-#ifndef PARAMETERDEF_H
-#define PARAMETERDEF_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -15,5 +14,3 @@ struct ParameterDef
 
     ParameterDef(int registryIDp, int offsetp, int convidp, int dataSizep, int dataTypep, String labelp);
 };
-
-#endif

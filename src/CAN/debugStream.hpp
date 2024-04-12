@@ -1,10 +1,7 @@
-#ifndef CAN_DEBUG_STREAM_H
-#define CAN_DEBUG_STREAM_H
+#pragma once
 
 #include <Arduino.h>
 
 namespace CAN {
     extern Stream* debugStream;
 }
-
-#endif

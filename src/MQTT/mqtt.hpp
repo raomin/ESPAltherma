@@ -1,5 +1,4 @@
-#ifndef MQTT_H
-#define MQTT_H
+#pragma once
 
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
@@ -75,5 +74,3 @@ void mqttPublish(const MQTTPublishTopic topic, const char* payload, const char* 
 int mqttCANTopicLength();
 
 void mqttSetCallback(MQTT_CALLBACK_SIGNATURE);
-
-#endif

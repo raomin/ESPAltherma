@@ -1,5 +1,4 @@
-#ifndef DRIVER_MCP2515_H
-#define DRIVER_MCP2515_H
+#pragma once
 
 #if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
 
@@ -27,7 +26,5 @@ public:
   void handleInterrupt();
   ~DriverMCP2515();
 };
-
-#endif
 
 #endif

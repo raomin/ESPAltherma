@@ -1,5 +1,4 @@
-#ifndef WEBUI_H
-#define WEBUI_H
+#pragma once
 
 #include <LittleFS.h>
 #include <ESPAsyncWebServer.h>
@@ -64,5 +63,3 @@ enum class LoopRunStatus : uint8_t {
 extern LoopRunStatus mainLoopStatus;
 
 void WebUI_Init();
-
-#endif

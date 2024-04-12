@@ -1,5 +1,4 @@
-#ifndef SEMANTIC_VERSION_H
-#define SEMANTIC_VERSION_H
+#pragma once
 
 #include "arduinoC.hpp"
 
@@ -27,5 +26,3 @@ public:
 
     SemanticVersion(const String version);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef DRIVER_ELM327_H
-#define DRIVER_ELM327_H
+#pragma once
 
 #include "../driver.hpp"
 #if !defined(NO_BLUETOOTH) && !defined(PIO_UNIT_TESTING)
@@ -33,5 +32,3 @@ public:
     void sendCommand(CANCommand* cmd, bool setValue = false, int value = 0);
     ~DriverELM327();
 };
-
-#endif
