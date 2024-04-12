@@ -132,3 +132,20 @@ void x10a_loop()
     handleState = HandleState::Stopped;
   }
 }
+
+void x10a_fill_config(JsonObject &jsonObject, X10A_Config *config) {
+  JsonArray parameters = jsonObject["PARAMETERS"].as<JsonArray>();
+  config->PARAMETERS_LENGTH = parameters.size();
+  config->PARAMETERS = new ParameterDef *[config->PARAMETERS_LENGTH];
+
+  for (size_t i = 0; i < config->PARAMETERS_LENGTH; i++) {
+    JsonArray parameter = parameters[i];
+    config->PARAMETERS[i] = new ParameterDef(
+        parameter[0].as<const int>(),
+        parameter[1].as<const int>(),
+        parameter[2].as<const int>(),
+        parameter[3].as<const int>(),
+        parameter[4].as<const int>(),
+        parameter[5]);
+  }
+}

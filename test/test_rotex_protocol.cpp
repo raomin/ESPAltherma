@@ -20,7 +20,6 @@ public:
 typedef unsigned long ulong;
 
 #include "X10A/x10a.hpp"
-#include "Config/config.hpp"
 
 #define MODELS_CONFIG_SIZE 1024*10
 
@@ -49,7 +48,7 @@ void setUp(void)
 
     JsonObject jsonObject = configDoc.as<JsonObject>();
 
-    fillX10AParameters(jsonObject, X10AConfig);
+    x10a_fill_config(jsonObject, X10AConfig);
     x10a_init(X10AConfig, true);
 }
 

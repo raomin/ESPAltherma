@@ -64,6 +64,57 @@ String canBus_readAllCommands()
     return "";
 }
 
+void canBus_fill_config(JsonObject &jsonObject, CAN_Config *config)
+{
+    JsonArray commands = jsonObject["COMMANDS"].as<JsonArray>();
+    config->COMMANDS_LENGTH = commands.size();
+    config->COMMANDS = new CANCommand *[config->COMMANDS_LENGTH];
+
+    for (size_t i = 0; i < config->COMMANDS_LENGTH; i++) {
+        JsonArray command = commands[i];
+
+        JsonArray commandBytes = command[CAN_COMMAND_INDEX_COMMAND];
+        byte commandArray[] = {
+            commandBytes[0],
+            commandBytes[1],
+            commandBytes[2],
+            commandBytes[3],
+            commandBytes[4],
+            commandBytes[5],
+            commandBytes[6]};
+
+        CANCommandValueCode **valueCodes;
+        uint8_t valueCodeSize = 0;
+
+        if (command.size() > CAN_COMMAND_INDEX_VALUE_CODE) {
+            JsonObject valueCodeCommands = command[CAN_COMMAND_INDEX_VALUE_CODE].as<JsonObject>();
+            valueCodeSize = valueCodeCommands.size();
+            valueCodes = new CANCommandValueCode *[valueCodeSize];
+
+            uint8_t valueCodeCounter = 0;
+
+            for (JsonPair keyValue : valueCodeCommands) {
+                valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
+                valueCodeCounter++;
+            }
+        } else {
+            valueCodes = nullptr;
+        }
+
+        config->COMMANDS[i] = new CANCommand(
+            command[CAN_COMMAND_INDEX_NAME],
+            command[CAN_COMMAND_INDEX_LABEL],
+            commandArray,
+            command[CAN_COMMAND_INDEX_ID].as<const uint16_t>(),
+            command[CAN_COMMAND_INDEX_DIVISOR].as<const float>(),
+            command[CAN_COMMAND_INDEX_WRITABLE].as<const bool>(),
+            command[CAN_COMMAND_INDEX_UNIT],
+            command[CAN_COMMAND_INDEX_TYPE],
+            valueCodeSize,
+            valueCodes);
+    }
+}
+
 void canBus_stop()
 {
     if(driver != nullptr)

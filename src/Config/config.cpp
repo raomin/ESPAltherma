@@ -88,7 +88,7 @@ void readConfig()
         X10AConfig->X10A_PROTOCOL = (X10AProtocol)configX10ADoc["X10A_PROTOCOL"].as<uint8_t>();
         X10AConfig->WEBUI_SELECTION_VALUES = (char *)configX10ADoc["WEBUI_SELECTION_VALUES"].as<const char*>();
 
-        fillX10AParameters(configX10ADoc, X10AConfig);
+        x10a_fill_config(configX10ADoc, X10AConfig);
 
         config->X10A_CONFIG = X10AConfig;
     }
@@ -122,74 +122,10 @@ void readConfig()
             CANConfig->CAN_AUTOPOLL_TIME = configCANDoc["CAN_AUTOPOLL_TIME"].as<uint16_t>();
         }
 
-        JsonArray commands = configCANDoc["COMMANDS"].as<JsonArray>();
-        CANConfig->COMMANDS_LENGTH = commands.size();
-        CANConfig->COMMANDS = new CANCommand*[CANConfig->COMMANDS_LENGTH];
-
-        for(size_t i = 0; i < CANConfig->COMMANDS_LENGTH; i++) {
-            JsonArray command = commands[i];
-
-            JsonArray commandBytes = command[CAN_COMMAND_INDEX_COMMAND];
-            byte commandArray[] = {
-                commandBytes[0],
-                commandBytes[1],
-                commandBytes[2],
-                commandBytes[3],
-                commandBytes[4],
-                commandBytes[5],
-                commandBytes[6]
-            };
-
-            CANCommandValueCode** valueCodes;
-            uint8_t valueCodeSize = 0;
-
-            if(command.size() > CAN_COMMAND_INDEX_VALUE_CODE) {
-                JsonObject valueCodeCommands = command[CAN_COMMAND_INDEX_VALUE_CODE].as<JsonObject>();
-                valueCodeSize = valueCodeCommands.size();
-                valueCodes = new CANCommandValueCode*[valueCodeSize];
-
-                uint8_t valueCodeCounter = 0;
-
-                for (JsonPair keyValue : valueCodeCommands) {
-                    valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
-                    valueCodeCounter++;
-                }
-            } else {
-                valueCodes = nullptr;
-            }
-
-            CANConfig->COMMANDS[i] = new CANCommand(
-                command[CAN_COMMAND_INDEX_NAME],
-                command[CAN_COMMAND_INDEX_LABEL],
-                commandArray,
-                command[CAN_COMMAND_INDEX_ID].as<const uint16_t>(),
-                command[CAN_COMMAND_INDEX_DIVISOR].as<const float>(),
-                command[CAN_COMMAND_INDEX_WRITABLE].as<const bool>(),
-                command[CAN_COMMAND_INDEX_UNIT],
-                command[CAN_COMMAND_INDEX_TYPE],
-                valueCodeSize,
-                valueCodes);
-        }
+        canBus_fill_config(configCANDoc, CANConfig);
 
         config->CAN_CONFIG = CANConfig;
     }
-}
-
-void fillX10AParameters(JsonObject &jsonObject, X10A_Config *config) {
-  JsonArray parameters = jsonObject["PARAMETERS"].as<JsonArray>();
-  config->PARAMETERS_LENGTH = parameters.size();
-  config->PARAMETERS = new ParameterDef *[config->PARAMETERS_LENGTH];
-
-  for (size_t i = 0; i < config->PARAMETERS_LENGTH; i++) {
-    JsonArray parameter = parameters[i];
-    config->PARAMETERS[i] = new ParameterDef(
-        parameter[0].as<const int>(),
-        parameter[1].as<const int>(),
-        parameter[2].as<const int>(),
-        parameter[3].as<const int>(),
-        parameter[4].as<const int>(),
-        parameter[5]);
-  }
 }
 
 void saveConfig()
