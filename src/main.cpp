@@ -4,6 +4,8 @@
 #include <M5StickCPlus.h>
 #elif ARDUINO_M5Stick_C
 #include <M5StickC.h>
+#elif ARDUINO_M5Stack_Tough
+#include <M5Tough.h>
 #else
 #include <Arduino.h>
 #endif
@@ -35,7 +37,7 @@ Converter converter;
 char registryIDs[32]; //Holds the registries to query
 bool busy = false;
 
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stack_Tough)
 long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
 #endif
 
@@ -85,6 +87,7 @@ void updateValues(char regID)
 }
 
 uint16_t loopcount =0;
+boolean display_sleeping = false;
 
 void extraLoop()
 {
@@ -112,6 +115,21 @@ void extraLoop()
     LCDTimeout = millis() + 30000;
   } else if (LCDTimeout < millis()) { //Turn screen off.
     M5.Display.sleep();
+  }
+  M5.update();
+#endif
+
+#ifdef ARDUINO_M5Stack_Tough
+  if (M5.Touch.changed){//Turn back ON screen
+    M5.Lcd.setBrightness(12);
+    M5.Lcd.wakeup();
+    LCDTimeout = millis() + 30000;
+    display_sleeping = false;
+
+  }else if (LCDTimeout < millis() && !display_sleeping){//Turn screen off.
+    M5.Lcd.sleep();
+    M5.Lcd.setBrightness(0);
+    display_sleeping = true;
   }
   M5.update();
 #endif
@@ -258,7 +276,7 @@ void initRegistries(){
 }
 
 void setupScreen(){
-#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) 
+#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stack_Tough)
   M5.begin();
 #if !defined(ARDUINO_M5Stick_C_Plus2)
   M5.Axp.EnableCoulombcounter();
