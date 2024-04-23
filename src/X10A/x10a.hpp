@@ -1,33 +1,16 @@
-#ifndef X10A_H
-#define X10A_H
-
-#ifndef PIO_UNIT_TESTING
-
-#ifdef ARDUINO_ARCH_ESP8266
-#include <SoftwareSerial.h>
-#define SERIAL_TYPE SoftwareSerial
-#define SERIAL_CONFIG (SWSERIAL_8E1)
-#define DEFINE_SerialX10A SERIAL_TYPE SerialX10A
-#else
-#include <HardwareSerial.h>
-#define SERIAL_TYPE HardwareSerial
-#define SERIAL_CONFIG (SERIAL_8E1)
-#define DEFINE_SerialX10A SERIAL_TYPE SerialX10A(1)
-#endif
-
-#endif
-
-extern SERIAL_TYPE SerialX10A;
+#pragma once
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include "IX10ASerial.hpp"
 #include "debugStream.hpp"
 #include "arrayFunctions.hpp"
 #include "registryBuffer.hpp"
 #include "parameterDef.hpp"
 #include "converters.hpp"
 #include "config.hpp"
-#include "comm.hpp"
+
+#define SER_TIMEOUT 300 // leave 300ms for the machine to answer
 
 extern std::function<void(const ulong ms)> callbackX10A_wait;
 extern std::function<void()> callbackX10A_sendValues;
@@ -54,5 +37,3 @@ void x10a_init(X10A_Config* X10AConfig, const bool disableMQTTLogMessagesToInit)
 void x10a_fill_config(JsonObject &jsonObject, X10A_Config *X10AConfig);
 
 void x10a_loop();
-
-#endif

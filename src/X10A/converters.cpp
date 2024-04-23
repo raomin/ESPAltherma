@@ -1,6 +1,6 @@
 #include "converters.hpp"
 
-using ESPAltherma::Converter;
+using X10A::Converter;
 using namespace X10A;
 
 Converter converter;

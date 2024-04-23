@@ -4,7 +4,7 @@
 #include "parameterDef.hpp"
 #include "debugStream.hpp"
 
-namespace ESPAltherma
+namespace X10A
 {
     class Converter
     {
@@ -37,4 +37,4 @@ namespace ESPAltherma
 
 }
 
-extern ESPAltherma::Converter converter;
+extern X10A::Converter converter;
