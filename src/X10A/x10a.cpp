@@ -6,7 +6,7 @@ std::function<void(const ulong ms)> callbackX10A_wait;
 std::function<void()> callbackX10A_sendValues;
 std::function<void(ParameterDef *labelDef)> callbackX10A_updateValues;
 
-IX10ASerial* SerialX10A;
+IX10ASerial* SerialX10A = nullptr;
 
 static X10A_Config* X10AConfig = nullptr;
 bool disableMQTTLogMessages;
@@ -130,6 +130,10 @@ void x10a_end()
 {
   if(SerialX10A) {
     SerialX10A->end();
+  }
+
+  if(SerialX10A != nullptr) {
+    delete SerialX10A;
   }
 
   if(X10AConfig != nullptr) {
@@ -260,4 +264,9 @@ void x10a_fill_config(JsonObject &jsonObject, X10A_Config *config) {
         parameter[4].as<const int>(),
         parameter[5]);
   }
+}
+
+bool x10a_got_inited()
+{
+  return SerialX10A != nullptr;
 }

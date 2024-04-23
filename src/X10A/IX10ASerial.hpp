@@ -5,6 +5,8 @@
 class IX10ASerial
 {
     public:
+        virtual ~IX10ASerial();
+
         virtual void begin(ulong baud, int8_t rxPin, int8_t txPin);
         virtual void end();
 

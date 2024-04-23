@@ -32,8 +32,10 @@ void x10a_handle(RegistryBuffer* buffer, const size_t& bufferSize, const bool se
 
 void x10a_convert_values(RegistryBuffer* buffer, const size_t& bufferSize, const bool sendValuesViaMQTT);
 
-void x10a_init(X10A_Config* X10AConfig, const bool disableMQTTLogMessagesToInit);
+void x10a_init(IX10ASerial* serial, X10A_Config* X10AConfig, const bool disableMQTTLogMessagesToInit);
 
 void x10a_fill_config(JsonObject &jsonObject, X10A_Config *X10AConfig);
+
+bool x10a_got_inited();
 
 void x10a_loop();
