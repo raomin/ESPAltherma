@@ -31,3 +31,8 @@ int X10ASerial::read()
 {
     return SerialX10A.read();
 }
+
+X10ASerial::operator bool() const
+{
+    return SerialX10A;
+}

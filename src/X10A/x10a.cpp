@@ -6,7 +6,7 @@ std::function<void(const ulong ms)> callbackX10A_wait;
 std::function<void()> callbackX10A_sendValues;
 std::function<void(ParameterDef *labelDef)> callbackX10A_updateValues;
 
-IX10ASerial* SerialX10A = nullptr;
+IX10ASerial* X10ASerial = nullptr;
 
 static X10A_Config* X10AConfig = nullptr;
 bool disableMQTTLogMessages;
@@ -79,15 +79,15 @@ bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol)
 
   // sending command to serial
   debugStream->printf("Querying register 0x%02x... ", registryBuffer->RegistryID);
-  SerialX10A->flush(); // prevent possible pending info on the read
-  SerialX10A->write((uint8_t*)prep, queryLength);
+  X10ASerial->flush(); // prevent possible pending info on the read
+  X10ASerial->write((uint8_t*)prep, queryLength);
   ulong start = millis();
 
   int len = 0;
   int replyLen = get_reply_len(registryBuffer->RegistryID, protocol);
   while ((len < replyLen) && (millis() < (start + SER_TIMEOUT))) {
-    if (SerialX10A->available()) {
-      registryBuffer->Buffer[len++] = SerialX10A->read();
+    if (X10ASerial->available()) {
+      registryBuffer->Buffer[len++] = X10ASerial->read();
       if (protocol == X10AProtocol::I && len == 3) {
         // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
         replyLen = registryBuffer->Buffer[2] + 2;
@@ -128,12 +128,12 @@ bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol)
 
 void x10a_end()
 {
-  if(SerialX10A) {
-    SerialX10A->end();
+  if(X10ASerial) {
+    X10ASerial->end();
   }
 
-  if(SerialX10A != nullptr) {
-    delete SerialX10A;
+  if(X10ASerial != nullptr) {
+    delete X10ASerial;
   }
 
   if(X10AConfig != nullptr) {
@@ -218,13 +218,17 @@ void x10a_convert_values(RegistryBuffer* buffer, const size_t& bufferSize, const
   }
 }
 
-void x10a_init(IX10ASerial* serial, X10A_Config* X10AConfigToInit, const bool disableMQTTLogMessagesToInit)
+void x10a_set_serial(IX10ASerial* serial)
+{
+  X10ASerial = serial;
+}
+
+void x10a_init(X10A_Config* X10AConfigToInit, const bool disableMQTTLogMessagesToInit)
 {
   x10a_end();
-  SerialX10A = serial;
   X10AConfig = X10AConfigToInit;
   disableMQTTLogMessages = disableMQTTLogMessagesToInit;
-  SerialX10A->begin(9600, X10AConfig->PIN_RX, X10AConfig->PIN_TX);
+  X10ASerial->begin(9600, X10AConfig->PIN_RX, X10AConfig->PIN_TX);
 }
 
 void x10a_loop()
@@ -268,5 +272,5 @@ void x10a_fill_config(JsonObject &jsonObject, X10A_Config *config) {
 
 bool x10a_got_inited()
 {
-  return SerialX10A != nullptr;
+  return X10ASerial;
 }
