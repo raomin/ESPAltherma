@@ -4,7 +4,6 @@
 #include <ArduinoJson.h>
 #include "IX10ASerial.hpp"
 #include "debugStream.hpp"
-#include "arrayFunctions.hpp"
 #include "registryBuffer.hpp"
 #include "parameterDef.hpp"
 #include "converters.hpp"
