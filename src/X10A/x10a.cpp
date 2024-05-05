@@ -7,6 +7,7 @@ std::function<void()> callbackX10A_sendValues;
 std::function<void(ParameterDef *labelDef)> callbackX10A_updateValues;
 
 IX10ASerial* X10ASerial = nullptr;
+IDebugStream* debugStream = nullptr;
 
 static X10A_Config* X10AConfig = nullptr;
 bool disableMQTTLogMessages;
@@ -233,8 +234,12 @@ void x10a_set_serial(IX10ASerial* serial)
   X10ASerial = serial;
 }
 
-void x10a_init(X10A_Config* X10AConfigToInit, const bool disableMQTTLogMessagesToInit)
+void x10a_init(IDebugStream* stream, X10A_Config* X10AConfigToInit, const bool disableMQTTLogMessagesToInit)
 {
+  if(stream != nullptr) {
+    debugStream = stream;
+  }
+
   x10a_end();
   X10AConfig = X10AConfigToInit;
   disableMQTTLogMessages = disableMQTTLogMessagesToInit;

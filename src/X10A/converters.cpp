@@ -5,7 +5,7 @@ using namespace X10A;
 
 Converter converter;
 
-void Converter::convert(ParameterDef *def, byte *data)
+void Converter::convert(IDebugStream* debugStream, ParameterDef *def, byte *data)
 {
     def->asString[0] = {0};
     int convId = def->convid;
@@ -197,7 +197,7 @@ void Converter::convert(ParameterDef *def, byte *data)
         case 305:
         case 306:
         case 307:
-            convertTable300(data, def->convid, def->asString);
+            convertTable300(debugStream, data, def->convid, def->asString);
             return;
         case 312:
             dblData = convertTable312(data);
@@ -248,7 +248,7 @@ void Converter::convert(ParameterDef *def, byte *data)
     debugStream->printf("-> %s\n", def->asString);
 }
 
-void Converter::convertTable300(byte *data, int tableID, char *ret)
+void Converter::convertTable300(IDebugStream* debugStream, byte *data, int tableID, char *ret)
 {
     debugStream->printf("Bin Conv %02x with tableID %d \n", data[0], tableID);
     char b = 1;

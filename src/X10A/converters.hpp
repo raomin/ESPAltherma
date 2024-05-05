@@ -2,17 +2,17 @@
 
 #include <Arduino.h>
 #include "parameterDef.hpp"
-#include "debugStream.hpp"
+#include "IDebugStream.hpp"
 
 namespace X10A
 {
     class Converter
     {
     public:
-        void convert(ParameterDef *def, byte *data);
+        void convert(IDebugStream* debugStream, ParameterDef *def, byte *data);
 
     private:
-        void convertTable300(byte *data, int tableID, char *ret);
+        void convertTable300(IDebugStream* debugStream, byte *data, int tableID, char *ret);
 
         void convertTable203(byte *data, char *ret);
 

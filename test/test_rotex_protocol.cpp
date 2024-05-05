@@ -31,14 +31,14 @@ typedef unsigned long ulong;
 #error Run script "build_x10a_commands.py" before running test!
 #endif
 
-X10A_Config* X10AConfig = nullptr;
+X10A_Config* TestX10AConfig = nullptr;
 
 void setUp(void)
 {
     ArduinoFakeReset();
 
-    X10AConfig = new X10A_Config();
-    X10AConfig->X10A_PROTOCOL = X10AProtocol::S;
+    TestX10AConfig = new X10A_Config();
+    TestX10AConfig->X10A_PROTOCOL = X10AProtocol::S;
 
     std::ifstream inputFile(X10AFile);
     std::string jsonContent((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
@@ -49,8 +49,8 @@ void setUp(void)
 
     JsonObject jsonObject = configDoc.as<JsonObject>();
 
-    x10a_fill_config(jsonObject, X10AConfig);
-    x10a_init(X10AConfig, true);
+    x10a_fill_config(jsonObject, TestX10AConfig);
+    x10a_init(TestX10AConfig, true);
 }
 
 void tearDown(void)
@@ -59,8 +59,8 @@ void tearDown(void)
 }
 
 void makeAssert(const String label, const String value) {
-    for (size_t i = 0; i < X10AConfig->PARAMETERS_LENGTH; i++) {
-        auto&& param = *X10AConfig->PARAMETERS[i];
+    for (size_t i = 0; i < TestX10AConfig->PARAMETERS_LENGTH; i++) {
+        auto&& param = *TestX10AConfig->PARAMETERS[i];
 
         if(param.label.equals(label)) {
             TEST_ASSERT_EQUAL_STRING(value.c_str(), param.asString);

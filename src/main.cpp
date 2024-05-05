@@ -152,11 +152,10 @@ void setup()
   x10a_set_serial(new X10ASerial());
 
   if(config->X10A_ENABLED) {
-    X10A::debugStream = &debugSerial;
     callbackX10A_updateValues = updateValues;
     callbackX10A_sendValues = sendValues;
     callbackX10A_wait = waitLoop;
-    x10a_init(config->X10A_CONFIG, config->MQTT_DISABLE_LOG_MESSAGES); // TODO: Correct place to use a MQTT config variable inside X10A??
+    x10a_init(new DebugStream((Stream*)debugSerial), config->X10A_CONFIG, config->MQTT_DISABLE_LOG_MESSAGES); // TODO: Correct place to use a MQTT config variable inside X10A??
     x10a_initRegistries(&registryBuffers, registryBufferSize);
   }
 

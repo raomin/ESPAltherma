@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include "IX10ASerial.hpp"
-#include "debugStream.hpp"
+#include "IDebugStream.hpp"
 #include "registryBuffer.hpp"
 #include "parameterDef.hpp"
 #include "converters.hpp"
@@ -33,7 +33,7 @@ void x10a_convert_values(RegistryBuffer* buffer, const size_t& bufferSize, const
 
 void x10a_set_serial(IX10ASerial* serial);
 
-void x10a_init(X10A_Config* X10AConfig, const bool disableMQTTLogMessagesToInit);
+void x10a_init(IDebugStream* stream, X10A_Config* X10AConfig, const bool disableMQTTLogMessagesToInit);
 
 void x10a_fill_config(JsonObject &jsonObject, X10A_Config *X10AConfig);
 
