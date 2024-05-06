@@ -216,7 +216,7 @@ void x10a_convert_values(RegistryBuffer* buffer, const size_t& bufferSize, const
         byte* input = buffer[j].Buffer;
         input += label.offset + offset;
 
-        converter.convert(&label, input);  // convert buffer result of label offset to correct/usabel value
+        converter.convert(debugStream, &label, input);  // convert buffer result of label offset to correct/usabel value
 
         if (sendValuesViaMQTT) {
           callbackX10A_updateValues(&label);  // send them in mqtt
