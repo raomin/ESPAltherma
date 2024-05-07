@@ -1,9 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <unity.h>
-#include <ArduinoFake.h>
+#include <Arduino.h>
 #include <ArduinoJson.h>
-#include "X10A/IDebugStream.hpp"
 
 using namespace fakeit;
 
@@ -17,32 +16,14 @@ public:
     size_t print(const char[]) {return 0;}
 };
 
-class DebugStreamF : public IDebugStream
-{
-    public:
-        DebugStreamF() {}
-        ~DebugStreamF() {}
-
-        size_t printf(const char * format, ...) {return 0;}
-
-        size_t print(const __FlashStringHelper *ifsh) {return 0;}
-        size_t print(const String& s) {return 0;}
-        size_t print(const char c[]) {return 0;}
-        size_t print(char c) {return 0;}
-
-        size_t println(const __FlashStringHelper *ifsh) {return 0;}
-        size_t println(const String& s) {return 0;}
-        size_t println(const char c[]) {return 0;}
-        size_t println(char c) {return 0;}
-        size_t println(void) {return 0;}
-};
-
 #define SERIAL_TYPE PrintF
 #define SERIAL_CONFIG (SWSERIAL_8E1)
 #define DEFINE_SerialX10A SERIAL_TYPE SerialX10A
 typedef unsigned long ulong;
 
-#include "X10A/x10a.cpp"
+#include "X10A/x10a.hpp"
+
+using namespace X10A;
 
 #define MODELS_CONFIG_SIZE 1024*10
 
@@ -53,11 +34,12 @@ typedef unsigned long ulong;
 #endif
 
 X10A_Config* TestX10AConfig = nullptr;
-DebugStreamF debugStreamF;
 
 void setUp(void)
 {
     ArduinoFakeReset();
+
+    Mock<IDebugStream> mockDebugStream;
 
     TestX10AConfig = new X10A_Config();
     TestX10AConfig->X10A_PROTOCOL = X10AProtocol::S;
@@ -72,7 +54,7 @@ void setUp(void)
     JsonObject jsonObject = configDoc.as<JsonObject>();
 
     x10a_fill_config(jsonObject, TestX10AConfig);
-    x10a_init(&debugStreamF, TestX10AConfig, true);
+    x10a_init(&mockDebugStream.get(), TestX10AConfig, true);
 }
 
 void tearDown(void)
