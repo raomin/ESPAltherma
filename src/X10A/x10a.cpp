@@ -281,7 +281,7 @@ void x10a_fill_config(JsonObject &jsonObject, X10A_Config *config) {
         parameter[2].as<const int>(),
         parameter[3].as<const int>(),
         parameter[4].as<const int>(),
-        parameter[5]);
+        parameter[5].as<const char*>());
   }
 }
 
