@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef PIO_UNIT_TESTING
+
 #include <Arduino.h>
 #include "IDebugStream.hpp"
 
@@ -24,3 +26,5 @@ class DebugStream : public IDebugStream
         size_t println(char c);
         size_t println(void);
 };
+
+#endif

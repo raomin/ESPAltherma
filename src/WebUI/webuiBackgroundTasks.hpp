@@ -2,8 +2,8 @@
 
 #include <ArduinoJson.hpp>
 #include "CAN/canBus.hpp"
-#include "X10A/x10a.hpp"
-#include "X10A/X10ASerial.hpp"
+#include <x10a.hpp>
+#include <X10ASerial.hpp>
 #include "arduinoC.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"

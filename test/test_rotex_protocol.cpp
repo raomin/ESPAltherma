@@ -21,7 +21,7 @@ public:
 #define DEFINE_SerialX10A SERIAL_TYPE SerialX10A
 typedef unsigned long ulong;
 
-#include "X10A/x10a.hpp"
+#include <x10a.hpp>
 
 using namespace X10A;
 

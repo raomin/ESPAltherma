@@ -4,7 +4,7 @@
 #include <ESPAsyncWebServer.h>
 #include <WebSerialLite.h>
 #include <ArduinoJson.h>
-#include "X10A/x10a.hpp"
+#include <x10a.hpp>
 #include "Config/config.hpp"
 #include "wireless.hpp"
 #include "persistence.hpp"

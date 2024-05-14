@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef PIO_UNIT_TESTING
+
 #include "IX10ASerial.hpp"
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -31,3 +33,5 @@ class X10ASerial : public IX10ASerial
     
     operator bool() const;
 };
+
+#endif

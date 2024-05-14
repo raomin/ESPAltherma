@@ -3,8 +3,8 @@
 #include <PubSubClient.h>
 
 #include "CAN/canBus.hpp"
-#include "X10A/x10a.hpp"
-#include "X10A/DebugStream.hpp"
+#include <x10a.hpp>
+#include <DebugStream.hpp>
 #include "arduinoC.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"

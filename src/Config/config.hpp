@@ -4,7 +4,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include "CAN/canBus.hpp"
-#include "X10A/x10a.hpp"
+#include <x10a.hpp>
 
 #ifdef ARDUINO_ARCH_ESP8266
 #define FILE_READ       "r"

@@ -1,5 +1,7 @@
 #include "DebugStream.hpp"
 
+#ifndef PIO_UNIT_TESTING
+
 DebugStream::DebugStream(Stream* stream)
 {
     this->stream = stream;
@@ -58,3 +60,5 @@ inline size_t DebugStream::println(void)
 {
     return stream->println();
 }
+
+#endif

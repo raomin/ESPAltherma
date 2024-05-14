@@ -1,5 +1,7 @@
 #include "X10ASerial.hpp"
 
+#ifndef PIO_UNIT_TESTING
+
 DEFINE_SerialX10A;
 
 void X10ASerial::begin(ulong baud, int8_t rxPin, int8_t txPin)
@@ -36,3 +38,5 @@ X10ASerial::operator bool() const
 {
     return SerialX10A;
 }
+
+#endif
