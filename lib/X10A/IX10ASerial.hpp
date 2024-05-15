@@ -17,5 +17,5 @@ class IX10ASerial
         virtual bool available() = 0;
         virtual int read() = 0;
 
-        operator bool() const;
+        virtual operator bool() const = 0;
 };
