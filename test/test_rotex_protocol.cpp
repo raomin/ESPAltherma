@@ -40,9 +40,11 @@ void setUp(void)
     ArduinoFakeReset();
 
     Mock<IDebugStream> mockDebugStream;
-    Mock<IX10ASerial> mockX10ASerials;
+    Mock<IX10ASerial> mockX10ASerial;
 
-    When(Method(mockX10ASerials, operator bool)).Return(false);
+    When(Method(mockX10ASerial, operator bool)).Return(false);
+    When(Method(mockX10ASerial, end)).AlwaysReturn();
+    When(Method(mockX10ASerial, begin)).AlwaysReturn();
 
     TestX10AConfig = new X10A_Config();
     TestX10AConfig->X10A_PROTOCOL = X10AProtocol::S;
@@ -56,7 +58,7 @@ void setUp(void)
 
     JsonObject jsonObject = configDoc.as<JsonObject>();
 
-    x10a_set_serial(&mockX10ASerials.get());
+    x10a_set_serial(&mockX10ASerial.get());
     x10a_fill_config(jsonObject, TestX10AConfig);
     x10a_init(&mockDebugStream.get(), TestX10AConfig, true);
 }
@@ -104,7 +106,7 @@ void test_rotex_converter_53(void)
     0x53 0x01 0x00 0x00 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0xaa
 
     */
-   /*
+   
     RegistryBuffer buffer[1];
 
     buffer[0].RegistryID = 0x53;
@@ -127,12 +129,11 @@ void test_rotex_converter_53(void)
     makeAssert("Circulation pump", "ON");
     makeAssert("External heater?", "OFF");
     makeAssert("Priority to domestic water", "OFF");
-    makeAssert("Burner inhibit from solaris", "ON");*/
+    makeAssert("Burner inhibit from solaris", "ON");
 }
 
 void test_rotex_converter_54(void)
 {
-    /*
     RegistryBuffer buffer[1];
 
     buffer[0].RegistryID = 0x53;
@@ -197,7 +198,7 @@ void test_rotex_converter_54(void)
     makeAssert("DHW tank temp.(C)", "46.25");
     makeAssert("F(C)", "0.00390625");
     makeAssert("Delta-Tr(deg)", "30");
-    makeAssert("R/C Setpoint(C)", "0");*/
+    makeAssert("R/C Setpoint(C)", "0");
 }
 
 int main(int argc, char **argv)
