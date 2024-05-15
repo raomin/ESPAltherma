@@ -11,7 +11,7 @@
 
 #define SER_TIMEOUT 300 // leave 300ms for the machine to answer
 
-extern std::function<void(const ulong ms)> callbackX10A_wait;
+extern std::function<void(const uint64_t ms)> callbackX10A_wait;
 extern std::function<void()> callbackX10A_sendValues;
 extern std::function<void(ParameterDef *labelDef)> callbackX10A_updateValues;
 

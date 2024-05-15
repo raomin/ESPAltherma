@@ -2,7 +2,7 @@
 
 using namespace X10A;
 
-std::function<void(const ulong ms)> callbackX10A_wait;
+std::function<void(const uint64_t ms)> callbackX10A_wait;
 std::function<void()> callbackX10A_sendValues;
 std::function<void(ParameterDef *labelDef)> callbackX10A_updateValues;
 
@@ -13,7 +13,7 @@ static X10A_Config* X10AConfig = nullptr;
 bool disableMQTTLogMessages;
 size_t registryBufferSize;
 RegistryBuffer *registryBuffers; // holds the registries to query and the last returned
-ulong lastTimeRunned = 0;
+uint64_t lastTimeRunned = 0;
 HandleState handleState = HandleState::Stopped;
 
 bool contains(uint8_t *array, size_t size, uint8_t value)
@@ -92,7 +92,7 @@ bool queryRegistry(RegistryBuffer *registryBuffer, X10AProtocol protocol)
   debugStream->printf("Querying register 0x%02x... ", registryBuffer->RegistryID);
   X10ASerial->flush(); // prevent possible pending info on the read
   X10ASerial->write((uint8_t*)prep, queryLength);
-  ulong start = millis();
+  uint64_t start = millis();
 
   int len = 0;
   int replyLen = get_reply_len(registryBuffer->RegistryID, protocol);
@@ -252,7 +252,7 @@ void x10a_loop()
     return;
 
   // TODO should be catched from main loop run
-  ulong loopStart = millis();
+  uint64_t loopStart = millis();
 
   if(loopStart - lastTimeRunned >= X10AConfig->FREQUENCY) {
     handleState = HandleState::Running;
@@ -260,7 +260,7 @@ void x10a_loop()
 
     x10a_handle(registryBuffers, registryBufferSize, true);
 
-    ulong loopEnd = X10AConfig->FREQUENCY - millis() + loopStart;
+    uint64_t loopEnd = X10AConfig->FREQUENCY - millis() + loopStart;
 
     debugStream->printf("X10A Done. Waiting %.2f sec...\n", (float)loopEnd / 1000);
     lastTimeRunned = loopStart;

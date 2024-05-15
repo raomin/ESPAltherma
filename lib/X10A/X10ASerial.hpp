@@ -20,7 +20,6 @@
 
 class X10ASerial : public IX10ASerial
 {
-
     void begin(ulong baud, int8_t rxPin, int8_t txPin);
     void end();
 
@@ -30,7 +29,7 @@ class X10ASerial : public IX10ASerial
 
     bool available();
     int read();
-    
+
     operator bool() const;
 };
 

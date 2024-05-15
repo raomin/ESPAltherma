@@ -172,7 +172,7 @@ void Converter::convert(IDebugStream* debugStream, ParameterDef *def, byte *data
             }
             else
             {
-                dblData = (uint)(double)data[0];
+                dblData = (uint32_t)(double)data[0];
                 break;
             }
 

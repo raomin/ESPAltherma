@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <unity.h>
-#include <Arduino.h>
+#include <ArduinoFake.h>
 #include <ArduinoJson.h>
 
 using namespace fakeit;
