@@ -4,7 +4,7 @@
 
 DEFINE_SerialX10A;
 
-void X10ASerial::begin(ulong baud, int8_t rxPin, int8_t txPin)
+void X10ASerial::begin(uint64_t baud, int8_t rxPin, int8_t txPin)
 {
     SerialX10A.begin(baud, SERIAL_CONFIG, rxPin, txPin);
 }

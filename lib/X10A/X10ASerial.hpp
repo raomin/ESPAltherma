@@ -20,17 +20,18 @@
 
 class X10ASerial : public IX10ASerial
 {
-    void begin(ulong baud, int8_t rxPin, int8_t txPin);
-    void end();
+    public:
+        void begin(uint64_t baud, int8_t rxPin, int8_t txPin);
+        void end();
 
-    void flush();
+        void flush();
 
-    void write(const uint8_t * data, size_t length);
+        void write(const uint8_t * data, size_t length);
 
-    bool available();
-    int read();
+        bool available();
+        int read();
 
-    operator bool() const;
+        operator bool() const;
 };
 
 #endif

@@ -20,7 +20,7 @@ void Converter::convert(IDebugStream* debugStream, ParameterDef *def, byte *data
     switch (convId)
     {
         case 100:
-            strlcat(def->asString, (char*)data, num);
+            strCopy(def->asString, (char*)data, num);
             return;
         case 101:
             dblData = (double)getSignedValue(data, num, 0);
@@ -421,4 +421,38 @@ short Converter::getSignedValue(byte *data, int datasize, int cnvflg)
         result = (short)((int)num * -1);
     }
     return result;
+}
+
+
+size_t Converter::strCopy(char *dest, const char *src, size_t size) {
+    size_t dlen = 0;
+    size_t slen = 0;
+
+    // Berechne die Länge von dest
+    while (dest[dlen] != '\0' && dlen < size)
+        dlen++;
+
+    // Berechne die Länge von src
+    while (src[slen] != '\0')
+        slen++;
+
+    // Stelle sicher, dass genügend Platz für src in dest vorhanden ist
+    if (dlen >= size)
+        return dlen + slen;
+
+    size_t remaining = size - dlen - 1; // -1 für das Nullzeichen
+    size_t copied = 0;
+
+    // Kopiere src in dest
+    while (*src != '\0' && copied < remaining) {
+        dest[dlen + copied] = *src;
+        src++;
+        copied++;
+    }
+
+    // Füge das Nullzeichen hinzu
+    dest[dlen + copied] = '\0';
+
+    // Rückgabe der Gesamtlänge
+    return dlen + slen;
 }

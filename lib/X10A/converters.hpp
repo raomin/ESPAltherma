@@ -33,6 +33,8 @@ namespace X10A
         unsigned short getUnsignedValue(byte *data, int dataSize, int cnvflg);
 
         short getSignedValue(byte *data, int datasize, int cnvflg);
+
+        size_t strCopy(char *dest, const char *src, size_t size);
     };
 
 }
