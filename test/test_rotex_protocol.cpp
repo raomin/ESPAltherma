@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 
 using namespace fakeit;
+using namespace std;
 
 struct PrintF : public StreamFake
 {
@@ -78,17 +79,14 @@ void makeAssert(const String label, const String value) {
     }
 }
 
-void overwriteBuffer(byte* buffer, byte* values)
+void overwriteBuffer(byte* buffer, byte* values, int bufferSize, int valuesSize)
 {
-    const int sizeValues = sizeof(values) / sizeof(values[0]);
-    const int sizeBuffer = sizeof(buffer) / sizeof(buffer[0]);
-
     int i;
-    for (i = 0; i < sizeValues; ++i) {
+    for (i = 0; i < valuesSize; ++i) {
         buffer[i] = values[i];
     }
 
-    for (; i < sizeBuffer; i++) {
+    for (; i < bufferSize; i++) {
         buffer[i] = 0;
     }
 }
@@ -115,7 +113,7 @@ void test_rotex_converter_53(void)
     byte buffer1[] = {0x53, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
     byte buffer2[] = {0x53, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa};
 
-    overwriteBuffer(buffer[0].Buffer, buffer1);
+    overwriteBuffer(buffer[0].Buffer, buffer1, sizeof(buffer[0].Buffer), sizeof(buffer1));
 
     x10a_convert_values(buffer, 1, false);
     makeAssert("Circulation pump", "ON");
@@ -123,7 +121,7 @@ void test_rotex_converter_53(void)
     makeAssert("Priority to domestic water", "OFF");
     makeAssert("Burner inhibit from solaris", "OFF");
 
-    overwriteBuffer(buffer[0].Buffer, buffer2);
+    overwriteBuffer(buffer[0].Buffer, buffer2, sizeof(buffer[0].Buffer), sizeof(buffer2));
 
     x10a_convert_values(buffer, 1, false);
     makeAssert("Circulation pump", "ON");
@@ -145,7 +143,7 @@ void test_rotex_converter_54(void)
     byte buffer4[] = {0x54, 0xb4, 0x12, 0x84, 0x1c, 0x24, 0x1c, 0x3c, 0x1c, 0x40, 0x2e, 0x01, 0x00, 0x1e, 0x00, 0x00, 0x00, 0x20};
     byte buffer5[] = {0x54, 0xcc, 0x1a, 0x6c, 0x1c, 0xb0, 0x1c, 0x3c, 0x1c, 0x40, 0x2e, 0x01, 0x00, 0x1e, 0x00, 0x00, 0x00, 0x8c};
 
-    overwriteBuffer(buffer[0].Buffer, buffer1);
+    overwriteBuffer(buffer[0].Buffer, buffer1, sizeof(buffer[0].Buffer), sizeof(buffer1));
     x10a_convert_values(buffer, 1, false);
     makeAssert("Refrig. Temp. liquid side(C)", "30.5938");
     makeAssert("Inlet water temp.(C)", "31.4375");
@@ -156,7 +154,7 @@ void test_rotex_converter_54(void)
     makeAssert("Delta-Tr(deg)", "36");
     makeAssert("R/C Setpoint(C)", "0");
 
-    overwriteBuffer(buffer[0].Buffer, buffer2);
+    overwriteBuffer(buffer[0].Buffer, buffer2, sizeof(buffer[0].Buffer), sizeof(buffer2));
     x10a_convert_values(buffer, 1, false);
     makeAssert("Refrig. Temp. liquid side(C)", "19.3281");
     makeAssert("Inlet water temp.(C)", "28.6875");
@@ -167,7 +165,7 @@ void test_rotex_converter_54(void)
     makeAssert("Delta-Tr(deg)", "30");
     makeAssert("R/C Setpoint(C)", "0");
 
-    overwriteBuffer(buffer[0].Buffer, buffer3);
+    overwriteBuffer(buffer[0].Buffer, buffer3, sizeof(buffer[0].Buffer), sizeof(buffer3));
     x10a_convert_values(buffer, 1, false);
     makeAssert("Refrig. Temp. liquid side(C)", "19.2344");
     makeAssert("Inlet water temp.(C)", "28.5938");
@@ -178,7 +176,7 @@ void test_rotex_converter_54(void)
     makeAssert("Delta-Tr(deg)", "30");
     makeAssert("R/C Setpoint(C)", "0");
 
-    overwriteBuffer(buffer[0].Buffer, buffer4);
+    overwriteBuffer(buffer[0].Buffer, buffer4, sizeof(buffer[0].Buffer), sizeof(buffer4));
     x10a_convert_values(buffer, 1, false);
     makeAssert("Refrig. Temp. liquid side(C)", "18.7031");
     makeAssert("Inlet water temp.(C)", "28.5156");
@@ -189,7 +187,7 @@ void test_rotex_converter_54(void)
     makeAssert("Delta-Tr(deg)", "30");
     makeAssert("R/C Setpoint(C)", "0");
 
-    overwriteBuffer(buffer[0].Buffer, buffer5);
+    overwriteBuffer(buffer[0].Buffer, buffer5, sizeof(buffer[0].Buffer), sizeof(buffer5));
     x10a_convert_values(buffer, 1, false);
     makeAssert("Refrig. Temp. liquid side(C)", "26.7969");
     makeAssert("Inlet water temp.(C)", "28.4219");
