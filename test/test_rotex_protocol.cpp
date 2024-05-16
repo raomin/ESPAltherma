@@ -28,11 +28,7 @@ using namespace X10A;
 
 #define MODELS_CONFIG_SIZE 1024*10
 
-#define X10AFile "../build/X10A/English/PROTOCOL_S_ROTEX.json"
-
-#if not __has_include(X10AFile)
-#error Run script "build_x10a_commands.py" before running test!
-#endif
+#define X10AFile "build/X10A/English/PROTOCOL_S_ROTEX.json"
 
 X10A_Config* TestX10AConfig = nullptr;
 
@@ -50,8 +46,13 @@ void setUp(void)
     TestX10AConfig = new X10A_Config();
     TestX10AConfig->X10A_PROTOCOL = X10AProtocol::S;
 
-    std::ifstream inputFile(X10AFile);
-    std::string jsonContent((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
+    ifstream inputFile(X10AFile);
+
+    if(!inputFile) {
+        throw runtime_error("Run script \"build_x10a_commands.py\" before running test!");
+    }
+
+    string jsonContent((istreambuf_iterator<char>(inputFile)), istreambuf_iterator<char>());
     inputFile.close();
 
     DynamicJsonDocument configDoc(MODELS_CONFIG_SIZE);
@@ -104,7 +105,7 @@ void test_rotex_converter_53(void)
     0x53 0x01 0x00 0x00 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0xaa
 
     */
-   
+
     RegistryBuffer buffer[1];
 
     buffer[0].RegistryID = 0x53;
