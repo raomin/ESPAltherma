@@ -43,6 +43,12 @@ void setUp(void)
     When(Method(mockX10ASerial, end)).AlwaysReturn();
     When(Method(mockX10ASerial, begin)).AlwaysReturn();
 
+    When(OverloadedMethod(mockDebugStream, print, size_t(const char[]))).Return(0);
+    When(OverloadedMethod(mockDebugStream, print, size_t(const char*))).Return(0);
+    When(OverloadedMethod(mockDebugStream, print, size_t(const String&))).Return(0);
+    When(OverloadedMethod(mockDebugStream, println, size_t(const char[]))).Return(0);
+    When(OverloadedMethod(mockDebugStream, println, size_t(const String&))).Return(0);
+
     TestX10AConfig = new X10A_Config();
     TestX10AConfig->X10A_PROTOCOL = X10AProtocol::S;
 
@@ -59,6 +65,9 @@ void setUp(void)
     deserializeJson(configDoc, jsonContent);
 
     JsonObject jsonObject = configDoc.as<JsonObject>();
+
+    jsonObject["PARAMETERS"] = jsonObject["Parameters"];
+    jsonObject.remove("Parameters");
 
     x10a_set_serial(&mockX10ASerial.get());
     x10a_fill_config(jsonObject, TestX10AConfig);
