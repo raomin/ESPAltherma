@@ -26,9 +26,10 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Run Unit Tests
-        run: pio run -e native
+        run: pio test -e native
 
   build:
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
