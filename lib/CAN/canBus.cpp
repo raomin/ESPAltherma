@@ -94,7 +94,7 @@ void canBus_fill_config(JsonObject &jsonObject, CAN_Config *config)
             uint8_t valueCodeCounter = 0;
 
             for (JsonPair keyValue : valueCodeCommands) {
-                valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<String>());
+                valueCodes[valueCodeCounter] = new CANCommandValueCode(keyValue.key().c_str(), keyValue.value().as<std::string>().c_str());
                 valueCodeCounter++;
             }
         } else {

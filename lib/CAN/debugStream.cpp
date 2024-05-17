@@ -1,5 +1,5 @@
 #include "debugStream.hpp"
 
 namespace CAN {
-    Stream* debugStream = nullptr;
+    IDebugStream* debugStream = nullptr;
 }

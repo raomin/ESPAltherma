@@ -151,11 +151,16 @@ void setup()
 
   x10a_set_serial(new X10ASerial());
 
+  IDebugStream* debugStream = nullptr;
+  if(config->X10A_ENABLED || config->CAN_ENABLED) {
+    debugStream = new DebugStream(&debugSerial);
+  }
+
   if(config->X10A_ENABLED) {
     callbackX10A_updateValues = updateValues;
     callbackX10A_sendValues = sendValues;
     callbackX10A_wait = waitLoop;
-    x10a_init(new DebugStream(&debugSerial), config->X10A_CONFIG, config->MQTT_DISABLE_LOG_MESSAGES); // TODO: Correct place to use a MQTT config variable inside X10A??
+    x10a_init(debugStream, config->X10A_CONFIG, config->MQTT_DISABLE_LOG_MESSAGES); // TODO: Correct place to use a MQTT config variable inside X10A??
     x10a_initRegistries(&registryBuffers, registryBufferSize);
   }
 
@@ -180,7 +185,7 @@ void setup()
   }
 
   if(config->CAN_ENABLED) {
-    CAN::debugStream = &debugSerial;
+    CAN::debugStream = debugStream;
     callbackRecievedCommand = [](const char *label, const char *value) { mqttPublish(MQTTPublishTopic::CAN, value, label); };
     callbackCAN = canBus_set;
     canBus_setup(config->CAN_CONFIG);

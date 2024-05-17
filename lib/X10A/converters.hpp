@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Arduino.h>
+#include <IDebugStream.hpp>
 #include "parameterDef.hpp"
-#include "IDebugStream.hpp"
 
 namespace X10A
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Arduino.h>
+#include <IDebugStream.hpp>
 
 namespace CAN {
-    extern Stream* debugStream;
+    extern IDebugStream* debugStream;
 }

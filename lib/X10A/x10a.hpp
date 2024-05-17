@@ -2,8 +2,8 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include "IX10ASerial.hpp"
-#include "IDebugStream.hpp"
+#include <IX10ASerial.hpp>
+#include <IDebugStream.hpp>
 #include "registryBuffer.hpp"
 #include "parameterDef.hpp"
 #include "converters.hpp"

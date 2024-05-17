@@ -1,6 +1,6 @@
 #include "sja1000.hpp"
 
-#ifndef ARDUINO_ARCH_ESP8266
+#if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
 
 using namespace CAN;
 

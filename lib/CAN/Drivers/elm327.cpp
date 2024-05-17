@@ -1,5 +1,7 @@
 #include "elm327.hpp"
 
+#if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
+
 using namespace CAN;
 
 DriverELM327::DriverELM327(const CAN_Config *CANConfig) : CANDriver(CANConfig)
@@ -246,3 +248,5 @@ DriverELM327::~DriverELM327()
     if(deleteNeeded)
         delete Elm327Serial;
 }
+
+#endif

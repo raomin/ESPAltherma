@@ -188,7 +188,7 @@ String CANDriver::readAllCommands()
   delete[] resultBuffer;
 
   CANDataToString = false;
-
+  
   String result;
   serializeJson(resultDoc, result);
   return result;
