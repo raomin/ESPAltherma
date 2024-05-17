@@ -7,6 +7,27 @@ on:
     branches: [ main ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+              ~/.cache/pip
+              ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Run Unit Tests
+        run: pio run -e native
+
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -23,7 +44,7 @@ jobs:
           key: ${{ runner.os }}-pio
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
