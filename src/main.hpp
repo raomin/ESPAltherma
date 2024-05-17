@@ -4,8 +4,8 @@
 #include <x10a.hpp>
 #include <DebugStream.hpp>
 #include <X10ASerial.hpp>
+#include <canBus.hpp>
 
-#include "CAN/canBus.hpp"
 #include "arduinoC.hpp"
 #include "Config/config.hpp"
 #include "debugSerial.hpp"

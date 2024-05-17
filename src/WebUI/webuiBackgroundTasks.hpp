@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ArduinoJson.hpp>
-#include "CAN/canBus.hpp"
+#include <canBus.hpp>
 #include <x10a.hpp>
 #include <X10ASerial.hpp>
 #include "arduinoC.hpp"

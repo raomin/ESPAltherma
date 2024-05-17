@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
-#include "CAN/canBus.hpp"
+#include <canBus.hpp>
 #include <x10a.hpp>
 
 #ifdef ARDUINO_ARCH_ESP8266

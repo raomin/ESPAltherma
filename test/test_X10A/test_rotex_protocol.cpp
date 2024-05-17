@@ -3,27 +3,10 @@
 #include <unity.h>
 #include <ArduinoFake.h>
 #include <ArduinoJson.h>
+#include <x10a.hpp>
 
 using namespace fakeit;
 using namespace std;
-
-struct PrintF : public StreamFake
-{
-public:
-    PrintF() {}
-    virtual ~PrintF() {}
-
-    size_t printf(const char * format, ...) {return 0;}
-    size_t print(const char[]) {return 0;}
-};
-
-#define SERIAL_TYPE PrintF
-#define SERIAL_CONFIG (SWSERIAL_8E1)
-#define DEFINE_SerialX10A SERIAL_TYPE SerialX10A
-typedef unsigned long ulong;
-
-#include <x10a.hpp>
-
 using namespace X10A;
 
 #define MODELS_CONFIG_SIZE 1024*10
