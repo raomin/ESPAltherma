@@ -32,22 +32,34 @@ using namespace X10A;
 
 X10A_Config* TestX10AConfig = nullptr;
 
+class MockDebugStream : public IDebugStream
+{
+    public:
+        ~MockDebugStream() {};
+
+        size_t printf(const char * format, ...) { return 0; }
+
+        size_t print(const __FlashStringHelper *ifsh) { return 0; }
+        size_t print(const String& s) { return 0; }
+        size_t print(const char c[]) { return 0; }
+        size_t print(char c) { return 0; }
+
+        size_t println(const __FlashStringHelper *ifsh) { return 0; }
+        size_t println(const String& s)  { return 0; }
+        size_t println(const char c[]) { return 0; }
+        size_t println(char c) { return 0; }
+        size_t println(void) { return 0; }
+};
+
 void setUp(void)
 {
     ArduinoFakeReset();
 
-    Mock<IDebugStream> mockDebugStream;
     Mock<IX10ASerial> mockX10ASerial;
 
     When(Method(mockX10ASerial, operator bool)).Return(false);
     When(Method(mockX10ASerial, end)).AlwaysReturn();
     When(Method(mockX10ASerial, begin)).AlwaysReturn();
-
-    When(OverloadedMethod(mockDebugStream, print, size_t(const char[]))).Return(0);
-    When(OverloadedMethod(mockDebugStream, print, size_t(const char*))).Return(0);
-    When(OverloadedMethod(mockDebugStream, print, size_t(const String&))).Return(0);
-    When(OverloadedMethod(mockDebugStream, println, size_t(const char[]))).Return(0);
-    When(OverloadedMethod(mockDebugStream, println, size_t(const String&))).Return(0);
 
     TestX10AConfig = new X10A_Config();
     TestX10AConfig->X10A_PROTOCOL = X10AProtocol::S;
@@ -71,7 +83,7 @@ void setUp(void)
 
     x10a_set_serial(&mockX10ASerial.get());
     x10a_fill_config(jsonObject, TestX10AConfig);
-    x10a_init(&mockDebugStream.get(), TestX10AConfig, true);
+    x10a_init(new MockDebugStream(), TestX10AConfig, true);
 }
 
 void tearDown(void)
