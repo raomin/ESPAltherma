@@ -189,9 +189,10 @@ String CANDriver::readAllCommands()
 
   CANDataToString = false;
   
-  String result;
+  // for unit testing use std::string instead of String. ArduinoFake::String doens't provide write() method
+  std::string result;
   serializeJson(resultDoc, result);
-  return result;
+  return String(result.c_str());
 }
 
 void CANDriver::onDataRecieved(uint32_t const timestamp_us, CanFrame const frame)
