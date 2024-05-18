@@ -3,6 +3,7 @@
 // tranlated from fhemHPSU and pyHPSU github project.
 // https://github.com/ahermann86/fhemHPSU
 // https://github.com/zanac/pyHPSU
+// TODO: https://github.com/weltenwort/py-hpsu-monitor
 
 using namespace CAN;
 
