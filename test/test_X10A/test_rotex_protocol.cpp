@@ -5,6 +5,8 @@
 #include <ArduinoJson.h>
 #include <x10a.hpp>
 
+#include "../mockSetup.hpp"
+
 using namespace fakeit;
 using namespace std;
 using namespace X10A;
@@ -14,25 +16,6 @@ using namespace X10A;
 #define X10AFile "build/X10A/English/PROTOCOL_S_ROTEX.json"
 
 X10A_Config* TestX10AConfig = nullptr;
-
-class MockDebugStream : public IDebugStream
-{
-    public:
-        ~MockDebugStream() {};
-
-        size_t printf(const char * format, ...) { return 0; }
-
-        size_t print(const __FlashStringHelper *ifsh) { return 0; }
-        size_t print(const String& s) { return 0; }
-        size_t print(const char c[]) { return 0; }
-        size_t print(char c) { return 0; }
-
-        size_t println(const __FlashStringHelper *ifsh) { return 0; }
-        size_t println(const String& s)  { return 0; }
-        size_t println(const char c[]) { return 0; }
-        size_t println(char c) { return 0; }
-        size_t println(void) { return 0; }
-};
 
 void setUp(void)
 {
