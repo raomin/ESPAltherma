@@ -136,7 +136,7 @@ void CANDriver::handleLoop()
 
   if(CANConfig->CAN_AUTOPOLL_MODE == CAN_PollMode::Auto)
   {
-    ulong currentTime = millis();
+    uint64_t currentTime = millis();
 
     if(currentTime - lastTimeRunned >= CANConfig->CAN_AUTOPOLL_TIME * 1000)
     {

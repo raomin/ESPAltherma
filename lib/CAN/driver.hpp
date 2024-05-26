@@ -39,7 +39,7 @@ class CANDriver
 protected:
     CMDSendInfo** cmdSendInfos;
     bool canInited = false;
-    ulong lastTimeRunned = 0;
+    uint64_t lastTimeRunned = 0;
     bool sniffingEnabled = false;
     CanDriverMode currentMode;
     const CAN_Config* CANConfig;

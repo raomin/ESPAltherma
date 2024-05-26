@@ -1,9 +1,5 @@
 #include "elm327.hpp"
 
-#if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
-
-
-
 DriverELM327::DriverELM327(const CAN_Config *CANConfig, IDebugStream* const debugStream) : CANDriver(CANConfig, debugStream)
 {
 }
@@ -119,7 +115,7 @@ bool DriverELM327::initInterface()
     }
 
     if(CANConfig->CAN_BUS == CAN_ICBus::BT) {
-        #ifndef NO_BLUETOOTH
+        #if !defined(NO_BLUETOOTH) && !defined(PIO_UNIT_TESTING)
         BluetoothSerial* SerialBT = new BluetoothSerial();
         deleteNeeded = true;
 
@@ -248,5 +244,3 @@ DriverELM327::~DriverELM327()
     if(deleteNeeded)
         delete Elm327Serial;
 }
-
-#endif
