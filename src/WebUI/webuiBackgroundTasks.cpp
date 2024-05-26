@@ -73,7 +73,7 @@ void webuiScanCANRegister()
 
   debugSerial.printf("Starting new CAN connection with BUS: %i, IC: %i, KBPS: %i\n", (uint8_t)webuiScanCANRegisterConfig->CAN_BUS, (uint8_t)webuiScanCANRegisterConfig->CAN_IC, webuiScanCANRegisterConfig->CAN_SPEED_KBPS);
 
-  if(canBus_setup(webuiScanCANRegisterConfig)) {
+  if(canBus_setup(webuiScanCANRegisterConfig, nullptr)) {
     debugSerial.println("Fetching and reading CAN values");
     valueCANLoadResponse = canBus_readAllCommands();
   } else {
@@ -83,7 +83,7 @@ void webuiScanCANRegister()
 
   if(CANWasInited) {
     debugSerial.println("Restoring original CAN connection");
-    canBus_setup(config->CAN_CONFIG);
+    canBus_setup(config->CAN_CONFIG, nullptr);
   } else {
     canBus_stop();
   }

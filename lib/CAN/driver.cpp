@@ -5,8 +5,6 @@
 // https://github.com/zanac/pyHPSU
 // TODO: https://github.com/weltenwort/py-hpsu-monitor
 
-using namespace CAN;
-
 String** resultBuffer;
 
 std::function<void(const char *label, const char* value)> callbackRecievedCommand;
@@ -125,7 +123,7 @@ void CANDriver::sniffCAN(const uint32_t timestamp_us, CanFrame const frame)
   debugStream->println(resultText);
 }
 
-CANDriver::CANDriver(const CAN_Config* CANConfigArg) : CANConfig(CANConfigArg)
+CANDriver::CANDriver(const CAN_Config* CANConfigArg, IDebugStream* const debugStreamArg) : CANConfig(CANConfigArg), debugStream(debugStreamArg)
 {
 }
 
@@ -189,7 +187,7 @@ String CANDriver::readAllCommands()
   delete[] resultBuffer;
 
   CANDataToString = false;
-  
+
   // for unit testing use std::string instead of String. ArduinoFake::String doens't provide write() method
   std::string result;
   serializeJson(resultDoc, result);

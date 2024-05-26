@@ -3,7 +3,6 @@
 #if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
 
 using namespace MCP2515;
-using namespace CAN;
 
 DriverMCP2515* self;
 
@@ -263,7 +262,7 @@ bool DriverMCP2515::getRate(const uint8_t mhz, const uint16_t speed, CanBitRate 
   return found;
 }
 
-DriverMCP2515::DriverMCP2515(const CAN_Config* CANConfig) : CANDriver(CANConfig)
+DriverMCP2515::DriverMCP2515(const CAN_Config* CANConfig, IDebugStream* const debugStream) : CANDriver(CANConfig, debugStream)
 {
   self = this;
 

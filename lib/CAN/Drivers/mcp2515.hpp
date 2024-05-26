@@ -19,7 +19,7 @@ private:
   bool getRate(const uint8_t mhz, const uint16_t speed, CanBitRate &rate);
 
 public:
-  DriverMCP2515(const CAN_Config* CANConfig);
+  DriverMCP2515(const CAN_Config* CANConfig, IDebugStream* const debugStream);
   bool initInterface();
   void writeLoopbackTest();
   void sendCommand(CANCommand* cmd, bool setValue = false, int value = 0);

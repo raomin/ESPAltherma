@@ -26,7 +26,7 @@ private:
     Stream* Elm327Serial;
 
 public:
-    DriverELM327(const CAN_Config* CANConfig);
+    DriverELM327(const CAN_Config* CANConfig, IDebugStream* const debugStream);
     bool initInterface();
     void handleLoop();
     void sendCommand(CANCommand* cmd, bool setValue = false, int value = 0);

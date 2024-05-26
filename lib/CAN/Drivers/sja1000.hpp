@@ -17,7 +17,7 @@ private:
   bool stopInterface();
 
 public:
-  DriverSJA1000(const CAN_Config* CANConfig);
+  DriverSJA1000(const CAN_Config* CANConfig, IDebugStream* const debugStream);
   bool initInterface();
   void writeLoopbackTest();
   void sendCommand(CANCommand* cmd, bool setValue = false, int value = 0);

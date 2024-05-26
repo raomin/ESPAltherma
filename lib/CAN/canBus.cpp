@@ -1,12 +1,15 @@
 #include "canBus.hpp"
 
-using namespace CAN;
-
 static CANDriver *driver = nullptr;
+static IDebugStream *debugStream = nullptr;
 
-bool canBus_setup(const CAN_Config* CANConfig)
+bool canBus_setup(const CAN_Config* CANConfig, IDebugStream* const debugStreamArg)
 {
     canBus_stop();
+
+    if(debugStreamArg != nullptr) {
+        debugStream = debugStreamArg;
+    }
 
     debugStream->println("Starting new CAN Driver...");
 
@@ -15,18 +18,18 @@ bool canBus_setup(const CAN_Config* CANConfig)
     switch (CANConfig->CAN_IC)
     {
     case CAN_ICTypes::ELM327:
-        driver = new DriverELM327(CANConfig);
+        driver = new DriverELM327(CANConfig, debugStream);
         result = driver->initInterface();
         break;
 
     #if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
     case CAN_ICTypes::MCP2515:
-        driver = new DriverMCP2515(CANConfig);
+        driver = new DriverMCP2515(CANConfig, debugStream);
         result = driver->initInterface();
         break;
 
     case CAN_ICTypes::SJA1000:
-        driver = new DriverSJA1000(CANConfig);
+        driver = new DriverSJA1000(CANConfig, debugStream);
         result = driver->initInterface();
         break;
     #endif

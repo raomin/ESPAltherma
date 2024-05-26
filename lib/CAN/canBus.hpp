@@ -2,14 +2,14 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include "debugStream.hpp"
+#include <IDebugStream.hpp>
 #include "config.hpp"
 #include "driver.hpp"
 #include "Drivers/mcp2515.hpp"
 #include "Drivers/elm327.hpp"
 #include "Drivers/sja1000.hpp"
 
-bool canBus_setup(const CAN_Config* CANConfig);
+bool canBus_setup(const CAN_Config* CANConfig, IDebugStream* const debugStream);
 
 void canBus_loop();
 

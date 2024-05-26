@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include "debugStream.hpp"
+#include <IDebugStream.hpp>
 #include "command.hpp"
 #include "config.hpp"
 
@@ -43,6 +43,7 @@ protected:
     bool sniffingEnabled = false;
     CanDriverMode currentMode;
     const CAN_Config* CANConfig;
+    IDebugStream* const debugStream;
     bool CANDataToString = false;
     size_t currentDataToStringIndex;
 
@@ -55,7 +56,7 @@ protected:
     void checkPendingMessages();
 
 public:
-    CANDriver(const CAN_Config* CANConfig);
+    CANDriver(const CAN_Config* CANConfig, IDebugStream* const debugStream);
     virtual bool initInterface() NOT_IMPLEMENTED;
     virtual void handleLoop();
     virtual String readAllCommands();
