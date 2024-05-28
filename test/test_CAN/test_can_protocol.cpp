@@ -40,7 +40,7 @@ void setUp(void)
     jsonObject.remove("Commands");
 
     canBus_fill_config(jsonObject, TestCANConfig);
-    //canBus_setup(TestCANConfig);
+    canBus_setup(TestCANConfig, new MockDebugStream());
 }
 
 void tearDown(void)

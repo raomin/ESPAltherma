@@ -115,7 +115,7 @@ bool DriverELM327::initInterface()
     }
 
     if(CANConfig->CAN_BUS == CAN_ICBus::BT) {
-        #if !defined(NO_BLUETOOTH) && !defined(PIO_UNIT_TESTING)
+#if !defined(NO_BLUETOOTH) && !defined(PIO_UNIT_TESTING)
         BluetoothSerial* SerialBT = new BluetoothSerial();
         deleteNeeded = true;
 
@@ -137,11 +137,13 @@ bool DriverELM327::initInterface()
         }
 
         Elm327Serial = SerialBT;
-        #else
+#else
         debugStream->println("CAN-Bus init failed! BT - this firmware is not compiled with bluetooth");
         return false;
-        #endif
+#endif
     } else if(CANConfig->CAN_BUS == CAN_ICBus::UART) {
+
+#ifndef PIO_UNIT_TESTING
         Serial1_begin(CANConfig->CAN_UART.PIN_RX, CANConfig->CAN_UART.PIN_TX);
 
         delay(100);
@@ -152,6 +154,7 @@ bool DriverELM327::initInterface()
         }
 
         Elm327Serial = &Serial1;
+#endif
     } else {
         debugStream->println("CAN-Bus init failed! E2 - not supported IC-Bus found");
         return false;

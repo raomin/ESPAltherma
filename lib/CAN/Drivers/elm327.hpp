@@ -9,8 +9,6 @@
 
 #ifdef ARDUINO_ARCH_ESP8266
 #define Serial1_begin(rx, tx) Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, SerialMode::SERIAL_FULL, rx, tx)
-#elif defined(PIO_UNIT_TESTING)
-#define Serial1_begin(rx, tx)
 #else
 #define Serial1_begin(rx, tx) Serial1.begin(ELM327_SERIAL_SPEED, SERIAL_8N1, rx, tx)
 #endif
@@ -25,7 +23,7 @@ private:
     bool listenOnly;
     bool deleteNeeded = false;
     String received = "";
-    Stream* Elm327Serial;
+    Stream* Elm327Serial = nullptr;
 
 public:
     DriverELM327(const CAN_Config* CANConfig, IDebugStream* const debugStream);
