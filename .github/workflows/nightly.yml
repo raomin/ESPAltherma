@@ -28,6 +28,9 @@ jobs:
       - name: Build X10A definitions
         run: python3 scripts/build_x10a_commands.py
 
+      - name: Build CAN definitions
+        run: python3 scripts/build_can_commands.py
+
       - name: Run Unit Tests
         run: pio test -e native
 
