@@ -3,7 +3,7 @@
 static CANDriver *driver = nullptr;
 static IDebugStream *debugStream = nullptr;
 
-bool canBus_setup(const CAN_Config* CANConfig, IDebugStream* const debugStreamArg)
+bool canBus_setup(const CAN_Config* CANConfig, IDebugStream* const debugStreamArg, CANDriver* const extDriver)
 {
     canBus_stop();
 
@@ -15,28 +15,33 @@ bool canBus_setup(const CAN_Config* CANConfig, IDebugStream* const debugStreamAr
 
     bool result = false;
 
-    switch (CANConfig->CAN_IC)
-    {
-    case CAN_ICTypes::ELM327:
-        driver = new DriverELM327(CANConfig, debugStream);
-        result = driver->initInterface();
-        break;
+    if(extDriver == nullptr) {
+        switch (CANConfig->CAN_IC)
+        {
+        case CAN_ICTypes::ELM327:
+            driver = new DriverELM327(CANConfig, debugStream);
+            result = driver->initInterface();
+            break;
 
-    #if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
-    case CAN_ICTypes::MCP2515:
-        driver = new DriverMCP2515(CANConfig, debugStream);
-        result = driver->initInterface();
-        break;
+        #if !defined(ARDUINO_ARCH_ESP8266) && !defined(PIO_UNIT_TESTING)
+        case CAN_ICTypes::MCP2515:
+            driver = new DriverMCP2515(CANConfig, debugStream);
+            result = driver->initInterface();
+            break;
 
-    case CAN_ICTypes::SJA1000:
-        driver = new DriverSJA1000(CANConfig, debugStream);
-        result = driver->initInterface();
-        break;
-    #endif
+        case CAN_ICTypes::SJA1000:
+            driver = new DriverSJA1000(CANConfig, debugStream);
+            result = driver->initInterface();
+            break;
+        #endif
 
-    default:
-        debugStream->println("No CAN Driver found");
-        return result;
+        default:
+            debugStream->println("No CAN Driver found");
+            return result;
+        }
+    } else {
+        driver = extDriver;
+        result = driver->initInterface();
     }
 
     if(!result)

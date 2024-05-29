@@ -143,6 +143,7 @@ bool DriverELM327::initInterface()
 #endif
     } else if(CANConfig->CAN_BUS == CAN_ICBus::UART) {
 
+// TODO: Fix this so maybe an external Stream pointer is given to be used isntead of direct Serial1 calls
 #ifndef PIO_UNIT_TESTING
         Serial1_begin(CANConfig->CAN_UART.PIN_RX, CANConfig->CAN_UART.PIN_TX);
 

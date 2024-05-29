@@ -9,7 +9,7 @@
 #include "Drivers/elm327.hpp"
 #include "Drivers/sja1000.hpp"
 
-bool canBus_setup(const CAN_Config* CANConfig, IDebugStream* const debugStream);
+bool canBus_setup(const CAN_Config* CANConfig, IDebugStream* const debugStream, CANDriver* const extDriver = nullptr);
 
 void canBus_loop();
 

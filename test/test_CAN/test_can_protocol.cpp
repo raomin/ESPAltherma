@@ -16,6 +16,18 @@ using namespace std;
 
 CAN_Config* TestCANConfig = nullptr;
 
+class TestCANDriver : public CANDriver
+{
+private:
+    bool setMode(CanDriverMode mode) { return true; }
+
+public:
+    TestCANDriver(const CAN_Config* CANConfig, IDebugStream* const debugStream) : CANDriver(CANConfig, debugStream) {}
+    bool initInterface() { return true; }
+    void sendCommand(CANCommand* cmd, bool setValue = false, int value = 0) {}
+    ~TestCANDriver() {}
+};
+
 void setUp(void)
 {
     ArduinoFakeReset();
@@ -39,8 +51,10 @@ void setUp(void)
     jsonObject["COMMANDS"] = jsonObject["Commands"];
     jsonObject.remove("Commands");
 
+    IDebugStream* mockDebugStream = new MockDebugStream();
+
     canBus_fill_config(jsonObject, TestCANConfig);
-    canBus_setup(TestCANConfig, new MockDebugStream());
+    canBus_setup(TestCANConfig, mockDebugStream, new TestCANDriver(TestCANConfig, mockDebugStream));
 }
 
 void tearDown(void)
