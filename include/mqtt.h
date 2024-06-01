@@ -256,14 +256,21 @@ void callbackPulse(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
   String ss((char*)payload);
-  uint16_t target_watt = ss.toInt();
+  long target_watt = ss.toInt();
 
   // TODO check for maximum supported watt setting (smaller duration between pulse than pulse lenght)
 
   // also converts from kWh to Wh
-  float WH_PER_PULSE = 1.0 / PULSE_PER_kWh * 1000;
+  float WH_PER_PULSE = 1.0 / PULSES_PER_kWh * 1000;
 
   ms_until_pulse = (3600.0 / target_watt * WH_PER_PULSE * 1000) - PULSE_DURATION_MS;
+  if ((ms_until_pulse + PULSE_DURATION_MS) > 60 * 1000) {
+    // cap the maximum pulse length to 1 minute
+    // a change of the pulse is only applied, after the current pulse is finished. Thus if the pulse rate is very low,
+    // it will take a long time to adjust the rate
+    ms_until_pulse = 60 * 1000;
+    Serial.printf("Capping pulse to %d Watt to ensure pulse rate is <= 60 sec\n", (int) WH_PER_PULSE * 60);
+  }
   if (timerPulseStart == NULL) {
     setupPulseTimer();
   }

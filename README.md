@@ -201,7 +201,7 @@ Depending on your HP model, SG3 might be configurable in "ECO mode", "Normal mod
 Note: Smart Grid needs to be switched ON in the heatpump configuration menu, otherwise SG1 and SG2 contacts are not evaluated.
 
 ## Step 5 (optional) - Pulse Meter feature
-ESPaltherma can communicate how much energy it should consume via a pulse meter. For this, uncomment and confugre PIN_PULSE`, `PULSE_PER_kWh` and `PULSE_DURATION_MS` in `src/setup.c`. Send energy amount in Watt to MQTT channel `espaltherma/pulse/set`. Current Watt setting is available in `espaltherma/pulse/state`.  
+ESPaltherma can communicate how much energy the HP should consume via a pulse meter. For this, uncomment and confugre `PIN_PULSE`, `PULSES_PER_kWh` and `PULSE_DURATION_MS` in `src/setup.c`. Send energy amount in Watt to MQTT channel `espaltherma/pulse/set`. Current Watt setting is available in `espaltherma/pulse/state`.  
 
 *TODO more close description what it is to do*
 
