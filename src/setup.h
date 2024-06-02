@@ -42,7 +42,7 @@
 //Uncomment and set to enable Pulse Meter mqtt functions
 // #define PIN_PULSE 25// Pin connected to pulse meter relay
 // #define PULSES_PER_kWh 1000  // match setting on HP (TODO hint for setting path)
-// #define PULSE_DURATION_MS 75  // Duration of the pulse, decrease on very high energy settings (TODO give example)
+// #define PULSE_DURATION_MS 50  // Duration of the pulse, decrease on very high energy settings (TODO give example)
 // #define PULSE_LED_BUILTIN 1 // also pulse the build in LED
 
 // DO NOT CHANGE: Defines the SG active/inactive relay states, according to the definition of the trigger status

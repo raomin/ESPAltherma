@@ -270,9 +270,10 @@ void callbackPulse(byte *payload, unsigned int length)
     target_watt = (long) WH_PER_PULSE * 60;
     Serial.printf("Capping pulse to %d Watt to ensure pulse rate is <= 60 sec\n", target_watt);
   }
-  if (ms_until_pulse < 20) {
-    // ensure a 20 ms gap between two pulses
-    ms_until_pulse = 20;
+  if (ms_until_pulse < 100) {
+    // ensure a 100 ms gap between two pulses
+    // taken from https://www.manualslib.de/manual/480757/Daikin-Brp069A61.html?page=10#manual
+    ms_until_pulse = 100;
     long original_target = target_watt;
     target_watt = (long) ((1000 * WH_PER_PULSE * 3600) / (ms_until_pulse + PULSE_DURATION_MS));
     Serial.printf("WARNING pulse frequency to high, capping at %d Watt! Target is %d Watt. Decrease PULSE_DURATION or PULSES_PER_kWh\n", target_watt, original_target);

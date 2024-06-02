@@ -201,14 +201,32 @@ Depending on your HP model, SG3 might be configurable in "ECO mode", "Normal mod
 Note: Smart Grid needs to be switched ON in the heatpump configuration menu, otherwise SG1 and SG2 contacts are not evaluated.
 
 ## Step 5 (optional) - Pulse Meter feature
+_Needs step 4 - Smart grid features_
 ESPaltherma can communicate how much energy the HP should consume via a pulse meter. For this, uncomment and confugre `PIN_PULSE`, `PULSES_PER_kWh` and `PULSE_DURATION_MS` in `src/setup.h`. Send energy amount in Watt to MQTT channel `espaltherma/pulse/set`. Current Watt setting is available in `espaltherma/pulse/state`.
 
-*TODO more close description what it is to do*
+### Hardware
+Similar to the SG1 and SG2 connections, an additional relay is needed for the pulse meter. As relays have a rather limited cycle count and switching is slow, it is strongly recommended to use alternatives like optocouplers. The relay/optocoupler needs to be connected to the S4S contacts of your heat pump and needs a 200 Ohm resistor on the positive side of the connection.
 
-Note the limits to reporded Watt. Both limits depend on
+For the optocoupler I used the [LTV 815](https://cdn-reichelt.de/documents/datenblatt/A200/LTV815_LTV825_LTV845_LIT.pdf). Be aware of the supported Voltage. On my heat pump I measured between 12 and 20 Volt on all connections (SG1, SG2 and Smart Grid). Here is the resulting PCB, note that also the SG1, SG2 contacts as well as the serial connection is implemented. _Important: The 200 Ohm resistor on the Smart Grid (S4S) connection is missing_
+
+<img src="doc/images/PCB_bottom.jpg" width="250" style="display: inline"/> <img src="doc/images/PCB_top.jpg" width="200" /> <img src="doc/images/PCB_wiring.jpg" width="200" />
+
+### Heat Pump Settings
+[9.A.2] Installer settings > Energy Metering > Electricity meter 2: Set to "1000/kWh for PV-Panel". Keep this in sync with the `PULSES_PER_kWh` setting in `src/setup.h`.
+
+Possibly following settings are also needed
+[9.8.4] Installer settings > Benefit kWh power supply > Benefit kWh power supply: Set to "Smartgrid"
+
+### Usage
+Set the Smart Grid value to "2 - Recommended ON" and set a set the _excess power_ in Watt in the MQTT channel `espaltherma/pulse/set`.
+
+Be aware, that this is not a direct command for the heat pump. It was build to be an information of a smart meter, thus the heat pumpt decides wheather or not to turn on. Could very well be, that the heat pump needs to see a certain level of power over a duration of time. 
+Also when the heat pump starts, the reported "excess power" needs to decrease. Unless you know what you do, it would be wise to report the exported power as seen by your smart meter!
+
+Note the limits to the reporded power. Limits are depnendend on these settings:
 * `PULSES_PER_kWh` (default is 1000)
-* `PULSE_DURATION_MS` (default is 75)
-For these defaults, the minimum reported power is 60 and the maximum is 21 kWh. If you need to represent more power, try reducing `PULSE_DURATION_MS`. If this is not sufficient, adapt `PULSES_PER_kWh` but keep it in sync with the HP setting.
+* `PULSE_DURATION_MS` (default is 50)
+For the above defaults, the minimum reported power is 60 W and the maximum is 18 kWh. If you need to represent more power, try reducing `PULSE_DURATION_MS` to at most 10. If this is not sufficient, adapt `PULSES_PER_kWh` but keep it in sync with the heat pump setting.
 
 # Troubleshooting
 
