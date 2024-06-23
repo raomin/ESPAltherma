@@ -3,11 +3,13 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-src/setup.h
 private/
+build/
 .vscode/settings.json
+sdkconfig.*
 contrib/ldd_decoder/bin/
 contrib/ldd_decoder/obj/
 contrib/ldd_decoder/label_defines.*
-src/my_setup.h
-DaikinLogger.sln
+managed_components/
+dependencies.lock
+.mono

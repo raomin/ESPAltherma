@@ -1,0 +1,125 @@
+#name: nightly build
+
+on:
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+              ~/.cache/pip
+              ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build X10A definitions
+        run: python3 scripts/build_x10a_commands.py
+
+      - name: Build CAN definitions
+        run: python3 scripts/build_can_commands.py
+
+      - name: Run Unit Tests
+        run: pio test -e native
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [esp32, esp32_debug_noBT, nodemcuv2, m5stickc, m5stack-tough, m5stickcplus, m5stickcplus2]
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+              ~/.cache/pip
+              ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build PlatformIO Project
+        run: pio run -e ${{ matrix.target }}
+
+      - name: Create build folder
+        run: mkdir -p build
+
+      - name: Move builded firmware to artifacts
+        run: mv .pio/build/${{ matrix.target }}/firmware.bin build/${{ matrix.target }}_nightly_firmware.bin
+
+      - name: Archive build results of ${{ matrix.target }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: pio-build
+          path: build/*_firmware.bin
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pio-build
+          path: build
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Build X10A definitions
+        run: python3 scripts/build_x10a_commands.py
+
+      - name: Build CAN definitions
+        run: python3 scripts/build_can_commands.py
+
+      - name: Create info file
+        run: |
+          echo -e "ref: $GITHUB_REF \ncommit: $GITHUB_SHA\nbuild: $(date +"%Y-%m-%dT%H:%M:%SZ")" > build/info.txt
+
+      - name: Rename folder name
+        run: mv build nightly-build
+
+      - uses: vimtor/action-zip@v1
+        with:
+          files: nightly-build/
+          recursive: false
+          dest: nightly-build.zip
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nightly-build
+          path: nightly-build.zip
+
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: pio-build
+
+      - name: Update nightly release
+        uses: pyTooling/Actions/releaser@r0
+        with:
+          tag: nightly
+          rm: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: nightly-build.zip

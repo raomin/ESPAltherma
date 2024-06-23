@@ -1,0 +1,741 @@
+{
+  "Model": "HPSU",
+  "Language": "Italian",
+  "Commands": [
+    {
+      "name": "t_hs",
+      "label": "T-GDC",
+      "description": "Viene visualizzata la temperatura corrente (di mandata) del generatore di calore."
+    },
+    {
+      "name": "t_hs_set",
+      "label": "T-GDC nom",
+      "description": "Viene visualizzata la temperatura nominale corrente del generatore di calore in °C con un valore decimale."
+    },
+    {
+      "name": "water_pressure",
+      "label": "Pressione Acqua",
+      "description": "Viene visualizzata la pressione idrica corrente espressa in bar."
+    },
+    {
+      "name": "t_ext",
+      "label": "T-Esterna",
+      "description": "Viene visualizzata la temperatura esterna corrente in °C con un valore decimale."
+    },
+    {
+      "name": "t_dhw",
+      "label": "T-Ac",
+      "description": "Viene visualizzata la temperatura corrente del bollitore di acqua calda in°C con un valore decimale. Se non fosse attivata alcuna funzione acqua calda, viene visualizzato \"- - -\"."
+    },
+    {
+      "name": "t_dhw_set",
+      "label": "T-Accumulatore",
+      "description": "Viene visualizzata la temperatura nominale corrente per l'approntamento di acqua calda in °C con un valore decimale. Se non fosse attivata alcuna funzione acqua calda, viene visualizzato \"- - -\". Il valore nominale corrente qui è sempre il valore massimo di tutte le richieste rilevanti per questo circuito dell'acqua calda."
+    },
+    {
+      "name": "t_return",
+      "label": "T-ritorno",
+      "description": "Viene visualizzata la temperatura di ritorno corrente del generatore di calore in °C con un valore decimale. Se non è collegato il relativo sensore al generatore di calore, viene visualizzato \"- - -"
+    },
+    {
+      "name": "flow_rate",
+      "label": "Flusso volumetrico",
+      "description": "Viene visualizzato il valore filtrato del flusso di volume corrente."
+    },
+    {
+      "name": "t_hc",
+      "label": "Temp. Circ. Riscald",
+      "description": "Viene visualizzata la temperatura del circuito di riscaldamento diretto in °C con un valore decimale."
+    },
+    {
+      "name": "t_hc_set",
+      "label": "Temp. Nomin. Circ. Risc.",
+      "description": "Viene visualizzata la temperatura nominale (di mandata) del circuito di riscaldamento diretto in °C con un valore decimale."
+    },
+    {
+      "name": "status_pump",
+      "label": "Status pompa",
+      "description": "Stato attuale della pompa di circolazione per riscaldamento interna del ROTEX HPSU compact."
+    },
+    {
+      "name": "runtime_comp",
+      "label": "Tempo oper. Comp",
+      "description": "Viene visualizzato il tempo di funzionamento del compressore espresso in ore."
+    },
+    {
+      "name": "runtime_pump",
+      "label": "Tempo oper. Pompa",
+      "description": "Viene visualizzato il tempo di funzionamento della pompa."
+    },
+    {
+      "name": "posmix",
+      "label": "Posizione Miscelatore",
+      "description": "Viene visualizzata la posizione corrente del miscelatore 3UV1 in %."
+    },
+    {
+      "name": "qboh",
+      "label": "Qboh",
+      "description": "Viene visualizzata la quantità di calore del riscaldamento di riserva per l'approntamento di acqua calda in kWh."
+    },
+    {
+      "name": "qchhp",
+      "label": "Qchhp",
+      "description": "Viene visualizzata la quantità di calore del riscaldamento di riserva per la modalità di riscaldamento in kWh."
+    },
+    {
+      "name": "qsc",
+      "label": "Qsc",
+      "description": "Viene visualizzata la quantità di calore della pompa di calore per la modalità di raffrescamento in kWh."
+    },
+    {
+      "name": "qch",
+      "label": "Qch",
+      "description": "Viene visualizzata la quantità di calore della pompa di calore per la modalità di riscaldamento in kWh."
+    },
+    {
+      "name": "qwp",
+      "label": "QWP",
+      "description": "Viene visualizzata l'intera quantità di calore della pompa di calore in kWh."
+    },
+    {
+      "name": "qdhw",
+      "label": "Qdhw",
+      "description": "Viene visualizzata la quantità di calore per l'approntamento di acqua calda in kWh."
+    },
+    {
+      "name": "sw_vers_01",
+      "label": "Numero Software CUI",
+      "description": "Viene visualizzato il software e la versione dell'unità di comando."
+    },
+    {
+      "name": "sw_vers_02",
+      "label": "Num Software Regolat",
+      "description": "Viene visualizzato il numero di software e la versione della scheda di regolazione."
+    },
+    {
+      "name": "sw_vers_03",
+      "label": "SW Nr. RTX RT",
+      "description": "Viene visualizzato il numero di software e la versione della scheda modbus."
+    },
+    {
+      "name": "mode_01",
+      "label": "Modo operativo",
+      "description": "Parametro per l'impostazione della modalità di funzionamento del circuito di riscaldamento interno. Per l'impostazione \"- - - -\" per questo circuito di riscaldamento si utilizza l'interruttore rotante della regolazione. Con l'impostazione della modalità di funzionamento \"Standby/OFF\", e \"Estate\" dell'interruttore rotante della centralina, si ottiene la riduzione di potenza di tutti i circuiti di riscaldamento o di consumo di tutto l'impianto. 0: --- 1: Standby 2: Riduzione 3: Riscaldamento 4: Raffrescamento 5: Estate 6: Automatico 1 7: Automatico 2"
+    },
+    {
+      "name": "tvbh2",
+      "label": "TVBH2 [C]",
+      "description": "Temperatura di mandata attuale riscaldamento (tV,BH)."
+    },
+    {
+      "name": "tliq2",
+      "label": "Tliq2 [C]",
+      "description": "Temperatura corrente del refrigerante (tliq2)."
+    },
+    {
+      "name": "tr2",
+      "label": "TR2 [C]",
+      "description": "Temperatura di ritorno attuale riscaldamento, sensore secondario (tR2)."
+    },
+    {
+      "name": "ta2",
+      "label": "TA2 [C]",
+      "description": "Temperatura esterna attuale (misurata dalla sonda della pompa di calore esterna)."
+    },
+    {
+      "name": "tdhw2",
+      "label": "Tdhw2 [C]",
+      "description": "Temperatura dell'acqua calda attuale nel bollitore dell'acqua calda, sensore secondario (tDHW2)."
+    },
+    {
+      "name": "quiet",
+      "label": "Modalità silenziosa",
+      "description": "Modalità per funzionamento silenzioso Esistono due modalità. In determinati casi, il funzionamento silenzioso si nota a causa della riduzione della potenza. 0: disattivato 1: attivato 2: Intervallo (funzionamento notturno fra le ore 22:00 e le ore 5:00 in modalità silenziosa)"
+    },
+    {
+      "name": "mode",
+      "label": "Mode",
+      "description": "Modalita' attuale della pompa di calore: 0: not active 1: riscaldare 2: Raffreddare 3: Funzione scongelamento attiva (Defrost) 4: Produzione di acqua calda (ACS)"
+    },
+    {
+      "name": "pump",
+      "label": "Pump",
+      "description": "Potenza attuale della pompa di circolazione per riscaldamento interna in %."
+    },
+    {
+      "name": "ext",
+      "label": "Ext",
+      "description": "Modalita' energetica attuale della pompa di calore:\\nLT: Funzione EVU attiva e tariffa ridotta.\\nHT: Funzione EVU attiva e tariffa normale.\\nSGN: SMART GRID - Funzione attiva, funzionamento\\nnormale.\\nSG1: SMART GRID - Funzione attiva, lancio,\\ncorrente piu' cara.\\nSG2: SMART GRID - Funzione attiva, funzionamento\\naumentato, corrente piu' conveniente.\\nSG3: SMART GRID - Funzione attiva, comando di attivazione e funzionamento aumentato, corrente piu' conveniente. '- - -': Nessuna modalita' esterna attiva, la pompa di calore funziona in modo normale."
+    },
+    {
+      "name": "ehs",
+      "label": "EHS",
+      "description": "Potenza attuale del Backup-Heater (BUH) in kW."
+    },
+    {
+      "name": "rt",
+      "label": "Room thermostat",
+      "description": "Attivazione di un termostato ambientale. Attivando questa funzione, la temperatura nominale ambientale viene controllata solo tramite il termostato ambientale. 0: Disattivato 1: Attivato"
+    },
+    {
+      "name": "bpv",
+      "label": "BPV",
+      "description": "Posizione attuale della valvola di miscelazione 3UVB1 (100 % = A, 0 % = B)."
+    },
+    {
+      "name": "t_v1",
+      "label": "TV",
+      "description": "Temperatura di mandata corrente (tV1)."
+    },
+    {
+      "name": "t_dhw1",
+      "label": "Tdhw",
+      "description": "Temperatura dell'acqua calda attuale nel bollitore dell'acqua calda (tDHW1)."
+    },
+    {
+      "name": "t_vbh",
+      "label": "TVBH",
+      "description": "Temperatura di uscita dell'acqua bollitore dell'acqua calda (tV,BH)."
+    },
+    {
+      "name": "t_outdoor_ot1",
+      "label": "TA",
+      "description": "Temperatura esterna attuale (misurata dalla sonda di temperatura opzionale RoCon OT1)."
+    },
+    {
+      "name": "t_r1",
+      "label": "TR",
+      "description": "Temperatura di ritorno attuale riscaldamento (tR1)."
+    },
+    {
+      "name": "v1",
+      "label": "V",
+      "description": "Flusso di volume attuale (portata) nell'impianto di riscaldamento."
+    },
+    {
+      "name": "t_room1_setpoint",
+      "label": "T-Ambiente 1",
+      "description": "Viene impostato il valore nominale della temperatura ambiente in °C con un valore decimale, che vale per il primo blocco di programma a orario del programma a orario Automatico 1 e Automatico 2. (testo dal manuale installatore) Questi parametri influenzano, oltre alla temperatura esterna, la curva calore e possibilmente la temperatura ambiente rilevata dal dispositivo di controllo EHS157034 (se presente e configurato), la temperatura di mandata desiderata per il circuito di riscaldamento. Se questi parametri vengono impostati erroneamente, questo può influenzare fortemente il funzionamento della pompa calore in modalità riscaldamento."
+    },
+    {
+      "name": "t_room2_setpoint",
+      "label": "T-Ambiente 2",
+      "description": "Viene impostato il valore nominale della temperatura ambiente in °C con un valore decimale, che vale per il primo blocco di programma a orario del programma a orario Automatico 1 e Automatico 2. (testo dal manuale installatore) Questi parametri influenzano, oltre alla temperatura esterna, la curva calore e possibilmente la temperatura ambiente rilevata dal dispositivo di controllo EHS157034 (se presente e configurato), la temperatura di mandata desiderata per il circuito di riscaldamento. Se questi parametri vengono impostati erroneamente, questo può influenzare fortemente il funzionamento della pompa calore in modalità riscaldamento."
+    },
+    {
+      "name": "t_room3_setpoint",
+      "label": "T-Ambiente 3",
+      "description": "Viene impostato il valore nominale della temperatura ambiente in °C con un valore decimale, che vale per il primo blocco di programma a orario del programma a orario Automatico 1 e Automatico 2. (testo dal manuale installatore) Questi parametri influenzano, oltre alla temperatura esterna, la curva calore e possibilmente la temperatura ambiente rilevata dal dispositivo di controllo EHS157034 (se presente e configurato), la temperatura di mandata desiderata per il circuito di riscaldamento. Se questi parametri vengono impostati erroneamente, questo può influenzare fortemente il funzionamento della pompa calore in modalità riscaldamento."
+    },
+    {
+      "name": "heat_slope",
+      "label": "Curva riscaldamento",
+      "description": "La curva di riscaldamento riproduce la dipendenza della temperatura nominale di mandata des circuito di riscaldamento dalla temperatura esterna."
+    },
+    {
+      "name": "t_dhw_setpoint1",
+      "label": "T-Acc 1 nom",
+      "description": "Viene impostato il valore nominale della temperatura dell'acqua calda in °C con un valore decimale, che vale per il primo blocco di programma a orario del programma a orario Automatico 1 e Automatico 2. (testo dal manuale installatore) Valore desiderato della temperatura dell'acqua calda. All'avvio non impostare al di sotto di 40°C. Dopo l'avvio non impostare mai al di sotto di 35°C!"
+    },
+    {
+      "name": "t_dhw_setpoint2",
+      "label": "T-Acc 2 nom",
+      "description": "Viene impostato il valore nominale della temperatura dell'acqua calda in °C con un valore decimale, che vale per il secondo blocco di programma a orario del programma a orario Automatico 1 e Automatico 2."
+    },
+    {
+      "name": "t_dhw_setpoint3",
+      "label": "T-Acc 3 nom",
+      "description": "Viene impostato il valore nominale della temperatura dell'acqua calda in °C con un valore decimale, che vale per il terzo blocco di programma a orario del programma a orario Automatico 1 e Automatico 2."
+    },
+    {
+      "name": "hyst_hp",
+      "label": "HP Isteresi TDHW",
+      "description": "Soglia di attivazione caricamento acqua calda. Stabilisce a partire da quale differenza di temperatura si attiva la pompa di calore per il caricamento dell'acqua calda"
+    },
+    {
+      "name": "t_flow_cooling",
+      "label": "T-Imp refrig",
+      "description": "Temperatura nominale di mandata di modalita' di raffreddamento in caso di regolazione in base ad una temperatura di mandata fissa"
+    },
+    {
+      "name": "error",
+      "label": "Errore",
+      "description": "errorcode"
+    },
+    {
+      "name": "outdoor_type",
+      "label": "Outdoor type",
+      "description": "Tipo di apparecchio esterno pompa di calore 0: nessuna selezione 1: 4 kW 2: 6 kW 3: 8 kW 4: 11 kW 5: 14 kW 6: 16 kW"
+    },
+    {
+      "name": "indoor_unit",
+      "label": "Indoor unit",
+      "description": "Tipo apparecchio interno pompa di calore 0: Finora non si verifica alcuna messa in funzione. 1: 304 2: 308 3: 508 4: 516"
+    },
+    {
+      "name": "func_heating",
+      "label": "Function Heating Rod",
+      "description": "Impostazione relativa all'eventuale presenza di generatore di calore aggiuntivo (WEZ) per l'approntamento di acqua calda e il sostegno al riscaldamento. 0: Nessun WEZ aggiuntivo 1: WEZ elettrico 2: WEZ alternativo per le funzioni approntamento di acqua calda e sostegno al riscaldamento 3: WEZ 1 alternativo per la funzione approntamento di acqua calda e WEZ 2 alternativo per la funzione sostegno al riscaldamento (testo manuale installatore) Durante l'utilizzo di un l’elemento riscaldante elettronico supportare la pompa di calore, impostare su 1."
+    },
+    {
+      "name": "hzu",
+      "label": "HUZ",
+      "description": "Sostegno al riscaldamento tramite il bollitore di acqua calda : 0: nessun sostegno al riscaldamento 1: sostegno al riscaldamento attivato"
+    },
+    {
+      "name": "equi_func",
+      "label": "Equilibrium Func",
+      "description": "(o Bivalence Function) La temperatura bivalente è rilevante per il funzionamento del riscaldatore aggiuntivo opzionale a seguito di una richiesta di back-up [modalità di riscaldamento ambientale]. Quando la funzione è attivata, il back-up heater viene sbloccato solo se la temperatura bivalente (impostabile alla voce Configurazione) non è stata raggiunta. Disattivando la funzione \"Temperatura bivalente\", il funzionamento del back-up heater è sempre possibile. 0: Disattivato 1: attivato (testo nel manuale tecnico) Quando attivato, l'elemento riscaldante elettronico per il supporto del riscaldamento verrà attivato per la prima volta quando la temperatura è al di sotto dei valori impostati in„Temp. di bivalenza“."
+    },
+    {
+      "name": "smart_grid",
+      "label": "SMART GRID",
+      "description": "Attivazione della funzione Smart Grid Non appena viene attivata questa funzione, a seconda del segnale inviato dal fornitore di energia elettrica, la pompa di calore viene disattivata o azionata maggiormente. 0: Disattivato 1: attivato"
+    },
+    {
+      "name": "modus_sg",
+      "label": "Mode SG",
+      "description": "Attivando il parametro \"SMART GRID\" (=1), tramite di esso si può regolare la riduzione di temperatura in modalità di risparmio (approntamento di acqua calda e riscaldamento) e l'aumento della temperatura di mandata con un comando di attivazione. 0: Comfort (aumento del valore nominale della temperatura dell'acqua calda di 5 K) 1: Standard (aumento del valore nominale della temperatura di mandata di 2 K e temperatura dell'acqua calda di 5 K) 2: Eco (aumento del valore nominale della temperatura di mandata di 5 K e temperatura dell'acqua calda di 10 K)"
+    },
+    {
+      "name": "ht_nt_func",
+      "label": "HT/NT Function",
+      "description": "Questo parametro stabilisce quali sorgenti di calore vengono disattivate quando si riceve il segnale della tariffa ridotta dall'ente di approvvigionamento energetico (EVU). 0: Disattivato (nessun effetto) 1: Compressore disattivato 2: Il compressore e il riscaldamento di riserva viene disattivato 3: Tutto viene disattivato (nessuna funzione dell'apparecchio, stand-by)"
+    },
+    {
+      "name": "ht_nt_contact",
+      "label": "HT/NT Contact",
+      "description": "Determinare se si tratti di un contatto di apertura o chiusura (NC or NO). 0: Valutazione di un contatto di chiusura 1: Valutazione di un contatto di apertura"
+    },
+    {
+      "name": "room_therm",
+      "label": "Room thermostat",
+      "description": "Attivazione di un termostato ambientale. Attivando questa funzione, la temperatura nominale ambientale viene controllata solo tramite il termostato ambientale. 0: Disattivato 1: Attivato"
+    },
+    {
+      "name": "interlink",
+      "label": "Interlink fct",
+      "description": "È possibile utilizzarlo solo negli impianti dotati di sonde di valore nominale diverse (ad es. 2º termostato ambientale). Questa impostazione di parametro offre la possibilità di utilizzare 2 valori nominali. Non appena viene attivata questa funzione (ad es. connettendo un ulteriore convettore HP), a seconda della richiesta, la regolazione avviene in base a 2 valori nominali. Il secondo valore nominale corrisponde al normale valore nominale +5 K (in caso di raffrescamento -5 K). 0: Disattivato 1: Attivato (testo dal manuale installatore) La temperatura di mandata viene modificata quando il secondo contatto del RT (contatto raffreddamento, Connettore J16) è chiuso al valore impostato nel parametro “T-Flow CH adj“ o „T-Flow Cooling adj“ ( RoCon HP, Cap. 6.2.2, Tab. 6-2)."
+    },
+    {
+      "name": "air_purge",
+      "label": "Air Purge",
+      "description": "Activation of automatic bleeding of the ROTEX HPSU compact and the connected heating circuit"
+    },
+    {
+      "name": "max_perf_pump",
+      "label": "PWM MAX",
+      "description": "Limite superiore della modulazione del segnale PWM. (testo del manuale installatore) Max Performance - Definisce l'energia massima prodotta dalla pompa"
+    },
+    {
+      "name": "min_perf_pump",
+      "label": "PWM MIN",
+      "description": "Limite inferiore della modulazione del segnale PWM. (testo del manuale installatore) Min Performance - Definisce la potenza minima dalla pompa"
+    },
+    {
+      "name": "outside_conf",
+      "label": "Outside Config",
+      "description": "Parametro per la configurazione del sensore di temperatura esterna. Se il parametro è attivato e non è stato collegato alcun sensore esterno, viene generato un messaggio di errore. 0: Disattivato 1: Attivato"
+    },
+    {
+      "name": "storage_conf",
+      "label": "Storage Config",
+      "description": "Con questo parametro, è possibile parametrare il sensore dell'approntamento di acqua calda. Nell'impostazione 0: \"Inattivo\" non viene valutato alcun sensore e la funzionalità dell'approntamento di acqua calda è disattivata. Nell'impostazione 1: \"Sensore\" viene valutato un sensore e la funzionalità dell'approntamento di acqua calda è attivata. Nell'impostazione 2: \"Termostato\", per l'approntamento di acqua calda viene valutato un interruttore del termostato (ON /OFF), in cui il \"contatto aperto\" viene valutato come \"nessuna necessità\". La funzionalità dell'approntamento di acqua calda viene attivata. 0: Inattivo 1: Sensore 2: Termostato"
+    },
+    {
+      "name": "pres_conf",
+      "label": "Pressure Config",
+      "description": "Parametro per la configurazione del sensore per la registrazione della pressione dell'acqua Impianto. 0: Disattivato 1: Attivato"
+    },
+    {
+      "name": "out_temp_adapt",
+      "label": "Outside Temp Adap",
+      "description": "Con questo parametro si può impostare un adeguamento personalizzato per il valore di misurazione della temperatura esterna rilevante per la regolazione."
+    },
+    {
+      "name": "power_dhw",
+      "label": "BOH power",
+      "description": "Potenza calorifica del riscaldatore elettrico aggiuntivo per l'approntamento di acqua calda"
+    },
+    {
+      "name": "buh_s1_pow",
+      "label": "BUH s1 power",
+      "description": "Potenza calorifica del riscaldatore elettrico aggiuntivo per il sostegno al riscaldamento livello 1 (in W) (testo dal manuale installatore) Definisce l'energia prodotta dall'elemento elettronico riscaldante installato, collegato al rispettivo stadio, e limita l'energia che viene utilizzata come supporto al riscaldamento del serbatoio attraverso la valvola miscelatrice. Se durante il supporto al riscaldamento attraverso l'elemento riscaldante elettronico il serbatoio diventa troppo caldo o si raffredda eccessivamente, si può verificare una deriva del sensore. Questo può essere contrastato modificando il valore del parametro come da Tab.3-4."
+    },
+    {
+      "name": "buh_s2_pow",
+      "label": "BUH s2 power",
+      "description": "Potenza calorifica del riscaldatore elettrico aggiuntivo per il sostegno al riscaldamento livello 2 (in W) (testo dal manuale installatore) Definisce l'energia prodotta dall'elemento elettronico riscaldante installato, collegato al rispettivo stadio, e limita l'energia che viene utilizzata come supporto al riscaldamento del serbatoio attraverso la valvola miscelatrice. Se durante il supporto al riscaldamento attraverso l'elemento riscaldante elettronico il serbatoio diventa troppo caldo o si raffredda eccessivamente, si può verificare una deriva del sensore. Questo può essere contrastato modificando il valore del parametro come da Tab.3-4."
+    },
+    {
+      "name": "power_biv",
+      "label": "Power BIV",
+      "description": "Potenza calorifica del generatore di calore alternativo. Serve alla limitazione del sostegno al riscaldamento. La potenza viene azionata con il sostegno al riscaldamento fino a quando non si raggiunge il parametro limite di temperatura [Overtemp CH Support]."
+    },
+    {
+      "name": "tdiff_dhw_ch",
+      "label": "TDiff-DHW CH",
+      "description": "TDiff-DHW CH"
+    },
+    {
+      "name": "t_vbh1_max",
+      "label": "T vbh1 max",
+      "description": "Massima temperatura di mandata (controllata tramite la valvola di miscelazione integrata). Limita il sostegno al riscaldamento alla temperatura immessa. (alternativo) Temperatura di erogazione massima dell'acqua (misurata su tV, BH) con funzione \"heating support\" attiva"
+    },
+    {
+      "name": "equi_temp",
+      "label": "Temp. di bivalenza",
+      "description": "Temperatura esterna a partire dalla quale viene attivato il riscaldatore aggiuntivo opzionale per il sostegno al riscaldamento ambientale. La temperatura bivalente è rilevante per il funzionamento del riscaldatore aggiuntivo opzionale a seguito di una richiesta di back-up [modalità di riscaldamento ambientale]. A tale scopo viene utilizzato il sensore di temperatura integrato sull'apparecchio esterno della pompa di calore (si differenzia da quelli indicato nel display)."
+    },
+    {
+      "name": "quiet_mode",
+      "label": "Quiet Mode",
+      "description": "Modalità per operatività silenziosa con output ridotto"
+    },
+    {
+      "name": "aux_fct",
+      "label": "AUX Fzn",
+      "description": "Attribuzione delle condizioni di attivazione per il contatto AUX. 0: Funzione disattivata 1: TDHW 1 min 2: Modalità di funzionamento 3: BUH 4: Errore 5: TVBH1 save 6: BIV parallelo 7: BIV alternativo 8: BOH"
+    },
+    {
+      "name": "aux_time",
+      "label": "AUX Tempo",
+      "description": "Tempo di ritardo (isteresi) funzione speciale, dopo questo periodo viene attivato il contatto AUX."
+    },
+    {
+      "name": "t_dhw_1_min",
+      "label": "T-DHW min",
+      "description": "Soglia di attivazione per contatto AUX dipendente dalla temperatura vedere RPS3 (BSK) / Soglia di commutazione della temperatura del serbatorio di accumulo (Tdhw) per il contatto di commutazione AUX (vedi parametro [AUX Fct])"
+    },
+    {
+      "name": "delta_t_ch",
+      "label": "Spread CH",
+      "description": "(Delta-T CH) Differenza di temperatura soglia superiore dimodulazione per modalità di riscaldamento. (traduzione non disponibile) Set outdoor temperature spread The ROTEX HPSU compact heating circulation pump controls the flow rate in order to achieve the set spread between the inflow target temperature and the return flow temperature (tV, BH - tR1)"
+    },
+    {
+      "name": "v_var",
+      "label": "V var",
+      "description": "La portata d'aria minima necessaria dell'unità (valore aritmetico, non impostabile)"
+    },
+    {
+      "name": "t_flow_ch_adj",
+      "label": "T-Flow CH adj",
+      "description": "(traduzione non disponibile) Only when parameter [Interlink fct] = On. With a closed cooling RT switching contact, the inflow target temperature is increased by the set value"
+    },
+    {
+      "name": "t_flow_cool_adj",
+      "label": "T-Flow Cooling adj",
+      "description": "(traduzione non disponibile) Only when parameter [Interlink fct] = On. With a closed cooling RT switching contact, the cooling inflow target temperature is reduced by the set value"
+    },
+    {
+      "name": "min_pressure",
+      "label": "Min Pressure",
+      "description": "Indica la pressione minima dell'acqua"
+    },
+    {
+      "name": "max_pressure",
+      "label": "Max Pressure",
+      "description": "Indica la pressione massima dell'acqua"
+    },
+    {
+      "name": "setpoint_pressure",
+      "label": "Set Point Pressure",
+      "description": "Indica la pressione obiettivo dell'acqua"
+    },
+    {
+      "name": "max_pressure_drop",
+      "label": "Max Pressuredrop",
+      "description": "Indica il massimo calo di pressione accettabile nel sistema di riscaldamento"
+    },
+    {
+      "name": "hc_func",
+      "label": "HC Function",
+      "description": "Al circuito di riscaldamento si possono attribuire varie funzionalità. 0: Regolazione circuito di riscaldamento standard (curva climatica) 1: Regolazione a un valore nominale di mandata fisso, a seconda della modalità di riscaldamento o riduzione"
+    },
+    {
+      "name": "t_frost_protect",
+      "label": "Antigelo",
+      "description": "0=Nessuna protezione del circuito di riscaldamento, Altrimenti: Se la temperatura esterna scende al di sotto del valore programmato, l'impianto passa alla modalità di protezione dal congelamento (accensione della pompa). La funzionalità si disattiva una volta che la temperatura esterna ha raggiunto il valore impostato +1 K"
+    },
+    {
+      "name": "insulation",
+      "label": "Livello Isolamento",
+      "description": "Con questo parametro, è possibile parametrare lo standard di coibentazione dell'edificio. IN tal modo si influenza la curva di riscaldamento e i tempi di riscaldamento e raffrescamento. 0: off 1: scarso 2: normale 3: buono 4: ottimo (testo del manuale installatore) A seconda dell'isolamento dell'edificio, la media della temperatura esterna viene calcolata su un dato periodo di tempo. Perciò può succedere che la pompa di calore non si accenda immediatamente quando la temperatura esterna raggiunge un valore inferiore a quello impostato in „Temp.-Lim Giorno“ . La temperatura esterna media può essere visualizzata nel livello Informazioni sotto la voce „T-Esterna“"
+    },
+    {
+      "name": "screed",
+      "label": "Massetto",
+      "description": "Con questo parametro si può attivare la funzione di asciugatura del massetto. La temperatura nominale di mandata viene regolata in base al programma massetto parametrato. Il giorno in cui viene attivata la funzione massetto non viene conteggiato nella durata del programma massetto. Il primo giorno comincia quindi al volgere del giorno ovvero alle ore 00:00. Per le restanti ore del giorno di attivazione, il riscaldamento segue l'impostazione del primo giorno di programma."
+    },
+    {
+      "name": "t_screed_day1",
+      "label": "Temp programma massetto giorno 1",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day2",
+      "label": "Temp programma massetto giorno 2",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day3",
+      "label": "Temp programma massetto giorno 3",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day4",
+      "label": "Temp programma massetto giorno 4",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day5",
+      "label": "Temp programma massetto giorno 5",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day6",
+      "label": "Temp programma massetto giorno 6",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day7",
+      "label": "Temp programma massetto giorno 7",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day8",
+      "label": "Temp programma massetto giorno 8",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day9",
+      "label": "Temp programma massetto giorno 9",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day10",
+      "label": "Temp programma massetto giorno 10",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day11",
+      "label": "Temp programma massetto giorno 11",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day12",
+      "label": "Temp programma massetto giorno 12",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day13",
+      "label": "Temp programma massetto giorno 13",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day14",
+      "label": "Temp programma massetto giorno 14",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day15",
+      "label": "Temp programma massetto giorno 15",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day16",
+      "label": "Temp programma massetto giorno 16",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day17",
+      "label": "Temp programma massetto giorno 17",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day18",
+      "label": "Temp programma massetto giorno 18",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day19",
+      "label": "Temp programma massetto giorno 19",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day20",
+      "label": "Temp programma massetto giorno 20",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day21",
+      "label": "Temp programma massetto giorno 21",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day22",
+      "label": "Temp programma massetto giorno 22",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day23",
+      "label": "Temp programma massetto giorno 23",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day24",
+      "label": "Temp programma massetto giorno 24",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day25",
+      "label": "Temp programma massetto giorno 25",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day26",
+      "label": "Temp programma massetto giorno 26",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day27",
+      "label": "Temp programma massetto giorno 27",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_screed_day28",
+      "label": "Temp programma massetto giorno 28",
+      "description": "In questa immissione si può parametrare il programma di svolgimento del riscaldamento del massetto. Si può impostare una temperatura nominale di mandata propria per una durata massima di 28 giorni separatamente per ogni giorno. La fine del programma massetto viene definita il primo giorno con l'impostazione del valore nominale \"- - - -\"."
+    },
+    {
+      "name": "t_out_lim_day",
+      "label": "Temp.-Lim Giorno (esterna)",
+      "description": "Se la temperatura esterna media misurata tramite il regolatore supera la soglia di calore qui impostata di 1 K, il riscaldamento viene bloccato. Il riscaldamento viene sbloccato di nuovo quando la temperatura esterna scende al di sotto della soglia di calore impostata."
+    },
+    {
+      "name": "t_out_lim_night",
+      "label": "Temp.-Lim Notte (esterna)",
+      "description": "Parametro per l'impostazione del limite di riscaldamento per lo \"Spegnimento\" del circuito di riscaldamento durante il tempo di riduzione."
+    },
+    {
+      "name": "t_flow_day",
+      "label": "T-Flow Day",
+      "description": "(traduzione non disponibile) Setting the inflow target temperature for the heating circuit during the heating time when in operating mode: \"Automatic 1\", \"Automatic 2\", \"Heating"
+    },
+    {
+      "name": "t_flow_night",
+      "label": "T-Flow night",
+      "description": "(traduzione non disponibile) Setting the inflow target temperature for the heating circuit during the setback time when in operating mode: \"Automatic 1\", \"Automatic 2\", \"Reducing"
+    },
+    {
+      "name": "max_t_flow",
+      "label": "Max T-Flow",
+      "description": "La temperatura nominale di mandata del circuito di riscaldamento viene limitata alla temperatura di mandata massima impostata (cioè non salirà sopra)"
+    },
+    {
+      "name": "min_t_flow",
+      "label": "Min T-Flow",
+      "description": "La temperatura nominale di mandata del circuito di riscaldamento viene aumentata alla temperatura di mandata minima impostata (cioè non scenderà sotto)."
+    },
+    {
+      "name": "hc_adapt",
+      "label": "HC Adaption",
+      "description": "Funzione per l'impostazione automatica della curva di riscaldamento 0: Disattivato 1: attivato"
+    },
+    {
+      "name": "start_tout_cool",
+      "label": "T-esterna inizio Raffredd.",
+      "description": "Con questo parametro si fissa a partire da quale temperatura esterna si avvia la modalità di raffrescamento (condizione di impostazione: modalità di raffrescamento). (non tradotto) Setting from which outside temperature the cooling operation with the highest cooling infeed target temperature"
+    },
+    {
+      "name": "max_tout_cool",
+      "label": "T-esterna Rafr Max",
+      "description": "Con questo parametro viene fissato con quale temperatura esterna viene fornita la temperatura nonimale di mandata di raffrescamento [T-madata inizio Rafredd.] più bassa o il valore nominale ambientale più alto [T-Room max cooling] (condizione di impostazione: modalità di raffrescamento). (non tradotto) Setting to determine from which outdoor temperature the lowest cooling flow temperature"
+    },
+    {
+      "name": "t_flow_cool_start",
+      "label": "T-mandata inizio Rafredd.",
+      "description": "(T-Flow Cooling start) Con questo parametro viene stabilito quale temperatura di mandata viene ottenuta all'inizio del raffrescamento (temperatura esterna = parametro [T-esterna inizio Raffredd.]) (condizione di impostazione: Parametro [raffrescare] = ON). (non tradotto) Setting the cooling inflow target temperature at the start of cooling mode"
+    },
+    {
+      "name": "t_flow_cool_max",
+      "label": "T-mandata Rafredd. max",
+      "description": "(T-Flow Cooling max) Con questo parametro viene stabilito quale temperatura di mandata viene ottenuta con massimo raffrescamento (temperatura esterna = parametro [T-mandata Rafredd. max]) (condizione di impostazione: modalità di raffrescamento). (non tradotto) Setting the minimum cooling inflow target temperature. This is kept constant relative to the outside temperature"
+    },
+    {
+      "name": "min_t_flow_cool",
+      "label": "Min T-Flow Cooling",
+      "description": "(traduzione non disponibile) Setting the absolute lower limit of the cooling inflow target temperature. The limitation is effective if a lower cooling inflow target temperature is determined based on other parameter settings"
+    },
+    {
+      "name": "t_flow_cool",
+      "label": "T-Flow Cooling",
+      "description": "(traduzione non disponibile) Setting the cooling inflow target temperature (fixed value) when cooling mode is active"
+    },
+    {
+      "name": "cool_setpoint_adj",
+      "label": "Cooling Setpoint adj",
+      "description": "Parallel displacement of the cooling characteristic curve to match the set value"
+    },
+    {
+      "name": "circ_pump_dhw",
+      "label": "Pompa circ ACS",
+      "description": "Con questo parametro si può impostare la funzione per il controllo di una pompa di circolazione in modo che essa venga sbloccata in sincronia al programma acqua calda. 0: Off 1: On"
+    },
+    {
+      "name": "circ_pump_interval",
+      "label": "Intervallo pompa circ.",
+      "description": "(traduzione non disponibile) Setting the interval control for an optional circulation pump"
+    },
+    {
+      "name": "anti_leg_day",
+      "label": "Anti-Legionella giorno",
+      "description": "Con questo parametro si può impostare la disinfezione termica del bollitore dell'acqua calda. 0 = Spento 1 = Lunedì ... 7 = Domenica"
+    },
+    {
+      "name": "anti_leg_time",
+      "label": "Anti-Legionella tempo",
+      "description": "Con questo parametro si può parametrare il tempo di avvio della disinfezione termica del serbatoio di acqua potabile."
+    },
+    {
+      "name": "anti_leg_temp",
+      "label": "Anti-Legionella temp",
+      "description": "Con questo parametro si può parametrare la temperatura nominale della disinfezione termica del serbatoio di acqua potabile."
+    },
+    {
+      "name": "max_dhw_loading",
+      "label": "Max DHW loading",
+      "description": "(traduzione non disponibile) Setting limits the time period for hot water generation to the set target value"
+    },
+    {
+      "name": "dhw_off_time",
+      "label": "DHW Off Time",
+      "description": "(traduzione non disponibile) Setting the block time following completion or interruption of a hot water generation cycle. New demand of hot water generation is satisfied only after expiry of this block time"
+    },
+    {
+      "name": "one_hot_water",
+      "label": "1x acqua calda",
+      "description": "Quando il valore desiderato [T-DHW Setpoint 1] viene raggiunto, questo parametro DEVE essere disattivato, diversamente, il serbatoio viene sempre mantenuto ad una temperatura di 37°C. Suggerimento: Disattivare sempre questo parametro (Impostazione 0)!"
+    },
+    {
+      "name": "timer_boh",
+      "label": "Timer BOH",
+      "description": "(traduzione non disponibile) Delay time after which the reserve heating may support the heat pump in hot water charging"
+    },
+    {
+      "name": "t_reduced",
+      "label": "T-Riduzione",
+      "description": "Viene impostato il valore nominale della temperatura ambientale di riduzione in °C con un valore decimale che vale per il programma a orario Automatico 1 e Automatico 2."
+    },
+    {
+      "name": "t_absence",
+      "label": "T-Asssenza",
+      "description": "Viene impostato il valore nominale della temperatura ambientale di riduzione in °C con un valore decimale che vale per il programma a orario Assente e Vacanze"
+    },
+    {
+      "name": "t_room",
+      "label": "T-Room",
+      "description": "(traduzione non disponibile) Room temperature measured by an optional Rocon U1 room station"
+    }
+  ]
+}
