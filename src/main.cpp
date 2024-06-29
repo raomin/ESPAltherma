@@ -309,6 +309,11 @@ void setup()
   pinMode(PIN_THERM, OUTPUT);
   // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
 
+#ifdef PIN_COOL
+  pinMode(PIN_COOL, OUTPUT);
+  // digitalWrite(PIN_COOL, PIN_THERM_ACTIVE_STATE);
+#endif
+
 #ifdef SAFETY_RELAY_PIN
   pinMode(SAFETY_RELAY_PIN, OUTPUT);
   digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
