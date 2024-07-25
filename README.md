@@ -336,7 +336,7 @@ When put in terms of ESPAltherma variables, the COP can be define as a sensor li
 
 ## Great! I can now monitor my heat pump! Can I change the configuration values too?
 
-Not directly. It might be possible to change registry values using the serial port but I'm not aware of this. If you know, comment on [the dedicated issue](/../../issues/1).
+Not directly. It might be possible to change registry values using the serial port but I'm not aware of this. If you know, comment on [the dedicated issue](https://github.com/raomin/ESPAltherma/issues/1).
 
 However, ESPAltherma, supports an extra GPIO to control a relay that you can plug as *external On/Off thermostat*. See [**Controling your Daikin Altherma heat pump**](#controling-your-daikin-altherma-heat-pump).
 
