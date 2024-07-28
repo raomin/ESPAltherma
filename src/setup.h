@@ -1,7 +1,7 @@
 //Setup your credentials and mqtt info here:
 //only change the value between the " " leave the rest of the line untouched.
-#define WIFI_SSID "SSID"//**Your SSID here**
-#define WIFI_PWD "password"//**Your password here** leave empty if open (bad!)
+#define WIFI_SSID "norcot"//**Your SSID here**
+#define WIFI_PWD "nor265cot"//**Your password here** leave empty if open (bad!)
 
 //Uncomment this to set a static IP instead of DHCP for the ESP (Separate by commas instead of dots)
 //#define WIFI_IP 192, 168, 0, 5
@@ -10,13 +10,13 @@
 //#define WIFI_PRIMARY_DNS 8, 8, 8, 8     //A DNS address is needed, even if it's not used 
 //#define WIFI_SECONDARY_DNS 8, 8, 4, 4   //A DNS address is needed, even if it's not used
 
-#define MQTT_SERVER "192.168.1.4"//**IP address here of your MQTT server**
-#define MQTT_USERNAME ""//leave empty if not set (bad!)
-#define MQTT_PASSWORD ""//leave empty if not set (bad!)
+#define MQTT_SERVER "192.168.68.121"//**IP address here of your MQTT server** emonpi.local, reserved in router (!)
+#define MQTT_USERNAME "emonpi"//leave empty if not set (bad!)
+#define MQTT_PASSWORD "emonpimqtt2016"//leave empty if not set (bad!)
 #define MQTT_PORT 1883
 //#define MQTT_ENCRYPTED // uncomment if MQTT connection is encrypted via TLS
 
-#define FREQUENCY 30000 //query values every 30 sec
+#define FREQUENCY 10000 //query values every 30 sec
 
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C_Plus2)
 // Values used when M5StickC, M5STickCPlus or M5Stick_C_Plus2 environment is selected:
@@ -62,8 +62,8 @@
 //#define JSONTABLE
 
 //Uncomment this if you want to activate the One Value <-> One Topic mode. Each value will be sent to a specific topic below 
-// #define ONEVAL_ONETOPIC
-// #define MQTT_OneTopic "espaltherma/OneATTR/" //Keep the ending "/" !!
+#define ONEVAL_ONETOPIC
+#define MQTT_OneTopic "emon/ASHP/" //Keep the ending "/" !!
 
 //Uncomment to disable common frequent log messages via MQTT to reduce network load
 //#define DISABLE_LOG_MESSAGES
@@ -84,7 +84,7 @@
 //#include "def/DEFAULT.h"
 
 //#include "def/Altherma(EBLA-EDLA D series 4-8kW Monobloc).h"
-//#include "def/Altherma(EBLA-EDLA D series 9-16kW Monobloc).h"
+#include "def/Altherma(EBLA-EDLA D series 9-16kW Monobloc).h"
 //#include "def/Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3).h"
 //#include "def/Altherma(EGSQH-A series 10kW GEO2).h"
 //#include "def/Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW).h"
