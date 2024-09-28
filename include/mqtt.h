@@ -56,28 +56,62 @@ void sendValues()
 #endif
 }
 
+void digitalWriteSgPins(uint8_t state) {
+  if (state == 0)
+  {
+    // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+  }
+  else if (state == 1)
+  {
+    // Set SG 1 mode => SG1 = INACTIVE, SG2 = ACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
+  }
+  else if (state == 2)
+  {
+    // Set SG 2 mode => SG1 = ACTIVE, SG2 = INACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+  }
+  else if (state == 3)
+  {
+    // Set SG 3 mode => SG1 = ACTIVE, SG2 = ACTIVE
+    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
+  }
+}
+
+void saveSgState(uint8_t state) {
+    EEPROM.write(EEPROM_SG, state);
+    EEPROM.commit();
+}
+
+void saveThermState(uint8_t state) {
+    EEPROM.write(EEPROM_STATE, state);
+    EEPROM.commit();
+}
+
 void restoreEEPROM() {
   if ('R' == EEPROM.read(EEPROM_CHK)){
     mqttSerial.printf("Restoring previous state: %s", (EEPROM.read(EEPROM_STATE) == PIN_THERM_ACTIVE_STATE) ? "On" : "Off");
     digitalWrite(PIN_THERM, EEPROM.read(EEPROM_STATE));
     #ifdef PIN_SG1
-    digitalWrite(PIN_SG1, EEPROM.read(EEPROM_PIN_SG1));
-    digitalWrite(PIN_SG2, EEPROM.read(EEPROM_PIN_SG2));
+    digitalWriteSgPins(EEPROM.read(EEPROM_SG));
     #endif
   }
   else{
-    mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
+    mqttSerial.printf("EEPROM not initialized (%d). Initializing...", EEPROM.read(EEPROM_CHK));
     EEPROM.write(EEPROM_CHK, 'R');
     EEPROM.write(EEPROM_STATE, !PIN_THERM_ACTIVE_STATE);
     #ifdef PIN_SG1
-    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    digitalWriteSgPins(EEPROM.read(EEPROM_SG));
     #endif
     EEPROM.commit();
     digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
     #ifdef PIN_SG1
-    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    digitalWriteSgPins(0);
     #endif
   }
 }
@@ -145,20 +179,18 @@ void callbackTherm(byte *payload, unsigned int length)
   if (payload[1] == 'F')
   { //turn off
     digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
-    EEPROM.write(EEPROM_STATE, !PIN_THERM_ACTIVE_STATE);
-    EEPROM.commit();
+    saveThermState(!PIN_THERM_ACTIVE_STATE);
     client.publish("espaltherma/STATE", "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
     digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
-    EEPROM.write(EEPROM_STATE, PIN_THERM_ACTIVE_STATE);
-    EEPROM.commit();
+    saveThermState(PIN_THERM_ACTIVE_STATE);
     client.publish("espaltherma/STATE", "ON", true);
     mqttSerial.println("Turned ON");
   }
-  else if (payload[0] == 'R')//R(eset/eboot)
+  else if (payload[0] == 'R') //R(eset/eboot)
   {
     mqttSerial.println("Rebooting");
     delay(100);
@@ -179,48 +211,32 @@ void callbackSg(byte *payload, unsigned int length)
   if (payload[0] == '0')
   {
     // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
-    EEPROM.write(EEPROM_SG, 0);
-    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_INACTIVE_STATE);
-    EEPROM.commit();
+    digitalWriteSgPins(0);
+    saveSgState(0);
     client.publish("espaltherma/sg/state", "0");
     Serial.println("Set SG mode to 0 - Normal operation");
   }
   else if (payload[0] == '1')
   {
     // Set SG 1 mode => SG1 = INACTIVE, SG2 = ACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
-    EEPROM.write(EEPROM_SG, 1);
-    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_ACTIVE_STATE);
-    EEPROM.commit();
+    digitalWriteSgPins(1);
+    saveSgState(1);
     client.publish("espaltherma/sg/state", "1");
     Serial.println("Set SG mode to 1 - Forced OFF");
   }
   else if (payload[0] == '2')
   {
     // Set SG 2 mode => SG1 = ACTIVE, SG2 = INACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
-    EEPROM.write(EEPROM_SG, 2);
-    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_INACTIVE_STATE);
-    EEPROM.commit();
+    digitalWriteSgPins(2);
+    saveSgState(2);
     client.publish("espaltherma/sg/state", "2");
     Serial.println("Set SG mode to 2 - Recommended ON");
   }
   else if (payload[0] == '3')
   {
     // Set SG 3 mode => SG1 = ACTIVE, SG2 = ACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
-    EEPROM.write(EEPROM_SG, 3);
-    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_ACTIVE_STATE);
-    EEPROM.commit();
+    digitalWriteSgPins(3);
+    saveSgState(3);
     client.publish("espaltherma/sg/state", "3");
     Serial.println("Set SG mode to 3 - Forced ON");
   }
