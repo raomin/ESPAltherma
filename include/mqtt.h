@@ -5,11 +5,9 @@
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
 
-#define EEPROM_STATE 0
 #define EEPROM_CHK 1
+#define EEPROM_STATE 0
 #define EEPROM_SG 2
-#define EEPROM_PIN_SG1 3
-#define EEPROM_PIN_SG2 4
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
@@ -56,7 +54,8 @@ void sendValues()
 #endif
 }
 
-void digitalWriteSgPins(uint8_t state) {
+void digitalWriteSgPins(uint8_t state)
+{
   if (state == 0)
   {
     // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
@@ -83,34 +82,36 @@ void digitalWriteSgPins(uint8_t state) {
   }
 }
 
-void saveSgState(uint8_t state) {
+void saveSgState(uint8_t state)
+{
     EEPROM.write(EEPROM_SG, state);
     EEPROM.commit();
 }
 
-void saveThermState(uint8_t state) {
+void saveThermState(uint8_t state)
+{
     EEPROM.write(EEPROM_STATE, state);
     EEPROM.commit();
 }
 
-void restoreEEPROM() {
-  if ('R' == EEPROM.read(EEPROM_CHK)){
+void restoreEEPROM()
+{
+  if ('R' == EEPROM.read(EEPROM_CHK)) {
     mqttSerial.printf("Restoring previous state: %s", (EEPROM.read(EEPROM_STATE) == PIN_THERM_ACTIVE_STATE) ? "On" : "Off");
     digitalWrite(PIN_THERM, EEPROM.read(EEPROM_STATE));
     #ifdef PIN_SG1
     digitalWriteSgPins(EEPROM.read(EEPROM_SG));
     #endif
   }
-  else{
+  else
+  {
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...", EEPROM.read(EEPROM_CHK));
     EEPROM.write(EEPROM_CHK, 'R');
-    EEPROM.write(EEPROM_STATE, !PIN_THERM_ACTIVE_STATE);
-    #ifdef PIN_SG1
-    digitalWriteSgPins(EEPROM.read(EEPROM_SG));
-    #endif
     EEPROM.commit();
+    saveThermState(!PIN_THERM_ACTIVE_STATE);
     digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
     #ifdef PIN_SG1
+    saveSgState(0);
     digitalWriteSgPins(0);
     #endif
   }
