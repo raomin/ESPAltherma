@@ -5,8 +5,11 @@
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
 
-#define EEPROM_CHK 1
 #define EEPROM_STATE 0
+#define EEPROM_CHK 1
+#define EEPROM_SG 2
+#define EEPROM_PIN_SG1 3
+#define EEPROM_PIN_SG2 4
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
@@ -53,22 +56,29 @@ void sendValues()
 #endif
 }
 
-void saveEEPROM(uint8_t state){
-    EEPROM.write(EEPROM_STATE,state);
-    EEPROM.commit();
-}
-
-void readEEPROM(){
+void restoreEEPROM() {
   if ('R' == EEPROM.read(EEPROM_CHK)){
-    digitalWrite(PIN_THERM,EEPROM.read(EEPROM_STATE));
-    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == PIN_THERM_ACTIVE_STATE)? "On":"Off" );
+    mqttSerial.printf("Restoring previous state: %s", (EEPROM.read(EEPROM_STATE) == PIN_THERM_ACTIVE_STATE) ? "On" : "Off");
+    digitalWrite(PIN_THERM, EEPROM.read(EEPROM_STATE));
+    #ifdef PIN_SG1
+    digitalWrite(PIN_SG1, EEPROM.read(EEPROM_PIN_SG1));
+    digitalWrite(PIN_SG2, EEPROM.read(EEPROM_PIN_SG2));
+    #endif
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
-    EEPROM.write(EEPROM_CHK,'R');
-    EEPROM.write(EEPROM_STATE,!PIN_THERM_ACTIVE_STATE);
+    EEPROM.write(EEPROM_CHK, 'R');
+    EEPROM.write(EEPROM_STATE, !PIN_THERM_ACTIVE_STATE);
+    #ifdef PIN_SG1
+    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    #endif
     EEPROM.commit();
-    digitalWrite(PIN_THERM,!PIN_THERM_ACTIVE_STATE);
+    digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
+    #ifdef PIN_SG1
+    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    #endif
   }
 }
 
@@ -93,7 +103,9 @@ void reconnectMqtt()
       // Smart Grid
       client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
       client.subscribe("espaltherma/sg/set");
-      client.publish("espaltherma/sg/state", "0");
+      char state[1];
+      sprintf(state, "%d", EEPROM.read(EEPROM_SG));
+      client.publish("espaltherma/sg/state", state);
 #endif
 
 #ifdef SAFETY_RELAY_PIN
@@ -133,14 +145,16 @@ void callbackTherm(byte *payload, unsigned int length)
   if (payload[1] == 'F')
   { //turn off
     digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
-    saveEEPROM(!PIN_THERM_ACTIVE_STATE);
+    EEPROM.write(EEPROM_STATE, !PIN_THERM_ACTIVE_STATE);
+    EEPROM.commit();
     client.publish("espaltherma/STATE", "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
     digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
-    saveEEPROM(PIN_THERM_ACTIVE_STATE);
+    EEPROM.write(EEPROM_STATE, PIN_THERM_ACTIVE_STATE);
+    EEPROM.commit();
     client.publish("espaltherma/STATE", "ON", true);
     mqttSerial.println("Turned ON");
   }
@@ -167,6 +181,10 @@ void callbackSg(byte *payload, unsigned int length)
     // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
     digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    EEPROM.write(EEPROM_SG, 0);
+    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    EEPROM.commit();
     client.publish("espaltherma/sg/state", "0");
     Serial.println("Set SG mode to 0 - Normal operation");
   }
@@ -175,6 +193,10 @@ void callbackSg(byte *payload, unsigned int length)
     // Set SG 1 mode => SG1 = INACTIVE, SG2 = ACTIVE
     digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
+    EEPROM.write(EEPROM_SG, 1);
+    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_INACTIVE_STATE);
+    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_ACTIVE_STATE);
+    EEPROM.commit();
     client.publish("espaltherma/sg/state", "1");
     Serial.println("Set SG mode to 1 - Forced OFF");
   }
@@ -183,6 +205,10 @@ void callbackSg(byte *payload, unsigned int length)
     // Set SG 2 mode => SG1 = ACTIVE, SG2 = INACTIVE
     digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    EEPROM.write(EEPROM_SG, 2);
+    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_ACTIVE_STATE);
+    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    EEPROM.commit();
     client.publish("espaltherma/sg/state", "2");
     Serial.println("Set SG mode to 2 - Recommended ON");
   }
@@ -191,6 +217,10 @@ void callbackSg(byte *payload, unsigned int length)
     // Set SG 3 mode => SG1 = ACTIVE, SG2 = ACTIVE
     digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
+    EEPROM.write(EEPROM_SG, 3);
+    EEPROM.write(EEPROM_PIN_SG1, SG_RELAY_ACTIVE_STATE);
+    EEPROM.write(EEPROM_PIN_SG2, SG_RELAY_ACTIVE_STATE);
+    EEPROM.commit();
     client.publish("espaltherma/sg/state", "3");
     Serial.println("Set SG mode to 3 - Forced ON");
   }
