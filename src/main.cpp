@@ -16,6 +16,18 @@
 #endif
 #include <HardwareSerial.h>
 
+#ifdef WT32_ETH01
+#include <ETH.h>
+#endif
+
+#ifdef ESPOE32
+#include <ETH.h>
+#define ETH_ADDR      1
+#define ETH_POWER     5
+#define ETH_MDC       23
+#define ETH_MDIO      18
+#endif
+
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
@@ -34,6 +46,8 @@
 Converter converter;
 char registryIDs[32]; //Holds the registries to query
 bool busy = false;
+
+static bool eth_connected = false;
 
 #if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
 long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
@@ -170,7 +184,7 @@ void get_wifi_bssid(const char *ssid, uint8_t *bssid, uint32_t *wifi_channel)
 void checkWifi()
 {
   int i = 0;
-  while (WiFi.status() != WL_CONNECTED)
+  while (!WiFi.isConnected())
   {
     delay(500);
     Serial.print(".");
@@ -182,11 +196,56 @@ void checkWifi()
   }
 }
 
-void setup_wifi()
+#if defined(WT32_ETH01) || defined(ESPOE32)
+void WiFiEvent(WiFiEvent_t event)
+{
+  switch (event) {
+    case ARDUINO_EVENT_ETH_START:
+      Serial.println("ETH Started");
+      // The hostname must be set after the interface is started, but needs
+      // to be set before DHCP, so set it from the event handler thread.
+      ETH.setHostname(HOSTNAME);
+      break;
+    case ARDUINO_EVENT_ETH_CONNECTED:
+      Serial.println("ETH Connected");
+      break;
+    case ARDUINO_EVENT_ETH_GOT_IP:
+      Serial.println("ETH Got IP");
+      eth_connected = true;
+      break;
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
+      Serial.println("ETH Disconnected");
+      eth_connected = false;
+      break;
+    case ARDUINO_EVENT_ETH_STOP:
+      Serial.println("ETH Stopped");
+      eth_connected = false;
+      break;
+    default:
+      break;
+  }
+}
+
+void setupEthernet()
+{
+  WiFi.onEvent(WiFiEvent);
+  #ifdef WT32_ETH01
+    ETH.begin();
+  #elif ESPOE32
+    ETH.begin(ETH_ADDR, ETH_POWER, ETH_MDC, ETH_MDIO, ETH_PHY_IP101, ETH_CLOCK_GPIO0_IN);
+  #endif
+
+  if (ETH.linkUp()) {
+    Serial.printf("Connected. IP Address: %s\n", ETH.localIP().toString().c_str());
+  }
+}
+#endif
+
+void setupWifi()
 {
   delay(10);
   // We start by connecting to a WiFi network
-  mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
+  Serial.printf("Connecting to %s\n", WIFI_SSID);
 
   #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
     IPAddress local_IP(WIFI_IP);
@@ -228,7 +287,7 @@ void setup_wifi()
     WiFi.begin(WIFI_SSID, WIFI_PWD, 0, 0, true);
   }
   checkWifi();
-  mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
+  Serial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
 }
 
 void initRegistries(){
@@ -329,9 +388,14 @@ void setup()
 
   EEPROM.begin(10);
   readEEPROM();//Restore previous state
+#if defined(WT32_ETH01) || defined(ESPOE32)
+  mqttSerial.print("Setting up ethernet...");
+  setupEthernet();
+#else
   mqttSerial.print("Setting up wifi...");
-  setup_wifi();
-  ArduinoOTA.setHostname("ESPAltherma");
+  setupWifi();
+#endif
+  ArduinoOTA.setHostname(HOSTNAME);
   ArduinoOTA.onStart([]() {
     busy = true;
   });
@@ -376,7 +440,7 @@ void waitLoop(uint ms){
 void loop()
 {
   unsigned long start = millis();
-  if (WiFi.status() != WL_CONNECTED)
+  if (!eth_connected && !WiFi.isConnected())
   { //restart board if needed
     checkWifi();
   }
