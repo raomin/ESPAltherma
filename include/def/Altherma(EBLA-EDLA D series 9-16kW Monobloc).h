@@ -116,7 +116,7 @@ LabelDef labelDefs[] = {
 //{0x60,0,304,1,-1,"Data Enable/Disable"},
 //{0x60,1,152,1,-1,"Indoor Unit Address"},
 //{0x60,2,315,1,-1,"I/U operation mode"},
-//{0x60,2,303,1,-1,"Thermostat ON/OFF"},
+//{0x60,2,303,1,-1,"Ext. Thermostat ON/OFF"},
 //{0x60,2,302,1,-1,"Freeze Protection"},
 //{0x60,2,301,1,-1,"Silent Mode"},
 //{0x60,2,300,1,-1,"Freeze Protection for water piping"},
