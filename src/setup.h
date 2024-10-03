@@ -15,6 +15,7 @@
 #define MQTT_PASSWORD ""//leave empty if not set (bad!)
 #define MQTT_PORT 1883
 //#define MQTT_ENCRYPTED // uncomment if MQTT connection is encrypted via TLS
+#define MQTT_HA_DISCOVERY // comment to disable HomeAssistant discovery messages
 
 #define FREQUENCY 30000 //query values every 30 sec
 
