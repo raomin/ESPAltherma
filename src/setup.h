@@ -33,7 +33,7 @@
 #ifdef COOLING
 #define PIN_THERM_COOLER 4// Pin connected to the thermostat relay - cooler (normally open)
 #endif
-#define PIN_THERM_ACTIVE_STATE HIGH// State to trigger the thermostat relay
+#define PIN_THERM_ACTIVE_STATE HIGH// State to trigger the thermostat relay(s) (cooler and heater)
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions
