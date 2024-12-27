@@ -19,7 +19,7 @@
 
 #define FREQUENCY 30000 //query values every 30 sec
 
-#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C_Plus2)
+#if defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C_Plus2)  || defined(ARDUINO_M5Stack_Tough)
 // Values used when M5StickC, M5STickCPlus or M5Stick_C_Plus2 environment is selected:
 #define RX_PIN    36// Pin connected to the TX pin of X10A 
 #define TX_PIN    26// Pin connected to the RX pin of X10A
