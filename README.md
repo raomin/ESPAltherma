@@ -60,7 +60,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 2. Optional - If you are using an **M5StickC** (or M5Stack), select the corresponding environment from the status bar:
 Click  ![end m5](doc/images/defaultenv.png) and select **env:M5StickC** on the top. The status bar should display ![end m5](doc/images/m5envv.png)
 For **M5StickCPlus** select **env:M5StickCPlus**
-If you are using an **ESP8266** select the `nodemcuv2` environement.
+If you are using an **ESP8266** select the `nodemcuv2` environment.
 
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
