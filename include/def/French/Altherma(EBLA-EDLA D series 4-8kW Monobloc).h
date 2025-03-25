@@ -184,7 +184,7 @@ LabelDef labelDefs[] = {
 //{0x62,8,301,1,-1,"Sortie d alarme"},
 //{0x62,8,300,1,-1,"Sortie fonctionnement espace H"},
 //{0x62,9,105,2,-1,"Capteur de débit (l/min)"},
-//{0x62,11,405,1,1,"Pression d eau"},
+//{0x62,11,105,1,2,"Pression d eau"},
 //{0x62,12,152,1,-1,"Signal de pompe à eau (0:max-100:arrêt)"},
 //{0x62,13,152,1,-1,"[Futur] Mélange vanne à 3 voies 1"},
 //{0x62,14,152,1,-1,"[Futur] Mélange vanne à 3 voies 2"},

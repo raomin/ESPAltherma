@@ -184,7 +184,7 @@ LabelDef labelDefs[] = {
 //{0x62,8,301,1,-1,"Alarmausgang"},
 //{0x62,8,300,1,-1,"Ausgang Betriebsmeldung"},
 //{0x62,9,105,2,-1,"Durchflussmenge (l/min)"},
-//{0x62,11,405,1,1,"Wasserdruck"},
+//{0x62,11,105,1,2,"Wasserdruck"},
 //{0x62,12,152,1,-1,"Pumpengeschwindigkeit (0: Max-100: Stop)"},
 //{0x62,13,152,1,-1,"[Zukunft] 3-Wege-Ventil Mischung 1"},
 //{0x62,14,152,1,-1,"[Zukunft] 3-Wege-Ventil Mischung 2"},

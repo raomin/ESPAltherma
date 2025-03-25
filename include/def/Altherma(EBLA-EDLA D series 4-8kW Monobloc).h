@@ -184,7 +184,7 @@ LabelDef labelDefs[] = {
 //{0x62,8,301,1,-1,"Alarm output"},
 //{0x62,8,300,1,-1,"Space H Operation output"},
 //{0x62,9,105,2,-1,"Flow sensor (l/min)"},
-//{0x62,11,405,1,1,"Water pressure"},
+//{0x62,11,105,1,2,"Water pressure"},
 //{0x62,12,152,1,-1,"Water pump signal (0:max-100:stop)"},
 //{0x62,13,152,1,-1,"[Future] 3 way Valve Mixing 1"},
 //{0x62,14,152,1,-1,"[Future] 3 way Valve Mixing 2"},
