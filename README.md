@@ -241,7 +241,7 @@ Some users reported that a ROTEX did not have a stable 5v that could be used to 
 
 If you are using an M5StickC you can select the PlatformIO env:m5stickc (or env_m5stickcplus for that version), then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
 
-# Integrating with Home Assitant
+# Integrating with Home Assistant
 
 ESPAltherma integrates easily with Home Assistant using [mqtt discovery](https://www.home-assistant.io/docs/mqtt/discovery/).
 
@@ -371,6 +371,8 @@ I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Inform
 ## My Daikin heat pump is not an Daikin Altherma. Can I still control it?
 
 No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
+
+Have a look at the [Faikin](https://github.com/revk/ESP32-Faikin) project for an alternative for thse units.
 
 ## How can I update ESPAltherma remotely?
 
