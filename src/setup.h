@@ -22,6 +22,14 @@
 // Values used when M5StickC, M5STickCPlus or M5Stick_C_Plus2 environment is selected:
 #define RX_PIN    36// Pin connected to the TX pin of X10A 
 #define TX_PIN    26// Pin connected to the RX pin of X10A
+#elif defined(ARDUINO_M5Stick_Atom3S_Lite)
+// Values used when M5Stick_Atom3S_Lite environment is selected (for groove connector):
+#define RX_PIN    32// Pin connected to the TX pin of X10A 
+#define TX_PIN    26// Pin connected to the RX pin of X10A
+#elif defined(ARDUINO_M5STACK_NANOC6)
+// Values used when ARDUINO_M5STACK_NANOC6 environment is selected (for groove connector):
+#define RX_PIN    2// Pin connected to the TX pin of X10A 
+#define TX_PIN    1// Pin connected to the RX pin of X10A
 #else 
 //Default GPIO PINs for Serial2:
 #define RX_PIN    16// Pin connected to the TX pin of X10A 
