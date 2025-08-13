@@ -116,7 +116,7 @@ If you are using an **ESP8266** select the `nodemcuv2` environment.
 
 1. Turn OFF your heat pump at the circuit breaker.
 2. Unscrew your pannel to access the main PCB of your unit.
-3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB. If your installation include a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
+3. Locate the X10A connector on your the PCB. This is the serial port on the main PCB. If your installation include a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follow. Pay attention to the orientation of the socket.
 
 ### Daikin Altherma 4 pin X10A Connection
