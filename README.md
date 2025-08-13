@@ -18,7 +18,7 @@
 
 <p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just Arduino on an <b>ESP32</b> or <b>ESP8266</b> Microcontroller.</p>
 
-_If this project has any value for you, please consider [buying me a 🍺](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)!. I don't do this for money but it feels good to get some support! Thanks :)_ 
+_If this project has any value for you, please consider [buying me a 🍺](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)! I don't do this for money but it feels good to get some support! Thanks :)_ 
 
 ## Features
 
@@ -47,7 +47,8 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
 ## Software
 
-- Platformio
+- [VSCode](https://code.visualstudio.com/)
+- [PlatformIO IDE](https://platformio.org/platformio-ide)
 
 *That's all!*
 
