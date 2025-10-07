@@ -154,7 +154,7 @@ LabelDef labelDefs[] = {
 //{0x61,8,105,2,1,"Inlet water temp.(R4T)"},
 //{0x61,10,105,2,1,"DHW tank temp. (R5T)"},
 //{0x61,12,105,2,1,"Indoor ambient temp. (R1T)"},
-//{0x61,14,105,2,1,"Ext. indoor ambient sensor (R6T)"},
+//{0x61,14,105,2,1,"Ext. outdoor ambient sensor (R6T)"},
 //{0x62,0,307,1,-1,"Data Enable/Disable"},
 //{0x62,1,152,1,-1,"Indoor Unit Address"},
 //{0x62,2,307,1,-1,"Reheat ON/OFF"},
