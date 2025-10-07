@@ -346,7 +346,7 @@ void setup()
 #endif
 
   EEPROM.begin(10);
-  readEEPROM();//Restore previous state
+  restoreEEPROM();//Restore previous state
   mqttSerial.print("Setting up wifi...");
   setup_wifi();
   ArduinoOTA.setHostname("ESPAltherma");
