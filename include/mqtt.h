@@ -1,6 +1,9 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include "restart.h"
+#ifdef DEBUG_SERIAL
+#include "comm.h"
+#endif
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
@@ -100,6 +103,11 @@ void reconnectMqtt()
       // Safety relay
       client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SAFETY\",\"stat_t\":\"~/SAFETY_STATE\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
       client.subscribe("espaltherma/SAFETY");
+#endif
+
+#ifdef DEBUG_SERIAL
+      // DebugSerial - MQTT<>Serial gateway
+      client.subscribe("espaltherma/serialTX");
 #endif
 
 #ifndef PIN_SG1
@@ -225,6 +233,45 @@ void callbackSafety(byte *payload, unsigned int length)
 }
 #endif
 
+#ifdef DEBUG_SERIAL
+void callbackDebugSerial(byte *payload, unsigned int length)
+{
+  payload[length] = '\0';
+  
+  // Send message to serial port
+  MySerial.write(payload, length);
+  MySerial.flush();
+  
+  // Wait for response with timeout
+  unsigned long startTime = millis();
+  const unsigned long timeout = 1000; // 1 second timeout
+  String response = "";
+  
+  while (millis() - startTime < timeout)
+  {
+    if (MySerial.available())
+    {
+      char c = MySerial.read();
+      response += c;
+      
+      // Reset timeout if we're still receiving data
+      startTime = millis();
+    }
+    
+    // Allow other operations during waiting
+    client.loop();
+    ArduinoOTA.handle();
+    yield();
+  }
+  
+  // Publish response if we got any data
+  if (response.length() > 0)
+  {
+    client.publish("espaltherma/serialRX", response.c_str());
+  }
+}
+#endif
+
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -244,6 +291,12 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (strcmp(topic, "espaltherma/SAFETY") == 0)
   {
     callbackSafety(payload, length);
+  }
+#endif
+#ifdef DEBUG_SERIAL
+  else if (strcmp(topic, "espaltherma/serialTX") == 0)
+  {
+    callbackDebugSerial(payload, length);
   }
 #endif
 

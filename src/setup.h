@@ -68,6 +68,11 @@
 //Uncomment to disable common frequent log messages via MQTT to reduce network load
 //#define DISABLE_LOG_MESSAGES
 
+//Uncomment this line to enable DebugSerial - MQTT<>Serial gateway functionality
+//Messages received on espaltherma/serialTX are sent to serial port
+//Responses from serial port are published to espaltherma/serialRX
+//#define DEBUG_SERIAL
+
 
 //Uncomment *ONE* of the following according to your installation.
 //Then, open and edit the selected file in the /include/def/ folder and uncomment each values you are interested in.
