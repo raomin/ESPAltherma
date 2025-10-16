@@ -1,9 +1,7 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include "restart.h"
-#ifdef DEBUG_SERIAL
 #include "comm.h"
-#endif
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"

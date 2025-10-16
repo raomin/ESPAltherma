@@ -1,3 +1,6 @@
+#ifndef COMM_H
+#define COMM_H
+
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #ifdef ARDUINO_ARCH_ESP8266
@@ -128,3 +131,5 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
     return true;
   }
 }
+
+#endif // COMM_H
