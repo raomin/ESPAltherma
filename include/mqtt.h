@@ -243,14 +243,14 @@ void callbackDebugSerial(byte *payload, unsigned int length)
   // Wait for response with timeout
   unsigned long startTime = millis();
   const unsigned long timeout = 1000; // 1 second timeout
-  String response = "";
+  byte responseBuffer[256]; // Buffer to store raw binary data
+  int responseLength = 0;
   
-  while (millis() - startTime < timeout)
+  while (millis() - startTime < timeout && responseLength < sizeof(responseBuffer))
   {
     if (MySerial.available())
     {
-      char c = MySerial.read();
-      response += c;
+      responseBuffer[responseLength++] = MySerial.read();
       
       // Reset timeout if we're still receiving data
       startTime = millis();
@@ -262,10 +262,19 @@ void callbackDebugSerial(byte *payload, unsigned int length)
     yield();
   }
   
-  // Publish response if we got any data
-  if (response.length() > 0)
+  // Publish response if we got any data, encoded as hex string
+  if (responseLength > 0)
   {
-    client.publish("espaltherma/serialRX", response.c_str());
+    String hexResponse = "";
+    for (int i = 0; i < responseLength; i++)
+    {
+      if (i > 0) hexResponse += " ";
+      if (responseBuffer[i] < 0x10) hexResponse += "0";
+      hexResponse += String(responseBuffer[i], HEX);
+    }
+    hexResponse.toUpperCase();
+    
+    client.publish("espaltherma/serialRX", hexResponse.c_str());
   }
 }
 #endif
