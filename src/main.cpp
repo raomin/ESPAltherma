@@ -332,6 +332,11 @@ void setup()
   digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
 #endif
 
+#ifdef PIN_LED
+  // LED for WiFi indicator
+  pinMode(PIN_LED, OUTPUT);
+#endif
+
 #ifdef PIN_SG1
   //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
   digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
@@ -350,6 +355,7 @@ void setup()
   mqttSerial.print("Setting up wifi...");
   setup_wifi();
   ArduinoOTA.setHostname("ESPAltherma");
+  ArduinoOTA.setTimeout(3000);
   ArduinoOTA.onStart([]() {
     busy = true;
   });
@@ -396,8 +402,16 @@ void loop()
   unsigned long start = millis();
   if (WiFi.status() != WL_CONNECTED)
   { //restart board if needed
+#ifdef PIN_LED
+    digitalWrite(PIN_LED, HIGH);
+#endif
     checkWifi();
   }
+
+#ifdef PIN_LED
+  digitalWrite(PIN_LED, LOW);
+#endif
+
   if (!client.connected())
   { //(re)connect to MQTT if needed
     reconnectMqtt();
