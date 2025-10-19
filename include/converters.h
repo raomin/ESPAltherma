@@ -1,6 +1,8 @@
 // convert read registry value to the expected format based on convID
 #include <string.h>
 char buff[64];
+//#define BOOLNUM // If defined (not commented out), convertTable 200 and 300 return the on/off signal as "1" or "0" rather than the default "ON" or "OFF"
+
 class Converter
 {
 public:
@@ -311,11 +313,19 @@ private:
         b = (char)(b << tableID % 10);
         if ((data[0] & b) > 0)
         {
+            #ifdef BOOLNUM
+            strcat(ret, "1");
+            #elif
             strcat(ret, "ON");
+            #endif
         }
         else
         {
+            #ifdef BOOLNUM
+            strcat(ret, "0");
+            #elif
             strcat(ret, "OFF");
+            #endif
         }
         return;
     }
@@ -420,11 +430,19 @@ private:
     {
         if (data[0] == 0)
         {
+            #ifdef BOOLNUM
+            strcat(ret, "0");
+            #elif
             strcat(ret, "OFF");
+            #endif
         }
         else
         {
+            #ifdef BOOLNUM
+            strcat(ret, "1");
+            #elif
             strcat(ret, "ON");
+            #endif
         }
     }
     // 201
