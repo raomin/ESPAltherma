@@ -28,8 +28,12 @@
 #define TX_PIN    17// Pin connected to the RX pin of X10A
 #endif
 
-#define PIN_THERM 0// Pin connected to the thermostat relay (normally open)
-#define PIN_THERM_ACTIVE_STATE HIGH// State to trigger the thermostat relay
+#define COOLING 0 // Specify if Cooling control (relay) is installed
+#define PIN_THERM_HEATER 2// Pin connected to the thermostat relay - heater (normally open)
+#ifdef COOLING
+#define PIN_THERM_COOLER 4// Pin connected to the thermostat relay - cooler (normally open)
+#endif
+#define PIN_THERM_ACTIVE_STATE HIGH// State to trigger the thermostat relay(s) (cooler and heater)
 
 //Smart grid control - Optional:
 //Uncomment and set to enable SG mqtt functions

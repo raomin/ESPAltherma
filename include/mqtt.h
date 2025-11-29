@@ -7,7 +7,8 @@
 #define MQTT_lwt "espaltherma/LWT"
 
 #define EEPROM_CHK 1
-#define EEPROM_STATE 0
+#define EEPROM_STATE_HEATER 0
+#define EEPROM_STATE_COOLER 2
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
@@ -54,22 +55,29 @@ void sendValues()
 #endif
 }
 
-void saveEEPROM(uint8_t state){
-    EEPROM.write(EEPROM_STATE,state);
+void saveEEPROM(uint8_t device, uint8_t state){
+    EEPROM.write(device,state);
     EEPROM.commit();
 }
 
 void readEEPROM(){
   if ('R' == EEPROM.read(EEPROM_CHK)){
-    digitalWrite(PIN_THERM,EEPROM.read(EEPROM_STATE));
-    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == PIN_THERM_ACTIVE_STATE)? "On":"Off" );
+    digitalWrite(PIN_THERM_HEATER,EEPROM.read(EEPROM_STATE_HEATER));
+    mqttSerial.printf("Restoring heater previous state: %s",(EEPROM.read(EEPROM_STATE_HEATER) == PIN_THERM_ACTIVE_STATE)? "On":"Off" );
+#ifdef COOLING
+    digitalWrite(PIN_THERM_HEATER,EEPROM.read(EEPROM_STATE_COOLER));
+    mqttSerial.printf("Restoring cooler previous state: %s",(EEPROM.read(EEPROM_STATE_COOLER) == PIN_THERM_ACTIVE_STATE)? "On":"Off" );
+#endif
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
     EEPROM.write(EEPROM_CHK,'R');
-    EEPROM.write(EEPROM_STATE,!PIN_THERM_ACTIVE_STATE);
+    EEPROM.write(EEPROM_STATE_HEATER,!PIN_THERM_ACTIVE_STATE);
+#ifdef COOLING
+    EEPROM.write(EEPROM_STATE_COOLER,!PIN_THERM_ACTIVE_STATE);
+#endif
     EEPROM.commit();
-    digitalWrite(PIN_THERM,!PIN_THERM_ACTIVE_STATE);
+    digitalWrite(PIN_THERM_HEATER,!PIN_THERM_ACTIVE_STATE);
   }
 }
 
@@ -86,10 +94,16 @@ void reconnectMqtt()
       Serial.println("connected!");
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-
+      client.publish("homeassistant/switch/espAltherma/heater/config", "{\"name\":\"Altherma Heater\",\"cmd_t\":\"~/HEATER\",\"stat_t\":\"~/HEATERSTATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+#ifdef COOLING
+      client.publish("homeassistant/switch/espAltherma/cooler/config", "{\"name\":\"Altherma Cooler\",\"cmd_t\":\"~/COOLER\",\"stat_t\":\"~/COOLERSTATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+#endif
       // Subscribe
-      client.subscribe("espaltherma/POWER");
+      client.subscribe("espaltherma/HEATER");
+#ifdef COOLING
+      client.subscribe("espaltherma/COOLER");
+#endif
+
 #ifdef PIN_SG1
       // Smart Grid
       client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
@@ -130,6 +144,14 @@ void reconnectMqtt()
   }
 }
 
+bool isHeaterOrCoolerEnabled() {
+  return EEPROM.read(EEPROM_STATE_HEATER)
+  #ifdef COOLING
+  || EEPROM.read(EEPROM_STATE_COOLER)
+  #endif
+  ;
+}
+
 void callbackTherm(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
@@ -138,16 +160,20 @@ void callbackTherm(byte *payload, unsigned int length)
   // Ok I'm not super proud of this, but it works :p
   if (payload[1] == 'F')
   { //turn off
-    digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
-    saveEEPROM(!PIN_THERM_ACTIVE_STATE);
-    client.publish("espaltherma/STATE", "OFF", true);
+    digitalWrite(PIN_THERM_HEATER, !PIN_THERM_ACTIVE_STATE);
+    saveEEPROM(EEPROM_STATE_HEATER,!PIN_THERM_ACTIVE_STATE);
+    client.publish("espaltherma/HEATERSTATE", "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
-    digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
-    saveEEPROM(PIN_THERM_ACTIVE_STATE);
-    client.publish("espaltherma/STATE", "ON", true);
+    if (isHeaterOrCoolerEnabled()) {
+      mqttSerial.println("Cooler enabled, unable to turn on Heater");
+      return;
+    }
+    digitalWrite(PIN_THERM_HEATER, PIN_THERM_ACTIVE_STATE);
+    saveEEPROM(EEPROM_STATE_HEATER,PIN_THERM_ACTIVE_STATE);
+    client.publish("espaltherma/HEATERSTATE", "ON", true);
     mqttSerial.println("Turned ON");
   }
   else if (payload[0] == 'R')//R(eset/eboot)
@@ -160,6 +186,44 @@ void callbackTherm(byte *payload, unsigned int length)
   {
     Serial.printf("Unknown message: %s\n", payload);
   }
+}
+
+void callbackCool(byte *payload, unsigned int length)
+{
+#ifdef COOLING
+  payload[length] = '\0';
+
+  // Is it ON or OFF?
+  // Ok I'm not super proud of this, but it works :p
+  if (payload[1] == 'F')
+  { //turn off
+    digitalWrite(PIN_THERM_COOLER, !PIN_THERM_ACTIVE_STATE);
+    saveEEPROM(EEPROM_STATE_COOLER,!PIN_THERM_ACTIVE_STATE);
+    client.publish("espaltherma/COOLERSTATE", "OFF", true);
+    mqttSerial.println("Turned OFF");
+  }
+  else if (payload[1] == 'N')
+  { //turn on
+    if (isHeaterOrCoolerEnabled()) {
+      mqttSerial.println("Heater enabled, unable to turn on Cooler");
+      return;
+    }  
+    digitalWrite(PIN_THERM_COOLER, PIN_THERM_ACTIVE_STATE);
+    saveEEPROM(EEPROM_STATE_COOLER,PIN_THERM_ACTIVE_STATE);
+    client.publish("espaltherma/COOLERSTATE", "ON", true);
+    mqttSerial.println("Turned ON");
+  }
+  else if (payload[0] == 'R')//R(eset/eboot)
+  {
+    mqttSerial.println("Rebooting");
+    delay(100);
+    restart_board();
+  }
+  else
+  {
+    Serial.printf("Unknown message: %s\n", payload);
+  }
+#endif  
 }
 
 #ifdef PIN_SG1
@@ -284,10 +348,16 @@ void callback(char *topic, byte *payload, unsigned int length)
 {
   Serial.printf("Message arrived [%s] : %s\n", topic, payload);
 
-  if (strcmp(topic, "espaltherma/POWER") == 0)
+  if (strcmp(topic, "espaltherma/HEATER") == 0)
   {
     callbackTherm(payload, length);
   }
+#ifdef COOLING
+  else if (strcmp(topic, "espaltherma/COOLER") == 0)
+  {
+    callbackCool(payload, length);
+  }
+#endif
 #ifdef PIN_SG1
   else if (strcmp(topic, "espaltherma/sg/set") == 0)
   {
