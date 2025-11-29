@@ -9,8 +9,10 @@
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
 
-#define MQTT_attr "espaltherma/ATTR"
-#define MQTT_lwt "espaltherma/LWT"
+// commented out duplicates
+// #define MQTT_attr "espaltherma/ATTR"
+// #define MQTT_lwt "espaltherma/LWT"
+
 
 #ifdef JSONTABLE
 char jsonbuff[MAX_MSG_SIZE] = "[{\0";
@@ -26,7 +28,7 @@ WiFiClient espClient;
 #endif
 PubSubClient client(espClient);
 
-void sendValues()
+void sendValuesMQTT()
 {
   Serial.printf("Sending values in MQTT.\n");
 #ifdef ARDUINO_M5Stick_C_Plus2

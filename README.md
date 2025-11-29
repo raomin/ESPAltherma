@@ -1,5 +1,6 @@
 ![](doc/images/logo.png)
 
+
 <hr/>
 
 <p align="center">
@@ -27,6 +28,7 @@ _If this project has any value for you, please consider [buying me a 🍺](https
     <li>Needs just an ESP32, no need for extra hardware. ESP8266 is also supported.</li>
     <li>Queries the Altherma for selected values at defined interval.</li>
     <li>Converts and formalizes all values in a JSON message sent over MQTT.</li>
+    <li>Converts and formalizes all values in a JSON message sent over HTTPS.</li>
     <li>Easily integrates with Home Assistant's MQTT auto-discovery.</li>
     <li>Supports update OverTheAir</li>
     <li>Log messages in Serial + MQTT + Screen (m5StickC)</li>
@@ -64,6 +66,7 @@ If you are using an **ESP8266** select the `nodemcuv2` environment.
 
 3. Edit the file `src/setup.h` as follows:
     - enter your wifi and mqtt settings
+    - if you want to send via HTTPS, update the HTTPS section lower down the file
     - select your RX TX GPIO pins connected to the X10A port. *The ESP32 has 3 serial ports. The first one, Serial0 is reserved for ESP<-USB->PC communication and ESP Altherma uses the Serial0 for logging (as any other project would do). So if you open the serial monitor on your PC, you'll see some debug from ESPAltherma. ESP32 can map any GPIO to the serial ports. Do NOT use the main Serial0 GPIOs RX0/TX0.* * The ESP8266 only has 1.5 Serial ports so it uses a software based serial driver. You can choose any pins, but some will stop you from being able to use the console*
 
       For ESP32 try to stick to the RX2/TX2 of your board (probably GPIO16/GPIO17). **For M5StickC or M5StickCPlus, 26 and 36 will automatically be used if you selected the corresponding environment**. For ESP8266 pins 4 & 5 (D2 & D1 on the NodeMCUv2) are known to work well. 
@@ -110,7 +113,9 @@ If you are using an **ESP8266** select the `nodemcuv2` environment.
     
     A wiki page is available [here](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) where everyone can comment on the values and their definition.
 
-5. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or press `F1` and select -> `PlatformIO: Upload`
+5. Decide on what format of BOOLEAN data is required for the destination. The default is "ON" and "OFF", however in converters.h there is the option to change this to "1" and "0" if the destination for the data requires this, by defining (uncommenting) the #define BOOLNUM statement.
+
+6. You're ready to go! Connect your ESP32/ESP8266 and click -> Upload! Or press `F1` and select -> `PlatformIO: Upload`
 
 ## Step 2: Connecting to the Heat pump
 
@@ -331,6 +336,19 @@ When put in terms of ESPAltherma variables, the COP can be define as a sensor li
 }}
 {% else %} 0 {%endif%}"
 ```
+
+# HTTPS - Emoncms / OpenEnergyMonitor / HeatPumpMonitor
+
+## Background
+
+As many Daikin owners and installers are keen to use this platform to send data directly to the https://heatpumpmonitor.org/ site by https://openenergymonitor.org/ the addition of the HTTPS messaging was added as a feature. This removes the need to have an instance of HomeAssistant to receive the MQTT and re-send as HTTP to emoncms, the engine behind heatpumpmonitor.
+
+## Settings for Emoncms
+
+- in converters.h, BOOLNUM needs to be defined - this means that rather than ON or OFF being sent, the data is 0 or 1 which is what EMONCMS is expecting
+- in setup.h, HTTPS needs to be defined, as well as MQTT not being defined
+- also in setup.h, ONETOPIC_ONEVAL should not be defined.
+- APIKEY and NODE also need to be defined with your own values
 
 # FAQ
 
