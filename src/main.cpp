@@ -6,6 +6,11 @@
 #include <M5StickC.h>
 #elif ARDUINO_M5Stack_Tough
 #include <M5Tough.h>
+#elif ARDUINO_M5Stick_Atom3S_Lite
+#include <M5AtomS3.h>
+#elif ARDUINO_M5STACK_NANOC6
+#include <M5NanoC6.h>
+#include <Adafruit_NeoPixel.h>
 #else
 #include <Arduino.h>
 #endif
@@ -41,6 +46,11 @@ bool busy = false;
 long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
 #endif
 
+
+#ifdef ARDUINO_M5STACK_NANOC6
+Adafruit_NeoPixel strip(1, M5NANO_C6_RGB_LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
+#endif
+
 bool contains(char array[], int size, int value)
 {
   for (int i = 0; i < size; i++)
@@ -69,12 +79,12 @@ void updateValues(char regID)
       }
     }
 
-    #ifdef ONEVAL_ONETOPIC
+#ifdef ONEVAL_ONETOPIC
     char topicBuff[128] = MQTT_OneTopic;
     strcat(topicBuff,labels[i]->label);
     client.publish(topicBuff, labels[i]->asString);
 
-    #else
+#else
     if (alpha){      
 
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
@@ -82,7 +92,7 @@ void updateValues(char regID)
     else{//number, no quotes
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
     }
-    #endif
+#endif
   }
 }
 
@@ -98,7 +108,7 @@ void extraLoop()
     ArduinoOTA.handle();
   }
 
-#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) 
+#if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus)
   if (M5.BtnA.wasPressed()){//Turn back ON screen
     M5.Axp.ScreenBreath(12);
     LCDTimeout = millis() + 30000;
@@ -206,27 +216,27 @@ void setup_wifi()
   // We start by connecting to a WiFi network
   mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
 
-  #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
-    IPAddress local_IP(WIFI_IP);
-    IPAddress gateway(WIFI_GATEWAY);
-    IPAddress subnet(WIFI_SUBNET);
+#if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
+  IPAddress local_IP(WIFI_IP);
+  IPAddress gateway(WIFI_GATEWAY);
+  IPAddress subnet(WIFI_SUBNET);
 
-    #ifdef WIFI_PRIMARY_DNS
-      IPAddress primaryDNS(WIFI_PRIMARY_DNS);
-    #else
-      IPAddress primaryDNS();
-    #endif
+#ifdef WIFI_PRIMARY_DNS
+  IPAddress primaryDNS(WIFI_PRIMARY_DNS);
+#else
+  IPAddress primaryDNS();
+#endif
 
-    #ifdef WIFI_SECONDARY_DNS
-      IPAddress secondaryDNS(WIFI_SECONDARY_DNS);
-    #else
-      IPAddress secondaryDNS();
-    #endif
+#ifdef WIFI_SECONDARY_DNS
+  IPAddress secondaryDNS(WIFI_SECONDARY_DNS);
+#else
+  IPAddress secondaryDNS();
+#endif
 
     if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-      mqttSerial.println("Failed to set static ip!");
-    }
-  #endif
+    mqttSerial.println("Failed to set static ip!");
+  }
+#endif
 
   uint8_t *bssid = nullptr;
   uint32_t wifi_channel = 0;
@@ -236,7 +246,7 @@ void setup_wifi()
   WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
 #endif
-    
+
   if (bssid != nullptr)
   {
     WiFi.begin(WIFI_SSID, WIFI_PWD, wifi_channel, bssid);
@@ -295,7 +305,7 @@ void setupScreen(){
   M5.Lcd.setTextFont(1);
   M5.Lcd.setTextColor(TFT_GREEN);
 
-#elif defined(ARDUINO_M5Stick_C_Plus2)  
+#elif defined(ARDUINO_M5Stick_C_Plus2)
   M5.begin();
 #if !defined(ARDUINO_M5Stick_C_Plus2)
   M5.Axp.EnableCoulombcounter();
@@ -323,7 +333,7 @@ void setup()
 {
   Serial.begin(115200);
   setupScreen();
-  MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
+   MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
   pinMode(PIN_THERM, OUTPUT);
   // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
 
@@ -345,6 +355,15 @@ void setup()
   gpio_pullup_dis(GPIO_NUM_25);
 #endif
 
+
+#ifdef ARDUINO_M5STACK_NANOC6
+  pinMode(M5NANO_C6_RGB_LED_PWR_PIN, OUTPUT);
+  digitalWrite(M5NANO_C6_RGB_LED_PWR_PIN, HIGH);
+
+  strip.begin();
+  strip.show();
+#endif
+
   EEPROM.begin(10);
   readEEPROM();//Restore previous state
   mqttSerial.print("Setting up wifi...");
@@ -360,12 +379,12 @@ void setup()
   });
   ArduinoOTA.begin();
 
-  #ifdef MQTT_ENCRYPTED
-  // Required to establish encrypted connections. 
+#ifdef MQTT_ENCRYPTED
+  // Required to establish encrypted connections.
   // If you want to be more secure here, you can use the CA certificate to allow the wifi client to verify the other party. NOTE: If you use the CA certificate here, then you need to make sure to update it here regulary!
   espClient.setInsecure();
   espClient.setTimeout(5);
-  #endif
+#endif
 
   client.setBufferSize(MAX_MSG_SIZE); //to support large json message
   client.setCallback(callback);
@@ -384,11 +403,11 @@ void setup()
 }
 
 void waitLoop(uint ms){
-      unsigned long start = millis();
+  unsigned long start = millis();
       while (millis() < start + ms) //wait .5sec between registries
-      {
-        extraLoop();
-      }
+  {
+    extraLoop();
+  }
 }
 
 void loop()
@@ -400,6 +419,16 @@ void loop()
   }
   if (!client.connected())
   { //(re)connect to MQTT if needed
+
+    #ifdef ARDUINO_M5STACK_NANOC6
+    strip.setPixelColor(0, strip.Color(0, 0, 255));
+    strip.show();
+    delay(1000);
+
+    strip.setPixelColor(0, strip.Color(0, 0, 0));
+    strip.show();
+    #endif
+
     reconnectMqtt();
   }
   //Querying all registries
@@ -410,7 +439,17 @@ void loop()
     while (!queryRegistry(registryIDs[i], buff, PROTOCOL) && tries++ < 3)
     {
       mqttSerial.println("Retrying...");
+
+
+      #ifdef ARDUINO_M5STACK_NANOC6
+      strip.setPixelColor(0, strip.Color(255, 0, 0));
+      strip.show();
+      delay(1000);
+
+      strip.setPixelColor(0, strip.Color(0, 0, 0));
+      strip.show();
       waitLoop(1000);
+      #endif
     }
     unsigned char receivedRegistryID = PROTOCOL == 'S' ? buff[0] : buff[1];
     if (registryIDs[i] == receivedRegistryID) //if replied registerID is coherent with the command
