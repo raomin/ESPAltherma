@@ -172,6 +172,17 @@ public:
             dblData += (double)(num3 & 255) / 256.0;
             break;
         }
+        case 120:
+        {
+            if (data[0] == 0 && data[1] == 128)
+            {
+                strcat(def->asString, "---");
+                return;
+            }
+            // Interpret as signed 16-bit fixed point (value / 256.0)
+            dblData = (double)getSignedValue(data, num, 0) / 256.0;
+            break;
+        }
         case 151:
             dblData = (double)getUnsignedValue(data, num, 0);
             break;
