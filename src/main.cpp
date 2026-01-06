@@ -30,6 +30,7 @@
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"
+#include "homeassistant.h"
 #include "mqtt.h"
 #include "restart.h"
 

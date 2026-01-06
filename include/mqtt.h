@@ -26,6 +26,11 @@ WiFiClient espClient;
 #endif
 PubSubClient client(espClient);
 
+/*
+ * Publishes a retained device discovery profile to MQTT, so Home Assistant can auto-configure our device and its sensors.
+ */
+void publishHomeAssistantDeviceDiscovery();
+
 void sendValues()
 {
   Serial.printf("Sending values in MQTT.\n");
@@ -87,6 +92,8 @@ void reconnectMqtt()
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
       client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+
+      publishHomeAssistantDeviceDiscovery();
 
       // Subscribe
       client.subscribe("espaltherma/POWER");
@@ -311,4 +318,31 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     Serial.printf("Unknown topic: %s\n", topic);
   }
+}
+
+void publishHomeAssistantDeviceDiscovery()
+{
+  std::string payload = buildDeviceDiscoveryPayload(labelDefs, sizeof(labelDefs) / sizeof(LabelDef));
+
+  uint16_t oldSize = client.getBufferSize();
+
+  const char *topic = "homeassistant/device/espaltherma-mqtt-discovery/config";
+
+  // Temporarily increase buffer size
+  if (!client.setBufferSize(strlen(topic) + 10 + payload.length()))
+  {
+    Serial.println("Error resizing MQTT message buffer, cannot send device discovery!");
+    return;
+  }
+
+  if (!client.publish(
+          topic,
+          payload.c_str(),
+          true))
+  {
+    Serial.println("Error publishing MQTT message!");
+  }
+
+  // Restore
+  client.setBufferSize(oldSize);
 }
