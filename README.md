@@ -115,9 +115,9 @@ If you are using an **ESP8266** select the `nodemcuv2` environment.
 ## Step 2: Connecting to the Heat pump
 
 1. Turn OFF your heat pump at the circuit breaker.
-2. Unscrew your pannel to access the main PCB of your unit.
+2. Unscrew your panel to access the main PCB of your unit.
 3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB. If your installation include a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
-4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follow. Pay attention to the orientation of the socket.
+4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follows. Pay attention to the orientation of the socket.
 
 ### Daikin Altherma 4 pin X10A Connection
 
@@ -131,7 +131,7 @@ If you are using an **ESP8266** select the `nodemcuv2` environment.
 | 4-NC | Not connected |
 | 5-GND | GND |
 
-> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`. 
+> ESP `RX_PIN` and `TX_PIN` can be changed in `src/setup.h`. 
 
 ### 8 pin X10A Connection
 
@@ -241,7 +241,7 @@ Some users reported that a ROTEX did not have a stable 5v that could be used to 
 
 If you are using an M5StickC you can select the PlatformIO env:m5stickc (or env_m5stickcplus for that version), then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
 
-# Integrating with Home Assitant
+# Integrating with Home Assistant
 
 ESPAltherma integrates easily with Home Assistant using [MQTT Discovery](https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery).
 
