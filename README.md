@@ -243,17 +243,31 @@ If you are using an M5StickC you can select the PlatformIO env:m5stickc (or env_
 
 # Integrating with Home Assitant
 
-ESPAltherma integrates easily with Home Assistant using [mqtt discovery](https://www.home-assistant.io/docs/mqtt/discovery/).
+ESPAltherma integrates easily with Home Assistant using [MQTT Discovery](https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery).
 
-After setup, ESPAltherma will generate 2 entities on Home Assistant:
+On succesful startup, ESPAltherma will generate one distinct device "Daikin Altherma via ESPAltherma" and two entities under the device "ESPAltherma" under the MQTT integration in Home Assistant:
+
+![](doc/images/mqtt-devices.png)
+
+The "Daikin Altherma via ESPAltherma" device will contain all sensors you've uncommented from your definition file, while the "ESPAltherma" device will contain two more low-level entities:
 
 ![](doc/images/haentities.png)
 
-- `sensor.althermasensors` holds the values as attributes.
-
+- `sensor.althermasensors` holds the sensor values as attributes.
 - `switch.altherma` activates the relay connected to the `PIN_THERM`
 
+## Device Discovery
+
+ESPAltherma will generate a device discovery JSON and publish that to MQTT topic `homeassistant/device/espaltherma-mqtt-discovery/config` for Home Assistant to pick up. The software will attempt to make the devices as specific to their unit as possible. Other characteristics:
+
+- Their name will be the label name as defined in the , e.g. "Discharge pipe temp.(R2T)"
+- Their entity ID will be `sensor.espaltherma_` followed by a lowercase, alphanumeric only conversion of their labels with spaces replaced by underscores. For example: "Discharge pipe temp.(R2T)" becomes `discharge_pipe_tempr2t`.
+
+To clear the configuration, for example after adding or removing some sensor, publish an empty, retained message to `homeassistant/device/espaltherma-mqtt-discovery/config`.
+
 ## Declaring sensor entities
+
+The discovery shown above will create all sensor entities for you, but it's still possible to create your own sensors as before, for example when you need custom conversions or calculations.
 
 In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `entity` sensor.althermasensors.
 
