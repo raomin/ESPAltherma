@@ -115,9 +115,9 @@ If you are using an **ESP8266** select the `nodemcuv2` environment.
 ## Step 2: Connecting to the Heat pump
 
 1. Turn OFF your heat pump at the circuit breaker.
-2. Unscrew your pannel to access the main PCB of your unit.
+2. Unscrew your panel to access the main PCB of your unit.
 3. Localize the X10A connector on your the PCB. This is the serial port on the main PCB. If your installation include a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
-4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follow. Pay attention to the orientation of the socket.
+4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follows. Pay attention to the orientation of the socket.
 
 ### Daikin Altherma 4 pin X10A Connection
 
@@ -131,7 +131,7 @@ If you are using an **ESP8266** select the `nodemcuv2` environment.
 | 4-NC | Not connected |
 | 5-GND | GND |
 
-> ESP `RX_PIN` `TX_PIN` can be changed in `src/setup.h`. 
+> ESP `RX_PIN` and `TX_PIN` can be changed in `src/setup.h`. 
 
 ### 8 pin X10A Connection
 
@@ -241,19 +241,33 @@ Some users reported that a ROTEX did not have a stable 5v that could be used to 
 
 If you are using an M5StickC you can select the PlatformIO env:m5stickc (or env_m5stickcplus for that version), then ESPAltherna will also report on the voltage and consumption of the M5StickC in the reported values.
 
-# Integrating with Home Assitant
+# Integrating with Home Assistant
 
-ESPAltherma integrates easily with Home Assistant using [mqtt discovery](https://www.home-assistant.io/docs/mqtt/discovery/).
+ESPAltherma integrates easily with Home Assistant using [MQTT Discovery](https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery).
 
-After setup, ESPAltherma will generate 2 entities on Home Assistant:
+On succesful startup, ESPAltherma will generate one distinct device "Daikin Altherma via ESPAltherma" and two entities under the device "ESPAltherma" under the MQTT integration in Home Assistant:
+
+![](doc/images/mqtt-devices.png)
+
+The "Daikin Altherma via ESPAltherma" device will contain all sensors you've uncommented from your definition file, while the "ESPAltherma" device will contain two more low-level entities:
 
 ![](doc/images/haentities.png)
 
-- `sensor.althermasensors` holds the values as attributes.
-
+- `sensor.althermasensors` holds the sensor values as attributes.
 - `switch.altherma` activates the relay connected to the `PIN_THERM`
 
+## Device Discovery
+
+ESPAltherma will generate a device discovery JSON and publish that to MQTT topic `homeassistant/device/espaltherma-mqtt-discovery/config` for Home Assistant to pick up. The software will attempt to make the devices as specific to their unit as possible. Other characteristics:
+
+- Their name will be the label name as defined in the , e.g. "Discharge pipe temp.(R2T)"
+- Their entity ID will be `sensor.espaltherma_` followed by a lowercase, alphanumeric only conversion of their labels with spaces replaced by underscores. For example: "Discharge pipe temp.(R2T)" becomes `discharge_pipe_tempr2t`.
+
+To clear the configuration, for example after adding or removing some sensor, publish an empty, retained message to `homeassistant/device/espaltherma-mqtt-discovery/config`.
+
 ## Declaring sensor entities
+
+The discovery shown above will create all sensor entities for you, but it's still possible to create your own sensors as before, for example when you need custom conversions or calculations.
 
 In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `entity` sensor.althermasensors.
 
