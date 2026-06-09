@@ -95,10 +95,10 @@ void extraLoop()
 
 #if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) 
   if (M5.BtnA.wasPressed()){//Turn back ON screen
-    M5.Axp.ScreenBreath(12);
+    M5.Display.setBrightness(100);
     LCDTimeout = millis() + 30000;
   } else if (LCDTimeout < millis()) { //Turn screen off.
-    M5.Axp.ScreenBreath(0);
+    M5.Display.setBrightness(0);
   }
   M5.update();
 #endif
@@ -273,11 +273,8 @@ void initRegistries(){
 void setupScreen(){
 #if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stack_Tough)
   M5.begin();
-#if !defined(ARDUINO_M5Stick_C_Plus2)
-  M5.Axp.EnableCoulombcounter();
-#endif
   M5.Lcd.setRotation(1);
-  M5.Axp.ScreenBreath(127);
+  M5.Display.setBrightness(127);
   M5.Lcd.fillScreen(TFT_WHITE);
   M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
   M5.Lcd.setTextDatum(MC_DATUM);
@@ -290,11 +287,8 @@ void setupScreen(){
   M5.Lcd.setTextFont(1);
   M5.Lcd.setTextColor(TFT_GREEN);
 
-#elif defined(ARDUINO_M5Stick_C_Plus2)  
+#elif defined(ARDUINO_M5Stick_C_Plus2)
   M5.begin();
-#if !defined(ARDUINO_M5Stick_C_Plus2)
-  M5.Axp.EnableCoulombcounter();
-#endif
   M5.Lcd.setRotation(1);
   M5.Lcd.setBrightness(127);
   M5.Lcd.fillScreen(TFT_WHITE);

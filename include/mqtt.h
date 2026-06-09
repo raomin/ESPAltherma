@@ -33,7 +33,7 @@ void publishHomeAssistantDeviceDiscovery();
 
 void sendValues()
 {
-  Serial.printf("Sending values in MQTT.\n");
+  mqttSerial.printf("Sending values in MQTT.\n");
 #ifdef ARDUINO_M5Stick_C_Plus2
   //Add Power values
   // getBatteryVoltage returns battery voltage [mV] as an int16_t
@@ -41,9 +41,9 @@ void sendValues()
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
 #elif ARDUINO_M5Stick_C
   //Add M5 APX values
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Axp.GetVinVoltage(),"M5AmpIn", M5.Axp.GetVinCurrent());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Axp.GetBatVoltage(),"M5BatCur", M5.Axp.GetBatCurrent());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Axp.GetBatPower());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Power.Axp192.getVBUSVoltage(),"M5AmpIn", M5.Power.Axp192.getVBUSCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Power.Axp192.getBatteryVoltage(),"M5BatCur", M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Power.Axp192.getBatteryPower());
 #endif
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
@@ -84,11 +84,11 @@ void reconnectMqtt()
   int i = 0;
   while (!client.connected())
   {
-    Serial.print("Attempting MQTT connection...");
+    mqttSerial.print("Attempting MQTT connection...");
 
     if (client.connect("ESPAltherma-dev", MQTT_USERNAME, MQTT_PASSWORD, MQTT_lwt, 0, true, "Offline"))
     {
-      Serial.println("connected!");
+      mqttSerial.println("connected!");
       client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
       client.publish(MQTT_lwt, "Online", true);
       client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
@@ -122,7 +122,7 @@ void reconnectMqtt()
     }
     else
     {
-      Serial.printf("failed, rc=%d, try again in 5 seconds", client.state());
+      mqttSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
       unsigned long start = millis();
       while (millis() < start + 5000)
       {
@@ -130,7 +130,7 @@ void reconnectMqtt()
       }
 
       if (i++ == 100) {
-        Serial.printf("Tried for 500 sec, rebooting now.");
+        mqttSerial.printf("Tried for 500 sec, rebooting now.");
         restart_board();
       }
     }
@@ -165,7 +165,7 @@ void callbackTherm(byte *payload, unsigned int length)
   }
   else
   {
-    Serial.printf("Unknown message: %s\n", payload);
+    mqttSerial.printf("Unknown message: %s\n", payload);
   }
 }
 
@@ -181,7 +181,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
     client.publish("espaltherma/sg/state", "0");
-    Serial.println("Set SG mode to 0 - Normal operation");
+    mqttSerial.println("Set SG mode to 0 - Normal operation");
   }
   else if (payload[0] == '1')
   {
@@ -189,7 +189,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
     client.publish("espaltherma/sg/state", "1");
-    Serial.println("Set SG mode to 1 - Forced OFF");
+    mqttSerial.println("Set SG mode to 1 - Forced OFF");
   }
   else if (payload[0] == '2')
   {
@@ -197,7 +197,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
     client.publish("espaltherma/sg/state", "2");
-    Serial.println("Set SG mode to 2 - Recommended ON");
+    mqttSerial.println("Set SG mode to 2 - Recommended ON");
   }
   else if (payload[0] == '3')
   {
@@ -205,11 +205,11 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
     digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
     client.publish("espaltherma/sg/state", "3");
-    Serial.println("Set SG mode to 3 - Forced ON");
+    mqttSerial.println("Set SG mode to 3 - Forced ON");
   }
   else
   {
-    Serial.printf("Unknown message: %s\n", payload);
+    mqttSerial.printf("Unknown message: %s\n", payload);
   }
 }
 #endif
@@ -233,7 +233,7 @@ void callbackSafety(byte *payload, unsigned int length)
   }
   else
   {
-    Serial.printf("Unknown message: %s\n", payload);
+    mqttSerial.printf("Unknown message: %s\n", payload);
   }
 }
 #endif
@@ -289,7 +289,7 @@ void callbackDebugSerial(byte *payload, unsigned int length)
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  Serial.printf("Message arrived [%s] : %s\n", topic, payload);
+  mqttSerial.printf("Message arrived [%s] : %s\n", topic, payload);
 
   if (strcmp(topic, "espaltherma/POWER") == 0)
   {
@@ -316,33 +316,38 @@ void callback(char *topic, byte *payload, unsigned int length)
 
   else
   {
-    Serial.printf("Unknown topic: %s\n", topic);
+    mqttSerial.printf("Unknown topic: %s\n", topic);
   }
+}
+
+// Streams a device-discovery payload chunk straight to the MQTT socket (used as a DiscoverySink).
+static void mqttDiscoverySink(void *ctx, const char *data, size_t len)
+{
+  PubSubClient *c = static_cast<PubSubClient *>(ctx);
+  c->write(reinterpret_cast<const uint8_t *>(data), len);
 }
 
 void publishHomeAssistantDeviceDiscovery()
 {
-  std::string payload = buildDeviceDiscoveryPayload(labelDefs, sizeof(labelDefs) / sizeof(LabelDef));
-
-  uint16_t oldSize = client.getBufferSize();
-
+  const size_t count = sizeof(labelDefs) / sizeof(LabelDef);
   const char *topic = "homeassistant/device/espaltherma-mqtt-discovery/config";
 
-  // Temporarily increase buffer size
-  if (!client.setBufferSize(strlen(topic) + 10 + payload.length()))
+  // First pass: compute the exact payload length, required up-front for the MQTT fixed header.
+  size_t payloadLen = streamDeviceDiscoveryPayload(labelDefs, count, nullptr, nullptr);
+
+  mqttSerial.printf("Sending HA discovery: %u sensors, %u bytes\n",
+                    (unsigned)(count + 3), (unsigned)payloadLen);
+
+  // Stream the payload directly to the socket. PubSubClient::write() writes straight to the
+  // TCP/TLS client, so the MQTT buffer only needs to hold the topic+header. This avoids the large
+  // contiguous setBufferSize() allocation that previously ran out of heap on bigger definitions.
+  if (!client.beginPublish(topic, payloadLen, true))
   {
-    Serial.println("Error resizing MQTT message buffer, cannot send device discovery!");
+    mqttSerial.println("Error starting device discovery publish!");
     return;
   }
 
-  if (!client.publish(
-          topic,
-          payload.c_str(),
-          true))
-  {
-    Serial.println("Error publishing MQTT message!");
-  }
+  streamDeviceDiscoveryPayload(labelDefs, count, mqttDiscoverySink, &client);
 
-  // Restore
-  client.setBufferSize(oldSize);
+  client.endPublish();
 }

@@ -15,36 +15,38 @@ const LabelDef battery_voltage = {-1, -1, -1, -1, ESP_SENSOR_M5BATV, "M5BatV"};
 const LabelDef wifi_rssi = {-1, -1, -1, -1, ESP_SENSOR_WIFI_RSSI, "WifiRSSI"};
 const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 
-std::string buildDeviceDiscoveryPayload(const LabelDef *labels, size_t count)
+size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx)
 {
-    // Add room for hardcoded sensors.
-    int labelCount = (count + 3);
+    size_t total = 0;
+    auto emit = [&](const char *data, size_t len) {
+        total += len;
+        if (sink != nullptr)
+        {
+            sink(ctx, data, len);
+        }
+    };
 
-    int maxStringLength = strlen(discovery_json_start) + strlen(discovery_json_end) + labelCount * 512;
+    emit(discovery_json_start, strlen(discovery_json_start));
 
-    Serial.printf("maxStringLength: %d, labelCount: %d\n", maxStringLength, labelCount);
+    // Hardcoded ESP diagnostic sensors.
+    std::string s = makeSensorJson(battery_voltage, true);
+    emit(s.data(), s.size());
+    s = "," + makeSensorJson(wifi_rssi, true);
+    emit(s.data(), s.size());
+    s = "," + makeSensorJson(free_mem, true);
+    emit(s.data(), s.size());
 
-    std::string payload;
-    payload.reserve(maxStringLength);
-
-    payload += discovery_json_start;
-
-    Serial.printf("Adding sensors... ");
-
-    payload += makeSensorJson(battery_voltage, true);
-    payload += "," + makeSensorJson(wifi_rssi, true);
-    payload += "," + makeSensorJson(free_mem, true);
-
-    for (int i = 0; i < count; i++)
+    // Sensors from the active definition file. Each component is streamed on its own so the
+    // payload is never held in memory all at once.
+    for (size_t i = 0; i < count; i++)
     {
-        payload += "," + makeSensorJson(labels[i], false);
+        s = "," + makeSensorJson(labels[i], false);
+        emit(s.data(), s.size());
     }
 
-    Serial.printf("\nAdded %d sensors\n", labelCount);
+    emit(discovery_json_end, strlen(discovery_json_end));
 
-    payload += discovery_json_end;
-
-    return payload;
+    return total;
 }
 
 std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
