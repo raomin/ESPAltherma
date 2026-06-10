@@ -4,6 +4,8 @@ char buff[64];
 class Converter
 {
 public:
+    int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22
+
     void getLabels(char registryID, LabelDef *ret[], int &num)
     {
         num = 0;
@@ -45,7 +47,15 @@ public:
         }
     }
 
-    double convertPress2Temp(double data){//assuming R32 gaz
+    double press2tempR410A(double d){
+        return -8.4448460086362E-07*d*d*d*d*d*d + 0.000112833751855216*d*d*d*d*d - 0.00584955138495273*d*d*d*d + 0.149130933664499*d*d*d - 1.99373679674187*d*d + 16.0504901396224*d - 53.2854030662239;
+    }
+    double press2tempR22(double d){
+        return -5.0232146925414E-06*d*d*d*d*d*d + 0.000475561916201275*d*d*d*d*d - 0.0175087997648461*d*d*d*d + 0.318620413943417*d*d*d - 3.0844373741869*d*d + 19.0217687284902*d - 42.3282361912494;
+    }
+    double convertPress2Temp(double data){// R32 default; R410A/R22 selected via RType (conv 800-803)
+        if (RType == 801) return press2tempR410A(data);
+        if (RType == 803) return press2tempR22(data);
         	double num = -2.6989493795556E-07 * data * data * data * data * data * data;
 			double num2 = 4.26383417104661E-05 * data * data * data * data * data;
 			double num3 = -0.00262978346547749 * data * data * data * data;
@@ -232,6 +242,30 @@ public:
                 break;
             }
 
+        case 213:
+        {
+            // O/U MPU / software ID nibble: 10-15 -> A-F, else decimal
+            int v = data[0];
+            if (v >= 10 && v <= 15)
+                sprintf(def->asString, "%c", 'A' + (v - 10));
+            else
+                sprintf(def->asString, "%d", v);
+            return;
+        }
+
+        case 214:
+        {
+            // EEPROM revision code: 0 -> blank, 1-24 -> A-X, else decimal
+            int v = data[0];
+            if (v == 0)
+                strcat(def->asString, " ");
+            else if (v >= 1 && v <= 24)
+                sprintf(def->asString, "%c", 'A' + (v - 1));
+            else
+                sprintf(def->asString, "%d", v);
+            return;
+        }
+
         case 215:
         case 216:
 		{
@@ -289,6 +323,98 @@ public:
         case 406:
             dblData = (double)getSignedValue(data, num, 1) * 0.1;
             dblData = convertPress2Temp(dblData);
+            break;
+
+        case 212:
+        {
+            // capacity code -> printed value
+            int v = data[0];
+            switch (v) {
+            case 0:   strcat(def->asString, "---"); break;
+            case 251: strcat(def->asString, "280"); break;
+            case 252: strcat(def->asString, "290"); break;
+            case 253: strcat(def->asString, "300"); break;
+            case 254: strcat(def->asString, "310"); break;
+            case 255: strcat(def->asString, "320"); break;
+            default:  sprintf(def->asString, "%d", v);
+            }
+            return;
+        }
+
+        case 219:
+        {
+            // capacity (kW class) code lookup
+            int v = data[0];
+            switch (v) {
+            case 0: case 50: case 63: strcat(def->asString, "---"); break;
+            case 17:  strcat(def->asString, "15");  break;
+            case 22:  strcat(def->asString, "20");  break;
+            case 28:  strcat(def->asString, "25");  break;
+            case 36:  strcat(def->asString, "32");  break;
+            case 45:  strcat(def->asString, "40");  break;
+            case 56:  strcat(def->asString, "50");  break;
+            case 71:  strcat(def->asString, "63");  break;
+            case 80:  strcat(def->asString, "71");  break;
+            case 90:  strcat(def->asString, "80");  break;
+            case 112: strcat(def->asString, "100"); break;
+            case 125: strcat(def->asString, "112"); break;
+            case 140: strcat(def->asString, "125"); break;
+            case 160: strcat(def->asString, "140"); break;
+            case 180: strcat(def->asString, "160"); break;
+            case 224: strcat(def->asString, "200"); break;
+            case 251: strcat(def->asString, "250"); break;
+            case 252: strcat(def->asString, "290"); break;
+            case 253: strcat(def->asString, "300"); break;
+            case 254: strcat(def->asString, "310"); break;
+            case 255: strcat(def->asString, "320"); break;
+            default:  sprintf(def->asString, "%d", v);
+            }
+            return;
+        }
+
+        case 310:
+            dblData = (double)((data[0] & 0x70) >> 4); // bits 4-6
+            break;
+        case 311:
+            dblData = (double)(data[0] & 0x07);        // low 3 bits
+            break;
+
+        case 314:
+        {
+            // 2-byte model code -> 3-char string via Conv51 table
+            static const char conv51[32] = {
+                '-','1','2','3','4','5','6','7','8','9','A','C','E','F','*','H',
+                'J','E','L','U','*','P','P','P','U','2','A','E','F','*','*','*'};
+            if (num < 2) { strcat(def->asString, "---"); return; }
+            unsigned int val = ((unsigned int)data[1] << 8) | data[0];
+            int i2 = (val >> 11) & 0x1F;
+            int i3 = (val >> 6) & 0x1F;
+            int i4 = val & 0x3F;
+            char s[4];
+            s[0] = conv51[i2];
+            s[1] = conv51[i3];
+            s[2] = (i4 > 32) ? conv51[0] : ((i4 < 32) ? conv51[i4] : '?');
+            s[3] = 0;
+            strcat(def->asString, s);
+            return;
+        }
+
+        // refrigerant type: sets RType (used by convertPress2Temp) and prints the gas
+        case 800:
+            RType = 800; strcat(def->asString, "---");   return;
+        case 801:
+            RType = 801; strcat(def->asString, "R410A"); return;
+        case 802:
+            RType = 802; strcat(def->asString, "R32");   return;
+        case 803:
+            RType = 803; strcat(def->asString, "R22");   return;
+
+        // enum-state convs not present; the def label
+        // enumerates the integer states, so expose the raw value
+        case 317:
+        case 323:
+        case 336:
+            dblData = (double)data[0];
             break;
 
         default:
