@@ -78,12 +78,21 @@ void readEEPROM(){
   }
 }
 
+// Defined in main.cpp; used to keep the screen/button responsive and WiFi
+// recovering while we wait between MQTT connection attempts.
+void handleScreen();
+void checkWifi();
+
 void reconnectMqtt()
 {
   // Loop until we're reconnected
   int i = 0;
   while (!client.connected())
   {
+    if (WiFi.status() != WL_CONNECTED)
+    { // No point retrying MQTT without WiFi; recover it first
+      checkWifi();
+    }
     mqttSerial.print("Attempting MQTT connection...");
 
     if (client.connect("ESPAltherma-dev", MQTT_USERNAME, MQTT_PASSWORD, MQTT_lwt, 0, true, "Offline"))
@@ -127,6 +136,8 @@ void reconnectMqtt()
       while (millis() < start + 5000)
       {
         ArduinoOTA.handle();
+        handleScreen();//Keep the button responsive while retrying
+        delay(10);
       }
 
       if (i++ == 100) {
