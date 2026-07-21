@@ -386,6 +386,8 @@ I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Inform
 
 No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
 
+Have a look at the [Faikin](https://github.com/revk/ESP32-Faikin) project for an alternative for thse units.
+
 ## How can I update ESPAltherma remotely?
 
 Yes! ESPAltherma source code is upgraded often. Your ESPAltherma can be updated Over-The-Air without having to unplug it from the heat pump:
