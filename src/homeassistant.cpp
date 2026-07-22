@@ -15,6 +15,22 @@ const LabelDef battery_voltage = {-1, -1, -1, -1, ESP_SENSOR_M5BATV, "M5BatV"};
 const LabelDef wifi_rssi = {-1, -1, -1, -1, ESP_SENSOR_WIFI_RSSI, "WifiRSSI"};
 const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 
+static bool isNumericSensor(const LabelDef &label)
+{
+    if (label.dataType == ESP_SENSOR_M5BATV ||
+        label.dataType == ESP_SENSOR_WIFI_RSSI ||
+        label.dataType == ESP_SENSOR_FREE_MEM ||
+        label.dataType == 1 || label.dataType == 2)
+    {
+        return true;
+    }
+
+    return (label.convid >= 101 && label.convid <= 119) ||
+           (label.convid >= 151 && label.convid <= 165) ||
+           label.convid == 312 ||
+           (label.convid >= 401 && label.convid <= 406);
+}
+
 size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx)
 {
     size_t total = 0;
@@ -59,6 +75,10 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
 
     json += "\"" + key + "\":{";
     json += getSensorDeviceAndUnit(label);
+    if (isNumericSensor(label))
+    {
+        json += "\"stat_cla\":\"measurement\",";
+    }
     json += "\"val_tpl\":\"{{value_json['";
     json += label.label;
     json += "']";
