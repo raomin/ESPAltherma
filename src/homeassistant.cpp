@@ -15,6 +15,14 @@ const LabelDef battery_voltage = {-1, -1, -1, -1, ESP_SENSOR_M5BATV, "M5BatV"};
 const LabelDef wifi_rssi = {-1, -1, -1, -1, ESP_SENSOR_WIFI_RSSI, "WifiRSSI"};
 const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 
+static bool isMeasurementSensor(const std::string &sensorProperties)
+{
+    // A numeric converter alone does not make a value a measurement. For example,
+    // detailed error codes are numeric but should not participate in statistics.
+    return sensorProperties.find("\"p\":\"sensor\"") != std::string::npos &&
+           sensorProperties.find("\"unit_of_meas\"") != std::string::npos;
+}
+
 size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx)
 {
     size_t total = 0;
@@ -57,15 +65,24 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
     std::string json;
     json.reserve(512);
 
+    const std::string sensorProperties = getSensorDeviceAndUnit(label);
+    const bool isBinarySensor = sensorProperties.find("\"p\":\"binary_sensor\"") != std::string::npos;
+
     json += "\"" + key + "\":{";
-    json += getSensorDeviceAndUnit(label);
+    json += sensorProperties;
+    if (isMeasurementSensor(sensorProperties))
+    {
+        json += "\"stat_cla\":\"measurement\",";
+    }
     json += "\"val_tpl\":\"{{value_json['";
     json += label.label;
     json += "']";
     json += getConversion(label);
     json += "}}\",";
     json += "\"uniq_id\":\"" + uid + "\",";
-    json += "\"def_ent_id\":\"sensor." + uid + "\",";
+    json += "\"def_ent_id\":\"";
+    json += isBinarySensor ? "binary_sensor." : "sensor.";
+    json += uid + "\",";
     json += "\"name\":\"";
     json += label.label;
     json += "\"";
