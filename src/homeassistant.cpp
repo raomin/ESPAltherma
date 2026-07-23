@@ -15,20 +15,12 @@ const LabelDef battery_voltage = {-1, -1, -1, -1, ESP_SENSOR_M5BATV, "M5BatV"};
 const LabelDef wifi_rssi = {-1, -1, -1, -1, ESP_SENSOR_WIFI_RSSI, "WifiRSSI"};
 const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 
-static bool isNumericSensor(const LabelDef &label)
+static bool isMeasurementSensor(const std::string &sensorProperties)
 {
-    if (label.dataType == ESP_SENSOR_M5BATV ||
-        label.dataType == ESP_SENSOR_WIFI_RSSI ||
-        label.dataType == ESP_SENSOR_FREE_MEM ||
-        label.dataType == 1 || label.dataType == 2)
-    {
-        return true;
-    }
-
-    return (label.convid >= 101 && label.convid <= 119) ||
-           (label.convid >= 151 && label.convid <= 165) ||
-           label.convid == 312 ||
-           (label.convid >= 401 && label.convid <= 406);
+    // A numeric converter alone does not make a value a measurement. For example,
+    // detailed error codes are numeric but should not participate in statistics.
+    return sensorProperties.find("\"p\":\"sensor\"") != std::string::npos &&
+           sensorProperties.find("\"unit_of_meas\"") != std::string::npos;
 }
 
 size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx)
@@ -73,9 +65,12 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
     std::string json;
     json.reserve(512);
 
+    const std::string sensorProperties = getSensorDeviceAndUnit(label);
+    const bool isBinarySensor = sensorProperties.find("\"p\":\"binary_sensor\"") != std::string::npos;
+
     json += "\"" + key + "\":{";
-    json += getSensorDeviceAndUnit(label);
-    if (isNumericSensor(label))
+    json += sensorProperties;
+    if (isMeasurementSensor(sensorProperties))
     {
         json += "\"stat_cla\":\"measurement\",";
     }
@@ -85,7 +80,9 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
     json += getConversion(label);
     json += "}}\",";
     json += "\"uniq_id\":\"" + uid + "\",";
-    json += "\"def_ent_id\":\"sensor." + uid + "\",";
+    json += "\"def_ent_id\":\"";
+    json += isBinarySensor ? "binary_sensor." : "sensor.";
+    json += uid + "\",";
     json += "\"name\":\"";
     json += label.label;
     json += "\"";

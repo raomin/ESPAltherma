@@ -22,7 +22,8 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic);
 
 /*
  * Returns sensor properties "p"(latform), "dev_cla" (device_class) and "unit_of_meas"(urement).
- * Numeric sensors receive a measurement state class when the component JSON is assembled.
+ * Sensors with a recognized measurement unit receive a measurement state class when the
+ * component JSON is assembled.
  */
 std::string getSensorDeviceAndUnit(const LabelDef &label);
 
