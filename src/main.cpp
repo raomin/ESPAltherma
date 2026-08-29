@@ -1,4 +1,4 @@
-#if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
+#if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough) || defined(ARDUINO_M5Stick_S3)
 #include <M5Unified.h>
 #else
 #include <Arduino.h>
@@ -32,7 +32,7 @@ Converter converter;
 char registryIDs[32]; //Holds the registries to query
 bool busy = false;
 
-#if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
+#if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough) || defined(ARDUINO_M5Stick_S3)
 #define HAS_M5_SCREEN
 long LCDTimeout = 40000;//Keep screen ON for 40s then turn off. ButtonA will turn it On again.
 #endif
@@ -377,6 +377,23 @@ void setupScreen(){
   M5.Lcd.fillScreen(TFT_BLACK);
   M5.Lcd.setFont(&Font0);
   M5.Lcd.setTextColor(TFT_GREEN);
+
+#elif defined(ARDUINO_M5Stick_S3)
+  M5.begin();
+  M5.Lcd.setRotation(1);
+  M5.Display.setBrightness(127);
+  M5.Lcd.fillScreen(TFT_WHITE);
+  M5.Lcd.setFont(&FreeSansBold12pt7b);
+  M5.Lcd.setTextDatum(MC_DATUM);
+  int xpos = M5.Lcd.width() / 2; // Half the screen width
+  int ypos = M5.Lcd.height() / 2; // Half the screen width
+  M5.Lcd.setTextColor(TFT_DARKGREY);
+  M5.Lcd.drawString("ESPAltherma", xpos,ypos);
+  delay(2000);
+  M5.Lcd.fillScreen(TFT_BLACK);
+  M5.Lcd.setTextFont(0);  // use a smaller font, to make the text fit on the screen
+  M5.Lcd.setTextColor(TFT_GREEN);
+
 #endif
 
 
