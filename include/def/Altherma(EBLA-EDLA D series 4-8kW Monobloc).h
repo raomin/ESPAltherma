@@ -81,7 +81,7 @@ LabelDef labelDefs[] = {
 //{0x30,13,305,1,-1,"Y3S"},
 //{0x00,0,998,1,-1,"In-Out separator"},
 //{0xA0,0,119,2,1,"Suction temp"},
-//{0xA0,2,119,2,1,"Outdoor heat exchanger temp."},
+//{0xA0,2,120,2,1,"Outdoor heat exchanger temp."},
 //{0xA0,4,119,2,1,"Liquid pipe temp."},
 //{0xA0,6,119,2,2,"Pressure"},
 //{0xA0,8,151,2,-1,"Expansion valve 3 (pls)"},
