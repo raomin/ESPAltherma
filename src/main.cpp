@@ -489,7 +489,7 @@ void loop()
   {
     unsigned char buff[64] = {0};
     int tries = 0;
-    while (!queryRegistry(registryIDs[i], buff, PROTOCOL) && tries++ < 3)
+    while (!queryRegistry(registryIDs[i], buff, sizeof(buff), PROTOCOL) && tries++ < 3)
     {
       mqttSerial.println("Retrying...");
       waitLoop(1000);

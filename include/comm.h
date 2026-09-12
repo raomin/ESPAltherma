@@ -27,7 +27,11 @@ unsigned char getCRC(unsigned char *src, int len)
 
 void logBuffer(unsigned char *buffer, size_t len)
 {
-  char bufflog[250] = {0};
+  char bufflog[330] = {0};
+  // Each byte takes 5 chars ("0xXX "); cap len so this can never overflow
+  // regardless of what the caller passes.
+  size_t maxLen = (sizeof(bufflog) - 1) / 5;
+  if (len > maxLen) len = maxLen;
   for (size_t i = 0; i < len; i++)
   {
     sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
@@ -58,7 +62,7 @@ int get_reply_len(char regID, char protocol='I')
   }
 }
 
-bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
+bool queryRegistry(char regID, unsigned char *buffer, size_t bufferSize, char protocol='I')
 {
 
   //preparing command:
@@ -83,6 +87,7 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
 
   int len = 0;
   int replyLen = get_reply_len(regID, protocol);
+  if (replyLen > (int)bufferSize) replyLen = (int)bufferSize;
 
   while ((len < replyLen) && (millis() < (start + SER_TIMEOUT)))
   {
@@ -91,8 +96,12 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
       buffer[len++] = MySerial.read();
       if (protocol == 'I' && len == 3)
       {
-        // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
+        // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md).
+        // Clamped to bufferSize: a noisy/disconnected serial line can return garbage here, and this
+        // byte was previously used unbounded, overflowing the caller's stack buffer and crashing the
+        // device with "Stack smashing protect failure!".
         replyLen = buffer[2] + 2;
+        if (replyLen > (int)bufferSize) replyLen = (int)bufferSize;
       }
       // Error reply common to both protocols
       if (len == 2 && buffer[0] == 0x15 && buffer[1] == 0xea)
