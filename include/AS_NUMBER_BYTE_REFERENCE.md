@@ -82,7 +82,7 @@ K  = byte[5] >> 4
 
 **Model**: EAVH16S18DA6V7  
 **AS Number**: AS1709217-30A  
-**Eeprom_Id**: `AS1709217-30 A 4P675168-30 A EAVH16S18DA6V7`
+**Board label**: `AS1709217-30 A 4P675168-30 A EAVH16S18DA6V7`
 
 ```
 d1=1  d2=7  d3=0  d4=9  d5=2  d6=1  d7=7

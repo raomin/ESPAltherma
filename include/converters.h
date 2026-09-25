@@ -5,15 +5,26 @@ class Converter
 {
 public:
     int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22
+    bool quiet = false; // no conversion trace on Serial (one-off decodes for the web interface)
+
+    // Active labels: the values selected for this installation
+    LabelDef *activeLabels = nullptr;
+    size_t activeCount = 0;
+
+    void setLabels(LabelDef *labels, size_t count)
+    {
+        activeLabels = labels;
+        activeCount = count;
+    }
 
     void getLabels(char registryID, LabelDef *ret[], int &num)
     {
         num = 0;
-        for (auto &&label : labelDefs)
+        for (size_t i = 0; i < activeCount; i++)
         {
-            if (label.registryID == registryID)
+            if (activeLabels[i].registryID == registryID)
             {
-                ret[num++] = &label;
+                ret[num++] = &activeLabels[i];
             }
         }
     }
@@ -74,10 +85,13 @@ public:
         int convId = def->convid;
         int num = def->dataSize;
         double dblData = NAN;
-        Serial.print("Converting from:");
-        for (int i = 0; i < num; i++)
+        if (!quiet)
         {
-            Serial.printf(" 0x%02x ", data[i]);
+            Serial.print("Converting from:");
+            for (int i = 0; i < num; i++)
+            {
+                Serial.printf(" 0x%02x ", data[i]);
+            }
         }
 
         switch (convId)
@@ -426,13 +440,15 @@ public:
         {
             sprintf(def->asString, "%g", dblData);
         }
-        Serial.printf("-> %s\n", def->asString);
+        if (!quiet)
+            Serial.printf("-> %s\n", def->asString);
     }
 
 private:
     void convertTable300(unsigned char *data, int tableID, char *ret)
     {
-        Serial.printf("Bin Conv %02x with tableID %d \n", data[0], tableID);
+        if (!quiet)
+            Serial.printf("Bin Conv %02x with tableID %d \n", data[0], tableID);
         char b = 1;
         b = (char)(b << tableID % 10);
         if ((data[0] & b) > 0)

@@ -1,0 +1,66 @@
+name: Release
+
+# On a version tag: builds the web flasher firmwares, attaches them to the GitHub release, and publishes
+# the GitHub Pages site (the existing pages + the installer at /flasher/).
+# The firmwares must be served by the Pages site itself: ESP Web Tools downloads them with fetch(), and
+# release assets are not served with CORS headers.
+# One-time setup: Settings > Pages > Source = "GitHub Actions".
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-release-${{ hashFiles('platformio.ini') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install platformio
+      - name: Label catalog up to date with include/def
+        run: python scripts/gen_catalog.py --check
+      - name: Version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"; else echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"; fi
+      - name: Build the web flasher firmwares
+        run: python scripts/build_flasher.py --build --version "${{ steps.version.outputs.version }}"
+      - name: Attach the firmwares to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: flasher/firmware/*.bin
+      - name: Build the site (existing pages + flasher/ with its firmwares)
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -10,10 +10,12 @@ const char *discovery_json_end = "},\"stat_t\":\"espaltherma/ATTR\",\"qos\": 2}"
 #define ESP_SENSOR_M5BATV 999
 #define ESP_SENSOR_WIFI_RSSI 998
 #define ESP_SENSOR_FREE_MEM 997
+#define ESP_SENSOR_M5VIN 996
 
 const LabelDef battery_voltage = {-1, -1, -1, -1, ESP_SENSOR_M5BATV, "M5BatV"};
 const LabelDef wifi_rssi = {-1, -1, -1, -1, ESP_SENSOR_WIFI_RSSI, "WifiRSSI"};
 const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
+const LabelDef m5_vin = {-1, -1, -1, -1, ESP_SENSOR_M5VIN, "M5VIN"};
 
 size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx)
 {
@@ -35,6 +37,11 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     emit(s.data(), s.size());
     s = "," + makeSensorJson(free_mem, true);
     emit(s.data(), s.size());
+#if defined(ARDUINO_M5Stick_C) && !defined(ARDUINO_M5Stick_C_Plus2)
+    // Supply voltage, published by the AXP192 boards: shows the drops of a weak 5V supply
+    s = "," + makeSensorJson(m5_vin, true);
+    emit(s.data(), s.size());
+#endif
 
     // Sensors from the active definition file. Each component is streamed on its own so the
     // payload is never held in memory all at once.
@@ -87,6 +94,7 @@ std::string getConversion(const LabelDef &label)
     {
         // Backwards-compatible workaround for the built-in ESP sensors returning a string with an optional unit, like "-42dBm" instead of just -42.
         case ESP_SENSOR_M5BATV:
+        case ESP_SENSOR_M5VIN:
             return "|replace('V','')|float";
         case ESP_SENSOR_WIFI_RSSI:
             return "|replace('dBm','')|int";
@@ -103,6 +111,7 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
         // Hardcoded ones for ESP:
         // "M5BatV" (voltage in V)
         case ESP_SENSOR_M5BATV:
+        case ESP_SENSOR_M5VIN:
             return "\"p\":\"sensor\",\"dev_cla\":\"voltage\",\"unit_of_meas\":\"V\",";
         // "WifiRSSI" (signal_strength in dBm)
         case ESP_SENSOR_WIFI_RSSI:

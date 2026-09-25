@@ -3,7 +3,7 @@
 #include <unity.h>
 
 // Few defines to mimic Arduino framework
-#include "arduino_to_native.h"
+#include "../arduino_to_native.h"
 
 #include "def/PROTOCOL_S_ROTEX.h"
 #include "converters.h"
@@ -20,6 +20,7 @@ void tearDown(void)
 std::string decode_data(unsigned char *buff)
 {
     Converter converter;
+    converter.setLabels(labelDefs, sizeof(labelDefs) / sizeof(LabelDef));
     converter.readRegistryValues(buff, 'S');
     LabelDef *labels[128];
     int num = 0;

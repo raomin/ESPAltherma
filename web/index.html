@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPAltherma</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--fg:#1d2733;--muted:#5f6b78;--line:#dde3ea;--accent:#0a74c9;--accent-fg:#fff;--ok:#1a8a4a;--warn:#b86e00;--bad:#c62f2f;--chip:#eef2f6;--code:#f0f3f6}
+@media (prefers-color-scheme:dark){:root{--bg:#10151b;--card:#18212b;--fg:#e4eaf0;--muted:#94a3b3;--line:#2a3643;--accent:#4aa3ea;--accent-fg:#06121d;--ok:#4cc27e;--warn:#f0a53a;--bad:#f06464;--chip:#223040;--code:#121a22}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.bar{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700;font-size:18px;margin-right:auto}
+.brand small{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:99px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.pill.ok i{background:var(--ok)}.pill.warn i{background:var(--warn)}.pill.bad i{background:var(--bad)}
+nav{max-width:980px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto}
+nav a{padding:9px 12px;color:var(--muted);text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap}
+nav a.on{color:var(--fg);border-color:var(--accent)}
+main{max-width:980px;margin:0 auto;padding:16px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv b{font-weight:500;color:var(--muted)}
+.kv span{overflow-wrap:anywhere}
+.banner{border-radius:10px;padding:12px 14px;margin-bottom:14px;border:1px solid var(--line);background:var(--card);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.banner.warn{border-color:var(--warn)}.banner.info{border-color:var(--accent)}
+.banner p{margin:0;flex:1;min-width:200px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--fg);font:inherit}
+input[type=checkbox]{width:auto;margin:0 8px 0 0;vertical-align:middle}
+.check{display:flex;align-items:center;color:var(--fg);font-size:14px;margin:10px 0}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 12px}
+button,.btn{display:inline-block;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:8px 14px;border-radius:7px;font:inherit;cursor:pointer;text-decoration:none}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+button.danger{color:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.muted{color:var(--muted);font-size:13px}
+.msg{font-size:13px}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:13px}
+td.v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.list button{display:block;width:100%;text-align:left;margin:6px 0}
+.steps{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.steps a{font-size:13px;padding:5px 10px;border-radius:99px;background:var(--chip);color:var(--muted);text-decoration:none}
+.steps a.on{background:var(--accent);color:var(--accent-fg)}
+pre{background:var(--code);border:1px solid var(--line);border-radius:7px;padding:10px;font-size:12px;overflow:auto;max-height:420px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.cand{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin:6px 0;cursor:pointer}
+.cand input{margin:0}
+.cand small{margin-left:auto;color:var(--muted)}
+.tag{font-size:11px;padding:1px 7px;border-radius:99px;background:var(--chip);color:var(--muted);margin-left:6px}
+.tag.ok{color:var(--ok)}.tag.warn{color:var(--warn)}
+details summary{cursor:pointer;color:var(--accent);font-size:14px;margin-top:10px}
+progress{width:100%;margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">ESPAltherma<small id="hdrModel"></small></div>
+    <span class="pill" id="pWifi"><i></i>WiFi</span>
+    <span class="pill" id="pMqtt"><i></i>MQTT</span>
+    <span class="pill" id="pHp"><i></i>Heat pump</span>
+  </div>
+  <nav id="nav">
+    <a href="#dashboard" class="on">Dashboard</a>
+    <a href="#setup">Setup</a>
+    <a href="#values">Values</a>
+    <a href="#settings">Settings</a>
+    <a href="#diagnostics">Diagnostics</a>
+    <a href="#system">System</a>
+  </nav>
+</header>
+<main>
+
+<section id="dashboard" class="on">
+  <div id="banners"></div>
+  <div class="grid">
+    <div class="card"><h2>Heat pump</h2><div class="kv" id="dHp"></div></div>
+    <div class="card"><h2>Network</h2><div class="kv" id="dNet"></div></div>
+    <div class="card" id="dPowerCard" hidden><h2>Power</h2><div class="kv" id="dPower"></div></div>
+  </div>
+  <div class="card">
+    <h2>Live values <span class="muted" id="valAge"></span></h2>
+    <table><tbody id="dValues"><tr><td class="muted">Waiting for the first readings…</td></tr></tbody></table>
+  </div>
+</section>
+
+<section id="setup">
+  <div class="steps" id="steps">
+    <a href="#setup/wifi" data-step="wifi">1 · WiFi</a>
+    <a href="#setup/mqtt" data-step="mqtt">2 · Home Assistant</a>
+    <a href="#setup/hp" data-step="hp">3 · Heat pump</a>
+    <a href="#setup/done" data-step="done">4 · Finish</a>
+  </div>
+
+  <div class="card step" data-step="wifi">
+    <h2>Connect to your WiFi</h2>
+    <p class="muted" id="wifiNow"></p>
+    <div class="list" id="wifiList"></div>
+    <div class="actions"><button id="wifiScan">Scan networks</button></div>
+    <label for="wSsid">Network name (SSID)</label><input id="wSsid" autocomplete="off">
+    <label for="wPwd">Password</label><input id="wPwd" type="password" autocomplete="new-password" placeholder="">
+    <div class="actions"><button class="primary" id="wifiSave">Save and connect</button><span class="msg" id="wifiMsg"></span></div>
+  </div>
+
+  <div class="card step" data-step="mqtt">
+    <h2>Connect to Home Assistant</h2>
+    <p class="muted">ESPAltherma sends its values to Home Assistant through an MQTT broker, usually the Mosquitto add-on. Home Assistant then creates the sensors automatically.</p>
+    <div class="actions"><button id="discBtn">Find my Home Assistant</button><span class="msg" id="discMsg"></span></div>
+    <div class="list" id="discList"></div>
+    <div class="row">
+      <div><label for="mServer">MQTT broker address</label><input id="mServer" placeholder="homeassistant.local or 192.168.1.10"></div>
+      <div><label for="mPort">Port</label><input id="mPort" type="number" value="1883"></div>
+    </div>
+    <div class="row">
+      <div><label for="mUser">User</label><input id="mUser" autocomplete="off"></div>
+      <div><label for="mPwd">Password</label><input id="mPwd" type="password" autocomplete="new-password"></div>
+    </div>
+    <div class="check"><input type="checkbox" id="mTls"><label for="mTls" style="margin:0">Encrypted connection (TLS)</label></div>
+    <p class="muted">Tip: in Home Assistant, create a dedicated user for ESPAltherma (Settings → People) and use it here.</p>
+    <div class="actions"><button id="mTest">Test connection</button><button class="primary" id="mSave">Save</button><span class="msg" id="mMsg"></span></div>
+  </div>
+
+  <div class="card step" data-step="hp">
+    <h2>Your heat pump</h2>
+    <div id="hpDetect"><p class="muted">Reading the heat pump…</p></div>
+    <div class="actions"><button id="hpRedetect">Detect again</button><span class="msg" id="hpMsg"></span></div>
+    <details id="hpManual"><summary>Choose my model from the list</summary>
+      <label for="hpModel">Model</label><select id="hpModel"></select>
+      <div class="actions"><button class="primary" id="hpPick">Use this model</button></div>
+    </details>
+  </div>
+
+  <div class="card step" data-step="done">
+    <h2>Almost done</h2>
+    <p>ESPAltherma reads a recommended set of values. You can add or remove values any time in <a href="#values">Values</a>.</p>
+    <div class="banner info" id="tmBox">
+      <p><b>Help improve automatic detection</b><br><span class="muted">Share your heat pump's anonymous identification codes so ESPAltherma can recognise your model instantly — for everyone. No network, MQTT or personal data is sent. <a href="#" id="tmShow">See exactly what is sent</a></span></p>
+      <label class="check" style="margin:0"><input type="checkbox" id="tmOn">Share</label>
+    </div>
+    <pre id="tmPreview" hidden></pre>
+    <div class="actions"><button class="primary" id="doneBtn">Finish</button></div>
+  </div>
+</section>
+
+<section id="values">
+  <div class="card">
+    <h2>Values to read</h2>
+    <p class="muted" id="valInfo"></p>
+    <div class="row"><div><label for="valSearch">Search</label><input id="valSearch" placeholder="temperature, pump, 0x61…"></div></div>
+    <div class="actions"><button id="valRec">Recommended only</button><button id="valRefresh">Refresh readings</button><button class="primary" id="valSave">Save selection</button><span class="msg" id="valMsg"></span></div>
+  </div>
+  <div class="card"><table><thead><tr><th></th><th>Value</th><th style="text-align:right">Now</th><th>Registry</th></tr></thead><tbody id="valTable"></tbody></table></div>
+</section>
+
+<section id="settings">
+  <div class="card">
+    <h2>Heat pump connection</h2>
+    <div class="row">
+      <div><label for="sRx">RX pin (to X10A TX)</label><input id="sRx" type="number"></div>
+      <div><label for="sTx">TX pin (to X10A RX)</label><input id="sTx" type="number"></div>
+      <div><label for="sFreq">Read every (seconds)</label><input id="sFreq" type="number" min="5"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Relays <span class="muted">(-1 = not used)</span></h2>
+    <div class="row">
+      <div><label for="sTherm">Thermostat relay pin</label><input id="sTherm" type="number"></div>
+      <div><label for="sSg1">Smart Grid pin 1</label><input id="sSg1" type="number"></div>
+      <div><label for="sSg2">Smart Grid pin 2</label><input id="sSg2" type="number"></div>
+      <div><label for="sSafety">Safety relay pin</label><input id="sSafety" type="number"></div>
+    </div>
+    <div class="check"><input type="checkbox" id="sThermHigh"><label for="sThermHigh" style="margin:0">Thermostat relay active high</label></div>
+    <div class="check"><input type="checkbox" id="sSgHigh"><label for="sSgHigh" style="margin:0">Smart Grid relays active high</label></div>
+    <div class="check"><input type="checkbox" id="sSafetyHigh"><label for="sSafetyHigh" style="margin:0">Safety relay active high</label></div>
+  </div>
+  <div class="card">
+    <h2>MQTT output</h2>
+    <div class="check"><input type="checkbox" id="sOneTopic"><label for="sOneTopic" style="margin:0">One topic per value</label></div>
+    <label for="sPrefix">Topic prefix (one topic per value)</label><input id="sPrefix">
+    <div class="check"><input type="checkbox" id="sJsonTable"><label for="sJsonTable" style="margin:0">JSON table format (ioBroker)</label></div>
+    <div class="check"><input type="checkbox" id="sNoLog"><label for="sNoLog" style="margin:0">Do not publish logs on MQTT</label></div>
+    <div class="check"><input type="checkbox" id="sDebug"><label for="sDebug" style="margin:0">MQTT ↔ serial gateway (DebugSerial)</label></div>
+  </div>
+  <div class="card">
+    <h2>Device</h2>
+    <div class="row">
+      <div><label for="sHost">Name on the network</label><input id="sHost"></div>
+      <div><label for="sAdmin">Admin password <span class="muted" id="sAdminState"></span></label><input id="sAdmin" type="password" autocomplete="new-password" placeholder="unchanged"></div>
+    </div>
+    <p class="muted">With an admin password, changing the settings or the firmware asks for user <b>admin</b> and this password.</p>
+    <div class="check"><input type="checkbox" id="sStatic"><label for="sStatic" style="margin:0">Static IP address</label></div>
+    <div class="row" id="sStaticBox">
+      <div><label for="sIp">IP</label><input id="sIp"></div>
+      <div><label for="sGw">Gateway</label><input id="sGw"></div>
+      <div><label for="sMask">Subnet mask</label><input id="sMask"></div>
+      <div><label for="sDns1">DNS</label><input id="sDns1"></div>
+    </div>
+  </div>
+  <div class="actions"><button class="primary" id="sSave">Save settings</button><span class="msg" id="sMsg"></span></div>
+</section>
+
+<section id="diagnostics">
+  <div class="card">
+    <h2>Definition corrections</h2>
+    <p class="muted">Some definitions do not match every unit: a value is then read across two neighbours and shows absurd, jumping numbers. ESPAltherma checks the replies and reads such a registry with the layout of the definition that fits.</p>
+    <div id="fixList"></div>
+    <div class="check"><input type="checkbox" id="fixAuto"><label for="fixAuto" style="margin:0">Correct automatically</label></div>
+    <div class="actions"><button id="fixUndo">Undo the corrections</button><span class="msg" id="fixMsg"></span></div>
+  </div>
+  <div class="card">
+    <h2>Heat pump survey</h2>
+    <p class="muted">Every registry of the heat pump, read once, with its identification codes and the detection result.</p>
+    <div class="actions"><button id="svRun">Run the survey again</button><button id="svCopy">Copy</button><span class="msg" id="svMsg"></span></div>
+    <pre id="svReport" style="margin-top:12px">No survey yet.</pre>
+  </div>
+  <div class="card">
+    <h2>Log</h2>
+    <div class="actions" style="margin-top:0"><button id="logClear">Clear</button><label class="check" style="margin:0"><input type="checkbox" id="logFollow" checked>Follow</label></div>
+    <pre id="log" style="margin-top:12px"></pre>
+  </div>
+</section>
+
+<section id="system">
+  <div class="grid">
+    <div class="card"><h2>Device</h2><div class="kv" id="sysInfo"></div></div>
+    <div class="card">
+      <h2>Firmware update</h2>
+      <p class="muted">Select the OTA firmware file (<code>.bin</code>) of a release.</p>
+      <input type="file" id="fwFile" accept=".bin">
+      <div class="actions"><button class="primary" id="fwBtn">Update</button><span class="msg" id="fwMsg"></span></div>
+      <progress id="fwProg" max="100" value="0" hidden></progress>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Configuration</h2>
+    <div class="check"><input type="checkbox" id="sysTm"><label for="sysTm" style="margin:0">Help improve automatic detection by sharing my heat pump's identification codes</label></div>
+    <p class="muted">Backups do not contain passwords.</p>
+    <div class="actions">
+      <button id="cfgExport">Download backup</button>
+      <label class="btn" for="cfgImport" style="margin:0;color:var(--fg)">Restore backup</label><input type="file" id="cfgImport" accept=".json" hidden>
+      <span class="msg" id="cfgMsg"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Restart</h2>
+    <div class="actions" style="margin-top:0"><button id="rebootBtn">Restart</button><button class="danger" id="resetBtn">Factory reset</button><span class="msg" id="rstMsg"></span></div>
+  </div>
+</section>
+
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const k of kids) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+};
+const FAMILIES = {G: 'Newer units (R32 · D/E series)', L: 'Older units (LT · Hybrid · GEO2)', S: 'Protocol S', R: 'Protocol S (ROTEX)'};
+let status = {}, cfg = {}, models = [], catalog = [], selected = new Set();
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, opts);
+  const type = r.headers.get('content-type') || '';
+  const body = type.includes('json') ? await r.json() : await r.text();
+  if (!r.ok) throw new Error((body && body.error) || r.status + ' ' + r.statusText);
+  return body;
+}
+const post = (path, data) => api(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data || {})});
+function msg(id, text, ok) { const m = $(id); m.textContent = text || ''; m.className = 'msg' + (ok === true ? ' ok' : ok === false ? ' bad' : ''); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function kv(target, rows) { const t = $(target); t.replaceChildren(); for (const [k, v] of rows) if (v != null && v !== '') t.append(el('b', {}, k), el('span', {}, v)); }
+function ago(s) { return s < 0 ? 'never' : s < 60 ? s + ' s ago' : Math.round(s / 60) + ' min ago'; }
+function hex(n) { return '0x' + n.toString(16).toUpperCase().padStart(2, '0'); }
+
+// ---- navigation
+function route() {
+  const [page, step] = (location.hash.slice(1) || 'dashboard').split('/');
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === page));
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + page));
+  if (page === 'setup') showStep(step || firstStep());
+  if (page === 'values') loadCatalog();
+  if (page === 'settings') fillSettings();
+  if (page === 'diagnostics') loadDiagnostics();
+}
+function firstStep() {
+  if (!status.wifi || !status.wifi.connected) return 'wifi';
+  if (!status.mqtt.configured) return 'mqtt';
+  if (status.hp.generic && !status.hp.confirmed) return 'hp';
+  return 'wifi';
+}
+function showStep(step) {
+  document.querySelectorAll('.step').forEach(s => s.hidden = s.dataset.step !== step);
+  document.querySelectorAll('#steps a').forEach(a => a.classList.toggle('on', a.dataset.step === step));
+  if (step === 'wifi') setupWifi();
+  if (step === 'mqtt') setupMqtt();
+  if (step === 'hp') setupHp();
+  if (step === 'done') setupDone();
+}
+window.addEventListener('hashchange', route);
+
+// ---- status
+function pill(id, state, text) { const p = $(id); p.className = 'pill ' + state; p.lastChild.textContent = text; }
+function renderStatus() {
+  const s = status, w = s.wifi, m = s.mqtt, hp = s.hp;
+  pill('#pWifi', w.connected ? 'ok' : w.ap ? 'warn' : 'bad', w.connected ? 'WiFi' : w.ap ? 'Setup AP' : 'No WiFi');
+  pill('#pMqtt', m.connected ? 'ok' : m.configured ? 'bad' : 'warn', m.connected ? 'MQTT' : m.configured ? 'MQTT offline' : 'No MQTT');
+  const hpOk = hp.values > 0 && hp.last_poll >= 0 && hp.last_poll < 300;
+  pill('#pHp', hpOk ? 'ok' : hp.model || !hp.generic ? 'warn' : 'bad', hpOk ? 'Heat pump' : hp.survey_running ? 'Detecting…' : 'Heat pump');
+  $('#hdrModel').textContent = hp.model || '';
+
+  kv('#dHp', [
+    ['Model', hp.generic ? (hp.model || 'not detected yet') : 'defined in my_setup.h'],
+    ['Status', hp.generic && hp.model ? (hp.confirmed ? 'confirmed' : 'to be confirmed') : null],
+    ['Protocol', hp.protocol],
+    ['Values', hp.values],
+    ['Last reading', ago(hp.last_poll)],
+    ['Corrected', (hp.layout_fixes || []).length ? hp.layout_fixes.map(f => hex(f.reg)).join(', ') + ' (see Diagnostics)' : null],
+    ['Safety relay', s.relays && s.relays.safety != null ? (s.relays.safety ? 'ON — heat pump stopped' : 'off') : null],
+    ['Thermostat relay', s.relays && s.relays.thermostat != null ? (s.relays.thermostat ? 'on' : 'off') : null],
+    ['Smart Grid', s.relays && s.relays.smart_grid != null ? ['Free running', 'Forced off', 'Recommended on', 'Forced on'][s.relays.smart_grid] : null],
+  ]);
+  kv('#dNet', [
+    ['WiFi', w.connected ? w.ssid + ' (' + w.rssi + ' dBm)' : (w.ssid ? 'connecting to ' + w.ssid : 'not configured')],
+    ['Address', w.connected ? w.ip + ' · ' + s.hostname + '.local' : null],
+    ['Setup AP', w.ap ? w.ap_ssid + ' · ' + w.ap_ip : null],
+    ['MQTT', m.configured ? m.server + (m.connected ? ' · connected' : ' · offline') : 'not configured'],
+  ]);
+  kv('#sysInfo', [['Firmware', s.fw], ['Board', s.board], ['Uptime', Math.round(s.uptime / 60) + ' min'], ['Last reset', s.reset_reason], ['Free memory', Math.round(s.heap / 1024) + ' kB'], ['Name', s.hostname]]);
+  const pw = s.power;
+  $('#dPowerCard').hidden = !pw;
+  if (pw) {
+    const v = x => x.toFixed(2) + ' V';
+    kv('#dPower', [
+      ['Supply', pw.vbus != null ? v(pw.vbus) + ' (' + pw.source + (pw.current != null ? ', ' + Math.round(pw.current) + ' mA' : '') + ')' + (pw.vbus < 4.5 ? ' — low, on battery' : '') : null],
+      ['Lowest since boot', pw.vbus_min != null ? v(pw.vbus_min) : null],
+      ['Battery', pw.battery != null ? v(pw.battery) + ' · ' + pw.battery_level + ' %' : null],
+      ['Battery current', pw.battery != null ? pw.battery_current + ' mA' + (pw.charging ? ' (charging)' : '') : null],
+      ['Last reset', s.reset_reason],
+    ]);
+  }
+
+  const b = $('#banners'); b.replaceChildren();
+  const banner = (cls, text, label, href) => b.append(el('div', {class: 'banner ' + cls}, el('p', {}, text), el('a', {class: 'btn', href}, label)));
+  if (!w.connected) banner('warn', 'ESPAltherma is not connected to your WiFi yet.', 'Set up WiFi', '#setup/wifi');
+  else if (!m.configured) banner('warn', 'Connect ESPAltherma to Home Assistant to get your heat pump sensors.', 'Connect', '#setup/mqtt');
+  else if (m.configured && !m.connected) banner('warn', 'The MQTT broker is unreachable (' + m.server + ').', 'Check', '#setup/mqtt');
+  if (hp.generic && hp.model && !hp.confirmed) banner('info', 'We found a ' + (FAMILIES[(s.detect || {}).family] || 'heat pump') + '. Please confirm your exact model to read all its values.', 'Confirm model', '#setup/hp');
+  if (hp.generic && !hp.model && !hp.survey_running) banner('warn', 'No heat pump answered yet. Check the X10A cable, or choose your model.', 'Heat pump', '#setup/hp');
+  // Values appeared (model just detected or chosen): show them without waiting for the next push
+  if (hp.values > 0 && hp.last_poll >= 0 && !valuesShown) api('/api/values').then(renderValues).catch(() => {});
+}
+async function refreshStatus() { try { status = await api('/api/status'); renderStatus(); } catch (e) {} }
+
+let valuesShown = false;
+function renderValues(list) {
+  const t = $('#dValues'); t.replaceChildren();
+  valuesShown = list.length > 0;
+  if (!list.length) { t.append(el('tr', {}, el('td', {class: 'muted'}, status.hp && status.hp.generic && !status.hp.model ? 'No values yet: the heat pump model is not known.' : 'Waiting for the first readings…'))); return; }
+  for (const v of list) t.append(el('tr', {}, el('td', {}, v.l), el('td', {class: 'v'}, v.v === '' ? '—' : v.v)));
+  $('#valAge').textContent = '· updated ' + new Date().toLocaleTimeString();
+}
+
+// ---- setup: wifi
+function setupWifi() {
+  const w = status.wifi || {};
+  $('#wifiNow').textContent = w.connected ? 'Connected to ' + w.ssid + ' (' + w.ip + ').' : w.ssid ? 'Trying to connect to ' + w.ssid + '…' : 'Choose your network.';
+  if (!$('#wSsid').value) $('#wSsid').value = w.ssid || '';
+  $('#wPwd').placeholder = cfg.wifi && cfg.wifi.has_pwd ? 'unchanged' : '';
+}
+$('#wifiScan').onclick = async () => {
+  const list = $('#wifiList'); list.replaceChildren(el('p', {class: 'muted'}, 'Scanning…'));
+  for (let i = 0; i < 20; i++) {
+    const r = await api('/api/wifi/scan');
+    if (!r.running) {
+      list.replaceChildren();
+      const seen = new Set();
+      for (const n of r.networks.sort((a, b) => b.rssi - a.rssi)) {
+        if (!n.ssid || seen.has(n.ssid)) continue; seen.add(n.ssid);
+        list.append(el('button', {onclick: () => { $('#wSsid').value = n.ssid; $('#wPwd').focus(); }}, n.ssid + '  ', el('span', {class: 'muted'}, n.rssi + ' dBm' + (n.secure ? ' · secured' : ''))));
+      }
+      if (!seen.size) list.append(el('p', {class: 'muted'}, 'No network found.'));
+      return;
+    }
+    await sleep(1000);
+  }
+};
+$('#wifiSave').onclick = async () => {
+  const data = {wifi: {ssid: $('#wSsid').value.trim()}};
+  if ($('#wPwd').value) data.wifi.pwd = $('#wPwd').value;
+  if (!data.wifi.ssid) return msg('#wifiMsg', 'Enter the network name.', false);
+  try {
+    await post('/api/config', data);
+    msg('#wifiMsg', 'Connecting… if you are on the setup access point, reconnect to your WiFi and open http://' + (status.hostname || 'espaltherma') + '.local', true);
+    for (let i = 0; i < 20; i++) { await sleep(2000); await refreshStatus(); if (status.wifi.connected && status.wifi.ssid === data.wifi.ssid) { msg('#wifiMsg', 'Connected: ' + status.wifi.ip, true); setTimeout(() => location.hash = '#setup/mqtt', 1500); return; } }
+  } catch (e) { msg('#wifiMsg', e.message, false); }
+};
+
+// ---- setup: mqtt
+function mqttForm() {
+  const d = {mqtt: {server: $('#mServer').value.trim(), port: +$('#mPort').value || 1883, user: $('#mUser').value, tls: $('#mTls').checked}};
+  if ($('#mPwd').value) d.mqtt.pwd = $('#mPwd').value;
+  return d;
+}
+function setupMqtt() {
+  const m = cfg.mqtt || {};
+  $('#mServer').value = m.server || ''; $('#mPort').value = m.port || 1883; $('#mUser').value = m.user || ''; $('#mTls').checked = !!m.tls;
+  $('#mPwd').placeholder = m.has_pwd ? 'unchanged' : '';
+}
+$('#discBtn').onclick = async () => {
+  msg('#discMsg', 'Searching the network…');
+  const list = $('#discList'); list.replaceChildren();
+  await post('/api/discover');
+  for (let i = 0; i < 30; i++) {
+    await sleep(1000);
+    const r = await api('/api/discover');
+    if (r.done && !r.running) {
+      msg('#discMsg', r.hosts.length ? '' : 'Nothing found. Enter the address of your broker below.');
+      for (const h of r.hosts) {
+        const text = h.mqtt ? (h.ha ? 'Home Assistant with its MQTT broker' : 'MQTT broker') + ' — ' + h.name + ' (' + h.ip + ':' + h.port + ')' : 'Home Assistant at ' + h.ip + ' — no MQTT broker found: install the Mosquitto broker add-on';
+        list.append(el('button', {disabled: !h.mqtt, onclick: () => { $('#mServer').value = h.ip; $('#mPort').value = h.port; $('#mUser').focus(); }}, text));
+      }
+      return;
+    }
+  }
+  msg('#discMsg', 'The search took too long.', false);
+};
+$('#mTest').onclick = async () => {
+  msg('#mMsg', 'Testing…');
+  try {
+    await post('/api/mqtt/test', mqttForm());
+    for (let i = 0; i < 20; i++) {
+      await sleep(700);
+      const r = await api('/api/mqtt/test');
+      if (r.result !== 'running') return msg('#mMsg', r.result === 'ok' ? 'Connection works.' : r.result, r.result === 'ok');
+    }
+  } catch (e) { msg('#mMsg', e.message, false); }
+};
+$('#mSave').onclick = async () => {
+  const d = mqttForm();
+  if (!d.mqtt.server) return msg('#mMsg', 'Enter the broker address.', false);
+  try { await post('/api/config', d); await loadConfig(); msg('#mMsg', 'Saved. Connecting…', true); setTimeout(() => location.hash = '#setup/hp', 1500); }
+  catch (e) { msg('#mMsg', e.message, false); }
+};
+
+// ---- setup: heat pump
+async function setupHp() {
+  const box = $('#hpDetect');
+  if (!status.hp.generic) { box.replaceChildren(el('p', {}, 'The values are defined at build time (my_setup.h). The detection result is in Diagnostics.')); $('#hpManual').hidden = true; return; }
+  if (!models.length) models = await api('/api/models');
+  const sel = $('#hpModel'); sel.replaceChildren();
+  for (const f of Object.keys(FAMILIES)) {
+    const g = el('optgroup', {label: FAMILIES[f]});
+    for (const m of models.filter(m => m.family === f)) g.append(el('option', {value: m.name, selected: m.name === status.hp.model}, m.name));
+    sel.append(g);
+  }
+  const report = await api('/api/detect');
+  const d = report.detect;
+  box.replaceChildren();
+  if (status.hp.survey_running) { box.append(el('p', {class: 'muted'}, 'Reading the heat pump… this takes about 10 seconds.')); setTimeout(() => location.hash === '#setup/hp' && setupHp(), 3000); return; }
+  if (!d || !d.model) { box.append(el('p', {}, 'The heat pump did not answer. Check the cable to the X10A connector (and the RX/TX pins in Settings), then detect again — or choose your model below.')); $('#hpManual').open = true; return; }
+  const conf = d.confidence, id = report.id || {};
+  const byNumber = d.method && d.method.startsWith('as_number');
+  box.append(el('p', {}, conf === 'high' ? (byNumber ? 'Your heat pump was recognised from its identification number:' : 'Your heat pump was recognised:')
+    : 'We recognised a ' + FAMILIES[d.family] + '. Several models match — please pick yours:'));
+  if (id.iu_as) box.append(el('p', {class: 'muted'}, 'Indoor unit ' + id.iu_as + (id.ou_pn ? ' · outdoor unit ' + id.ou_pn : '')));
+  const choices = conf === 'high' ? [d.candidates[0]] : d.candidates;
+  choices.forEach((c, i) => {
+    const current = status.hp.model === c.model;
+    box.append(el('label', {class: 'cand'}, el('input', {type: 'radio', name: 'cand', value: c.model, checked: current || (!status.hp.model && i === 0)}), c.model,
+      current ? el('span', {class: 'tag ' + (status.hp.confirmed ? 'ok' : 'warn')}, status.hp.confirmed ? 'in use' : 'in use, to confirm') : null));
+  });
+  box.append(el('div', {class: 'actions'}, el('button', {class: 'primary', onclick: () => { const c = document.querySelector('input[name=cand]:checked'); if (c) useModel(c.value); }}, 'This is my model')));
+  box.append(el('p', {class: 'muted'}, 'Not in the list? Use "Choose my model from the list" below.'));
+}
+async function useModel(name) {
+  try { await post('/api/config', {hp: {model: name, confirmed: true, labels: []}}); msg('#hpMsg', 'Model saved.', true); await loadConfig(); await refreshStatus(); setTimeout(() => location.hash = '#setup/done', 1200); }
+  catch (e) { msg('#hpMsg', e.message, false); }
+}
+$('#hpPick').onclick = () => useModel($('#hpModel').value);
+$('#hpRedetect').onclick = async () => { msg('#hpMsg', 'Detecting…'); await post('/api/detect'); await sleep(1500); await refreshStatus(); setupHp(); msg('#hpMsg', ''); };
+
+// ---- setup: done / telemetry
+function setupDone() {
+  $('#tmOn').checked = !!(cfg.telemetry && cfg.telemetry.enabled);
+  $('#tmBox').hidden = !status.telemetry_available;
+}
+$('#tmShow').onclick = async e => { e.preventDefault(); const p = $('#tmPreview'); p.hidden = !p.hidden; if (!p.hidden) p.textContent = JSON.stringify(await api('/api/telemetry'), null, 2); };
+$('#doneBtn').onclick = async () => { await post('/api/config', {telemetry: {enabled: $('#tmOn').checked}}); await loadConfig(); location.hash = '#dashboard'; };
+
+// ---- values
+async function loadCatalog() {
+  const info = $('#valInfo');
+  if (!status.hp || !status.hp.generic) { info.textContent = 'The values are defined at build time in my_setup.h.'; $('#valTable').replaceChildren(); return; }
+  if (!status.hp.model) { info.textContent = 'Choose your heat pump model first (Setup → Heat pump).'; $('#valTable').replaceChildren(); return; }
+  catalog = await api('/api/catalog?model=' + encodeURIComponent(status.hp.model));
+  selected = new Set(catalog.filter(v => v.sel).map(v => v.k));
+  renderCatalog();
+}
+// New readings, keeping the ticks not saved yet
+async function refreshReadings() {
+  if (!status.hp || !status.hp.model) return;
+  const fresh = await api('/api/catalog?model=' + encodeURIComponent(status.hp.model));
+  const byKey = {};
+  for (const v of fresh) byKey[v.k + '|' + v.l] = v.v;
+  for (const v of catalog) v.v = byKey[v.k + '|' + v.l];
+  renderCatalog();
+}
+function renderCatalog() {
+  const q = $('#valSearch').value.toLowerCase();
+  const t = $('#valTable'); t.replaceChildren();
+  const seen = new Set();
+  for (const v of catalog) {
+    if (/^not in use|^\*?unused/i.test(v.l)) continue;
+    if (q && !(v.l.toLowerCase().includes(q) || hex(v.r).toLowerCase().includes(q))) continue;
+    const id = 'v' + v.k + '_' + seen.size; seen.add(id);
+    t.append(el('tr', {}, el('td', {}, el('input', {type: 'checkbox', id, checked: selected.has(v.k), onchange: e => { e.target.checked ? selected.add(v.k) : selected.delete(v.k); countSel(); }})),
+      el('td', {}, el('label', {for: id, style: 'margin:0;color:var(--fg);font-size:14px'}, v.l, v.rec ? el('span', {class: 'tag'}, 'recommended') : null)),
+      el('td', {class: 'v'}, v.v == null ? '' : (v.v === '' ? '—' : v.v)),
+      el('td', {class: 'muted'}, hex(v.r) + ' / ' + v.o)));
+  }
+  countSel();
+}
+function countSel() { $('#valInfo').textContent = status.hp.model + ' — ' + selected.size + ' values selected (max 128).'; }
+$('#valSearch').oninput = renderCatalog;
+$('#valRefresh').onclick = refreshReadings;
+$('#valRec').onclick = () => { selected = new Set(catalog.filter(v => v.rec).map(v => v.k)); renderCatalog(); };
+$('#valSave').onclick = async () => {
+  if (selected.size > 128) return msg('#valMsg', 'Select at most 128 values.', false);
+  try { await post('/api/config', {hp: {labels: [...selected]}}); msg('#valMsg', 'Saved. Home Assistant sensors update with the next reading.', true); }
+  catch (e) { msg('#valMsg', e.message, false); }
+};
+
+// ---- settings
+function fillSettings() {
+  if (!cfg.hp) return;
+  const r = cfg.relays, o = cfg.output, w = cfg.wifi;
+  $('#sRx').value = cfg.hp.rx; $('#sTx').value = cfg.hp.tx; $('#sFreq').value = Math.round(cfg.hp.frequency / 1000);
+  $('#sTherm').value = r.therm_pin; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
+  $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
+  $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sJsonTable').checked = o.json_table; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
+  $('#sHost').value = cfg.hostname; $('#sAdminState').textContent = cfg.admin.has_pwd ? '(set)' : '(none)';
+  $('#sStatic').checked = w.static; $('#sIp').value = w.ip; $('#sGw').value = w.gateway; $('#sMask').value = w.subnet; $('#sDns1').value = w.dns1;
+  $('#sStaticBox').hidden = !w.static;
+}
+$('#sStatic').onchange = e => $('#sStaticBox').hidden = !e.target.checked;
+$('#sSave').onclick = async () => {
+  const n = id => parseInt($(id).value, 10);
+  const d = {
+    hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000},
+    relays: {therm_pin: n('#sTherm'), sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
+    output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
+    hostname: $('#sHost').value.trim() || 'ESPAltherma',
+    wifi: {static: $('#sStatic').checked, ip: $('#sIp').value, gateway: $('#sGw').value, subnet: $('#sMask').value, dns1: $('#sDns1').value},
+  };
+  if ($('#sAdmin').value) d.admin = {pwd: $('#sAdmin').value};
+  try { const r = await post('/api/config', d); msg('#sMsg', r.reboot ? 'Saved. Restarting to apply…' : 'Saved.', true); $('#sAdmin').value = ''; await loadConfig(); }
+  catch (e) { msg('#sMsg', e.message, false); }
+};
+
+// ---- diagnostics
+async function loadDiagnostics() {
+  renderFixes();
+  const r = await api('/api/detect');
+  $('#svReport').textContent = r.regs ? JSON.stringify(r, null, 2) : 'No survey yet.';
+  if (!$('#log').textContent) $('#log').textContent = await api('/api/log');
+  scrollLog();
+}
+function scrollLog() { if ($('#logFollow').checked) $('#log').scrollTop = 1e9; }
+function renderFixes() {
+  const fixes = (status.hp && status.hp.layout_fixes) || [];
+  const list = $('#fixList'); list.replaceChildren();
+  if (!fixes.length) list.append(el('p', {}, 'No correction: the replies match the definition.'));
+  for (const f of fixes) list.append(el('p', {}, 'Registry ' + hex(f.reg) + ' is read with the layout of ', el('b', {}, f.model), '.'));
+  $('#fixAuto').checked = !(cfg.hp && cfg.hp.layout_check === false);
+  $('#fixUndo').disabled = !fixes.length;
+}
+$('#fixAuto').onchange = async e => { await post('/api/config', {hp: {layout_check: e.target.checked}}); await loadConfig(); msg('#fixMsg', 'Saved.', true); };
+$('#fixUndo').onclick = async () => {
+  await post('/api/config', {hp: {layout_fixes: [], layout_check: false}});
+  await loadConfig(); await refreshStatus(); renderFixes();
+  msg('#fixMsg', 'Corrections undone, automatic correction off.', true);
+};
+$('#svRun').onclick = async () => { msg('#svMsg', 'Reading every registry…'); await post('/api/detect'); for (let i = 0; i < 30; i++) { await sleep(1500); await refreshStatus(); if (!status.hp.survey_running) break; } await loadDiagnostics(); msg('#svMsg', 'Done.', true); };
+// The clipboard API needs https: the device page is plain http, so fall back to the copy command
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+  const t = el('textarea', {style: 'position:fixed;top:0;left:0;opacity:0'});
+  t.value = text;
+  document.body.append(t);
+  t.select();
+  const ok = document.execCommand('copy');
+  t.remove();
+  return ok ? Promise.resolve() : Promise.reject(new Error('copy failed'));
+}
+$('#svCopy').onclick = () => copyText($('#svReport').textContent).then(() => msg('#svMsg', 'Copied.', true), () => msg('#svMsg', 'Select the text and copy it with Ctrl+C.', false));
+$('#logClear').onclick = () => $('#log').textContent = '';
+
+// ---- system
+$('#fwBtn').onclick = () => {
+  const f = $('#fwFile').files[0];
+  if (!f) return msg('#fwMsg', 'Choose a firmware file.', false);
+  const fd = new FormData(); fd.append('firmware', f);
+  const x = new XMLHttpRequest(), p = $('#fwProg');
+  p.hidden = false; x.upload.onprogress = e => p.value = e.loaded / e.total * 100;
+  x.onload = () => msg('#fwMsg', x.status === 200 ? 'Updated. Restarting…' : 'Update failed.', x.status === 200);
+  x.onerror = () => msg('#fwMsg', 'Update failed.', false);
+  x.open('POST', '/update'); x.send(fd); msg('#fwMsg', 'Uploading…');
+};
+$('#sysTm').onchange = e => post('/api/config', {telemetry: {enabled: e.target.checked}});
+$('#cfgExport').onclick = async () => {
+  const data = await api('/api/config');
+  const a = el('a', {href: URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'})), download: 'espaltherma-config.json'});
+  a.click();
+};
+$('#cfgImport').onchange = async e => {
+  try { const data = JSON.parse(await e.target.files[0].text()); const r = await post('/api/config', data); msg('#cfgMsg', r.reboot ? 'Restored. Restarting…' : 'Restored.', true); await loadConfig(); }
+  catch (err) { msg('#cfgMsg', err.message, false); }
+};
+$('#rebootBtn').onclick = async () => { await post('/api/reboot'); msg('#rstMsg', 'Restarting…', true); };
+$('#resetBtn').onclick = async () => { if (confirm('Erase all settings (WiFi, MQTT, model) and restart?')) { await post('/api/factory-reset'); msg('#rstMsg', 'Settings erased. Restarting…', true); } };
+
+// ---- live data
+async function loadConfig() { try { cfg = await api('/api/config'); $('#sysTm').checked = !!(cfg.telemetry && cfg.telemetry.enabled); } catch (e) {} }
+function connectEvents() {
+  if (!window.EventSource) return;
+  const es = new EventSource('/events');
+  es.addEventListener('values', e => renderValues(JSON.parse(e.data)));
+  es.addEventListener('status', e => { status = JSON.parse(e.data); renderStatus(); });
+  es.addEventListener('log', e => { const l = $('#log'); l.textContent += e.data; if (l.textContent.length > 60000) l.textContent = l.textContent.slice(-40000); scrollLog(); });
+}
+(async () => {
+  await refreshStatus();
+  await loadConfig();
+  api('/api/values').then(renderValues).catch(() => {});
+  route();
+  connectEvents();
+  setInterval(refreshStatus, 15000);
+})();
+</script>
+</body>
+</html>

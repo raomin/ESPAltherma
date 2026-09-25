@@ -23,6 +23,9 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 ## Features
 
   <ul style="list-style-position: inside;">
+    <li>Installs from the browser (ESP32 family), no software needed: see <a href="#quick-install-web-installer">Quick install</a>.</li>
+    <li>Detects your heat pump model and reads a recommended set of values out of the box.</li>
+    <li>Web interface: live values, setup wizard, Home Assistant discovery, firmware updates.</li>
     <li>Connects with the serial port of Altherma on port X10A.</li>
     <li>Needs just an ESP32, no need for extra hardware. ESP8266 is also supported.</li>
     <li>Queries the Altherma for selected values at defined interval.</li>
@@ -47,11 +50,32 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
 ## Software
 
-- Platformio
+- Chrome or Edge on a computer, with the [web installer](#quick-install-web-installer)
+- or Platformio, to build it yourself
 
 *That's all!*
 
+# Quick install (web installer)
+
+For ESP32, ESP32-C3, ESP32-S3, M5StickC (Plus, Plus2) and M5Stack Tough.
+
+1. Open the **[ESPAltherma installer](https://raomin.github.io/ESPAltherma/flasher/)** in Chrome or Edge, choose your board, plug it in by USB and click **Install**.
+2. When asked, enter your WiFi network.
+3. Connect the board to the X10A port of the heat pump ([wiring](#step-2-connecting-to-the-heat-pump)).
+4. Open `http://espaltherma.local` (or the address shown by the installer):
+   - ESPAltherma reads the heat pump and detects its model: confirm it. Until you confirm, only the values every candidate model reads the same way are published.
+   - Click **Find my Home Assistant** to connect to your MQTT broker (usually the Mosquitto add-on). The sensors appear in Home Assistant automatically.
+   - Pick more values in **Values** if you want.
+
+No WiFi entered, or the network changed? The board opens a setup network **ESPAltherma-XXXX** (password `espaltherma`): join it and follow the page that opens.
+
+Everything is configured at runtime: no file to edit, no rebuild. Updates are installed from the web interface (System), with the `-ota.bin` file of a release.
+
+The detection report (identification codes of your heat pump, every registry read once, detected model) is published on `espaltherma/detect` and shown in the web interface (Diagnostics). Send `espaltherma/detect/run` to read it again.
+
 # Getting started
+
+This section builds the firmware yourself with PlatformIO, with your settings and values compiled in (`src/setup.h` / `src/my_setup.h`). This path is still supported, and also required for the ESP8266. With an ESP32 you also get the web interface; its settings start from your `setup.h` values, and a changed `setup.h` wins again on the next flash.
 
 ## Step 1: Uploading the firmware
 

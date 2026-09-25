@@ -5,26 +5,71 @@
 
 #define MQTT_attr "espaltherma/ATTR"
 #define MQTT_lwt "espaltherma/LWT"
+#define MQTT_detect "espaltherma/detect"
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
 
-#define MQTT_attr "espaltherma/ATTR"
-#define MQTT_lwt "espaltherma/LWT"
+#ifndef MAX_MSG_SIZE
+#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt
+#endif
 
-#ifdef JSONTABLE
-char jsonbuff[MAX_MSG_SIZE] = "[{\0";
-#else
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
-#endif
 
-#ifdef MQTT_ENCRYPTED
+WiFiClient plainClient;
+#if defined(ESPALTHERMA_GENERIC) || defined(MQTT_ENCRYPTED)
+// TLS is a runtime option of the generic firmware; builds from my_setup.h opt in with MQTT_ENCRYPTED (~100KB of flash)
 #include <WiFiClientSecure.h>
-WiFiClientSecure espClient;
-#else
-WiFiClient espClient;
+#define HAS_TLS_CLIENT
+WiFiClientSecure secureClient;
 #endif
-PubSubClient client(espClient);
+PubSubClient client;
+
+extern Converter converter;
+
+// Defined in main.cpp
+void requestSurvey();
+void valuesLock();
+void valuesUnlock();
+
+void resetJson()
+{
+  strcpy(jsonbuff, config.jsonTable ? "[{" : "{");
+}
+
+// Selects the (plain or TLS) network client and the broker, from the configuration.
+void setupMqttClient()
+{
+#ifdef HAS_TLS_CLIENT
+  if (config.mqttTls)
+  {
+    // Required to establish encrypted connections.
+    // If you want to be more secure here, you can use the CA certificate to allow the wifi client to verify the other party. NOTE: If you use the CA certificate here, then you need to make sure to update it here regulary!
+    secureClient.setInsecure();
+    secureClient.setTimeout(5);
+    client.setClient(secureClient);
+    Serial.printf("Wifi client timeout: %d\n", secureClient.getTimeout());
+  }
+  else
+#endif
+  {
+    client.setClient(plainClient);
+    Serial.printf("Wifi client timeout: %d\n", plainClient.getTimeout());
+  }
+  resetJson();
+  client.setBufferSize(MAX_MSG_SIZE); //to support large json message
+  client.setServer(config.mqttServer, config.mqttPort);
+}
+
+// Relay states, for the web interface
+bool thermostatOn = false;
+bool safetyActive = false; // the heat pump is stopped by the safety relay
+int sgMode = 0;
+
+int thermActiveState() { return config.thermActiveHigh ? HIGH : LOW; }
+int sgActiveState() { return config.sgActiveHigh ? HIGH : LOW; }
+int sgInactiveState() { return config.sgActiveHigh ? LOW : HIGH; }
+int safetyActiveState() { return config.safetyActiveHigh ? HIGH : LOW; }
 
 /*
  * Publishes a retained device discovery profile to MQTT, so Home Assistant can auto-configure our device and its sensors.
@@ -48,15 +93,12 @@ void sendValues()
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
   jsonbuff[strlen(jsonbuff) - 1] = '}';
-#ifdef JSONTABLE
-  strcat(jsonbuff,"]");
-#endif
+  if (config.jsonTable)
+  {
+    strcat(jsonbuff,"]");
+  }
   client.publish(MQTT_attr, jsonbuff);
-#ifdef JSONTABLE
-  strcpy(jsonbuff, "[{\0");
-#else
-  strcpy(jsonbuff, "{\0");
-#endif
+  resetJson();
 }
 
 void saveEEPROM(uint8_t state){
@@ -66,15 +108,20 @@ void saveEEPROM(uint8_t state){
 
 void readEEPROM(){
   if ('R' == EEPROM.read(EEPROM_CHK)){
-    digitalWrite(PIN_THERM,EEPROM.read(EEPROM_STATE));
-    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == PIN_THERM_ACTIVE_STATE)? "On":"Off" );
+    if (config.thermPin >= 0){
+      digitalWrite(config.thermPin,EEPROM.read(EEPROM_STATE));
+    }
+    thermostatOn = EEPROM.read(EEPROM_STATE) == thermActiveState();
+    mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == thermActiveState())? "On":"Off" );
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
     EEPROM.write(EEPROM_CHK,'R');
-    EEPROM.write(EEPROM_STATE,!PIN_THERM_ACTIVE_STATE);
+    EEPROM.write(EEPROM_STATE,!thermActiveState());
     EEPROM.commit();
-    digitalWrite(PIN_THERM,!PIN_THERM_ACTIVE_STATE);
+    if (config.thermPin >= 0){
+      digitalWrite(config.thermPin,!thermActiveState());
+    }
   }
 }
 
@@ -83,6 +130,63 @@ void readEEPROM(){
 void handleScreen();
 void checkWifi();
 
+// One connection attempt; on success publishes the discovery messages and subscribes.
+bool mqttConnectOnce()
+{
+    mqttSerial.print("Attempting MQTT connection...");
+
+    if (client.connect(config.mqttClientId, config.mqttUser, config.mqttPwd, MQTT_lwt, 0, true, "Offline"))
+    {
+      mqttSerial.println("connected!");
+      client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
+      client.publish(MQTT_lwt, "Online", true);
+      if (config.thermPin >= 0)
+      {
+        client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+      }
+      else
+      {
+        // No thermostat relay: remove the switch from HA
+        client.publish("homeassistant/switch/espAltherma/config", "", true);
+      }
+
+      publishHomeAssistantDeviceDiscovery();
+
+      // Subscribe
+      client.subscribe("espaltherma/POWER");
+      client.subscribe("espaltherma/detect/run");
+      if (config.sg1Pin >= 0)
+      {
+      // Smart Grid
+      client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
+      client.subscribe("espaltherma/sg/set");
+      client.publish("espaltherma/sg/state", "0");
+      }
+      else
+      {
+      // Publish empty retained message so discovered entities are removed from HA
+      client.publish("homeassistant/select/espAltherma/sg/config", "", true);
+      }
+
+      if (config.safetyPin >= 0)
+      {
+      // Safety relay
+      client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SAFETY\",\"stat_t\":\"~/SAFETY_STATE\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
+      client.subscribe("espaltherma/SAFETY");
+      }
+
+      if (config.debugSerial)
+      {
+      // DebugSerial - MQTT<>Serial gateway
+      client.subscribe("espaltherma/serialTX");
+      }
+      return true;
+    }
+    mqttSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
+    return false;
+}
+
+// Blocks until connected (ESP8266; the ESP32 retries from the main loop, see netmgr.h)
 void reconnectMqtt()
 {
   // Loop until we're reconnected
@@ -93,50 +197,14 @@ void reconnectMqtt()
     { // No point retrying MQTT without WiFi; recover it first
       checkWifi();
     }
-    mqttSerial.print("Attempting MQTT connection...");
-
-    if (client.connect("ESPAltherma-dev", MQTT_USERNAME, MQTT_PASSWORD, MQTT_lwt, 0, true, "Offline"))
+    if (!mqttConnectOnce())
     {
-      mqttSerial.println("connected!");
-      client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
-      client.publish(MQTT_lwt, "Online", true);
-      client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
-
-      publishHomeAssistantDeviceDiscovery();
-
-      // Subscribe
-      client.subscribe("espaltherma/POWER");
-#ifdef PIN_SG1
-      // Smart Grid
-      client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
-      client.subscribe("espaltherma/sg/set");
-      client.publish("espaltherma/sg/state", "0");
-#endif
-
-#ifdef SAFETY_RELAY_PIN
-      // Safety relay
-      client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SAFETY\",\"stat_t\":\"~/SAFETY_STATE\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
-      client.subscribe("espaltherma/SAFETY");
-#endif
-
-#ifdef DEBUG_SERIAL
-      // DebugSerial - MQTT<>Serial gateway
-      client.subscribe("espaltherma/serialTX");
-#endif
-
-#ifndef PIN_SG1
-      // Publish empty retained message so discovered entities are removed from HA
-      client.publish("homeassistant/select/espAltherma/sg/config", "", true);
-#endif
-    }
-    else
-    {
-      mqttSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
       unsigned long start = millis();
       while (millis() < start + 5000)
       {
         ArduinoOTA.handle();
         handleScreen();//Keep the button responsive while retrying
+        mqttSerial.drain();
         delay(10);
       }
 
@@ -154,17 +222,23 @@ void callbackTherm(byte *payload, unsigned int length)
 
   // Is it ON or OFF?
   // Ok I'm not super proud of this, but it works :p
-  if (payload[1] == 'F')
+  if (config.thermPin < 0 && payload[0] != 'R')
+  {
+    mqttSerial.println("No thermostat relay configured, ignoring");
+  }
+  else if (payload[1] == 'F')
   { //turn off
-    digitalWrite(PIN_THERM, !PIN_THERM_ACTIVE_STATE);
-    saveEEPROM(!PIN_THERM_ACTIVE_STATE);
+    digitalWrite(config.thermPin, !thermActiveState());
+    saveEEPROM(!thermActiveState());
+    thermostatOn = false;
     client.publish("espaltherma/STATE", "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
   { //turn on
-    digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
-    saveEEPROM(PIN_THERM_ACTIVE_STATE);
+    digitalWrite(config.thermPin, thermActiveState());
+    saveEEPROM(thermActiveState());
+    thermostatOn = true;
     client.publish("espaltherma/STATE", "ON", true);
     mqttSerial.println("Turned ON");
   }
@@ -180,7 +254,6 @@ void callbackTherm(byte *payload, unsigned int length)
   }
 }
 
-#ifdef PIN_SG1
 //Smartgrid callbacks
 void callbackSg(byte *payload, unsigned int length)
 {
@@ -189,32 +262,36 @@ void callbackSg(byte *payload, unsigned int length)
   if (payload[0] == '0')
   {
     // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(config.sg1Pin, sgInactiveState());
+    digitalWrite(config.sg2Pin, sgInactiveState());
+    sgMode = 0;
     client.publish("espaltherma/sg/state", "0");
     mqttSerial.println("Set SG mode to 0 - Normal operation");
   }
   else if (payload[0] == '1')
   {
     // Set SG 1 mode => SG1 = INACTIVE, SG2 = ACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
+    digitalWrite(config.sg1Pin, sgInactiveState());
+    digitalWrite(config.sg2Pin, sgActiveState());
+    sgMode = 1;
     client.publish("espaltherma/sg/state", "1");
     mqttSerial.println("Set SG mode to 1 - Forced OFF");
   }
   else if (payload[0] == '2')
   {
     // Set SG 2 mode => SG1 = ACTIVE, SG2 = INACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
+    digitalWrite(config.sg1Pin, sgActiveState());
+    digitalWrite(config.sg2Pin, sgInactiveState());
+    sgMode = 2;
     client.publish("espaltherma/sg/state", "2");
     mqttSerial.println("Set SG mode to 2 - Recommended ON");
   }
   else if (payload[0] == '3')
   {
     // Set SG 3 mode => SG1 = ACTIVE, SG2 = ACTIVE
-    digitalWrite(PIN_SG1, SG_RELAY_ACTIVE_STATE);
-    digitalWrite(PIN_SG2, SG_RELAY_ACTIVE_STATE);
+    digitalWrite(config.sg1Pin, sgActiveState());
+    digitalWrite(config.sg2Pin, sgActiveState());
+    sgMode = 3;
     client.publish("espaltherma/sg/state", "3");
     mqttSerial.println("Set SG mode to 3 - Forced ON");
   }
@@ -223,9 +300,7 @@ void callbackSg(byte *payload, unsigned int length)
     mqttSerial.printf("Unknown message: %s\n", payload);
   }
 }
-#endif
 
-#ifdef SAFETY_RELAY_PIN
 void callbackSafety(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
@@ -233,13 +308,15 @@ void callbackSafety(byte *payload, unsigned int length)
   if (payload[0] == '0')
   {
     // Set Safety relay to OFF
-    digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
+    digitalWrite(config.safetyPin, !safetyActiveState());
+    safetyActive = false;
     client.publish("espaltherma/SAFETY_STATE", "0", true);
   }
   else if (payload[0] == '1')
   {
     // Set Safety relay to ON
-    digitalWrite(SAFETY_RELAY_PIN, SAFETY_RELAY_ACTIVE_STATE);
+    digitalWrite(config.safetyPin, safetyActiveState());
+    safetyActive = true;
     client.publish("espaltherma/SAFETY_STATE", "1", true);
   }
   else
@@ -247,13 +324,12 @@ void callbackSafety(byte *payload, unsigned int length)
     mqttSerial.printf("Unknown message: %s\n", payload);
   }
 }
-#endif
 
-#ifdef DEBUG_SERIAL
 void callbackDebugSerial(byte *payload, unsigned int length)
 {
   payload[length] = '\0';
   
+  serialLock(); // The heat pump task must not query while we use the link
   // Send message to serial port
   MySerial.write(payload, length);
   MySerial.flush();
@@ -279,6 +355,7 @@ void callbackDebugSerial(byte *payload, unsigned int length)
     ArduinoOTA.handle();
     yield();
   }
+  serialUnlock();
   
   // Publish response if we got any data, encoded as hex string
   if (responseLength > 0)
@@ -295,7 +372,6 @@ void callbackDebugSerial(byte *payload, unsigned int length)
     client.publish("espaltherma/serialRX", hexResponse.c_str());
   }
 }
-#endif
 
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -306,24 +382,23 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     callbackTherm(payload, length);
   }
-#ifdef PIN_SG1
-  else if (strcmp(topic, "espaltherma/sg/set") == 0)
+  else if (strcmp(topic, "espaltherma/detect/run") == 0)
+  {
+    mqttSerial.println("Heat pump survey requested");
+    requestSurvey();
+  }
+  else if (config.sg1Pin >= 0 && strcmp(topic, "espaltherma/sg/set") == 0)
   {
     callbackSg(payload, length);
   }
-#endif
-#ifdef SAFETY_RELAY_PIN
-  else if (strcmp(topic, "espaltherma/SAFETY") == 0)
+  else if (config.safetyPin >= 0 && strcmp(topic, "espaltherma/SAFETY") == 0)
   {
     callbackSafety(payload, length);
   }
-#endif
-#ifdef DEBUG_SERIAL
-  else if (strcmp(topic, "espaltherma/serialTX") == 0)
+  else if (config.debugSerial && strcmp(topic, "espaltherma/serialTX") == 0)
   {
     callbackDebugSerial(payload, length);
   }
-#endif
 
   else
   {
@@ -340,11 +415,13 @@ static void mqttDiscoverySink(void *ctx, const char *data, size_t len)
 
 void publishHomeAssistantDeviceDiscovery()
 {
-  const size_t count = sizeof(labelDefs) / sizeof(LabelDef);
+  valuesLock(); // the heat pump task may be changing the values
+  const LabelDef *labels = converter.activeLabels;
+  const size_t count = converter.activeCount;
   const char *topic = "homeassistant/device/espaltherma-mqtt-discovery/config";
 
   // First pass: compute the exact payload length, required up-front for the MQTT fixed header.
-  size_t payloadLen = streamDeviceDiscoveryPayload(labelDefs, count, nullptr, nullptr);
+  size_t payloadLen = streamDeviceDiscoveryPayload(labels, count, nullptr, nullptr);
 
   mqttSerial.printf("Sending HA discovery: %u sensors, %u bytes\n",
                     (unsigned)(count + 3), (unsigned)payloadLen);
@@ -354,11 +431,13 @@ void publishHomeAssistantDeviceDiscovery()
   // contiguous setBufferSize() allocation that previously ran out of heap on bigger definitions.
   if (!client.beginPublish(topic, payloadLen, true))
   {
+    valuesUnlock();
     mqttSerial.println("Error starting device discovery publish!");
     return;
   }
 
-  streamDeviceDiscoveryPayload(labelDefs, count, mqttDiscoverySink, &client);
+  streamDeviceDiscoveryPayload(labels, count, mqttDiscoverySink, &client);
 
   client.endPublish();
+  valuesUnlock();
 }

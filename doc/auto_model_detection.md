@@ -1,5 +1,10 @@
 # Automatic Model/Family Detection for ESPAltherma
 
+> **Superseded.** This first proposal (a hand-written decision tree) was replaced by the implementation described in
+> [PLAN_web_flasher.md](PLAN_web_flasher.md): `include/survey.h` reads every registry and the identification codes,
+> `include/detect.h` scores every model of the merged catalog (`scripts/gen_catalog.py`) against it, and
+> `data/fingerprints.json` gives exact matches. Kept for the analysis below.
+
 ## Context
 
 ESPAltherma currently requires the user to manually select their heat pump model by uncommenting `#include "def/..."` in `setup.h` / `my_setup.h`. There are 36 definition files, and choosing the wrong one causes incorrect readings. The DISCREPANCIES.md report shows 72 labels with conflicting mappings across models — same label name, different registry/offset/convid.

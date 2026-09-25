@@ -1,0 +1,16 @@
+[
+  {"id": "esp32", "name": "ESP32 DevKit", "chip": "ESP32", "env": "web-esp32", "rx": 16, "tx": 17,
+   "note": "Most ESP32 development boards (DevKit, WROOM-32, DOIT…)"},
+  {"id": "esp32c3", "name": "ESP32-C3", "chip": "ESP32-C3", "env": "web-esp32c3", "rx": 4, "tx": 5,
+   "note": "ESP32-C3 DevKit, SuperMini and similar"},
+  {"id": "esp32s3", "name": "ESP32-S3", "chip": "ESP32-S3", "env": "web-esp32s3", "rx": 16, "tx": 17,
+   "note": "ESP32-S3 DevKit and modules"},
+  {"id": "m5stickc", "name": "M5StickC", "chip": "ESP32", "env": "web-m5stickc", "rx": 36, "tx": 26,
+   "note": "With screen, fits next to the board"},
+  {"id": "m5stickcplus", "name": "M5StickC Plus", "chip": "ESP32", "env": "web-m5stickcplus", "rx": 36, "tx": 26,
+   "note": "With screen, fits next to the board"},
+  {"id": "m5stickcplus2", "name": "M5StickC Plus2", "chip": "ESP32", "env": "web-m5stickcplus2", "rx": 36, "tx": 26,
+   "note": "With screen, fits next to the board"},
+  {"id": "m5stack-tough", "name": "M5Stack Tough", "chip": "ESP32", "env": "web-m5stack-tough", "rx": 36, "tx": 26,
+   "note": "Rugged, touch screen (Port B)"}
+]

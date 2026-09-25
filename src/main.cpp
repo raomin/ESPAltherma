@@ -15,22 +15,73 @@
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
 
-#if __has_include("my_setup.h")
+#if defined(ESPALTHERMA_GENERIC)
+// Generic firmware (web flasher): no compile time settings, everything is configured at runtime.
+#elif __has_include("my_setup.h")
 #include "my_setup.h"
 #else
 #include "setup.h"
 #endif
 
+#ifdef LABELDEF
+// A definition file was included by the setup: its uncommented values are the ones queried.
+#define HAS_STATIC_LABELS
+#endif
+#include "labeldef.h"
+
+#include "board.h"
+#include "version.h"
+#include "config.h"
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"
+#include "survey.h"
+#ifdef HAS_CATALOG
+#include "catalog.h"
+#include "detect.h"
+#include "layoutfix.h"
+#endif
 #include "homeassistant.h"
 #include "mqtt.h"
 #include "restart.h"
+#include "power.h"
+#ifdef HAS_WEBUI
+#include "netmgr.h"
+#include "improv.h"
+#include "webserver.h"
+#endif
 
-Converter converter;
+::Converter converter; // qualified: ArduinoJson (via ESPAsyncWebServer) also has a Converter
 char registryIDs[32]; //Holds the registries to query
+bool registryOk[32]; //Registries successfully read during the last query cycle
 bool busy = false;
+
+Survey survey;
+char surveyJson[3072];
+unsigned long lastSurvey = 0;
+volatile bool discoveryDirty = false; //the values changed: HA discovery must be sent again
+volatile bool labelsDirty = false;    //the model or the selection changed: the heat pump task reloads the values
+volatile bool forceDetection = false; //detect again even if a model is set (requested from the web interface)
+unsigned long lastPollMs = 0;         //end of the last query cycle
+#ifdef HAS_CATALOG
+DetectResult detection;
+std::vector<LabelDef> catalogLabels; //values of the model, generic firmware
+LayoutChecker layoutChecker;         //checks the model's layout against the replies (layoutfix.h)
+LayoutCycle layoutCycle;             //replies of the last query cycle
+#endif
+volatile bool surveyRequested = false;
+volatile bool surveyReady = false;
+
+#ifdef HAS_HP_TASK
+// The heat pump task converts values while the main loop publishes them.
+SemaphoreHandle_t valuesMutex = xSemaphoreCreateMutex();
+void valuesLock() { xSemaphoreTake(valuesMutex, portMAX_DELAY); }
+void valuesUnlock() { xSemaphoreGive(valuesMutex); }
+volatile bool cycleReady = false;
+#else
+void valuesLock() {}
+void valuesUnlock() {}
+#endif
 
 #if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
 #define HAS_M5_SCREEN
@@ -65,20 +116,19 @@ void updateValues(char regID)
       }
     }
 
-    #ifdef ONEVAL_ONETOPIC
-    char topicBuff[128] = MQTT_OneTopic;
-    strcat(topicBuff,labels[i]->label);
-    client.publish(topicBuff, labels[i]->asString);
-
-    #else
-    if (alpha){      
+    if (config.oneValOneTopic)
+    {
+      char topicBuff[128];
+      snprintf(topicBuff, sizeof(topicBuff), "%s%s", config.oneTopicPrefix, labels[i]->label);
+      client.publish(topicBuff, labels[i]->asString);
+    }
+    else if (alpha){
 
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
     }
     else{//number, no quotes
       snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
     }
-    #endif
   }
 }
 
@@ -106,7 +156,7 @@ void handleScreen()
 {
   M5.update();
 #ifdef ARDUINO_M5Stack_Tough
-  bool wakeRequested = M5.Touch.changed;
+  bool wakeRequested = M5.Touch.getCount() > 0 && M5.Touch.getDetail().wasPressed();
 #else
   bool wakeRequested = M5.BtnA.wasPressed();
 #endif
@@ -132,6 +182,8 @@ void extraLoop()
     ArduinoOTA.handle();
   }
   handleScreen();
+  samplePower();
+  mqttSerial.drain();
 }
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -189,6 +241,17 @@ void checkWifi()
   if (WiFi.status() == WL_CONNECTED)
     return;
 
+  if (config.wifiSsid[0] == 0)
+  {
+    mqttSerial.println("No WiFi network configured.");
+    while (true)
+    { //Nothing to connect to: wait for provisioning
+      handleScreen();
+      mqttSerial.drain();
+      delay(50);
+    }
+  }
+
   unsigned long lostTime = millis();
   unsigned long lastAttempt = millis();
   unsigned long lastDot = 0;
@@ -207,7 +270,7 @@ void checkWifi()
       Serial.println("\nStill disconnected. Rescanning for strongest AP...");
       WiFi.disconnect();
       delay(100);
-      WiFi.begin(WIFI_SSID, WIFI_PWD, 0, 0, true);
+      WiFi.begin(config.wifiSsid, config.wifiPwd, 0, 0, true);
       lastAttempt = millis();
     }
     if (millis() - lostTime >= 120000)
@@ -242,7 +305,7 @@ void checkWifiRoaming()
   int32_t bestRSSI = currentRSSI + ROAM_MIN_IMPROVEMENT;
   for (int16_t i = 0; i < n; i++)
   {
-    if (WiFi.SSID(i) == WIFI_SSID && WiFi.RSSI(i) > bestRSSI
+    if (WiFi.SSID(i) == config.wifiSsid && WiFi.RSSI(i) > bestRSSI
         && memcmp(WiFi.BSSID(i), WiFi.BSSID(), 6) != 0)
     {
       bestRSSI = WiFi.RSSI(i);
@@ -257,8 +320,10 @@ void checkWifiRoaming()
     mqttSerial.printf("WiFi weak (%ddBm), roaming to stronger AP (%ddBm, ch%d)\n", currentRSSI, bestRSSI, channel);
     WiFi.scanDelete();
     WiFi.disconnect();
-    WiFi.begin(WIFI_SSID, WIFI_PWD, channel, bssid, true);
+    WiFi.begin(config.wifiSsid, config.wifiPwd, channel, bssid, true);
+#ifndef HAS_WEBUI
     checkWifi();
+#endif
   }
   else
   {
@@ -273,50 +338,78 @@ void setup_wifi()
 {
   delay(10);
   // We start by connecting to a WiFi network
-  mqttSerial.printf("Connecting to %s\n", WIFI_SSID);
+  mqttSerial.printf("Connecting to %s\n", config.wifiSsid);
 
-  #if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
-    IPAddress local_IP(WIFI_IP);
-    IPAddress gateway(WIFI_GATEWAY);
-    IPAddress subnet(WIFI_SUBNET);
-
-    #ifdef WIFI_PRIMARY_DNS
-      IPAddress primaryDNS(WIFI_PRIMARY_DNS);
-    #else
-      IPAddress primaryDNS();
-    #endif
-
-    #ifdef WIFI_SECONDARY_DNS
-      IPAddress secondaryDNS(WIFI_SECONDARY_DNS);
-    #else
-      IPAddress secondaryDNS();
-    #endif
-
-    if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+  if (config.staticIp)
+  {
+    if (!WiFi.config(IPAddress(config.ip), IPAddress(config.gateway), IPAddress(config.subnet), IPAddress(config.dns1), IPAddress(config.dns2))) {
       mqttSerial.println("Failed to set static ip!");
     }
-  #endif
+  }
 
   uint8_t *bssid = nullptr;
   uint32_t wifi_channel = 0;
 #ifdef ARDUINO_ARCH_ESP8266
-  get_wifi_bssid(WIFI_SSID, bssid, &wifi_channel);
+  WiFi.hostname(config.hostname);
+  get_wifi_bssid(config.wifiSsid, bssid, &wifi_channel);
 #else //assume ESP32
+  WiFi.setHostname(config.hostname);
   WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
 #endif
     
   if (bssid != nullptr)
   {
-    WiFi.begin(WIFI_SSID, WIFI_PWD, wifi_channel, bssid);
+    WiFi.begin(config.wifiSsid, config.wifiPwd, wifi_channel, bssid);
   }
   else
   {
-    WiFi.begin(WIFI_SSID, WIFI_PWD, 0, 0, true);
+    WiFi.begin(config.wifiSsid, config.wifiPwd, 0, 0, true);
   }
   WiFi.setAutoReconnect(true);
   checkWifi();
   mqttSerial.printf("Connected. IP Address: %s\n", WiFi.localIP().toString().c_str());
+}
+
+void initLabels(){
+#ifdef HAS_STATIC_LABELS
+  converter.setLabels(labelDefs, sizeof(labelDefs) / sizeof(LabelDef));
+#elif defined(HAS_CATALOG)
+  //Generic firmware: the values of the configured model, from the catalog
+  int model = catalogFindModel(config.model);
+  if (model < 0)
+  {
+    catalogLabels.clear();
+    converter.setLabels(nullptr, 0);
+    return;
+  }
+  config.protocol = CATALOG_MODELS[model].protocol;
+  //Registries corrected with the layout of another definition
+  CatalogFix fixes[CONFIG_MAX_FIXES];
+  size_t fixCount = 0;
+  for (uint8_t f = 0; f < config.fixCount; f++)
+  {
+    int fixModel = catalogFindModel(config.fixModel[f]);
+    if (fixModel >= 0)
+    {
+      fixes[fixCount++] = {config.fixReg[f], fixModel};
+      mqttSerial.printf("Registry 0x%02x read with the layout of %s\n", config.fixReg[f], config.fixModel[f]);
+    }
+  }
+  //New model, or corrections undone: the evidence starts again
+  static uint8_t lastFixCount = 0;
+  static bool lastLayoutCheck = true;
+  if (layoutChecker.model != model || layoutChecker.count == 0 || config.fixCount < lastFixCount || (config.layoutCheck && !lastLayoutCheck))
+  {
+    layoutCheckInit(layoutChecker, model);
+  }
+  lastFixCount = config.fixCount;
+  lastLayoutCheck = config.layoutCheck;
+  int refrigerant = catalogBuildLabels(model, config.labels, config.labelCount, catalogLabels, fixes, fixCount);
+  converter.RType = refrigerant ? refrigerant : 802;
+  converter.setLabels(catalogLabels.data(), catalogLabels.size());
+  mqttSerial.printf("Model: %s (%s), %d values\n", config.model, config.modelConfirmed ? "confirmed" : "to be confirmed", (int)catalogLabels.size());
+#endif
 }
 
 void initRegistries(){
@@ -327,8 +420,9 @@ void initRegistries(){
   }
 
   int i = 0;
-  for (auto &&label : labelDefs)
+  for (size_t l = 0; l < converter.activeCount; l++)
   {
+    LabelDef &label = converter.activeLabels[l];
     if (!contains(registryIDs, sizeof(registryIDs), label.registryID))
     {
       mqttSerial.printf("Adding registry 0x%2x to be queried.\n", label.registryID);
@@ -337,11 +431,15 @@ void initRegistries(){
   }
   if (i == 0)
   {
+#ifdef HAS_STATIC_LABELS
     mqttSerial.printf("ERROR - No values selected in the include file. Stopping.\n");
     while (true)
     {
       extraLoop();
     }
+#else
+    mqttSerial.printf("No values selected yet.\n");
+#endif
   }
 }
 
@@ -383,27 +481,331 @@ void setupScreen(){
 
 }
 
+// Query function used by the survey: same as the polling, on a zeroed buffer.
+bool surveyQuery(uint8_t regID, unsigned char *buffer, char protocol)
+{
+  memset(buffer, 0, SURVEY_BUFFER_SIZE);
+  return queryRegistry(regID, buffer, protocol);
+}
+
+void requestSurvey()
+{
+  surveyRequested = true;
+}
+
+void valuesLock();
+void valuesUnlock();
+
+// Rebuilds the values to query after a model or selection change. Heat pump task (or setup) only.
+void reloadLabels()
+{
+  valuesLock();
+  initLabels();
+  initRegistries();
+  memset(registryOk, 0, sizeof(registryOk));
+  valuesUnlock();
+  discoveryDirty = true;
+}
+
+#ifdef HAS_CATALOG
+#ifdef HAS_STATIC_LABELS
+// Models whose definition has every value compiled in. The user knows their definition works:
+// reported next to the fingerprint, this is the ground truth that grows the fingerprint table.
+void appendConfiguredModels(char *out, size_t size, size_t pos)
+{
+  const size_t count = sizeof(labelDefs) / sizeof(LabelDef);
+  pos--; //reopen the detection object
+  surveyAppend(out, size, pos, ",\"configured\":[");
+  int matches = 0;
+  for (int m = 0; m < CATALOG_MODEL_COUNT; m++)
+  {
+    bool all = count > 0;
+    for (size_t l = 0; l < count && all; l++)
+    {
+      const LabelDef &d = labelDefs[l];
+      bool found = false;
+      for (int i = 0; i < CATALOG_ENTRY_COUNT && !found; i++)
+      {
+        const CatalogEntry &e = CATALOG_ENTRIES[i];
+        found = catalogInModel(e, m) && e.reg == d.registryID && e.offset == d.offset && e.conv == d.convid && e.size == d.dataSize;
+      }
+      all = found;
+    }
+    if (all && matches++ < 6)
+      surveyAppend(out, size, pos, "%s\"%s\"", matches > 1 ? "," : "", CATALOG_MODELS[m].name);
+  }
+  surveyAppend(out, size, pos, "],\"configured_count\":%d}", matches);
+}
+#else
+// Generic firmware: uses the detected model, unless a model is already set for this heat pump.
+void applyDetection()
+{
+  if (detection.model < 0)
+  {
+    mqttSerial.println("No heat pump answered, check the connection to X10A.");
+    return;
+  }
+  char key[sizeof(config.detectedKey)];
+  surveyKey(survey, key, sizeof(key));
+  bool sameHeatPump = strcmp(key, config.detectedKey) == 0;
+  bool forced = forceDetection;
+  forceDetection = false;
+  if (config.model[0] && sameHeatPump && !forced)
+    return;
+  if (config.model[0])
+    mqttSerial.println("A different heat pump answered: detecting its model again.");
+
+  uint32_t keys[CONFIG_MAX_LABELS];
+  int safe = detectSafeKeys(detection, keys, CONFIG_MAX_LABELS);
+  if (safe == 0)
+  {
+    mqttSerial.println("Model uncertain and no value is safe to read: choose the model in the web interface.");
+    return;
+  }
+  strlcpy(config.model, CATALOG_MODELS[detection.model].name, sizeof(config.model));
+  strlcpy(config.detectedKey, key, sizeof(config.detectedKey));
+  config.fixCount = 0; //corrections belong to the previous model
+  config.modelConfirmed = detection.confidence == DETECT_HIGH;
+  config.labelCount = safe < 0 ? 0 : safe; //0: all the recommended values
+  memcpy(config.labels, keys, sizeof(uint32_t) * config.labelCount);
+  configSave();
+  mqttSerial.printf("Detected %s (%s confidence)\n", config.model, detectConfidenceName(detection.confidence));
+  reloadLabels();
+}
+
+// Scores the model's layout on the last replies, and corrects a registry that clearly does not match the unit.
+// Heat pump task only (reloads the values).
+void layoutCheck()
+{
+  if (!config.layoutCheck || layoutCycle.count == 0 || layoutChecker.count == 0)
+    return;
+  layoutCheckCycle(layoutChecker, layoutCycle);
+  bool changed = false;
+  for (uint8_t i = 0; i < layoutChecker.count; i++)
+  {
+    LayoutCheck &rc = layoutChecker.regs[i];
+    bool fixed = false;
+    for (uint8_t f = 0; f < config.fixCount && !fixed; f++)
+      fixed = config.fixReg[f] == rc.reg;
+    int k = fixed ? -1 : layoutCheckDecide(rc);
+    if (k < 0 || config.fixCount >= CONFIG_MAX_FIXES)
+      continue;
+    const LayoutCandidate &a = rc.c[0], &c = rc.c[k];
+    mqttSerial.printf("Registry 0x%02x does not match %s on this unit (%u/%u plausible values): read with the layout of %s (%u/%u)\n",
+                      rc.reg, config.model, a.plausible, a.checks, CATALOG_MODELS[c.model].name, c.plausible, c.checks);
+    config.fixReg[config.fixCount] = rc.reg;
+    strlcpy(config.fixModel[config.fixCount], CATALOG_MODELS[c.model].name, sizeof(config.fixModel[0]));
+    config.fixCount++;
+    changed = true;
+  }
+  if (changed)
+  {
+    configSave();
+    reloadLabels();
+  }
+}
+
+// The survey replies count as a first poll cycle for the layout check.
+void layoutFeedSurvey()
+{
+  layoutCycle.clear();
+  for (uint8_t i = 0; i < survey.count; i++)
+  {
+    const SurveyReg &r = survey.regs[i];
+    if (r.answered)
+      layoutCycle.add(r.id, r.payload, r.len);
+  }
+  layoutCheck();
+}
+#endif
+#endif
+
+// Reads every known registry once and builds the detection report. Runs where the registries are polled.
+void runSurvey()
+{
+  surveyRequested = false;
+  lastSurvey = millis();
+  mqttSerial.println("Starting heat pump survey...");
+  surveyRun(survey, surveyQuery);
+  const char *detectJson = nullptr;
+#ifdef HAS_CATALOG
+  static char detectBuf[1024];
+  detectModel(survey, detection);
+  size_t len = detectToJson(detection, detectBuf, sizeof(detectBuf));
+#ifdef HAS_STATIC_LABELS
+  appendConfiguredModels(detectBuf, sizeof(detectBuf), len);
+#endif
+  detectJson = detectBuf;
+#endif
+  //Rendered aside then swapped in: the web interface may be reading the previous report
+  static char report[sizeof(surveyJson)];
+  surveyToJson(survey, report, sizeof(report), ESPALTHERMA_VERSION, BOARD_NAME, detectJson);
+  valuesLock();
+  memcpy(surveyJson, report, sizeof(surveyJson));
+  valuesUnlock();
+  mqttSerial.printf("Survey done: protocol %c, %d registries.\n", survey.protocol ? survey.protocol : '-', survey.count);
+#if defined(HAS_CATALOG) && !defined(HAS_STATIC_LABELS)
+  applyDetection();
+  if (config.model[0] && survey.protocol == 'I')
+    layoutFeedSurvey();
+#endif
+  surveyReady = true;
+}
+
+void publishSurvey()
+{
+  surveyReady = false;
+  Serial.println(surveyJson);
+  client.publish(MQTT_detect, surveyJson, true);
+}
+
+void hpDelay(unsigned long ms);
+
+// Queries all registries and converts their values.
+// Runs in the heat pump task (ESP32) or in the main loop (ESP8266).
+void layoutCheck();
+
+void pollRegistries()
+{
+#if defined(HAS_CATALOG) && !defined(HAS_STATIC_LABELS)
+  layoutCycle.clear();
+#endif
+  for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
+  {
+    unsigned char buff[REPLY_BUFFER_SIZE] = {0};
+    int tries = 0;
+    while (!queryRegistry(registryIDs[i], buff, config.protocol) && tries++ < 3)
+    {
+      mqttSerial.println("Retrying...");
+      hpDelay(1000);
+    }
+    unsigned char receivedRegistryID = config.protocol == 'S' ? buff[0] : buff[1];
+    registryOk[i] = (uint8_t)registryIDs[i] == receivedRegistryID; //if replied registerID is coherent with the command
+    if (registryOk[i])
+    {
+      valuesLock();
+      converter.readRegistryValues(buff, config.protocol); //process all values from the register
+#ifdef HAS_WEBUI
+      if (config.protocol == 'I')
+        replyCache.update(buff[1], buff + 3, buff[2] >= 2 ? buff[2] - 2 : 0);
+      else
+        replyCache.update(buff[0], buff + 1, get_reply_len(buff[0], 'S') - 2);
+#endif
+      valuesUnlock();
+#if defined(HAS_CATALOG) && !defined(HAS_STATIC_LABELS)
+      if (config.protocol == 'I' && buff[2] >= 2)
+        layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
+#endif
+    }
+  }
+#if defined(HAS_CATALOG) && !defined(HAS_STATIC_LABELS)
+  layoutCheck();
+#endif
+}
+
+// Sends the values of the last query cycle in mqtt. Main loop only.
+void publishValues()
+{
+  valuesLock();
+  for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
+  {
+    if (registryOk[i])
+    {
+      updateValues(registryIDs[i]);
+    }
+  }
+  valuesUnlock();
+  sendValues();//Send the full json message
+#ifdef HAS_WEBUI
+  webSendValues();
+#endif
+}
+
+#ifdef HAS_HP_TASK
+void hpDelay(unsigned long ms)
+{
+  delay(ms);
+}
+
+// Owns the X10A link: runs the survey on request and queries the registries every config.frequency ms.
+void hpTask(void *)
+{
+  for (;;)
+  {
+    unsigned long start = millis();
+#if defined(HAS_CATALOG) && !defined(HAS_STATIC_LABELS)
+    if (!config.model[0] && millis() - lastSurvey > 60000)
+    { //No model yet: the heat pump may not have been connected, try again
+      surveyRequested = true;
+    }
+#endif
+    if (labelsDirty)
+    {
+      labelsDirty = false;
+      reloadLabels();
+    }
+    if (surveyRequested)
+    {
+      runSurvey();
+    }
+    if (!busy && (uint8_t)registryIDs[0] != 0xFF)
+    {
+      pollRegistries();
+      lastPollMs = millis();
+      cycleReady = true;
+      mqttSerial.printf("Done. Waiting %ld ms...", (long)(config.frequency - (millis() - start)));
+    }
+    while (millis() - start < config.frequency && !surveyRequested && !labelsDirty)
+    {
+      delay(100);
+    }
+  }
+}
+#else
+void waitLoop(uint ms);
+void hpDelay(unsigned long ms)
+{
+  waitLoop(ms);
+}
+#endif
+
+void setupPins()
+{
+  if (config.thermPin >= 0)
+  {
+    pinMode(config.thermPin, OUTPUT);
+  }
+
+  if (config.safetyPin >= 0)
+  {
+    //Inactive level first, then output: an output starts low, which would be active for a low-triggered relay
+    digitalWrite(config.safetyPin, !safetyActiveState());
+    pinMode(config.safetyPin, OUTPUT);
+  }
+
+  if (config.sg1Pin >= 0 && config.sg2Pin >= 0)
+  {
+    //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
+    digitalWrite(config.sg1Pin, sgInactiveState());
+    digitalWrite(config.sg2Pin, sgInactiveState());
+    pinMode(config.sg1Pin, OUTPUT);
+    pinMode(config.sg2Pin, OUTPUT);
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
+#if ARDUINO_USB_CDC_ON_BOOT && ARDUINO_USB_MODE
+  Serial.setTxTimeoutMs(0); //USB port of the chip: do not block when no computer is connected
+#endif
+#ifdef SECOND_CONSOLE
+  SECOND_CONSOLE.begin(115200);
+#endif
+  configLoad();
+  setupPins(); //relays to their inactive state first: they would float during the splash screen
   setupScreen();
-  MySerial.begin(9600, SERIAL_CONFIG, RX_PIN, TX_PIN);
-  pinMode(PIN_THERM, OUTPUT);
-  // digitalWrite(PIN_THERM, PIN_THERM_ACTIVE_STATE);
-
-#ifdef SAFETY_RELAY_PIN
-  pinMode(SAFETY_RELAY_PIN, OUTPUT);
-  digitalWrite(SAFETY_RELAY_PIN, !SAFETY_RELAY_ACTIVE_STATE);
-#endif
-
-#ifdef PIN_SG1
-  //Smartgrid pins - Set first to the inactive state, before configuring as outputs (avoid false triggering when initializing)
-  digitalWrite(PIN_SG1, SG_RELAY_INACTIVE_STATE);
-  digitalWrite(PIN_SG2, SG_RELAY_INACTIVE_STATE);
-  pinMode(PIN_SG1, OUTPUT);
-  pinMode(PIN_SG2, OUTPUT);
-
-#endif
+  MySerial.begin(9600, SERIAL_CONFIG, config.rxPin, config.txPin);
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
   gpio_pullup_dis(GPIO_NUM_25);
@@ -411,9 +813,6 @@ void setup()
 
   EEPROM.begin(10);
   readEEPROM();//Restore previous state
-  mqttSerial.print("Setting up wifi...");
-  setup_wifi();
-  ArduinoOTA.setHostname("ESPAltherma");
   ArduinoOTA.onStart([]() {
     busy = true;
   });
@@ -422,29 +821,38 @@ void setup()
     mqttSerial.print("Error on OTA - restarting");
     restart_board();
   });
+
+  setupMqttClient();
+  client.setCallback(callback);
+  mqttSerial.begin(&client, "espaltherma/log");
+
+#ifdef HAS_WEBUI
+  //Nothing blocks: WiFi, the setup access point and MQTT are handled by netLoop()
+  netBegin();
+  webBegin();
+#else
+  mqttSerial.print("Setting up wifi...");
+  setup_wifi();
+  ArduinoOTA.setHostname(config.hostname);
   ArduinoOTA.begin();
 
-  #ifdef MQTT_ENCRYPTED
-  // Required to establish encrypted connections. 
-  // If you want to be more secure here, you can use the CA certificate to allow the wifi client to verify the other party. NOTE: If you use the CA certificate here, then you need to make sure to update it here regulary!
-  espClient.setInsecure();
-  espClient.setTimeout(5);
-  #endif
-
-  client.setBufferSize(MAX_MSG_SIZE); //to support large json message
-  client.setCallback(callback);
-  client.setServer(MQTT_SERVER, MQTT_PORT);
-
-  auto timeout = espClient.getTimeout();
-  Serial.printf("Wifi client timeout: %d\n", timeout);
-
-  mqttSerial.printf("Connecting to MQTT server: %s:%d\n", MQTT_SERVER, MQTT_PORT);
-  mqttSerial.begin(&client, "espaltherma/log");
+  mqttSerial.printf("Connecting to MQTT server: %s:%d\n", config.mqttServer, config.mqttPort);
   reconnectMqtt();
   mqttSerial.println("OK!");
+#endif
 
+  initLabels();
   initRegistries();
+#if defined(ESPALTHERMA_GENERIC) || defined(SURVEY_ON_BOOT)
+  requestSurvey();
+#endif
+#ifdef HAS_HP_TASK
+  xTaskCreate(hpTask, "heatpump", 8192, nullptr, 1, nullptr);
+#endif
   mqttSerial.print("ESPAltherma started!");
+#ifdef ARDUINO_ARCH_ESP32
+  mqttSerial.printf(" Last reset: %s\n", resetReasonName());
+#endif
 }
 
 void waitLoop(uint ms){
@@ -458,6 +866,14 @@ void waitLoop(uint ms){
 void loop()
 {
   unsigned long start = millis();
+#ifdef HAS_WEBUI
+  netLoop();
+  improv.loop();
+#ifdef SECOND_CONSOLE
+  improv2.loop();
+#endif
+  webLoop();
+#else
   if (WiFi.status() != WL_CONNECTED)
   { //restart board if needed
     checkWifi();
@@ -467,25 +883,37 @@ void loop()
   { //(re)connect to MQTT if needed
     reconnectMqtt();
   }
-  //Querying all registries
-  for (size_t i = 0; (i < 32) && registryIDs[i] != 0xFF; i++)
+#endif
+#ifdef HAS_HP_TASK
+  //The heat pump task does the querying, we publish its results
+  extraLoop();
+  if (cycleReady)
   {
-    unsigned char buff[64] = {0};
-    int tries = 0;
-    while (!queryRegistry(registryIDs[i], buff, PROTOCOL) && tries++ < 3)
-    {
-      mqttSerial.println("Retrying...");
-      waitLoop(1000);
-    }
-    unsigned char receivedRegistryID = PROTOCOL == 'S' ? buff[0] : buff[1];
-    if (registryIDs[i] == receivedRegistryID) //if replied registerID is coherent with the command
-    {
-      converter.readRegistryValues(buff, PROTOCOL); //process all values from the register
-      updateValues(registryIDs[i]);       //send them in mqtt
-      //waitLoop(500);//wait .5sec between registries
-    }
+    cycleReady = false;
+    publishValues();
   }
-  sendValues();//Send the full json message
-  mqttSerial.printf("Done. Waiting %ld ms...", FREQUENCY - millis() + start);
-  waitLoop(FREQUENCY - millis() + start);
+  if (surveyReady && client.connected())
+  {
+    publishSurvey();
+  }
+  if (discoveryDirty && client.connected())
+  {
+    discoveryDirty = false;
+    publishHomeAssistantDeviceDiscovery();
+  }
+  delay(5);
+#else
+  if (surveyRequested)
+  {
+    runSurvey();
+    publishSurvey();
+  }
+  //Querying all registries
+  pollRegistries();
+  publishValues();
+  unsigned long elapsed = millis() - start;
+  unsigned long wait = elapsed < config.frequency ? config.frequency - elapsed : 0;
+  mqttSerial.printf("Done. Waiting %ld ms...", (long)wait);
+  waitLoop(wait);
+#endif
 }

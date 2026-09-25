@@ -13,3 +13,8 @@ src/my_setup.h
 DaikinLogger.sln
 .vscode/extensions.json
 include/def/mydef.h
+include/webui_data.h
+flasher/firmware/
+flasher/manifest-*.json
+scripts/family_analysis/family_report.txt
+__pycache__/

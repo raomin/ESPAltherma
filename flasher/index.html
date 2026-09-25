@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPAltherma Installer</title>
+<meta name="description" content="Install ESPAltherma on your ESP32 from the browser, then connect it to your Daikin Altherma heat pump and Home Assistant.">
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--fg:#1d2733;--muted:#5f6b78;--line:#dde3ea;--accent:#0a74c9;--accent-fg:#fff;--chip:#eef2f6;--warn:#b86e00}
+@media (prefers-color-scheme:dark){:root{--bg:#10151b;--card:#18212b;--fg:#e4eaf0;--muted:#94a3b3;--line:#2a3643;--accent:#4aa3ea;--accent-fg:#06121d;--chip:#223040;--warn:#f0a53a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:28px;margin:0 0 4px}
+h2{font-size:19px;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+h2 .n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-size:14px;flex:none}
+.lead{color:var(--muted);margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+.boards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.board{border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;background:var(--bg);text-align:left;font:inherit;color:inherit}
+.board b{display:block}
+.board span{font-size:13px;color:var(--muted)}
+.board.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.muted{color:var(--muted);font-size:14px}
+.warn{color:var(--warn);font-size:14px}
+table{border-collapse:collapse;width:100%;font-size:15px;margin-top:8px}
+td,th{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:500;font-size:13px}
+code{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:14px}
+esp-web-install-button button{background:var(--accent);color:var(--accent-fg);border:0;border-radius:8px;padding:11px 22px;font:inherit;font-weight:600;cursor:pointer}
+esp-web-install-button[install-unsupported] button{display:none}
+.hidden{display:none}
+ol{padding-left:20px;margin:8px 0}
+li{margin:4px 0}
+a{color:var(--accent)}
+footer{color:var(--muted);font-size:14px;text-align:center;margin-top:24px}
+</style>
+</head>
+<body>
+<main>
+  <h1>ESPAltherma</h1>
+  <p class="lead">Monitor your Daikin Altherma heat pump in Home Assistant. Install from your browser: no software, no configuration file.</p>
+
+  <div class="card">
+    <h2><span class="n">1</span>Choose your board</h2>
+    <div class="boards" id="boards"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>Install</h2>
+    <p>Plug the board into this computer with a USB data cable, then click <b>Install</b>. After the installation, the installer asks for your WiFi network.</p>
+    <esp-web-install-button id="install">
+      <button slot="activate">Install ESPAltherma</button>
+      <span slot="unsupported" class="warn">Your browser cannot talk to USB devices. Use Chrome or Edge on a computer.</span>
+      <span slot="not-allowed" class="warn">The installer needs a secure page (https or localhost).</span>
+    </esp-web-install-button>
+    <p class="muted" id="version"></p>
+    <p class="muted">The board does not show up? Install the USB driver of your board (CP210x or CH340), and try another cable: some only charge.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>Connect it to the heat pump</h2>
+    <p>Power the heat pump <b>off</b> first. Find the <code>X10A</code> connector on the main board of the indoor unit (with a Bi-zone kit, use <code>X12A</code> on the Bi-zone board: same pins).</p>
+    <table>
+      <thead><tr><th>X10A</th><th>Board</th></tr></thead>
+      <tbody>
+        <tr><td>1 · 5V</td><td>5V / VIN <span class="muted">(can power the board)</span></td></tr>
+        <tr><td>2 · TX</td><td>GPIO <b id="pinRx">16</b> <span class="muted">(RX)</span></td></tr>
+        <tr><td>3 · RX</td><td>GPIO <b id="pinTx">17</b> <span class="muted">(TX)</span></td></tr>
+        <tr><td>5 · GND</td><td>GND <span class="muted">(always connect it, even when powered by USB)</span></td></tr>
+      </tbody>
+    </table>
+    <p class="muted">The pins can be changed later in the web interface (Settings). ROTEX units with an 8-pin X10A: see the <a href="https://github.com/raomin/ESPAltherma#8-pin-x10a-connection">wiring guide</a>.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>Finish in the web interface</h2>
+    <ol>
+      <li>Open <a href="http://espaltherma.local" id="devLink">http://espaltherma.local</a> (or the address shown by the installer).</li>
+      <li>ESPAltherma reads your heat pump and detects its model. Confirm it.</li>
+      <li>Click <b>Find my Home Assistant</b> to connect it to your MQTT broker. The sensors appear in Home Assistant automatically.</li>
+    </ol>
+    <p class="muted">No WiFi entered, or the network changed? The board opens a setup network <b>ESPAltherma-XXXX</b> (password <code>espaltherma</code>): join it and follow the page that opens.</p>
+  </div>
+
+  <footer>
+    <a href="https://github.com/raomin/ESPAltherma">ESPAltherma on GitHub</a> ·
+    Prefer PlatformIO? <a href="https://github.com/raomin/ESPAltherma#getting-started">Build it yourself</a>
+  </footer>
+</main>
+<script>
+const button = document.getElementById('install');
+async function select(board, el) {
+  document.querySelectorAll('.board').forEach(b => b.classList.toggle('on', b === el));
+  button.manifest = 'manifest-' + board.id + '.json';
+  document.getElementById('pinRx').textContent = board.rx;
+  document.getElementById('pinTx').textContent = board.tx;
+  try {
+    const m = await (await fetch(button.manifest)).json();
+    document.getElementById('version').textContent = 'Version ' + m.version + ' for ' + board.name;
+  } catch (e) {
+    document.getElementById('version').textContent = 'This firmware is not available yet.';
+  }
+}
+fetch('boards.json').then(r => r.json()).then(boards => {
+  const list = document.getElementById('boards');
+  boards.forEach((b, i) => {
+    const el = document.createElement('button');
+    el.className = 'board';
+    el.innerHTML = '<b></b><span></span>';
+    el.querySelector('b').textContent = b.name;
+    el.querySelector('span').textContent = b.note;
+    el.onclick = () => select(b, el);
+    list.append(el);
+    if (i === 0) select(b, el);
+  });
+});
+</script>
+</body>
+</html>

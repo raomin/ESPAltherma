@@ -1,0 +1,10285 @@
+{
+ "source": "known indoor unit boards, 2026-09",
+ "as_numbers": [
+  {
+   "body": "1008467",
+   "suffix": "11",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW)"
+   ],
+   "models": [
+    "EHFH03S18DA3V"
+   ],
+   "software": [
+    "ID1900C604"
+   ]
+  },
+  {
+   "body": "1008467",
+   "suffix": "12",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW)"
+   ],
+   "models": [
+    "EHFH03S18DJ3V"
+   ],
+   "software": [
+    "ID1900C604"
+   ]
+  },
+  {
+   "body": "1008467",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts EHFH"
+   ],
+   "software": [
+    "ID1900C604"
+   ]
+  },
+  {
+   "body": "1008468",
+   "suffix": "11",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW)"
+   ],
+   "models": [
+    "EHFZ03S18DA3V"
+   ],
+   "software": [
+    "ID1900C604"
+   ]
+  },
+  {
+   "body": "1008468",
+   "suffix": "12",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW)"
+   ],
+   "models": [
+    "EHFZ03S18DJ3V"
+   ],
+   "software": [
+    "ID1900C604"
+   ]
+  },
+  {
+   "body": "1008468",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts EHFZ"
+   ],
+   "software": [
+    "ID1900C604"
+   ]
+  },
+  {
+   "body": "1705393",
+   "suffix": "1",
+   "letter": "C",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)",
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASR04I3",
+    "BELARIASR08I3",
+    "BELARIASR16I3",
+    "BELARIASRC04I3",
+    "BELARIASRC08I3",
+    "BELARIASRC16I3",
+    "EHBH04CA3V",
+    "EHBH08CA3V",
+    "EHBH08CA9W",
+    "EHBH16CA3V",
+    "EHBH16CA9W",
+    "EHBX04CA3V",
+    "EHBX08CA3V",
+    "EHBX08CA9W",
+    "EHBX16CA3V",
+    "EHBX16CA9W",
+    "EHVH04S18CA3V*",
+    "EHVH08S18CA3V*",
+    "EHVH08S26CA9W",
+    "EHVH16S18CA3V",
+    "EHVH16S26CA9W",
+    "EHVX04S18CA3V",
+    "EHVX08S18CA3V",
+    "EHVX08S26CA9W",
+    "EHVX16S18CA3V",
+    "EHVX16S26CA9W",
+    "RHBH04CA3V",
+    "RHBH08CA9W",
+    "RHBH16CA9W",
+    "RHBX04CA3V",
+    "RHBX08CA9W",
+    "RHBX16CA9W"
+   ],
+   "software": [
+    "ID3866"
+   ]
+  },
+  {
+   "body": "1705393",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "5011555"
+   ],
+   "software": [
+    "ID3866"
+   ]
+  },
+  {
+   "body": "1705393",
+   "suffix": "3",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "5011556"
+   ],
+   "software": [
+    "ID3866"
+   ]
+  },
+  {
+   "body": "1705393",
+   "suffix": "4",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "5011557"
+   ],
+   "software": [
+    "ID3866"
+   ]
+  },
+  {
+   "body": "1705393",
+   "suffix": "5",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "5011558"
+   ],
+   "software": [
+    "ID3866"
+   ]
+  },
+  {
+   "body": "1706407",
+   "suffix": "10",
+   "letter": "",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "EHYHBH05AAV3*",
+    "RHYHBH05AAV3"
+   ],
+   "software": [
+    "ID4302"
+   ]
+  },
+  {
+   "body": "1706407",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "EHYHBH08AAV3*",
+    "RHYHBH08AAV3"
+   ],
+   "software": [
+    "ID4302"
+   ]
+  },
+  {
+   "body": "1706407",
+   "suffix": "12",
+   "letter": "",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "EHYHBX08AAV3",
+    "RHYHBX08AAV3"
+   ],
+   "software": [
+    "ID4302"
+   ]
+  },
+  {
+   "body": "1706407",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPPHybrid05R5F3651E"
+   ],
+   "software": [
+    "ID4302"
+   ]
+  },
+  {
+   "body": "1706407",
+   "suffix": "3",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPPHybrid08R5F3651E"
+   ],
+   "software": [
+    "ID4302"
+   ]
+  },
+  {
+   "body": "1706408",
+   "suffix": "10",
+   "letter": "",
+   "defs": [
+    "Altherma(EGSQH-A series 10kW GEO2)"
+   ],
+   "models": [
+    "EGSQH10S18AA9W",
+    "RGSQH10S18AA9W",
+    "THERMALIAC12_1"
+   ],
+   "software": [
+    "ID4302"
+   ]
+  },
+  {
+   "body": "1706408",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5015169"
+   ],
+   "software": [
+    "ID4302"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASR04I3",
+    "EHBX04CA3V",
+    "RHBX04CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "12",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBX08CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "13",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASR08I3",
+    "EHBX08CA9W",
+    "RHBX08CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "14",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH04CA3V",
+    "RHBH04CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "15",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH08CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "16",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH08CA9W",
+    "RHBH08CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPP_EHB_04_CA2CB"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "21",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBX16CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "22",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASR16I3",
+    "EHBX16CA9W",
+    "RHBX16CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "23",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH16CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "24",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH16CA9W",
+    "RHBH16CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "25",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASRC04I3",
+    "EHVX04S18CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "26",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "27",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASRC08I3",
+    "EHVX08S26CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "28",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH04S18CA3V*"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "29",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18CA3V*"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "3",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPP_EHB_08_CA2CB"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "30",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08S26CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "35",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVX16S18CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "36",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASRC16I3",
+    "EHVX16S26CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "37",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH16S18CA3V"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "38",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH16S26CA9W"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "4",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPP_EHV_04_CA2CB"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706409",
+   "suffix": "5",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPP_EHV_08_CA2CB"
+   ],
+   "software": [
+    "ID4304"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "11",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASR04I4",
+    "EHBX04CB3V",
+    "RHBX04CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "12",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBX08CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "13",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASR08I4",
+    "EHBX08CB9W",
+    "RHBX08CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "14",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH04CB3V",
+    "RHBH04CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "14",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH04CB3VU"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "15",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH08CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "15",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH08CB3VU"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "16",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH08CB9W",
+    "RHBH08CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "17",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBX11CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "18",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASR11I4",
+    "EHBX11CB9W",
+    "RHBX11CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "19",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH11CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts EHB_04"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5015652"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "20",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH11CB9W",
+    "RHBH11CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "21",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBX16CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "22",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASR16I4",
+    "EHBX16CB9W",
+    "RHBX16CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "23",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH16CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "24",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH16CB9W",
+    "RHBH16CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "25",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASRC04I4",
+    "EHVX04S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "26",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "27",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "BELARIASRC08I4",
+    "EHVX08S26CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "28",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH04S18CB3V",
+    "EHVH04S18CB3VF"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "29",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18CB3V",
+    "EHVH08S18CB3VF"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts EHB_11_16"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "3",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5015653"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "30",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08S26CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "31",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVX11S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "32",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASRC11I4",
+    "EHVX11S26CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "33",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH11S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "34",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH11S26CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "35",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVX16S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "36",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASRC16I4",
+    "EHVX16S26CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "37",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH16S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "38",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH16S26CB9W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "4",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_04"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "5",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_11_16"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "6",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Spareparts EHB_08"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706432",
+   "suffix": "7",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_08"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "10",
+   "letter": "B",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "EHYHBH05AAV3*",
+    "EHYHBH05AFV3",
+    "RHYHBH05AAV3"
+   ],
+   "software": [
+    "ID2281"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "10",
+   "letter": "",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "EHYHBH05AAV3U"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "11",
+   "letter": "B",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "EHYHBH08AAV3*",
+    "EHYHBH08AFV3",
+    "RHYHBH08AAV3"
+   ],
+   "software": [
+    "ID2281"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "EHYHBH08AAV3U"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "12",
+   "letter": "B",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "BELARIAH08I1",
+    "EHYHBX08AAV3",
+    "EHYHBX08AFV3",
+    "RHYHBX08AAV3"
+   ],
+   "software": [
+    "ID2281"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "2",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "SPPHybrid05"
+   ],
+   "software": [
+    "ID2281"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5015658"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "3",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "SPPHybrid08"
+   ],
+   "software": [
+    "ID2281"
+   ]
+  },
+  {
+   "body": "1706433",
+   "suffix": "3",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5015659"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706434",
+   "suffix": "10",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSQH-A series 10kW GEO2)"
+   ],
+   "models": [
+    "EGSQH10S18AA9W",
+    "RGSQH10S18AA9W",
+    "THERMALIAC12_1"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706434",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts GSHP"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "10",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ05CAV3",
+    "RBLQ05CAV3"
+   ],
+   "software": [
+    "ID66F2"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "11",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ05CAV3",
+    "RDLQ05CAV3"
+   ],
+   "software": [
+    "ID66F2"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ05CAV3U"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "12",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ07CAV3",
+    "RBLQ07CAV3"
+   ],
+   "software": [
+    "ID66F2"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "13",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ07CAV3",
+    "RDLQ07CAV3"
+   ],
+   "software": [
+    "ID66F2"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "13",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ07CAV3U"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "5019760"
+   ],
+   "software": [
+    "ID66F2"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5015656"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "5019761"
+   ],
+   "software": [
+    "ID66F2"
+   ]
+  },
+  {
+   "body": "1706435",
+   "suffix": "3",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5015657"
+   ],
+   "software": [
+    "ID4583"
+   ]
+  },
+  {
+   "body": "1706558",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart 04 Bizone"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706558",
+   "suffix": "28",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CB_04-08kW Bizone)"
+   ],
+   "models": [
+    "EHVZ04S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706558",
+   "suffix": "29",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CB_04-08kW Bizone)"
+   ],
+   "models": [
+    "EHVZ08S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706558",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart 08_16 Bizone"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706558",
+   "suffix": "37",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CB_11-16kW Bizone)"
+   ],
+   "models": [
+    "EHVZ16S18CB3V"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "14",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH04CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "15",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHBH08CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "19",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH11CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "2",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Spareparts EHB_04(DAB)"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "23",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHBH16CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "28",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH04S18CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "29",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "3",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Spareparts EHB_08_11_16(DAB)"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "30",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08S26CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "34",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH11S26CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "38",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH16S26CBV"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "4",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_04(DAB)"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706973",
+   "suffix": "5",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Spareparts EHV08_11_16(DAB)"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706974",
+   "suffix": "28",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH04SU18CB6W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706974",
+   "suffix": "29",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08SU18CB6W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706974",
+   "suffix": "30",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08SU26CB6W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706974",
+   "suffix": "34",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH11SU26CB6W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706974",
+   "suffix": "38",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "EHVH16SU26CB6W"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706974",
+   "suffix": "4",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_04(UK)"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706974",
+   "suffix": "5",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts EHV08_11_16(UK)"
+   ],
+   "software": [
+    "ID76F2"
+   ]
+  },
+  {
+   "body": "1706976",
+   "suffix": "10",
+   "letter": "A",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "CHYHBH05AAV3",
+    "CHYHBH05AFV3"
+   ],
+   "software": [
+    "ID97F2"
+   ]
+  },
+  {
+   "body": "1706976",
+   "suffix": "11",
+   "letter": "A",
+   "defs": [
+    "Altherma(Hybrid)"
+   ],
+   "models": [
+    "CHYHBH08AAV3",
+    "CHYHBH08AFV3"
+   ],
+   "software": [
+    "ID97F2"
+   ]
+  },
+  {
+   "body": "1706976",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_Multi_Hybrid)"
+   ],
+   "models": [
+    "SPPMULTIHYBRID05"
+   ],
+   "software": [
+    "ID97F2"
+   ]
+  },
+  {
+   "body": "1706976",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_Multi_Hybrid)"
+   ],
+   "models": [
+    "SPPMULTIHYBRID08"
+   ],
+   "software": [
+    "ID97F2"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "10",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ004BAVP"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ005BAVP"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "12",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ004BAVP"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "13",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ005BAVP"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "18",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ004BAVP-H-"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "19",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ005BAVP-H-"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "5018823"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "20",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ004BAVP-H-"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "21",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ005BAVP-H-"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707290",
+   "suffix": "5",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "5019804"
+   ],
+   "software": [
+    "ID66F4"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "11",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBX04DA6V",
+    "RHBX04DA6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "12",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBX08DA6V",
+    "RHBX08DA6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "13",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBX08DA9W",
+    "RHBX08DA9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "14",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBH04DA6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "15",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBH08DA6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "16",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBH08DA9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "17",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBX04DA9W",
+    "RHBX04DA9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts EHB"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "3",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_S18"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "30",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S18DA3V",
+    "EHVX04S18DJ3V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "31",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S18DA6V",
+    "EHVX04S18DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "32",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S23DA3V",
+    "EHVX04S23DJ3V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "33",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S23DA6V",
+    "EHVX04S23DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "34",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S18DA6V",
+    "EHVX08S18DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "35",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S18DA9W",
+    "EHVX08S18DJ9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "36",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S23DA6V",
+    "EHVX08S23DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "37",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S23DA9W",
+    "EHVX08S23DJ9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "38",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH04S18DA6V",
+    "EHVH04S18DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "39",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH04S23DA6V",
+    "EHVH04S23DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "4",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_S23"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "40",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S18DA6V",
+    "EHVH08S18DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "41",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S18DA9W",
+    "EHVH08S18DJ9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "42",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S23DA6V",
+    "EHVH08S23DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "43",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S23DA9W",
+    "EHVH08S23DJ9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "5",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts DAB"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "50",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S18DA3VG",
+    "EHVX04S18DJ3VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "51",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S18DA6VG",
+    "EHVX04S18DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "52",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S23DA3VG",
+    "EHVX04S23DJ3VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "53",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX04S23DA6VG",
+    "EHVX04S23DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "54",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S18DA6VG",
+    "EHVX08S18DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "55",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S18DA9WG",
+    "EHVX08S18DJ9WG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "56",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S23DA6VG",
+    "EHVX08S23DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "57",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S23DA9WG",
+    "EHVX08S23DJ9WG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "58",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH04S18DA6VG",
+    "EHVH04S18DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "59",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH04S23DA6VG",
+    "EHVH04S23DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "60",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S18DA6VG",
+    "EHVH08S18DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "61",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S18DA9WG",
+    "EHVH08S18DJ9WG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "62",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S23DA6VG",
+    "EHVH08S23DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "63",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S23DA9WG",
+    "EHVH08S23DJ9WG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "70",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S23DAV"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "71",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23DAV"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "72",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S23DAVG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707450",
+   "suffix": "73",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23DAVG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "2",
+   "letter": "D",
+   "defs": [],
+   "models": [
+    "Sparepart S18_Bizone"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "3",
+   "letter": "D",
+   "defs": [],
+   "models": [
+    "Sparepart S23_Bizone"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "38",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ04S18DA6V",
+    "EHVZ04S18DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "40",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S18DA6V",
+    "EHVZ08S18DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "41",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S18DA9W",
+    "EHVZ08S18DJ9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "42",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S23DA6V",
+    "EHVZ08S23DJ6V"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "43",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S23DA9W",
+    "EHVZ08S23DJ9W"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "50",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ04S18DA6VG",
+    "EHVZ04S18DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "51",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S18DA6VG",
+    "EHVZ08S18DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "52",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S18DA9WG",
+    "EHVZ08S18DJ9WG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "53",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S23DA6VG",
+    "EHVZ08S23DJ6VG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707452",
+   "suffix": "54",
+   "letter": "D",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)",
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVZ08S23DA9WG",
+    "EHVZ08S23DJ9WG"
+   ],
+   "software": [
+    "ID17014006"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "14",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ006BAVP"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "15",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ008BAVP"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "16",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ006BAVP"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "17",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ008BAVP"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "22",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ006BAVP-H-"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "23",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWAQ008BAVP-H-"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "24",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ006BAVP-H-"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "25",
+   "letter": "",
+   "defs": [
+    "Daikin Mini chiller(EWAQ-EWYQ B series 4-8kW)"
+   ],
+   "models": [
+    "EWYQ008BAVP-H-"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "3",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5018983"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "4",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5019801"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "6",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5019802"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707458",
+   "suffix": "7",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "5019803"
+   ],
+   "software": [
+    "ID66F5"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "10",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ011CAV3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ014CAV3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "12",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ016CAV3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "13",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ011CAV3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "14",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ014CAV3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "15",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ016CAV3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "16",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ011CAW1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "17",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ014CAW1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "18",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ016CAW1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "19",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ011CAW1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "Spareparts Liq injection GQI"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "20",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ014CAW1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707780",
+   "suffix": "21",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ016CAW1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707787",
+   "suffix": "11",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "EJHA04AAV3"
+   ],
+   "software": [
+    "ID17015B03"
+   ]
+  },
+  {
+   "body": "1707787",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts_Hydro_EJHA"
+   ],
+   "software": [
+    "ID17015B03"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "10",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ011CA3V3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ014CA3V3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "12",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ016CA3V3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "13",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ011CA3V3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "14",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ014CA3V3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "15",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ016CA3V3"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "16",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ011CA3W1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "17",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ014CA3W1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "18",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLQ016CA3W1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "19",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ011CA3W1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "Spareparts Liq injection GQI BUH"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "20",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ014CA3W1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1707926",
+   "suffix": "21",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EDLQ-CA series 11-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLQ016CA3W1"
+   ],
+   "software": [
+    "ID8283"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "11",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABH16DA6V",
+    "EABH16DF6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "12",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABH16DA9W",
+    "EABH16DF9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "13",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABX16DA6V",
+    "EABX16DF6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "14",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABX16DA9W",
+    "EABX16DF9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "2",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts EAB"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "3",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts EAV_S18"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "30",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S18DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "31",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S23DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "32",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S18DA9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "33",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S23DA9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "34",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S18DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "35",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S23DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "36",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S18DA9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "37",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S23DA9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "4",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts EAV_S23"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "50",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S18DA6VG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "51",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S23DA6VG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "52",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S18DA9WG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "53",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S23DA9WG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "54",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S18DA6VG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "55",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S23DA6VG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "56",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S18DA9WG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "57",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S23DA9WG"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "60",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16SU18DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708171",
+   "suffix": "61",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16SU23DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708172",
+   "suffix": "2",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Sparepart S18_Bizone_G"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708172",
+   "suffix": "3",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Sparepart S23 Bizone_G"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708172",
+   "suffix": "38",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVZ16S18DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708172",
+   "suffix": "39",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVZ16S23DA6V"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708172",
+   "suffix": "40",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVZ16S18DA9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708172",
+   "suffix": "41",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVZ16S23DA9W"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "11",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETBH16DA6V",
+    "ETBH16DF6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "12",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETBH16DA9W",
+    "ETBH16DF9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "13",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETBX16DA6V",
+    "ETBX16DF6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "14",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "BELARIAE18I1",
+    "BELARIAE18I2",
+    "ETBX16DA9W",
+    "ETBX16DF9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "2",
+   "letter": "M",
+   "defs": [],
+   "models": [
+    "Spareparts_ETB_T"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "3",
+   "letter": "M",
+   "defs": [],
+   "models": [
+    "Spareparts_ETV_T"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "30",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S18DA6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "31",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S23DA6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "32",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S18DA9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "33",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S23DA9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "34",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVX16S18DA6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "35",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVX16S23DA6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "36",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVX16S18DA9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "37",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "BELARIAECP18I1",
+    "ETVX16S23DA9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "38",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVZ16S18DA6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "39",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVZ16S23DA6V"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "4",
+   "letter": "M",
+   "defs": [],
+   "models": [
+    "Spareparts_ETVZ_T"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "40",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVZ16S18DA9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "41",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVZ16S23DA9W"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "50",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S18DA6VG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "51",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S23DA6VG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "52",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S18DA9WG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "53",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVH16S23DA9WG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "54",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVX16S18DA6VG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "55",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVX16S23DA6VG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "56",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVX16S18DA9WG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708405",
+   "suffix": "57",
+   "letter": "M",
+   "defs": [
+    "Altherma(EPRA D ETV16-ETB16-ETVZ16 D series 14-16kW)"
+   ],
+   "models": [
+    "ETVX16S23DA9WG"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708415",
+   "suffix": "1",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D ETSH-X 16P30-50 D series 14-16kW-ECH2O)"
+   ],
+   "models": [
+    "ETS(HX)(B)16P(3/5)0DA"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708454",
+   "suffix": "01",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "AUDAX.DK4"
+   ],
+   "software": [
+    "ID19007002"
+   ]
+  },
+  {
+   "body": "1708631",
+   "suffix": "2",
+   "letter": "H",
+   "defs": [],
+   "models": [
+    "Spareparts_BELARIAE18I"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708631",
+   "suffix": "3",
+   "letter": "H",
+   "defs": [],
+   "models": [
+    "Spareparts_BELARIAECP18I1"
+   ],
+   "software": [
+    "ID19005D08"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "02",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts_EHB_D"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "03",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts_EHV_S18_D"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "04",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts_EHV_S23_D"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "05",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts_EHVZ_S18_D"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "06",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts_EHVZ_S23_D"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "11",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBX04DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "12",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBX08DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "13",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBX08DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "14",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBH04DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "15",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBH08DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "16",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHBH08DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "30",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S18DA3V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "31",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "32",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S23DA3V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "33",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S23DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "34",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "35",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "36",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S23DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "37",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S23DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "38",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "39",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S23DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "40",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "41",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "42",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "43",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "50",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ04S18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "51",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "52",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S18DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "53",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S23DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "54",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S23DA9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "60",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH04S18DJ6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "61",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S18DJ6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "62",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S23DJ6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "63",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVH08S23DJ9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "64",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S18DJ6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "65",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S23DJ6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "66",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)"
+   ],
+   "models": [
+    "EHVX08S23DJ9W7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "70",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04SU18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "71",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04SU23DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "72",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08SU18DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708687",
+   "suffix": "73",
+   "letter": "F",
+   "defs": [
+    "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08SU23DA6V7"
+   ],
+   "software": [
+    "ID19016505"
+   ]
+  },
+  {
+   "body": "1708762",
+   "suffix": "33",
+   "letter": "B",
+   "defs": [
+    "Altherma(ERGA D EHSH-X P30-50 D series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "(E/R)HS*P*D*"
+   ],
+   "software": [
+    "ID17019A04"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "11",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETBH12EF6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "12",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETBX12EF6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "13",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETBH12EF9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "14",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETBX12EF9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "2",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETB"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "3",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETV"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "30",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVH12S18EA6V",
+    "ETVH12S18EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "31",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVH12S23EA6V",
+    "ETVH12S23EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "32",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVX12S18EA6V",
+    "ETVX12S18EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "33",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVX12S23EA6V",
+    "ETVX12S23EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "34",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVH12S18EA9W",
+    "ETVH12S18EJ9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "35",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVH12S23EA9W",
+    "ETVH12S23EJ9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "36",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVX12S18EA9W",
+    "ETVX12S18EJ9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "37",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVX12S23EA9W",
+    "ETVX12S23EJ9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "38",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVZ12S18EA6V",
+    "ETVZ12S18EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "39",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVZ12S23EA6V",
+    "ETVZ12S23EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "4",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETVZ"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "40",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVZ12S18EA9W",
+    "ETVZ12S18EJ9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "41",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVZ12S23EA9W",
+    "ETVZ12S23EJ9W"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "5",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETS"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "50",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVH12SU18EA6V",
+    "ETVH12SU18EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "51",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ETVH12SU23EA6V",
+    "ETVH12SU23EJ6V"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "52",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSH12P30EF",
+    "ETSH12P30EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "53",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSH12P50EF",
+    "ETSH12P50EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "54",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSHB12P30EF",
+    "ETSHB12P30EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "55",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSHB12P50EF",
+    "ETSHB12P50EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "56",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSX12P30EF",
+    "ETSX12P30EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "57",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSX12P50EF",
+    "ETSX12P50EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "58",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSXB12P30EF",
+    "ETSXB12P30EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "59",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ETSXB12P50EF",
+    "ETSXB12P50EG"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "6",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETS_B"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1708873",
+   "suffix": "7",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts_ETV_UK"
+   ],
+   "software": [
+    "ID20007904"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "11",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX06DA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "12",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH06DA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "13",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX10DA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "14",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH10DA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "15",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX06DA9WG"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "16",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX10DA9WG"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart_GSHP"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "20",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH06UDA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "21",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH10UDA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "22",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX06UDA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "23",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX10UDA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart_WSHP"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "30",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAX06DA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "31",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAH06DA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "40",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAX06UDA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709114",
+   "suffix": "41",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAH06UDA9W"
+   ],
+   "software": [
+    "ID20011C03"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "11",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABH16DF6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "12",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABH16DF9W7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "13",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABX16DF6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "14",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EABX16DF9W7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts_EAB_7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts_EAV_S18_7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "30",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S18DA6V7",
+    "EAVH16S18DJ6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "31",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S23DA6V7",
+    "EAVH16S23DJ6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "32",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S18DA9W7",
+    "EAVH16S18DJ9W7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "33",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16S23DA9W7",
+    "EAVH16S23DJ9W7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "34",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S18DA6V7",
+    "EAVX16S18DJ6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "35",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S23DA6V7",
+    "EAVX16S23DJ6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "36",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S18DA9W7",
+    "EAVX16S18DJ9W7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "37",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVX16S23DA9W7",
+    "EAVX16S23DJ9W7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "4",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Spareparts_EAV_S23_7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "60",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16SU18DA6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709217",
+   "suffix": "61",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVH16SU23DA6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709218",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart_S18_Bizone_7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709218",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart_S23_Bizone_7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709218",
+   "suffix": "38",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVZ16S18DA6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709218",
+   "suffix": "39",
+   "letter": "A",
+   "defs": [
+    "Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)"
+   ],
+   "models": [
+    "EAVZ16S23DA6V7"
+   ],
+   "software": [
+    "ID18002904"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "11",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSH04P30EF",
+    "EHSH04P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "12",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSHB04P30EF",
+    "EHSHB04P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "13",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSX04P30EF",
+    "EHSX04P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "14",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSXB04P30EF",
+    "EHSXB04P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "15",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSX04P50EF",
+    "EHSX04P50EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "16",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSXB04P50EF",
+    "EHSXB04P50EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "17",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSH08P30EF",
+    "EHSH08P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "18",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSHB08P30EF",
+    "EHSHB08P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "19",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSX08P30EF",
+    "EHSX08P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts EHS"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "20",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSXB08P30EF",
+    "EHSXB08P30EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "21",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSH08P50EF",
+    "EHSH08P50EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "22",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSHB08P50EF",
+    "EHSHB08P50EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "23",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSX08P50EF",
+    "EHSX08P50EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "24",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERGA E EHSH-X P30-50 E_EF series 04-08kW-ECH2O)"
+   ],
+   "models": [
+    "EHSXB08P50EF",
+    "EHSXB08P50EG"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709231",
+   "suffix": "3",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts EHS_B"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "11",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EBLA04E23V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "12",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EDLA04E23V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "13",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EBLA06E23V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "14",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EDLA06E23V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "15",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EBLA08E23V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "16",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EDLA08E23V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "17",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EBLA04E2V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "18",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EDLA04E2V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "19",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EBLA06E2V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts_EDL_EBL"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "20",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EDLA06E2V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "21",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EBLA08E2V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "22",
+   "letter": "C",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 4-8kW Monobloc)"
+   ],
+   "models": [
+    "EDLA08E2V3"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "23",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWYA004D2V3P"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "24",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWAA004D2V3P"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "25",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWYA006D2V3P"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "26",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWAA006D2V3P"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "27",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWYA008D2V3P"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "28",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWAA008D2V3P"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "29",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWAA004D2V3P-H"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "3",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts_EDL_EBL_3VBUH"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "30",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWAA006D2V3P-H"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "31",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWAA008D2V3P-H"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "32",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWYA004D2V3P-H"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "33",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWYA006D2V3P-H"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "34",
+   "letter": "C",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 4-8kW)"
+   ],
+   "models": [
+    "EWYA008D2V3P-H"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709232",
+   "suffix": "4",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "Spareparts_EWAA_EWYA"
+   ],
+   "software": [
+    "ID20017704"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "11",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBH16EF6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "12",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBH16EF9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "13",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBX16EF6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "14",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBX16EF9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "2",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETB_T_7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "3",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETV_T_7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "30",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S18EA6V7",
+    "ETVH16S18EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "31",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S23EA6V7",
+    "ETVH16S23EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "32",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S18EA9W7",
+    "ETVH16S18EJ9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "33",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S23EA9W7",
+    "ETVH16S23EJ9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "34",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S18EA6V7",
+    "ETVX16S18EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "35",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S23EA6V7",
+    "ETVX16S23EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "36",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S18EA9W7",
+    "ETVX16S18EJ9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "37",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S23EA9W7",
+    "ETVX16S23EJ9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "38",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S18EA6V7",
+    "ETVZ16S18EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "39",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S23EA6V7",
+    "ETVZ16S23EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "4",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETVZ_T_7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "40",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S18EA9W7",
+    "ETVZ16S18EJ9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "41",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S23EA9W7",
+    "ETVZ16S23EJ9W7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "45",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16SU18EA6V7",
+    "ETVH16SU18EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "46",
+   "letter": "F",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16SU23EA6V7",
+    "ETVH16SU23EJ6V7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709233",
+   "suffix": "5",
+   "letter": "F",
+   "defs": [],
+   "models": [
+    "Spareparts ETV_U_T_7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709241",
+   "suffix": "11",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_Multi_DHWHP)",
+    "EKHWET-BAV3(Multi DHW tank)"
+   ],
+   "models": [
+    "EKHWET90BAV3"
+   ],
+   "software": [
+    "ID21003301"
+   ]
+  },
+  {
+   "body": "1709241",
+   "suffix": "12",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_Multi_DHWHP)",
+    "EKHWET-BAV3(Multi DHW tank)"
+   ],
+   "models": [
+    "EKHWET120BAV3"
+   ],
+   "software": [
+    "ID21003301"
+   ]
+  },
+  {
+   "body": "1709241",
+   "suffix": "13",
+   "letter": "B",
+   "defs": [
+    "Altherma(LT_Multi_DHWHP)",
+    "EKHWET-BAV3(Multi DHW tank)"
+   ],
+   "models": [
+    "EKHWETU120BAV3"
+   ],
+   "software": [
+    "ID21003301"
+   ]
+  },
+  {
+   "body": "1709241",
+   "suffix": "2",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Sparepart_Multi_DHWHP"
+   ],
+   "software": [
+    "ID21003301"
+   ]
+  },
+  {
+   "body": "1709241",
+   "suffix": "3",
+   "letter": "B",
+   "defs": [],
+   "models": [
+    "Sparepart Multi DHWHP UK"
+   ],
+   "software": [
+    "ID21003301"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "11",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELBH12EF6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "12",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELBH12EF9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "13",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELBX12EF6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "14",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELBX12EF9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "2",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts ELB"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "3",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts ELV"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "30",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVH12S18EJ6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "31",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVH12S23EJ6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "32",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVH12S18EJ9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "33",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVH12S23EJ9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "34",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVX12S18EJ6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "35",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVX12S23EJ6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "36",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVX12S18EJ9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "37",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVX12S23EJ9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "38",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVZ12S18EJ6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "39",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVZ12S23EJ6V"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "4",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts ELVZ"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "40",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVZ12S18EJ9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "41",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETV16-ETB16-ETVZ16 E_EJ series 8-12kW)"
+   ],
+   "models": [
+    "ELVZ12S23EJ9W"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "5",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts ELS"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "50",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSH12P30EF",
+    "ELSH12P30EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "51",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSH12P50EF",
+    "ELSH12P50EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "52",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSHB12P30EF",
+    "ELSHB12P30EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "53",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSHB12P50EF",
+    "ELSHB12P50EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "54",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSX12P30EF",
+    "ELSX12P30EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "55",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSX12P50EF",
+    "ELSX12P50EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "56",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSXB12P30EF",
+    "ELSXB12P30EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "57",
+   "letter": "E",
+   "defs": [
+    "Altherma(EPRA E ETSH-X 16P30-50 E series 8-12kW-ECH2O)"
+   ],
+   "models": [
+    "ELSXB12P50EF",
+    "ELSXB12P50EG"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709433",
+   "suffix": "6",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts ELSB"
+   ],
+   "software": [
+    "ID22009C02"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "11",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSH16P30EF",
+    "ETSH16P30EF7",
+    "ETSH16P30EG7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "12",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSH16P50EF",
+    "ETSH16P50EF7",
+    "ETSH16P50EG7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "13",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSHB16P30EF",
+    "ETSHB16P30EF7",
+    "ETSHB16P30EG7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "14",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSHB16P50EF",
+    "ETSHB16P50EF7",
+    "ETSHB16P50EG7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "15",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSX16P30EF",
+    "ETSX16P30EF7",
+    "ETSX16P30EG7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "16",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSHB16P50EG7",
+    "ETSX16P50EF",
+    "ETSX16P50EF7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "17",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSXB16P30EF",
+    "ETSXB16P30EF7",
+    "ETSXB16P30EG7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "18",
+   "letter": "D",
+   "defs": [
+    "Altherma(EPRA D_D7 ETSH-X 16P30-50 E_E7 series 14-18kW-ECH2O)"
+   ],
+   "models": [
+    "ETSXB16P50EF",
+    "ETSXB16P50EF7",
+    "ETSXB16P50EG7"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "2",
+   "letter": "D",
+   "defs": [],
+   "models": [
+    "Spareparts ETS_16"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709516",
+   "suffix": "3",
+   "letter": "D",
+   "defs": [],
+   "models": [
+    "Spareparts ETS_B16"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "1709968",
+   "suffix": "1",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "EPBX*",
+    "EPSX*",
+    "EPVX*",
+    "EPVZ*"
+   ],
+   "software": [
+    "ID23015103"
+   ]
+  },
+  {
+   "body": "1710115",
+   "suffix": "11",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "CKHWS180BJV3"
+   ],
+   "software": [
+    "ID24004002"
+   ]
+  },
+  {
+   "body": "1710115",
+   "suffix": "12",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "CKHWS230BJV3"
+   ],
+   "software": [
+    "ID24004002"
+   ]
+  },
+  {
+   "body": "1710115",
+   "suffix": "13",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "CKHWSU230BJV3"
+   ],
+   "software": [
+    "ID24004002"
+   ]
+  },
+  {
+   "body": "1710115",
+   "suffix": "2",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "CKHWS180BJV3",
+    "Sparepart Multi DHWHP2 S18"
+   ],
+   "software": [
+    "ID24004002"
+   ]
+  },
+  {
+   "body": "1710115",
+   "suffix": "3",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "CKHWS230BJV3",
+    "Sparepart Multi DHWHP2 S23"
+   ],
+   "software": [
+    "ID24004002"
+   ]
+  },
+  {
+   "body": "1807663",
+   "suffix": "02",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPPHPSU05"
+   ],
+   "software": [
+    "ID7541"
+   ]
+  },
+  {
+   "body": "1807663",
+   "suffix": "03",
+   "letter": "",
+   "defs": [],
+   "models": [
+    "SPPHPSU07"
+   ],
+   "software": [
+    "ID7541"
+   ]
+  },
+  {
+   "body": "1807663",
+   "suffix": "10",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "RBLQ05C2V3"
+   ],
+   "software": [
+    "ID7541"
+   ]
+  },
+  {
+   "body": "1807663",
+   "suffix": "11",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_EBLQ-EBLQ-CA series 5-7kW Monobloc)"
+   ],
+   "models": [
+    "RBLQ07C2V3"
+   ],
+   "software": [
+    "ID7541"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "02",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EHB_E"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "03",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_S18_E"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "04",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EHV_S23_E"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "05",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EHVZ_S18_E"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "06",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EHVZ_S23_E"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "11",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHBX04EA6V",
+    "EHBX04EF6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "12",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHBX08EA6V",
+    "EHBX08EF6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "13",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHBX08EA9W",
+    "EHBX08EF9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "14",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHBH04EA6V",
+    "EHBH04EF6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "15",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHBH08EA6V",
+    "EHBH08EF6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "16",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHBH08EA9W",
+    "EHBH08EF9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "31",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S18EA3V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "32",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S18EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "33",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S23EA3V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "34",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S23EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "35",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "36",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18EA9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "37",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S23EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "38",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S23EA9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "39",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S18EA6VG"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "40",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S23EA6VG"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "41",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18EA6VG"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "42",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S23EA6VG"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "43",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S18EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "44",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S23EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "45",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "46",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18EA9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "47",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23EA6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "48",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23EA9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "49",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ04S18EA6V",
+    "EHVZ04S18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "50",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S18EA6V",
+    "EHVZ08S18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "51",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S18EA9W",
+    "EHVZ08S18EJ9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "52",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S23EA6V",
+    "EHVZ08S23EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "53",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVZ08S23EA9W",
+    "EHVZ08S23EJ9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "61",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "62",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04S23EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "63",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "64",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18EJ9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "65",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "66",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08S23EJ9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "67",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S18EJ3V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "68",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S23EJ3V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "69",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "70",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX04S23EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "71",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "72",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S23EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "73",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S18EJ9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "74",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVX08S23EJ9W"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "81",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04SU18EA6V",
+    "EHVH04SU18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "82",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH04SU23EA6V",
+    "EHVH04SU23EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "83",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08SU18EA6V",
+    "EHVH08SU18EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608726",
+   "suffix": "84",
+   "letter": "E",
+   "defs": [
+    "Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)"
+   ],
+   "models": [
+    "EHVH08SU23EA6V",
+    "EHVH08SU23EJ6V"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "02",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EDL_EBL"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "03",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EDL_EBL_3VBUH"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "04",
+   "letter": "E",
+   "defs": [],
+   "models": [
+    "Spareparts EWAA_EWYA"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "11",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA09DA3V3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "12",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA11DA3V3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "13",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA14DA3V3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "14",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA16DA3V3",
+    "EDLA16DA3V37"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "15",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA09DA3V3",
+    "EBLA09DA3V3U"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "16",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA11DA3V3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "17",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA14DA3V3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "18",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA16DA3V3",
+    "EBLA16DA3V37"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "19",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA09DAV3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "20",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA11DAV3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "21",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA14DAV3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "22",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA16DAV3",
+    "EDLA16DAV37"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "23",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA09DAV3",
+    "EBLA09DAV3U"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "24",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA11DAV3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "25",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA14DAV3"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "26",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA16DAV3",
+    "EBLA16DAV37"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "27",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA09DA3W1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "28",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA11DA3W1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "29",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA14DA3W1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "30",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA16DA3W1",
+    "EDLA16DA3W17"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "31",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA09DA3W1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "32",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA11DA3W1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "33",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA14DA3W1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "34",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA16DA3W1",
+    "EBLA16DA3W17"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "35",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA09DAW1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "36",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA11DAW1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "37",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA14DAW1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "38",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EDLA16DAW1",
+    "EDLA16DAW17"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "39",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA09DAW1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "40",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA11DAW1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "41",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA14DAW1"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "42",
+   "letter": "E",
+   "defs": [
+    "Altherma(EBLA-EDLA D series 9-16kW Monobloc)"
+   ],
+   "models": [
+    "EBLA16DAW1",
+    "EBLA16DAW17"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "50",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA011DAV3P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "51",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA014DAV3P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "52",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA016DAV3P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "53",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA011DAV3P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "54",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA014DAV3P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "55",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA016DAV3P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "56",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA009DAV3P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "57",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA011DAV3P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "58",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA014DAV3P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "59",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA016DAV3P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "60",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA009DAV3P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "61",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA011DAV3P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "62",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA014DAV3P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "63",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA016DAV3P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "64",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA011DAW1P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "65",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA014DAW1P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "66",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA016DAW1P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "67",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA011DAW1P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "68",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA014DAW1P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "69",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWAA016DAW1P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "70",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA009DAW1P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "71",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA011DAW1P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "72",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA014DAW1P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "73",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA016DAW1P"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "74",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA009DAW1P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "75",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA011DAW1P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "76",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA014DAW1P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608727",
+   "suffix": "77",
+   "letter": "E",
+   "defs": [
+    "Daikin Mini chiller(EWAA-EWYA D series 9-16kW)"
+   ],
+   "models": [
+    "EWYA016DAW1P-H-"
+   ],
+   "software": [
+    "ID20002203"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "11",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBH11DF6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "12",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBH16DF6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "13",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBH11DF9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "14",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBH16DF9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "15",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBX11DF6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "16",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBX16DF6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "17",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBX11DF9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "18",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBBX16DF9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "19",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH11S18DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "2",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "SPP EBB"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "20",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH11S23DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "21",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH16S18DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "22",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH16S23DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "23",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH11S18DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "24",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH11S23DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "25",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH16S18DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "26",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH16S23DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "27",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX11S18DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "28",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX11S23DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "29",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX16S18DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "3",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "SPP EBV"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "30",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX16S23DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "31",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX11S18DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "32",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX11S23DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "33",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX16S18DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "34",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVX16S23DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "35",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVZ16S18DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "36",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVZ16S23DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "37",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVZ16S18DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "38",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVZ16S23DJ9W"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "4",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "SPP EBVZ"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "40",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSH11P30DF",
+    "EBSH11P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "41",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSH16P30DF",
+    "EBSH16P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "42",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSHB11P30DF",
+    "EBSHB11P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "43",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSHB16P30DF",
+    "EBSHB16P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "44",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSX11P30DF",
+    "EBSX11P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "45",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSX16P30DF",
+    "EBSX16P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "46",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSXB11P30DF",
+    "EBSXB11P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "47",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSXB16P30DF",
+    "EBSXB16P30DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "48",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSH11P50DF",
+    "EBSH11P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "49",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSH16P50DF",
+    "EBSH16P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "5",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "SPP EBS"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "50",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSHB11P50DF",
+    "EBSHB11P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "51",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSHB16P50DF",
+    "EBSHB16P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "52",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSX11P50DF",
+    "EBSX11P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "53",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSX16P50DF",
+    "EBSX16P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "54",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSXB11P50DF",
+    "EBSXB11P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "55",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O)"
+   ],
+   "models": [
+    "EBSXB16P50DF",
+    "EBSXB16P50DG"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "6",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "SPP EBS_B"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "60",
+   "letter": "C",
+   "defs": [
+    "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW)"
+   ],
+   "models": [
+    "EBVH16SU23DJ6V"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608729",
+   "suffix": "7",
+   "letter": "C",
+   "defs": [],
+   "models": [
+    "SPP_EBV_UK"
+   ],
+   "software": [
+    "ID20007903"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "11",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBH16EF6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "12",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBH16EF9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "13",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBX16EF6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "14",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETBX16EF9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "2",
+   "letter": "G",
+   "defs": [],
+   "models": [
+    "Spareparts ETB_T"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "3",
+   "letter": "G",
+   "defs": [],
+   "models": [
+    "Spareparts ETV_T"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "30",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S18EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "31",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S23EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "32",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S18EA9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "33",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16S23EA9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "34",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S18EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "35",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S23EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "36",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S18EA9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "37",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVX16S23EA9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "38",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S18EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "39",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S23EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "4",
+   "letter": "G",
+   "defs": [],
+   "models": [
+    "Spareparts ETVZ_T"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "40",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S18EA9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "41",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVZ16S23EA9W"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "45",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16SU18EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "46",
+   "letter": "G",
+   "defs": [
+    "Altherma(EPRA D_D7 ETV16-ETB16-ETVZ16 E_E7 series 14-18kW)"
+   ],
+   "models": [
+    "ETVH16SU23EA6V"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3608934",
+   "suffix": "5",
+   "letter": "G",
+   "defs": [],
+   "models": [
+    "Spareparts ETV_U_T"
+   ],
+   "software": [
+    "ID20017705"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "11",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX06DA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "12",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH06DA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "13",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX10DA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "14",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH10DA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "15",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX06DA9WG2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "16",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX10DA9WG2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "2",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart_GSHP2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "20",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH06UDA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "21",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAH10UDA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "22",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX06UDA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "23",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EGSAX10UDA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "3",
+   "letter": "A",
+   "defs": [],
+   "models": [
+    "Sparepart_WSHP2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "30",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAX06DA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "31",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAH06DA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "40",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAX06UDA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  },
+  {
+   "body": "3609606",
+   "suffix": "41",
+   "letter": "A",
+   "defs": [
+    "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3)"
+   ],
+   "models": [
+    "EWSAH06UDA9W2"
+   ],
+   "software": [
+    "ID23001602"
+   ]
+  }
+ ]
+}

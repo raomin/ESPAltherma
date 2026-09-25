@@ -1,0 +1,52 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install platformio
+      - name: Label catalog up to date with include/def
+        run: python scripts/gen_catalog.py --check
+      - name: Unit tests
+        run: pio test -e native
+
+  firmware:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - esp32
+          - esp32c3
+          - m5stickc
+          - m5stickcplus
+          - m5stickcplus2
+          - m5stack-tough
+          - nodemcuv2
+          - web-esp32
+          - web-esp32c3
+          - web-esp32s3
+          - web-m5stickc
+          - web-m5stickcplus
+          - web-m5stickcplus2
+          - web-m5stack-tough
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ matrix.env }}-${{ hashFiles('platformio.ini') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install platformio
+      - run: pio run -e ${{ matrix.env }}

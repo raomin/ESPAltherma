@@ -14,6 +14,18 @@ HardwareSerial MySerial(1);
 #define SERIAL_FLUSH_TX_ONLY false
 #endif
 #define SER_TIMEOUT 300 //leave 300ms for the machine to answer
+#define REPLY_BUFFER_SIZE 64 //size of the buffers given to queryRegistry
+
+#ifdef ARDUINO_ARCH_ESP32
+// The X10A link is shared by the polling task, the detection survey and the DebugSerial gateway.
+// Recursive: the DebugSerial callback runs client.loop() while holding it, which can re-enter it.
+SemaphoreHandle_t serialMutex = xSemaphoreCreateRecursiveMutex();
+void serialLock() { xSemaphoreTakeRecursive(serialMutex, portMAX_DELAY); }
+void serialUnlock() { xSemaphoreGiveRecursive(serialMutex); }
+#else
+void serialLock() {}
+void serialUnlock() {}
+#endif
 
 unsigned char getCRC(unsigned char *src, int len)
 {
@@ -58,7 +70,17 @@ int get_reply_len(char regID, char protocol='I')
   }
 }
 
+bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol);
+
 bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
+{
+  serialLock();
+  bool ok = queryRegistryUnlocked(regID, buffer, protocol);
+  serialUnlock();
+  return ok;
+}
+
+bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
 {
 
   //preparing command:
@@ -86,22 +108,30 @@ bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')
 
   while ((len < replyLen) && (millis() < (start + SER_TIMEOUT)))
   {
-    if (MySerial.available())
+    if (!MySerial.available())
     {
-      buffer[len++] = MySerial.read();
-      if (protocol == 'I' && len == 3)
-      {
-        // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
-        replyLen = buffer[2] + 2;
-      }
-      // Error reply common to both protocols
-      if (len == 2 && buffer[0] == 0x15 && buffer[1] == 0xea)
-      {
-        // HP didn't understand the command
-        mqttSerial.printf("Error 0x15 0xEA returned from HP\n");
-        delay(500);
-        return false;
-      }
+      delay(1); //let other tasks run while the bytes arrive (the UART buffers them)
+      continue;
+    }
+    if (len >= REPLY_BUFFER_SIZE)
+    {
+      mqttSerial.printf("ERR: Reply of register 0x%02x too long (%d bytes)\n", regID, replyLen);
+      delay(500);
+      return false;
+    }
+    buffer[len++] = MySerial.read();
+    if (protocol == 'I' && len == 3)
+    {
+      // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
+      replyLen = buffer[2] + 2;
+    }
+    // Error reply common to both protocols
+    if (len == 2 && buffer[0] == 0x15 && buffer[1] == 0xea)
+    {
+      // HP didn't understand the command
+      mqttSerial.printf("Error 0x15 0xEA returned from HP\n");
+      delay(500);
+      return false;
     }
   }
   if (millis() >= (start + SER_TIMEOUT))
