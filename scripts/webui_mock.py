@@ -51,8 +51,9 @@ def key(reg, off, conv, size=2):
 
 
 class Device:
-    def __init__(self, fresh):
+    def __init__(self, fresh, ethernet=False):
         self.start = time.time()
+        self.ethernet = ethernet
         self.lock = threading.Lock()
         self.config = {
             "wifi": {"ssid": "" if fresh else "HomeWiFi", "has_pwd": not fresh, "static": False, "ip": "", "gateway": "", "subnet": "", "dns1": "", "dns2": ""},
@@ -71,18 +72,43 @@ class Device:
 
     def status(self):
         c = self.config
-        wifi_ok = bool(c["wifi"]["ssid"])
-        return {
-            "fw": "2.0.0-mock", "board": "esp32", "uptime": int(time.time() - self.start), "heap": 182000, "hostname": c["hostname"],
+        wifi_ok = bool(c["wifi"]["ssid"]) and not self.ethernet  # Ethernet boards keep the WiFi as a standby
+        link = "ethernet" if self.ethernet else "wifi" if wifi_ok else "none"
+        st = {
+            "fw": "2.0.0-mock", "board": "wt32-eth01" if self.ethernet else "esp32", "uptime": int(time.time() - self.start),
+            "heap": 182000, "heap_min": 151000, "hostname": c["hostname"],
+            "net": {"link": link, "ip": "192.168.1.43" if self.ethernet else "192.168.1.42" if wifi_ok else "0.0.0.0"},
             "wifi": {"ssid": c["wifi"]["ssid"], "connected": wifi_ok, "ip": "192.168.1.42" if wifi_ok else "0.0.0.0", "rssi": -58,
-                     "ap": not wifi_ok, "ap_ssid": "ESPAltherma-1A2B", "ap_ip": "192.168.4.1"},
-            "mqtt": {"configured": bool(c["mqtt"]["server"]), "connected": bool(c["mqtt"]["server"]) and wifi_ok, "server": c["mqtt"]["server"], "state": 0},
+                     "bssid": "80:3F:5D:67:A1:91" if wifi_ok else "", "channel": 12 if wifi_ok else 0, "last_disconnect": "",
+                     "ap": link == "none", "ap_ssid": "ESPAltherma-1A2B", "ap_ip": "192.168.4.1"},
+            "mqtt": {"configured": bool(c["mqtt"]["server"]), "connected": bool(c["mqtt"]["server"]) and link != "none", "server": c["mqtt"]["server"], "state": 0},
             "hp": {"generic": True, "protocol": c["hp"]["protocol"], "model": c["hp"]["model"], "confirmed": c["hp"]["confirmed"],
                    "values": len(self.values()), "last_poll": 12 if c["hp"]["model"] else -1,
                    "survey_running": time.time() < self.survey_until, "survey_done": time.time() >= self.survey_until},
             "detect": {"model": MODELS[0][0], "family": "G", "confidence": "low"},
             "telemetry_available": True,
+            "reset_reason": "restart by the firmware", "restart_cause": "Settings changed from the web interface",
         }
+        if self.ethernet:
+            st["eth"] = {"up": True, "ip": "192.168.1.43", "mac": "A8:03:2A:11:22:33", "speed": 100, "full_duplex": True}
+        return st
+
+    def events(self):
+        now = int(time.time())
+        up = int(time.time() - self.start)
+        items = [
+            (0, 3, 57, "Boot #58: restart by the firmware, firmware 2.0.0-mock"),
+            (now - up - 5, 312, 57, "Restart: No network for 5 minutes (WiFi 20:23:51:97:82:12 ch 6 -84 dBm, last disconnect NO_AP_FOUND)"),
+            (now - up - 20, 297, 57, "WiFi: disconnected, NO_AP_FOUND (201), 18 more attempts failed"),
+            (now - up - 300, 12, 57, "WiFi: disconnected, BEACON_TIMEOUT (200)"),
+            (now - up - 312, 0, 57, "Boot #57: power on, firmware 2.0.0-mock"),
+        ]
+        events = [{"t": now - up + 3, "up": 3, "boot": 58, "text": "Boot #58: restart by the firmware, firmware 2.0.0-mock"},
+                  {"t": now - up + 9, "up": 9, "boot": 58, "text": "WiFi: joined access point 6A:48:B8:EA:44:08, channel 9"},
+                  {"t": now - up + 10, "up": 10, "boot": 58, "text": "Online over WiFi: 192.168.1.42, -52 dBm"}]
+        events += [{"t": t, "up": u, "boot": b, "text": x} for t, u, b, x in items[1:]]
+        events.sort(key=lambda e: -e["t"])
+        return {"boot": 58, "uptime": up, "clock": True, "events": events}
 
     def survey(self):
         if time.time() < self.survey_until:
@@ -146,6 +172,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, d.config)
         if p == "/api/detect":
             return self.send(200, d.survey())
+        if p == "/api/events":
+            return self.send(200, d.events())
         if p == "/api/models":
             return self.send(200, [{"name": n, "family": f, "protocol": pr} for n, f, pr in MODELS])
         if p == "/api/catalog":
@@ -221,8 +249,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--fresh", action="store_true", help="start like a freshly flashed device")
+    ap.add_argument("--ethernet", action="store_true", help="a board connected by Ethernet")
     args = ap.parse_args()
-    Handler.device = Device(args.fresh)
+    Handler.device = Device(args.fresh, args.ethernet)
     print("Mock ESPAltherma on http://localhost:%d" % args.port)
     ThreadingHTTPServer(("", args.port), Handler).serve_forever()
 

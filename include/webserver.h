@@ -91,6 +91,7 @@ AppConfig *volatile pendingConfig = nullptr; // posted configuration, applied by
 volatile bool rebootRequested = false;
 unsigned long rebootAt = 0;
 volatile bool factoryResetRequested = false;
+const char *volatile rebootCause = "Restart from the web interface"; // restart cause saved for the next boot
 volatile bool mqttTestRequested = false;
 AppConfig mqttTestConfig;
 char mqttTestResult[96] = "";
@@ -176,16 +177,32 @@ static void statusJson(JsonDocument &doc)
   doc["board"] = BOARD_NAME;
   doc["uptime"] = millis() / 1000;
   doc["heap"] = ESP.getFreeHeap();
+  doc["heap_min"] = ESP.getMinFreeHeap();
   doc["hostname"] = config.hostname;
+
+  JsonObject net = doc["net"].to<JsonObject>();
+  net["link"] = netLinkName(); // "wifi", "ethernet" or "none"
+  net["ip"] = netIP().toString();
 
   JsonObject wifi = doc["wifi"].to<JsonObject>();
   wifi["ssid"] = config.wifiSsid;
   wifi["connected"] = WiFi.status() == WL_CONNECTED;
   wifi["ip"] = WiFi.localIP().toString();
   wifi["rssi"] = WiFi.RSSI();
+  wifi["bssid"] = wifiBssid; // access point last joined
+  wifi["channel"] = (int)wifiChannel;
+  wifi["last_disconnect"] = wifiDisconnectName();
   wifi["ap"] = apActive;
   wifi["ap_ssid"] = apSsid;
   wifi["ap_ip"] = WiFi.softAPIP().toString();
+#ifdef HAS_ETHERNET
+  JsonObject eth = doc["eth"].to<JsonObject>();
+  eth["up"] = (bool)ethUp;
+  eth["ip"] = ETH.localIP().toString();
+  eth["mac"] = ETH.macAddress();
+  eth["speed"] = ETH.linkSpeed();
+  eth["full_duplex"] = ETH.fullDuplex();
+#endif
 
   JsonObject mqtt = doc["mqtt"].to<JsonObject>();
   mqtt["configured"] = config.mqttServer[0] != 0;
@@ -224,6 +241,7 @@ static void statusJson(JsonDocument &doc)
 #endif
   doc["telemetry_available"] = TELEMETRY_AVAILABLE;
   doc["reset_reason"] = resetReasonName();
+  doc["restart_cause"] = restartCause; // saved by the firmware before restarting itself, "" otherwise
   JsonObject relays = doc["relays"].to<JsonObject>();
   if (config.thermPin >= 0)
     relays["thermostat"] = thermostatOn;
@@ -452,11 +470,33 @@ void webBegin()
     r->send(resp);
   });
 
+  // Event history (eventlog.h), newest first
+  webServer.on("/api/events", HTTP_GET, [](AsyncWebServerRequest *r) {
+    static EventRing copy; // too big for the stack; requests are served one at a time
+    eventCopy(copy);
+    JsonDocument doc;
+    doc["boot"] = eventBoot;
+    doc["uptime"] = millis() / 1000;
+    doc["clock"] = eventClockSet;
+    JsonArray list = doc["events"].to<JsonArray>();
+    for (size_t i = copy.count(); i-- > 0;)
+    {
+      const EventEntry &e = copy.at(i);
+      JsonObject item = list.add<JsonObject>();
+      item["t"] = e.epoch;
+      item["up"] = e.uptime;
+      item["boot"] = e.boot;
+      item["text"] = e.text;
+    }
+    sendJson(r, doc);
+  });
+
   webServer.on("/api/wifi/scan", HTTP_GET, [](AsyncWebServerRequest *r) {
-    int n = WiFi.scanComplete();
+    int n = roamScanning ? WIFI_SCAN_RUNNING : WiFi.scanComplete(); // the roaming scan's results are not ours
     JsonDocument doc;
     if (n == WIFI_SCAN_FAILED)
     {
+      WiFi.enableSTA(true); // off on Ethernet boards
       WiFi.scanNetworks(true);
       doc["running"] = true;
     }
@@ -543,6 +583,7 @@ void webBegin()
   webServer.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
+    rebootCause = "Restart requested from the web interface";
     rebootRequested = true;
     sendOk(r);
   });
@@ -561,7 +602,10 @@ void webBegin()
     bool ok = !updateFailed && !Update.hasError();
     r->send(ok ? 200 : 500, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false,\"error\":\"update failed\"}");
     if (ok)
+    {
+      rebootCause = "Firmware update from the web interface";
       rebootRequested = true;
+    }
   }, [](AsyncWebServerRequest *r, String filename, size_t index, uint8_t *data, size_t len, bool final) {
     if (config.adminPwd[0] && !r->authenticate("admin", config.adminPwd))
       return;
@@ -569,6 +613,7 @@ void webBegin()
     {
       updateFailed = !Update.begin(UPDATE_SIZE_UNKNOWN);
       mqttSerial.printf("Firmware update started (%s)\n", filename.c_str());
+      eventAddf("Firmware update from the web interface: %s", filename.c_str());
     }
     if (!updateFailed && Update.write(data, len) != len)
       updateFailed = true;
@@ -603,6 +648,7 @@ void webBegin()
 // Tests the MQTT settings with a separate connection. Blocks up to a few seconds: main loop only.
 static void runMqttTest()
 {
+  LOOP_STAGE("MQTT test");
   mqttTestRequested = false;
   WiFiClient plain;
   PubSubClient test;
@@ -634,9 +680,10 @@ static void runMqttTest()
 
 static void sendTelemetry()
 {
+  LOOP_STAGE("telemetry");
   telemetryPending = false;
 #ifdef HAS_TLS_CLIENT
-  if (!config.telemetry || !TELEMETRY_AVAILABLE || WiFi.status() != WL_CONNECTED || !surveyJson[0])
+  if (!config.telemetry || !TELEMETRY_AVAILABLE || !netOnline() || !surveyJson[0])
     return;
   WiFiClientSecure tls;
   tls.setInsecure();
@@ -656,6 +703,7 @@ void webLoop()
   AppConfig *next = pendingConfig;
   if (next != nullptr)
   {
+    LOOP_STAGE("apply settings");
     bool wifiChanged = strcmp(next->wifiSsid, config.wifiSsid) != 0 || strcmp(next->wifiPwd, config.wifiPwd) != 0 ||
                        next->staticIp != config.staticIp || next->ip != config.ip || next->gateway != config.gateway ||
                        next->subnet != config.subnet || next->dns1 != config.dns1 || next->dns2 != config.dns2;
@@ -686,6 +734,7 @@ void webLoop()
       telemetryPending = true;
     if (reboot)
     {
+      rebootCause = "Settings changed from the web interface";
       rebootRequested = true;
     }
   }
@@ -700,6 +749,7 @@ void webLoop()
   if (factoryResetRequested)
   {
     configReset();
+    rebootCause = "Factory reset from the web interface";
     rebootRequested = true;
     factoryResetRequested = false;
   }
@@ -710,7 +760,7 @@ void webLoop()
     else if ((long)(millis() - rebootAt) >= 0)
     {
       mqttSerial.println("Rebooting...");
-      restart_board();
+      restart_board(rebootCause);
     }
   }
 

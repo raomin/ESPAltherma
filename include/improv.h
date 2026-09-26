@@ -40,6 +40,8 @@
 
 // Defined in netmgr.h
 void connectWifi();
+bool netOnline();
+IPAddress netIP();
 
 class ImprovSerial
 {
@@ -54,7 +56,7 @@ public:
     }
     if (_provisioning)
     {
-      if (WiFi.status() == WL_CONNECTED)
+      if (netOnline())
       {
         _provisioning = false;
         sendState(IMPROV_STATE_PROVISIONED);
@@ -147,7 +149,7 @@ private:
       break;
     }
     case IMPROV_CMD_GET_STATE:
-      if (WiFi.status() == WL_CONNECTED)
+      if (netOnline()) // over Ethernet too: the installer then offers to open the device page
       {
         sendState(IMPROV_STATE_PROVISIONED);
         sendUrl(IMPROV_CMD_GET_STATE);
@@ -165,6 +167,7 @@ private:
     }
     case IMPROV_CMD_GET_NETWORKS:
     {
+      WiFi.enableSTA(true); // off on Ethernet boards
       int n = WiFi.scanNetworks(false, false);
       for (int i = 0; i < n; i++)
       {
@@ -230,7 +233,7 @@ private:
 
   void sendUrl(uint8_t command)
   {
-    String url = "http://" + WiFi.localIP().toString();
+    String url = "http://" + netIP().toString();
     const char *strings[] = {url.c_str()};
     sendResult(command, strings, 1);
   }

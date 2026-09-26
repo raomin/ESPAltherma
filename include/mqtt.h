@@ -24,8 +24,23 @@ WiFiClient plainClient;
 WiFiClientSecure secureClient;
 #endif
 PubSubClient client;
+Client *mqttNet = &plainClient; // the network client under PubSubClient
 
 extern Converter converter;
+
+// Publishes, and flags a write the broker did not take (stage.h). A message larger than the buffer is not one.
+bool mqttPublish(const char *topic, const char *payload, bool retained = false)
+{
+  if (mqttWriteFailed || !client.connected())
+    return false;
+  size_t len = strlen(payload);
+  if (MQTT_MAX_HEADER_SIZE + 2 + strlen(topic) + len > client.getBufferSize())
+    return false;
+  if (client.publish(topic, (const uint8_t *)payload, len, retained))
+    return true;
+  mqttWriteFailed = true;
+  return false;
+}
 
 // Defined in main.cpp
 void requestSurvey();
@@ -48,12 +63,14 @@ void setupMqttClient()
     secureClient.setInsecure();
     secureClient.setTimeout(5);
     client.setClient(secureClient);
+    mqttNet = &secureClient;
     Serial.printf("Wifi client timeout: %d\n", secureClient.getTimeout());
   }
   else
 #endif
   {
     client.setClient(plainClient);
+    mqttNet = &plainClient;
     Serial.printf("Wifi client timeout: %d\n", plainClient.getTimeout());
   }
   resetJson();
@@ -86,18 +103,23 @@ void sendValues()
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
 #elif ARDUINO_M5Stick_C
   //Add M5 APX values
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", M5.Power.Axp192.getVBUSVoltage(),"M5AmpIn", M5.Power.Axp192.getVBUSCurrent());
+  { // the input in use: the 5V pin (ACIN, eg. powered from the X10A) or USB (VBUS)
+    float acin = M5.Power.Axp192.getACINVoltage(), vbus = M5.Power.Axp192.getVBUSVoltage();
+    bool pin = acin > vbus;
+    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", pin ? acin : vbus,"M5AmpIn", pin ? M5.Power.Axp192.getACINCurrent() : M5.Power.Axp192.getVBUSCurrent());
+  }
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Power.Axp192.getBatteryVoltage(),"M5BatCur", M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Power.Axp192.getBatteryPower());
 #endif
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
+  if (WiFi.status() == WL_CONNECTED) // not over Ethernet
+    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
   jsonbuff[strlen(jsonbuff) - 1] = '}';
   if (config.jsonTable)
   {
     strcat(jsonbuff,"]");
   }
-  client.publish(MQTT_attr, jsonbuff);
+  mqttPublish(MQTT_attr, jsonbuff);
   resetJson();
 }
 
@@ -210,7 +232,7 @@ void reconnectMqtt()
 
       if (i++ == 100) {
         mqttSerial.printf("Tried for 500 sec, rebooting now.");
-        restart_board();
+        restart_board("MQTT broker unreachable for 500 seconds");
       }
     }
   }
@@ -246,7 +268,7 @@ void callbackTherm(byte *payload, unsigned int length)
   {
     mqttSerial.println("Rebooting");
     delay(100);
-    restart_board();
+    restart_board("Restart requested over MQTT");
   }
   else
   {
@@ -410,7 +432,8 @@ void callback(char *topic, byte *payload, unsigned int length)
 static void mqttDiscoverySink(void *ctx, const char *data, size_t len)
 {
   PubSubClient *c = static_cast<PubSubClient *>(ctx);
-  c->write(reinterpret_cast<const uint8_t *>(data), len);
+  if (!mqttWriteFailed && c->write(reinterpret_cast<const uint8_t *>(data), len) != len)
+    mqttWriteFailed = true; // the rest would wait 10s per write, with the values locked
 }
 
 void publishHomeAssistantDeviceDiscovery()

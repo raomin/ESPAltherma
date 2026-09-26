@@ -4,9 +4,11 @@
 
 For each board of flasher/boards.json:
   - --build runs `pio run -e <env>` (otherwise the existing build output is used),
-  - copies .pio/build/<env>/firmware-factory.bin (merged image, flashed at 0) to <out>/firmware/<id>.bin,
-    and firmware.bin (for updates from the web interface) to <out>/firmware/<id>-ota.bin,
-  - writes <out>/manifest-<id>.json.
+  - copies .pio/build/<env>/firmware-factory.bin (merged image, flashed at 0, for manual downloads) to
+    <out>/firmware/<id>.bin, and firmware.bin (for updates from the web interface) to <out>/firmware/<id>-ota.bin,
+  - copies the parts listed in flash-parts.json to <out>/firmware/<id>/ and writes <out>/manifest-<id>.json with
+    them: written at their own offsets, they leave the NVS partition (the settings) alone, unless the user
+    chooses to erase the device.
 
 Local test: python scripts/build_flasher.py --build, then python scripts/serve_flasher.py and open
 http://localhost:8000 in Chrome or Edge (Web Serial works on localhost).
@@ -55,17 +57,26 @@ def main():
     for b in boards:
         build = os.path.join(ROOT, ".pio", "build", b["env"])
         factory = os.path.join(build, "firmware-factory.bin")
-        if not os.path.exists(factory):
+        if not os.path.exists(factory) or not os.path.exists(os.path.join(build, "flash-parts.json")):
             missing.append(b["env"])
             continue
         shutil.copyfile(factory, os.path.join(firmware_dir, b["id"] + ".bin"))
         shutil.copyfile(os.path.join(build, "firmware.bin"), os.path.join(firmware_dir, b["id"] + "-ota.bin"))
+        with open(os.path.join(build, "flash-parts.json"), encoding="utf-8") as f:
+            flash_parts = json.load(f)
+        parts_dir = os.path.join(firmware_dir, b["id"])
+        os.makedirs(parts_dir, exist_ok=True)
+        parts = []
+        for part in flash_parts:
+            name = os.path.basename(part["path"])
+            shutil.copyfile(part["path"], os.path.join(parts_dir, name))
+            parts.append({"path": "firmware/%s/%s" % (b["id"], name), "offset": part["offset"]})
         manifest = {
             "name": "ESPAltherma for " + b["name"],
             "version": version,
             "new_install_prompt_erase": True,
             "new_install_improv_wait_time": 20,
-            "builds": [{"chipFamily": b["chip"], "parts": [{"path": "firmware/%s.bin" % b["id"], "offset": 0}]}],
+            "builds": [{"chipFamily": b["chip"], "parts": parts}],
         }
         with open(os.path.join(args.out, "manifest-%s.json" % b["id"]), "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)

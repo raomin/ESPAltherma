@@ -7,6 +7,7 @@
 #endif
 #include "config.h"
 #include "logbuf.h"
+#include "stage.h"
 
 // Log stream: written to Serial right away, and queued for MQTT (espaltherma/log) and the M5 screen.
 // The queue is drained by the main loop, so logging is safe from any task.
@@ -92,8 +93,10 @@ void MQTTSerial::drain()
         }
         M5.Lcd.print(chunk);
 #endif
-        if (!config.disableLogMessages && WiFi.status() == WL_CONNECTED && _client!=nullptr &&_client->connected()){
-            _client->publish(_topic,(const uint8_t*)chunk,len);
+        if (!config.disableLogMessages && !mqttWriteFailed && _client!=nullptr &&_client->connected()){ // connected over WiFi or Ethernet
+            bool fits = MQTT_MAX_HEADER_SIZE + 2 + strlen(_topic) + len <= _client->getBufferSize();
+            if (fits && !_client->publish(_topic,(const uint8_t*)chunk,len))
+                mqttWriteFailed = true; // the broker does not take data: stop here (see stage.h)
         }
         if (onChunk != nullptr){
             onChunk(chunk, len);

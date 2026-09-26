@@ -39,6 +39,8 @@ jobs:
           - web-m5stickcplus
           - web-m5stickcplus2
           - web-m5stack-tough
+          - web-wt32-eth01
+          - web-esp32-poe
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4

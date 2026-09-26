@@ -47,6 +47,10 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--muted);font-weight:500;font-size:13px}
 td.v{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.nowrap{white-space:nowrap;font-variant-numeric:tabular-nums}
+.scroll{max-height:420px;overflow:auto;margin-top:12px}
+table.events{font-size:13px}
+table.events td{overflow-wrap:anywhere}
 .list button{display:block;width:100%;text-align:left;margin:6px 0}
 .steps{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
 .steps a{font-size:13px;padding:5px 10px;border-radius:99px;background:var(--chip);color:var(--muted);text-decoration:none}
@@ -223,6 +227,12 @@ progress{width:100%;margin-top:10px}
     <pre id="svReport" style="margin-top:12px">No survey yet.</pre>
   </div>
   <div class="card">
+    <h2>Event history</h2>
+    <p class="muted">Restarts and their causes, network and MQTT changes, supply drops, firmware updates. Kept across restarts; after a power cut, the last two minutes may be missing.</p>
+    <div class="actions" style="margin-top:0"><button id="evRefresh">Refresh</button><button id="evCopy">Copy</button><span class="msg" id="evMsg"></span></div>
+    <div class="scroll"><table class="events" id="evTable"></table></div>
+  </div>
+  <div class="card">
     <h2>Log</h2>
     <div class="actions" style="margin-top:0"><button id="logClear">Clear</button><label class="check" style="margin:0"><input type="checkbox" id="logFollow" checked>Follow</label></div>
     <pre id="log" style="margin-top:12px"></pre>
@@ -294,8 +304,11 @@ function route() {
   if (page === 'settings') fillSettings();
   if (page === 'diagnostics') loadDiagnostics();
 }
+// Online over WiFi or Ethernet (status.net: firmware with the Ethernet support)
+function online(s = status) { return s.net ? s.net.link !== 'none' : !!(s.wifi && s.wifi.connected); }
+function onEthernet(s = status) { return !!(s.net && s.net.link === 'ethernet'); }
 function firstStep() {
-  if (!status.wifi || !status.wifi.connected) return 'wifi';
+  if (!online()) return 'wifi';
   if (!status.mqtt.configured) return 'mqtt';
   if (status.hp.generic && !status.hp.confirmed) return 'hp';
   return 'wifi';
@@ -314,7 +327,7 @@ window.addEventListener('hashchange', route);
 function pill(id, state, text) { const p = $(id); p.className = 'pill ' + state; p.lastChild.textContent = text; }
 function renderStatus() {
   const s = status, w = s.wifi, m = s.mqtt, hp = s.hp;
-  pill('#pWifi', w.connected ? 'ok' : w.ap ? 'warn' : 'bad', w.connected ? 'WiFi' : w.ap ? 'Setup AP' : 'No WiFi');
+  pill('#pWifi', online(s) ? 'ok' : w.ap ? 'warn' : 'bad', onEthernet(s) ? 'Ethernet' : w.connected ? 'WiFi' : w.ap ? 'Setup AP' : 'No network');
   pill('#pMqtt', m.connected ? 'ok' : m.configured ? 'bad' : 'warn', m.connected ? 'MQTT' : m.configured ? 'MQTT offline' : 'No MQTT');
   const hpOk = hp.values > 0 && hp.last_poll >= 0 && hp.last_poll < 300;
   pill('#pHp', hpOk ? 'ok' : hp.model || !hp.generic ? 'warn' : 'bad', hpOk ? 'Heat pump' : hp.survey_running ? 'Detecting…' : 'Heat pump');
@@ -331,13 +344,19 @@ function renderStatus() {
     ['Thermostat relay', s.relays && s.relays.thermostat != null ? (s.relays.thermostat ? 'on' : 'off') : null],
     ['Smart Grid', s.relays && s.relays.smart_grid != null ? ['Free running', 'Forced off', 'Recommended on', 'Forced on'][s.relays.smart_grid] : null],
   ]);
+  const e = s.eth;
   kv('#dNet', [
-    ['WiFi', w.connected ? w.ssid + ' (' + w.rssi + ' dBm)' : (w.ssid ? 'connecting to ' + w.ssid : 'not configured')],
-    ['Address', w.connected ? w.ip + ' · ' + s.hostname + '.local' : null],
+    ['Ethernet', e ? (e.up ? e.ip + ' · ' + e.speed + ' Mbps' : 'no link (cable?)') : null],
+    ['WiFi', w.connected ? w.ssid + ' (' + w.rssi + ' dBm)' : !w.ssid ? 'not configured' : e && e.up ? w.ssid + ', standby while Ethernet works' : 'connecting to ' + w.ssid],
+    ['Access point', w.connected && w.bssid ? w.bssid + ' · channel ' + w.channel : null],
+    ['Last WiFi drop', w.ssid && w.last_disconnect ? w.last_disconnect : null],
+    ['Address', online(s) ? (s.net ? s.net.ip : w.ip) + ' · ' + s.hostname + '.local' : null],
     ['Setup AP', w.ap ? w.ap_ssid + ' · ' + w.ap_ip : null],
     ['MQTT', m.configured ? m.server + (m.connected ? ' · connected' : ' · offline') : 'not configured'],
   ]);
-  kv('#sysInfo', [['Firmware', s.fw], ['Board', s.board], ['Uptime', Math.round(s.uptime / 60) + ' min'], ['Last reset', s.reset_reason], ['Free memory', Math.round(s.heap / 1024) + ' kB'], ['Name', s.hostname]]);
+  const lastReset = s.reset_reason + (s.restart_cause ? ': ' + s.restart_cause : '');
+  const memory = Math.round(s.heap / 1024) + ' kB' + (s.heap_min != null ? ' (lowest ' + Math.round(s.heap_min / 1024) + ' kB)' : '');
+  kv('#sysInfo', [['Firmware', s.fw], ['Board', s.board], ['Uptime', Math.round(s.uptime / 60) + ' min'], ['Last reset', lastReset], ['Free memory', memory], ['Name', s.hostname]]);
   const pw = s.power;
   $('#dPowerCard').hidden = !pw;
   if (pw) {
@@ -347,13 +366,13 @@ function renderStatus() {
       ['Lowest since boot', pw.vbus_min != null ? v(pw.vbus_min) : null],
       ['Battery', pw.battery != null ? v(pw.battery) + ' · ' + pw.battery_level + ' %' : null],
       ['Battery current', pw.battery != null ? pw.battery_current + ' mA' + (pw.charging ? ' (charging)' : '') : null],
-      ['Last reset', s.reset_reason],
+      ['Last reset', lastReset],
     ]);
   }
 
   const b = $('#banners'); b.replaceChildren();
   const banner = (cls, text, label, href) => b.append(el('div', {class: 'banner ' + cls}, el('p', {}, text), el('a', {class: 'btn', href}, label)));
-  if (!w.connected) banner('warn', 'ESPAltherma is not connected to your WiFi yet.', 'Set up WiFi', '#setup/wifi');
+  if (!online(s)) banner('warn', 'ESPAltherma is not connected to your network yet.', 'Set up WiFi', '#setup/wifi');
   else if (!m.configured) banner('warn', 'Connect ESPAltherma to Home Assistant to get your heat pump sensors.', 'Connect', '#setup/mqtt');
   else if (m.configured && !m.connected) banner('warn', 'The MQTT broker is unreachable (' + m.server + ').', 'Check', '#setup/mqtt');
   if (hp.generic && hp.model && !hp.confirmed) banner('info', 'We found a ' + (FAMILIES[(s.detect || {}).family] || 'heat pump') + '. Please confirm your exact model to read all its values.', 'Confirm model', '#setup/hp');
@@ -375,7 +394,8 @@ function renderValues(list) {
 // ---- setup: wifi
 function setupWifi() {
   const w = status.wifi || {};
-  $('#wifiNow').textContent = w.connected ? 'Connected to ' + w.ssid + ' (' + w.ip + ').' : w.ssid ? 'Trying to connect to ' + w.ssid + '…' : 'Choose your network.';
+  $('#wifiNow').textContent = onEthernet() ? 'Connected by Ethernet (' + status.net.ip + '). WiFi is optional: it takes over when the cable is unplugged.'
+    : w.connected ? 'Connected to ' + w.ssid + ' (' + w.ip + ').' : w.ssid ? 'Trying to connect to ' + w.ssid + '…' : 'Choose your network.';
   if (!$('#wSsid').value) $('#wSsid').value = w.ssid || '';
   $('#wPwd').placeholder = cfg.wifi && cfg.wifi.has_pwd ? 'unchanged' : '';
 }
@@ -570,8 +590,25 @@ $('#sSave').onclick = async () => {
 };
 
 // ---- diagnostics
+// Event history: local time once the device clock was set, else the time since that boot
+let eventLines = [];
+function eventTime(e) {
+  if (e.t) return new Date(e.t * 1000).toLocaleString();
+  const m = Math.floor(e.up / 60);
+  return 'boot +' + (m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m ? m + ' min ' + (e.up % 60) + ' s' : e.up + ' s');
+}
+async function loadEvents() {
+  const r = await api('/api/events');
+  const t = $('#evTable'); t.replaceChildren();
+  eventLines = r.events.map(e => eventTime(e) + '  #' + e.boot + '  ' + e.text);
+  if (!r.events.length) t.append(el('tr', {}, el('td', {class: 'muted'}, 'No event yet.')));
+  for (const e of r.events) t.append(el('tr', {class: e.boot === r.boot ? '' : 'muted'}, el('td', {class: 'nowrap'}, eventTime(e)), el('td', {}, '#' + e.boot), el('td', {}, e.text)));
+}
+$('#evRefresh').onclick = () => loadEvents().catch(() => msg('#evMsg', 'Could not read the history.', false));
+$('#evCopy').onclick = () => copyText(eventLines.join('\n')).then(() => msg('#evMsg', 'Copied.', true), () => msg('#evMsg', 'Select the text and copy it with Ctrl+C.', false));
 async function loadDiagnostics() {
   renderFixes();
+  loadEvents().catch(() => {});
   const r = await api('/api/detect');
   $('#svReport').textContent = r.regs ? JSON.stringify(r, null, 2) : 'No survey yet.';
   if (!$('#log').textContent) $('#log').textContent = await api('/api/log');

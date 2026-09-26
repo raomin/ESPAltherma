@@ -45,6 +45,9 @@
 #include "mqtt.h"
 #include "restart.h"
 #include "power.h"
+#ifdef HAS_HP_TASK
+#include "watchdog.h"
+#endif
 #ifdef HAS_WEBUI
 #include "netmgr.h"
 #include "improv.h"
@@ -120,7 +123,7 @@ void updateValues(char regID)
     {
       char topicBuff[128];
       snprintf(topicBuff, sizeof(topicBuff), "%s%s", config.oneTopicPrefix, labels[i]->label);
-      client.publish(topicBuff, labels[i]->asString);
+      mqttPublish(topicBuff, labels[i]->asString);
     }
     else if (alpha){
 
@@ -175,15 +178,24 @@ void handleScreen(){}
 
 void extraLoop()
 {
+  LOOP_STAGE("MQTT receive");
   client.loop();
+  LOOP_STAGE("ArduinoOTA");
   ArduinoOTA.handle();
   while (busy)
   { //Stop processing during OTA
     ArduinoOTA.handle();
   }
+  LOOP_STAGE("screen");
   handleScreen();
+  LOOP_STAGE("power");
   samplePower();
+  LOOP_STAGE("log to MQTT");
   mqttSerial.drain();
+#ifdef ARDUINO_ARCH_ESP32
+  LOOP_STAGE("event history");
+  eventLoop();
+#endif
 }
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -276,7 +288,7 @@ void checkWifi()
     if (millis() - lostTime >= 120000)
     { //Still no WiFi after 2 min: reboot in case the WiFi stack is wedged
       Serial.printf("Tried connecting for 120 sec, rebooting now.");
-      restart_board();
+      restart_board("No WiFi for 2 minutes");
     }
   }
 }
@@ -484,6 +496,9 @@ void setupScreen(){
 // Query function used by the survey: same as the polling, on a zeroed buffer.
 bool surveyQuery(uint8_t regID, unsigned char *buffer, char protocol)
 {
+#ifdef HAS_HP_TASK
+  watchdogHp();
+#endif
   memset(buffer, 0, SURVEY_BUFFER_SIZE);
   return queryRegistry(regID, buffer, protocol);
 }
@@ -656,7 +671,7 @@ void publishSurvey()
 {
   surveyReady = false;
   Serial.println(surveyJson);
-  client.publish(MQTT_detect, surveyJson, true);
+  mqttPublish(MQTT_detect, surveyJson, true);
 }
 
 void hpDelay(unsigned long ms);
@@ -672,6 +687,9 @@ void pollRegistries()
 #endif
   for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
   {
+#ifdef HAS_HP_TASK
+    watchdogHp();
+#endif
     unsigned char buff[REPLY_BUFFER_SIZE] = {0};
     int tries = 0;
     while (!queryRegistry(registryIDs[i], buff, config.protocol) && tries++ < 3)
@@ -733,6 +751,7 @@ void hpTask(void *)
   for (;;)
   {
     unsigned long start = millis();
+    watchdogHp();
 #if defined(HAS_CATALOG) && !defined(HAS_STATIC_LABELS)
     if (!config.model[0] && millis() - lastSurvey > 60000)
     { //No model yet: the heat pump may not have been connected, try again
@@ -742,21 +761,26 @@ void hpTask(void *)
     if (labelsDirty)
     {
       labelsDirty = false;
+      HP_STAGE("reload values");
       reloadLabels();
     }
     if (surveyRequested)
     {
+      HP_STAGE("survey");
       runSurvey();
     }
     if (!busy && (uint8_t)registryIDs[0] != 0xFF)
     {
+      HP_STAGE("query");
       pollRegistries();
       lastPollMs = millis();
       cycleReady = true;
       mqttSerial.printf("Done. Waiting %ld ms...", (long)(config.frequency - (millis() - start)));
     }
+    HP_STAGE("wait");
     while (millis() - start < config.frequency && !surveyRequested && !labelsDirty)
     {
+      watchdogHp();
       delay(100);
     }
   }
@@ -795,6 +819,11 @@ void setupPins()
 
 void setup()
 {
+#ifdef ARDUINO_ARCH_ESP32
+  restartCauseLoad();
+  eventBegin();
+  eventAddf("Boot #%u: %s, firmware %s", eventBoot, resetReasonName(), ESPALTHERMA_VERSION);
+#endif
   Serial.begin(115200);
 #if ARDUINO_USB_CDC_ON_BOOT && ARDUINO_USB_MODE
   Serial.setTxTimeoutMs(0); //USB port of the chip: do not block when no computer is connected
@@ -815,11 +844,14 @@ void setup()
   readEEPROM();//Restore previous state
   ArduinoOTA.onStart([]() {
     busy = true;
+#ifdef HAS_HP_TASK
+    watchdogPaused = true; // the upload runs inside ArduinoOTA.handle()
+#endif
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
     mqttSerial.print("Error on OTA - restarting");
-    restart_board();
+    restart_board("ArduinoOTA upload failed");
   });
 
   setupMqttClient();
@@ -848,10 +880,11 @@ void setup()
 #endif
 #ifdef HAS_HP_TASK
   xTaskCreate(hpTask, "heatpump", 8192, nullptr, 1, nullptr);
+  watchdogBegin();
 #endif
   mqttSerial.print("ESPAltherma started!");
 #ifdef ARDUINO_ARCH_ESP32
-  mqttSerial.printf(" Last reset: %s\n", resetReasonName());
+  mqttSerial.printf(" Last reset: %s%s%s\n", resetReasonName(), restartCause[0] ? ": " : "", restartCause);
 #endif
 }
 
@@ -866,12 +899,18 @@ void waitLoop(uint ms){
 void loop()
 {
   unsigned long start = millis();
+#ifdef HAS_HP_TASK
+  watchdogLoop();
+#endif
 #ifdef HAS_WEBUI
+  LOOP_STAGE("network");
   netLoop();
+  LOOP_STAGE("Improv");
   improv.loop();
 #ifdef SECOND_CONSOLE
   improv2.loop();
 #endif
+  LOOP_STAGE("web");
   webLoop();
 #else
   if (WiFi.status() != WL_CONNECTED)
@@ -890,17 +929,21 @@ void loop()
   if (cycleReady)
   {
     cycleReady = false;
+    LOOP_STAGE("publish values");
     publishValues();
   }
   if (surveyReady && client.connected())
   {
+    LOOP_STAGE("publish survey");
     publishSurvey();
   }
   if (discoveryDirty && client.connected())
   {
     discoveryDirty = false;
+    LOOP_STAGE("HA discovery");
     publishHomeAssistantDeviceDiscovery();
   }
+  LOOP_STAGE("idle");
   delay(5);
 #else
   if (surveyRequested)

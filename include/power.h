@@ -76,10 +76,12 @@ void samplePower()
     if (power.vbus < LOW_SUPPLY_MV && !lowReported)
     {
       mqttSerial.printf("External supply low: %.2f V on the %s, running on the battery (%.2f V)\n", power.vbus / 1000.0, power.source, power.battery / 1000.0);
+      eventAddf("Supply low: %.2f V on the %s, battery %.2f V", power.vbus / 1000.0, power.source, power.battery / 1000.0);
       lowReported = true;
     }
-    else if (power.vbus >= LOW_SUPPLY_MV + 200)
+    else if (power.vbus >= LOW_SUPPLY_MV + 200 && lowReported)
     {
+      eventAddf("Supply back: %.2f V on the %s", power.vbus / 1000.0, power.source);
       lowReported = false;
     }
   }
