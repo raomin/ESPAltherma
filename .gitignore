@@ -13,3 +13,5 @@ src/my_setup.h
 DaikinLogger.sln
 .vscode/extensions.json
 include/def/mydef.h
+.DS_Store
+include/.DS_Store
