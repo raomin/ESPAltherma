@@ -45,6 +45,21 @@ struct CatalogAsNumber
   uint64_t models; // candidate models (definition files)
 };
 
+// Sensor names in another language (gen_catalog.py, from include/def/<Language>/)
+struct CatalogTranslation
+{
+  uint16_t label; // offset of the English name in CATALOG_LABELS
+  uint16_t text;  // offset of the translation in the language pool
+};
+
+struct CatalogLanguage
+{
+  const char *code; // "fr", "de"...
+  const char *pool;
+  const CatalogTranslation *items; // sorted by label
+  uint16_t count;
+};
+
 #define CATALOG_FLAG_RECOMMENDED 1 // enabled by default
 #define CATALOG_FLAG_ALWAYS 2      // refrigerant type: no data, selects the pressure->temperature conversion
 
@@ -73,6 +88,37 @@ inline int catalogModelFor(uint8_t reg, int model, const CatalogFix *fixes, size
 inline const char *catalogLabel(const CatalogEntry &e)
 {
   return CATALOG_LABELS + e.label;
+}
+
+// Index of a language in CATALOG_LANGUAGES, -1 for English or an unknown code.
+inline int catalogLanguage(const char *code)
+{
+  for (int i = 0; code != nullptr && i < CATALOG_LANGUAGE_COUNT; i++)
+  {
+    if (strcmp(CATALOG_LANGUAGES[i].code, code) == 0)
+      return i;
+  }
+  return -1;
+}
+
+// Name of an entry in a language (catalogLanguage()), English when it has no translation.
+inline const char *catalogName(const CatalogEntry &e, int language)
+{
+  if (language < 0 || language >= CATALOG_LANGUAGE_COUNT)
+    return catalogLabel(e);
+  const CatalogLanguage &l = CATALOG_LANGUAGES[language];
+  int low = 0, high = (int)l.count - 1;
+  while (low <= high)
+  {
+    int mid = (low + high) / 2;
+    if (l.items[mid].label == e.label)
+      return l.pool + l.items[mid].text;
+    if (l.items[mid].label < e.label)
+      low = mid + 1;
+    else
+      high = mid - 1;
+  }
+  return catalogLabel(e);
 }
 
 inline bool catalogInModel(const CatalogEntry &e, int model)
@@ -112,9 +158,10 @@ static bool catalogKeySelected(uint32_t key, const uint32_t *keys, size_t keyCou
 
 // Builds the labels to query for a model: the selected keys, or its recommended values when nothing is selected.
 // Returns the refrigerant conversion of the model (801 R410A, 802 R32, 803 R22), or 0 if it does not tell.
-// Registries in fixes are read with the entries of their fix model.
+// Registries in fixes are read with the entries of their fix model. The display names are in language
+// (catalogLanguage()); the labels, used as MQTT keys and Home Assistant ids, stay English.
 int catalogBuildLabels(int model, const uint32_t *keys, size_t keyCount, std::vector<LabelDef> &out,
-                       const CatalogFix *fixes = nullptr, size_t fixCount = 0)
+                       const CatalogFix *fixes = nullptr, size_t fixCount = 0, int language = -1)
 {
   out.clear();
   int refrigerant = 0;
@@ -135,6 +182,7 @@ int catalogBuildLabels(int model, const uint32_t *keys, size_t keyCount, std::ve
     out.push_back(LabelDef(e.reg, e.offset, e.conv, e.size, e.type, catalogLabel(e)));
     memset(out.back().asString, 0, sizeof(out.back().asString));
     out.back().data = nullptr;
+    out.back().name = catalogName(e, language);
   }
   return refrigerant;
 }

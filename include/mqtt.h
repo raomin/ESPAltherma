@@ -114,6 +114,7 @@ void sendValues()
   if (WiFi.status() == WL_CONNECTED) // not over Ethernet
     snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
   jsonbuff[strlen(jsonbuff) - 1] = '}';
   if (config.jsonTable)
   {

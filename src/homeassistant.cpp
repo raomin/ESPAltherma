@@ -11,11 +11,13 @@ const char *discovery_json_end = "},\"stat_t\":\"espaltherma/ATTR\",\"qos\": 2}"
 #define ESP_SENSOR_WIFI_RSSI 998
 #define ESP_SENSOR_FREE_MEM 997
 #define ESP_SENSOR_M5VIN 996
+#define ESP_SENSOR_UPTIME 995
 
 const LabelDef battery_voltage = {-1, -1, -1, -1, ESP_SENSOR_M5BATV, "M5BatV"};
 const LabelDef wifi_rssi = {-1, -1, -1, -1, ESP_SENSOR_WIFI_RSSI, "WifiRSSI"};
 const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 const LabelDef m5_vin = {-1, -1, -1, -1, ESP_SENSOR_M5VIN, "M5VIN"};
+const LabelDef uptime = {-1, -1, -1, -1, ESP_SENSOR_UPTIME, "Uptime"};
 
 size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx)
 {
@@ -37,6 +39,8 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     emit(s.data(), s.size());
     s = "," + makeSensorJson(free_mem, true);
     emit(s.data(), s.size());
+    s = "," + makeSensorJson(uptime, true);
+    emit(s.data(), s.size());
 #if defined(ARDUINO_M5Stick_C) && !defined(ARDUINO_M5Stick_C_Plus2)
     // Supply voltage, published by the AXP192 boards: shows the drops of a weak 5V supply
     s = "," + makeSensorJson(m5_vin, true);
@@ -54,6 +58,19 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     emit(discovery_json_end, strlen(discovery_json_end));
 
     return total;
+}
+
+// Translated names may hold quotes
+static std::string jsonEscape(const char *s)
+{
+    std::string out;
+    for (; *s; s++)
+    {
+        if (*s == '"' || *s == '\\')
+            out += '\\';
+        out += *s;
+    }
+    return out;
 }
 
 std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
@@ -74,7 +91,7 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
     json += "\"uniq_id\":\"" + uid + "\",";
     json += "\"def_ent_id\":\"sensor." + uid + "\",";
     json += "\"name\":\"";
-    json += label.label;
+    json += jsonEscape(label.name != nullptr ? label.name : label.label); // in the chosen language; the ids stay English
     json += "\"";
 
     // "an entity that exposes some configuration parameter or diagnostics of a device but does not allow changing it, for example, a sensor showing RSSI or MAC address"
@@ -99,6 +116,7 @@ std::string getConversion(const LabelDef &label)
         case ESP_SENSOR_WIFI_RSSI:
             return "|replace('dBm','')|int";
         case ESP_SENSOR_FREE_MEM:
+        case ESP_SENSOR_UPTIME:
             return "|int";
     }
     return "";
@@ -119,6 +137,9 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
         // "FreeMem" (data_size in b)
         case ESP_SENSOR_FREE_MEM:
             return "\"p\":\"sensor\",\"dev_cla\":\"data_size\",\"unit_of_meas\":\"B\",";
+        // "Uptime" (seconds since the last restart)
+        case ESP_SENSOR_UPTIME:
+            return "\"p\":\"sensor\",\"dev_cla\":\"duration\",\"unit_of_meas\":\"s\",";
 
         /// Built-in ones:
         // TODO: move magic numbers to consts

@@ -33,6 +33,7 @@ struct AppConfig
   bool staticIp;
   uint32_t ip, gateway, subnet, dns1, dns2;
   char hostname[33];
+  char lang[6]; // web interface and sensor names: "" follows the browser (sensor names in English), or "fr", "de"...
 
   // MQTT
   char mqttServer[65];
@@ -115,6 +116,7 @@ void configSeed(AppConfig &c)
 #endif
 
   strlcpy(c.hostname, "ESPAltherma", sizeof(c.hostname));
+  c.lang[0] = 0;
   c.layoutCheck = true;
 
 #if defined(MQTT_SERVER)
@@ -262,6 +264,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   wifi["dns1"] = ipToString(c.dns1);
   wifi["dns2"] = ipToString(c.dns2);
   doc["hostname"] = c.hostname;
+  doc["lang"] = c.lang;
 
   JsonObject mqtt = doc["mqtt"].to<JsonObject>();
   mqtt["server"] = c.mqttServer;
@@ -359,6 +362,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readIp(wifi["dns1"], c.dns1);
   readIp(wifi["dns2"], c.dns2);
   readStr(src["hostname"], c.hostname, sizeof(c.hostname));
+  readStr(src["lang"], c.lang, sizeof(c.lang));
 
   JsonVariantConst mqtt = src["mqtt"];
   readStr(mqtt["server"], c.mqttServer, sizeof(c.mqttServer));

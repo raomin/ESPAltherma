@@ -10,13 +10,15 @@ import argparse
 import json
 import os
 import random
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PAGE = os.path.join(ROOT, "web", "index.html")
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
+import webpage  # noqa: E402  (the page with its translations)
 
 MODELS = [
     ("Altherma(ERGA E EHV-EHB-EHVZ E_EJ series 04-08kW)", "G", "I"),
@@ -164,8 +166,7 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         p = url.path
         if p == "/":
-            with open(PAGE, "rb") as f:
-                return self.send(200, f.read(), "text/html")
+            return self.send(200, webpage.render(ROOT).encode("utf-8"), "text/html")
         if p == "/api/status":
             return self.send(200, d.status())
         if p == "/api/config":
@@ -189,7 +190,11 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, {"running": running, "done": not running, "hosts": [] if running else [
                 {"name": "homeassistant", "ip": "192.168.1.10", "port": 1883, "ha": True, "mqtt": True}]})
         if p == "/api/mqtt/test":
-            return self.send(200, {"result": "running" if time.time() < d.mqtt_test_until else "ok"})
+            if time.time() < d.mqtt_test_until:
+                return self.send(200, {"result": "running"})
+            if not d.config["mqtt"]["server"].startswith("192.168."):
+                return self.send(200, {"result": "error", "reason": "broker unreachable", "state": -2})
+            return self.send(200, {"result": "ok"})
         if p == "/api/log":
             return self.send(200, d.log, "text/plain")
         if p == "/api/telemetry":

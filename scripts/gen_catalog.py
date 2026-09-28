@@ -12,6 +12,7 @@ Also runs as a PlatformIO pre-build script (extra_scripts = pre:scripts/gen_cata
 header is only rewritten when its content changes, so builds are not needlessly recompiled.
 """
 
+import collections
 import glob
 import json
 import os
@@ -122,6 +123,65 @@ def c_string(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+# Sensor names in other languages, from the translated definition files (include/def/<Language>/). They are
+# line-by-line translations of the English files: each English name gets the translation found most often.
+# Only the names shown in Home Assistant and the web interface change; the MQTT keys and ids stay English.
+LANGUAGES = [("fr", "French"), ("de", "German"), ("it", "Italian"), ("es", "Spanish")]
+
+
+def translations(files, labels):
+    out = ["// Sensor names by language: {English name offset in CATALOG_LABELS, name offset in the language pool},",
+           "// sorted by the first. Names without a translation stay English. Left out of the builds whose values",
+           "// come from my_setup.h (their names are those of the definition file compiled in).",
+           "#ifdef HAS_STATIC_LABELS",
+           "#define CATALOG_LANGUAGE_COUNT 0",
+           "static const CatalogLanguage CATALOG_LANGUAGES[1] = {{\"\", nullptr, nullptr, 0}};",
+           "#else"]
+    table = []
+    for code, folder in LANGUAGES:
+        votes = collections.defaultdict(collections.Counter)
+        for f in files:
+            path = os.path.join(DEF_DIR, folder, f)
+            if not os.path.exists(path):
+                continue
+            english = list(parse(os.path.join(DEF_DIR, f)))
+            translated = list(parse(path))
+            if [e[:5] for e in english] != [t[:5] for t in translated]:
+                print("gen_catalog: %s/%s does not follow the English file, skipped" % (folder, f))
+                continue
+            for e, t in zip(english, translated):
+                if t[5] != e[5] and e[5] in labels:
+                    votes[e[5]][t[5]] += 1
+        items = sorted((labels[en], c.most_common(1)[0][0]) for en, c in votes.items())
+        pool, pos, pairs = [], 0, []
+        offsets = {}
+        for en_offset, text in items:
+            if text not in offsets:
+                offsets[text] = pos
+                pool.append(text)
+                pos += len(text.encode("utf-8")) + 1
+            pairs.append((en_offset, offsets[text]))
+        if pos > 0xFFFF:
+            raise SystemExit("gen_catalog: %s name pool over 64KB" % code)
+        upper = code.upper()
+        out.append("static const char CATALOG_NAMES_%s[] =" % upper)
+        for text in pool:
+            out.append("    %s \"\\0\"" % c_string(text))
+        out.append("    ;")
+        out.append("static const CatalogTranslation CATALOG_TR_%s[] = {" % upper)
+        for i in range(0, len(pairs), 8):
+            out.append("    " + " ".join("{%d, %d}," % p for p in pairs[i:i + 8]))
+        out.append("};")
+        table.append('    {"%s", CATALOG_NAMES_%s, CATALOG_TR_%s, %d},' % (code, upper, upper, len(pairs)))
+    out.append("#define CATALOG_LANGUAGE_COUNT %d" % len(LANGUAGES))
+    out.append("static const CatalogLanguage CATALOG_LANGUAGES[CATALOG_LANGUAGE_COUNT] = {")
+    out += table
+    out.append("};")
+    out.append("#endif")
+    out.append("")
+    return out
+
+
 def build():
     files = sorted(os.path.basename(p) for p in glob.glob(os.path.join(DEF_DIR, "*.h")))
     files = [f for f in files if f not in EXCLUDED]
@@ -204,6 +264,7 @@ def build():
         out.append("    {0x%02x, %d, %d, %d, %d, %d, %d, 0x%016xULL}," % (reg, offset, conv, size, dtype, labels[label], flags, mask))
     out.append("};")
     out.append("")
+    out += translations(files, labels)
 
     fingerprints = []
     if os.path.exists(FINGERPRINTS):

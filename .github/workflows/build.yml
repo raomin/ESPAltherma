@@ -16,6 +16,8 @@ jobs:
       - run: pip install platformio
       - name: Label catalog up to date with include/def
         run: python scripts/gen_catalog.py --check
+      - name: Translations complete (web/i18n, flasher/i18n)
+        run: python scripts/check_i18n.py --check
       - name: Unit tests
         run: pio test -e native
 

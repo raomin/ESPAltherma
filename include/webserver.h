@@ -6,6 +6,7 @@
 // directly. Changes are queued and applied by webLoop() in the main loop.
 
 #include <ESPAsyncWebServer.h>
+#include <memory>
 #include <Update.h>
 #include "webui_data.h"
 #ifdef HAS_TLS_CLIENT
@@ -30,6 +31,7 @@ extern char surveyJson[];
 extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
+extern volatile bool surveyInProgress;
 extern unsigned long lastPollMs;
 #ifdef HAS_CATALOG
 extern DetectResult detection;
@@ -73,7 +75,7 @@ struct ReplyCache
         return data[i];
       }
     }
-    const SurveyReg *sr = survey.find(r);
+    const SurveyReg *sr = surveyInProgress ? nullptr : survey.find(r); // being rewritten by the heat pump task
     if (sr != nullptr && sr->answered)
     {
       n = sr->len;
@@ -94,7 +96,9 @@ volatile bool factoryResetRequested = false;
 const char *volatile rebootCause = "Restart from the web interface"; // restart cause saved for the next boot
 volatile bool mqttTestRequested = false;
 AppConfig mqttTestConfig;
-char mqttTestResult[96] = "";
+char mqttTestResult[16] = ""; // "running", "ok" or "error"
+const char *mqttTestReason = "";  // English, translated by the web interface
+int mqttTestState = 0;             // PubSubClient state
 volatile bool telemetryPending = false;
 bool updateFailed = false;
 
@@ -221,7 +225,7 @@ static void statusJson(JsonDocument &doc)
   hp["confirmed"] = config.modelConfirmed;
   hp["values"] = converter.activeCount;
   hp["last_poll"] = lastPollMs ? (long)((millis() - lastPollMs) / 1000) : -1;
-  hp["survey_running"] = (bool)surveyRequested;
+  hp["survey_running"] = surveyRequested || surveyInProgress;
   hp["survey_done"] = surveyJson[0] != 0;
   JsonArray fixes = hp["layout_fixes"].to<JsonArray>();
   for (uint8_t f = 0; f < config.fixCount; f++)
@@ -293,6 +297,104 @@ String telemetryPayload()
   return s;
 }
 
+#ifdef HAS_CATALOG
+// The catalog of a model, sent item by item: the whole list (25KB with the translated names) may not fit in one
+// piece of a fragmented heap, which crashed the device when it was built in memory first.
+struct CatalogStream
+{
+  int model = -1;
+  int language = -1;
+  bool current = false;
+  CatalogFix fixes[CONFIG_MAX_FIXES];
+  size_t fixCount = 0;
+  int next = 0; // next entry to look at
+  bool started = false;
+  bool ended = false;
+  bool firstItem = true;
+  String pending; // bytes of the current piece not sent yet
+  size_t sent = 0;
+  ::Converter decoder; // one-off decodes of the current values
+
+  // Prepares the next piece: "[", an item, or "]". False when everything was sent.
+  bool produce()
+  {
+    pending = "";
+    sent = 0;
+    if (!started)
+    {
+      started = true;
+      pending = "[";
+      return true;
+    }
+    for (; next < CATALOG_ENTRY_COUNT; next++)
+    {
+      const CatalogEntry &e = CATALOG_ENTRIES[next];
+      if (!catalogInModel(e, catalogModelFor(e.reg, model, fixes, fixCount)) || (e.flags & CATALOG_FLAG_ALWAYS))
+        continue;
+      next++;
+      uint32_t key = catalogKey(e);
+      bool recommended = e.flags & CATALOG_FLAG_RECOMMENDED;
+      bool selected = recommended;
+      if (current && config.labelCount > 0)
+      {
+        selected = false;
+        for (uint16_t k = 0; k < config.labelCount && !selected; k++)
+          selected = config.labels[k] == key;
+      }
+      JsonDocument item;
+      item["k"] = key;
+      item["r"] = e.reg;
+      item["o"] = e.offset;
+      item["c"] = e.conv;
+      item["l"] = catalogLabel(e);
+      const char *translated = catalogName(e, language);
+      if (translated != catalogLabel(e))
+        item["n"] = translated; // name in the requested language
+      item["rec"] = recommended;
+      item["sel"] = selected;
+      uint8_t len = 0;
+      valuesLock();
+      const uint8_t *payload = replyCache.find(e.reg, len, survey);
+      if (payload != nullptr && e.offset + e.size <= len)
+      {
+        LabelDef value(e.reg, e.offset, e.conv, e.size, e.type, catalogLabel(e));
+        memset(value.asString, 0, sizeof(value.asString));
+        decoder.convert(&value, const_cast<uint8_t *>(payload + e.offset)); // read only, bounds checked above
+        item["v"] = String(value.asString);
+      }
+      valuesUnlock();
+      String json;
+      serializeJson(item, json); // overwrites json: the comma goes in front afterwards
+      pending = firstItem ? json : "," + json;
+      firstItem = false;
+      return true;
+    }
+    if (ended)
+      return false;
+    ended = true;
+    pending = "]";
+    return true;
+  }
+
+  size_t fill(uint8_t *buffer, size_t maxLen)
+  {
+    size_t n = 0;
+    while (n < maxLen)
+    {
+      if (sent >= pending.length() && !produce())
+        break;
+      size_t chunk = pending.length() - sent;
+      if (chunk > maxLen - n)
+        chunk = maxLen - n;
+      memcpy(buffer + n, pending.c_str() + sent, chunk);
+      n += chunk;
+      sent += chunk;
+    }
+    return n;
+  }
+};
+#endif
+
 static void handleCatalog(AsyncWebServerRequest *r)
 {
 #ifdef HAS_CATALOG
@@ -303,61 +405,22 @@ static void handleCatalog(AsyncWebServerRequest *r)
     r->send(404, "application/json", "{\"ok\":false,\"error\":\"unknown model\"}");
     return;
   }
-  bool current = strcmp(name.c_str(), config.model) == 0;
-  CatalogFix fixes[CONFIG_MAX_FIXES];
-  size_t fixCount = 0;
-  for (uint8_t f = 0; current && f < config.fixCount; f++)
+  std::shared_ptr<CatalogStream> stream = std::make_shared<CatalogStream>();
+  stream->model = model;
+  stream->current = strcmp(name.c_str(), config.model) == 0;
+  String lang = r->hasParam("lang") ? r->getParam("lang")->value() : String(config.lang);
+  stream->language = catalogLanguage(lang.c_str());
+  for (uint8_t f = 0; stream->current && f < config.fixCount; f++)
   {
     int fixModel = catalogFindModel(config.fixModel[f]);
     if (fixModel >= 0)
-      fixes[fixCount++] = {config.fixReg[f], fixModel};
+      stream->fixes[stream->fixCount++] = {config.fixReg[f], fixModel};
   }
-  AsyncResponseStream *resp = r->beginResponseStream("application/json");
-  resp->print("[");
-  bool first = true;
-  ::Converter decoder; // one-off decodes of the current values
-  decoder.quiet = true;
-  decoder.RType = converter.RType;
-  for (int i = 0; i < CATALOG_ENTRY_COUNT; i++)
-  {
-    const CatalogEntry &e = CATALOG_ENTRIES[i];
-    if (!catalogInModel(e, catalogModelFor(e.reg, model, fixes, fixCount)) || (e.flags & CATALOG_FLAG_ALWAYS))
-      continue;
-    uint32_t key = catalogKey(e);
-    bool recommended = e.flags & CATALOG_FLAG_RECOMMENDED;
-    bool selected = recommended;
-    if (current && config.labelCount > 0)
-    {
-      selected = false;
-      for (uint16_t k = 0; k < config.labelCount && !selected; k++)
-        selected = config.labels[k] == key;
-    }
-    JsonDocument item;
-    item["k"] = key;
-    item["r"] = e.reg;
-    item["o"] = e.offset;
-    item["c"] = e.conv;
-    item["l"] = catalogLabel(e);
-    item["rec"] = recommended;
-    item["sel"] = selected;
-    uint8_t len = 0;
-    valuesLock();
-    const uint8_t *payload = replyCache.find(e.reg, len, survey);
-    if (payload != nullptr && e.offset + e.size <= len)
-    {
-      LabelDef value(e.reg, e.offset, e.conv, e.size, e.type, catalogLabel(e));
-      memset(value.asString, 0, sizeof(value.asString));
-      decoder.convert(&value, const_cast<uint8_t *>(payload + e.offset)); // read only, bounds checked above
-      item["v"] = String(value.asString);
-    }
-    valuesUnlock();
-    if (!first)
-      resp->print(",");
-    first = false;
-    serializeJson(item, *resp);
-  }
-  resp->print("]");
-  r->send(resp);
+  stream->decoder.quiet = true;
+  stream->decoder.RType = converter.RType;
+  r->sendChunked("application/json", [stream](uint8_t *buffer, size_t maxLen, size_t) -> size_t {
+    return stream->fill(buffer, maxLen);
+  });
 #else
   r->send(404);
 #endif
@@ -559,6 +622,11 @@ void webBegin()
   webServer.on("/api/mqtt/test", HTTP_GET, [](AsyncWebServerRequest *r) {
     JsonDocument doc;
     doc["result"] = mqttTestResult;
+    if (strcmp(mqttTestResult, "error") == 0)
+    {
+      doc["reason"] = mqttTestReason;
+      doc["state"] = mqttTestState;
+    }
     sendJson(r, doc);
   });
 
@@ -672,9 +740,9 @@ static void runMqttTest()
   else
   {
     // PubSubClient states: -4 timeout, -2 connection failed, 4 bad credentials, 5 unauthorized
-    int state = test.state();
-    const char *reason = state == -2 ? "broker unreachable" : (state == 4 || state == 5) ? "wrong user or password" : "connection refused";
-    snprintf(mqttTestResult, sizeof(mqttTestResult), "error: %s (%d)", reason, state);
+    mqttTestState = test.state();
+    mqttTestReason = mqttTestState == -2 ? "broker unreachable" : (mqttTestState == 4 || mqttTestState == 5) ? "wrong user or password" : "connection refused";
+    strcpy(mqttTestResult, "error");
   }
 }
 
@@ -714,6 +782,7 @@ void webLoop()
     bool labelsChanged = strcmp(next->model, config.model) != 0 || next->labelCount != config.labelCount ||
                          memcmp(next->labels, config.labels, sizeof(uint32_t) * next->labelCount) != 0 ||
                          next->fixCount != config.fixCount || next->layoutCheck != config.layoutCheck;
+    labelsChanged = labelsChanged || strcmp(next->lang, config.lang) != 0;
     bool confirmedNow = next->modelConfirmed && (!config.modelConfirmed || labelsChanged);
     bool telemetryEnabled = next->telemetry && !config.telemetry;
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||

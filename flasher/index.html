@@ -3,57 +3,81 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ESPAltherma Installer</title>
+<title>ESPAltherma web installer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 158'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2357d1bd'/%3E%3Cstop offset='1' stop-color='%2367dcf4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M82 1L158 77H140V157H24V77H6Z' fill='url%28%23g%29'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='8' stroke-linecap='round'%3E%3Cpath d='M46.9 88.3A48 48 0 0 1 117.1 88.3'/%3E%3Cpath d='M57.9 98.5A33 33 0 0 1 106.1 98.5'/%3E%3Cpath d='M69.6 109.4A17 17 0 0 1 94.4 109.4'/%3E%3C/g%3E%3Ccircle cx='82' cy='121' r='4.6' fill='%23fff'/%3E%3Crect x='2.5' y='115.5' width='52' height='41' rx='6' fill='%235bcad3' stroke='%23294646' stroke-width='3'/%3E%3Ccircle cx='19.5' cy='136' r='11' fill='%23e6f3f5' stroke='%23294646' stroke-width='3'/%3E%3Cg fill='%23294646'%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6'/%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6' transform='rotate%28120 19.5 136%29'/%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6' transform='rotate%28240 19.5 136%29'/%3E%3C/g%3E%3Cpath d='M38 123.5h9.5M38 131.5h9.5M38 139.5h9.5M38 147.5h9.5' stroke='%23294646' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
 <meta name="description" content="Install ESPAltherma on your ESP32 from the browser, then connect it to your Daikin Altherma heat pump and Home Assistant.">
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 <style>
-:root{--bg:#f4f6f8;--card:#fff;--fg:#1d2733;--muted:#5f6b78;--line:#dde3ea;--accent:#0a74c9;--accent-fg:#fff;--chip:#eef2f6;--warn:#b86e00}
-@media (prefers-color-scheme:dark){:root{--bg:#10151b;--card:#18212b;--fg:#e4eaf0;--muted:#94a3b3;--line:#2a3643;--accent:#4aa3ea;--accent-fg:#06121d;--chip:#223040;--warn:#f0a53a}}
+/* colours, font and shapes as in web/index.html (the device page) */
+:root{--bg:#edf0f7;--card:#f8faff;--soft:#e4e8f1;--ink:#0a1a33;--ink2:#5c677d;--line:#d6dce8;
+--acc:#0466c8;--acc-ink:#f8faff;--note-bg:#fbeccb;--note:#6b4800;--info-bg:#dde9f8;--info:#083d78;
+--shadow:0 1px 2px rgba(0,24,69,.06),0 8px 22px rgba(0,24,69,.07);--r:20px;
+--f:ui-rounded,"SF Pro Rounded","Avenir Next",Avenir,"Segoe UI Variable Display","Segoe UI",Nunito,system-ui,sans-serif;--mono:ui-monospace,"SF Mono",Consolas,monospace;
+--mdc-theme-primary:var(--acc)}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1526;--card:#131f33;--soft:#1a283e;--ink:#e3e9f5;--ink2:#979dac;--line:#24334b;
+--acc:#5aa2f5;--acc-ink:#0b1526;--note-bg:#3b3018;--note:#f3d9a4;--info-bg:#16304f;--info:#c3dcfb;
+--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 26px rgba(0,0,0,.28)}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:860px;margin:0 auto;padding:24px 16px 48px}
-h1{font-size:28px;margin:0 0 4px}
-h2{font-size:19px;margin:0 0 12px;display:flex;align-items:center;gap:10px}
-h2 .n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-size:14px;flex:none}
-.lead{color:var(--muted);margin:0 0 24px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
-.boards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
-.board{border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;background:var(--bg);text-align:left;font:inherit;color:inherit}
-.board b{display:block}
-.board span{font-size:13px;color:var(--muted)}
-.board.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
-.muted{color:var(--muted);font-size:14px}
-.warn{color:var(--warn);font-size:14px}
-table{border-collapse:collapse;width:100%;font-size:15px;margin-top:8px}
-td,th{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
-th{color:var(--muted);font-weight:500;font-size:13px}
-code{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:14px}
-esp-web-install-button button{background:var(--accent);color:var(--accent-fg);border:0;border-radius:8px;padding:11px 22px;font:inherit;font-weight:600;cursor:pointer}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--f)}
+main{max-width:860px;margin:0 auto;padding:28px 16px 48px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+/* wordmark as in the README logo: ESP bold, ALTHERMA light and condensed */
+h1.brand{flex:1;display:flex;align-items:center;gap:14px;margin:0;min-width:0;font:300 30px/1 "Bahnschrift SemiCondensed",Bahnschrift,"Roboto Condensed","Arial Narrow",var(--f);letter-spacing:.05em;color:var(--ink2);font-stretch:condensed}
+h1.brand b{font-weight:700;color:var(--ink);letter-spacing:.02em}
+h1.brand small{display:block;font:600 15px/1.2 var(--f);letter-spacing:0;color:var(--ink2);margin-top:6px}
+.logo{width:54px;height:54px;border-radius:17px;background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+.top select{font:600 14px var(--f);color:var(--ink);background:var(--card);border:0;border-radius:999px;padding:8px 12px;box-shadow:var(--shadow);cursor:pointer}
+.lead{color:var(--ink2);font-size:17px;margin:0 0 22px;max-width:640px}
+h2{font-size:19px;font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+h2 .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--info-bg);color:var(--info);font-size:14px;flex:none}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:22px 24px;margin-bottom:16px}
+.card>p{margin:10px 0 0}
+.boards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.board{display:flex;flex-direction:column;align-items:flex-start;border:0;border-radius:14px;padding:12px 14px;cursor:pointer;background:var(--soft);text-align:left;font:inherit;color:inherit}
+.board b{display:block;font-weight:600}
+.board span{font-size:13px;line-height:1.4;margin-top:3px;color:var(--ink2)}
+.board:hover{box-shadow:inset 0 0 0 1.5px var(--line)}
+.board.on{background:var(--ink);color:var(--card)}
+.board.on span{color:inherit;opacity:.75}
+.muted{color:var(--ink2);font-size:14px}
+.note{display:flex;gap:10px;align-items:center;padding:12px 16px;border-radius:16px;background:var(--note-bg);color:var(--note);font-size:14.5px}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+table{border-collapse:collapse;width:100%;font-size:15px;margin-top:10px}
+td,th{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--ink2);font-weight:600;font-size:13px}
+code{background:var(--soft);padding:1px 7px;border-radius:6px;font:13.5px var(--mono)}
+esp-web-install-button{display:block;margin-top:16px}
+esp-web-install-button button{background:var(--acc);color:var(--acc-ink);border:0;border-radius:999px;padding:12px 24px;font:600 15px var(--f);cursor:pointer}
 esp-web-install-button[install-unsupported] button{display:none}
 .hidden{display:none}
-ol{padding-left:20px;margin:8px 0}
-li{margin:4px 0}
-a{color:var(--accent)}
-footer{color:var(--muted);font-size:14px;text-align:center;margin-top:24px}
+ol{padding-left:22px;margin:8px 0}
+li{margin:5px 0}
+a{color:var(--acc);text-underline-offset:3px}
+footer{color:var(--ink2);font-size:14px;text-align:center;margin-top:28px}
+footer a{color:inherit}
+@media (max-width:620px){h1.brand{font-size:25px;gap:12px}.logo{width:46px;height:46px;border-radius:15px}.logo svg{width:32px!important;height:32px!important}.card{padding:18px}.lead{font-size:16px}.boards{grid-template-columns:1fr 1fr}.board{padding:10px 12px}}
 </style>
 </head>
 <body>
 <main>
-  <h1>ESPAltherma</h1>
+  <div class="top">
+      <h1 class="brand"><span class="logo"><svg class="mark" style="width:38px;height:38px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 158"><defs><linearGradient id="logoG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#57d1bd"/><stop offset="1" stop-color="#67dcf4"/></linearGradient></defs><path d="M82 1L158 77H140V157H24V77H6Z" fill="url(#logoG)"/><g fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"><path d="M46.9 88.3A48 48 0 0 1 117.1 88.3"/><path d="M57.9 98.5A33 33 0 0 1 106.1 98.5"/><path d="M69.6 109.4A17 17 0 0 1 94.4 109.4"/></g><circle cx="82" cy="121" r="4.6" fill="#fff"/><rect x="2.5" y="115.5" width="52" height="41" rx="6" fill="#5bcad3" stroke="#294646" stroke-width="3"/><circle cx="19.5" cy="136" r="11" fill="#e6f3f5" stroke="#294646" stroke-width="3"/><g fill="#294646"><ellipse cx="19.5" cy="131.2" rx="2.7" ry="4.6"/><ellipse cx="19.5" cy="131.2" rx="2.7" ry="4.6" transform="rotate(120 19.5 136)"/><ellipse cx="19.5" cy="131.2" rx="2.7" ry="4.6" transform="rotate(240 19.5 136)"/></g><path d="M38 123.5h9.5M38 131.5h9.5M38 139.5h9.5M38 147.5h9.5" stroke="#294646" stroke-width="2.6" stroke-linecap="round"/></svg></span><span><span translate="no"><b>ESP</b>ALTHERMA</span><small>Web installer</small></span></h1>
+    <select id="lang" aria-label="Language" translate="no"></select>
+  </div>
   <p class="lead">Monitor your Daikin Altherma heat pump in Home Assistant. Install from your browser: no software, no configuration file.</p>
 
   <div class="card">
-    <h2><span class="n">1</span>Choose your board</h2>
+    <h2><span class="n" translate="no">1</span>Choose your board</h2>
     <div class="boards" id="boards"></div>
   </div>
 
   <div class="card">
-    <h2><span class="n">2</span>Install</h2>
-    <p>Plug the board into this computer with a USB data cable, then click <b>Install</b>. After the installation, the installer asks for your WiFi network.</p>
+    <h2><span class="n" translate="no">2</span>Install</h2>
+    <p data-th>Plug the board into this computer with a USB data cable, then click <b>Install</b>. After the installation, the installer asks for your WiFi network.</p>
     <esp-web-install-button id="install">
       <button slot="activate">Install ESPAltherma</button>
-      <span slot="unsupported" class="warn">Your browser cannot talk to USB devices. Use Chrome or Edge on a computer.</span>
-      <span slot="not-allowed" class="warn">The installer needs a secure page (https or localhost).</span>
+      <span slot="unsupported" class="note"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/></svg>Your browser cannot talk to USB devices. Use Chrome or Edge on a computer.</span>
+      <span slot="not-allowed" class="note"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/></svg>The installer needs a secure page (https or localhost).</span>
     </esp-web-install-button>
     <p class="muted" id="version"></p>
     <p class="muted">The board does not show up? Install the USB driver of your board (CP210x or CH340), and try another cable: some only charge.</p>
@@ -61,62 +85,105 @@ footer{color:var(--muted);font-size:14px;text-align:center;margin-top:24px}
   </div>
 
   <div class="card">
-    <h2><span class="n">3</span>Connect it to the heat pump</h2>
-    <p>Power the heat pump <b>off</b> first. Find the <code>X10A</code> connector on the main board of the indoor unit (with a Bi-zone kit, use <code>X12A</code> on the Bi-zone board: same pins).</p>
+    <h2><span class="n" translate="no">3</span>Connect it to the heat pump</h2>
+    <p data-th>Power the heat pump <b>off</b> first. Find the <code>X10A</code> connector on the main board of the indoor unit (with a Bi-zone kit, use <code>X12A</code> on the Bi-zone board: same pins).</p>
     <table>
-      <thead><tr><th>X10A</th><th>Board</th></tr></thead>
+      <thead><tr><th translate="no">X10A</th><th>Board</th></tr></thead>
       <tbody>
-        <tr><td>1 · 5V</td><td>5V / VIN <span class="muted">(can power the board)</span></td></tr>
-        <tr><td>2 · TX</td><td>GPIO <b id="pinRx">16</b> <span class="muted">(RX)</span></td></tr>
-        <tr><td>3 · RX</td><td>GPIO <b id="pinTx">17</b> <span class="muted">(TX)</span></td></tr>
-        <tr><td>5 · GND</td><td>GND <span class="muted">(always connect it, even when powered by USB)</span></td></tr>
+        <tr><td translate="no">1 · 5V</td><td><span translate="no">5V / VIN</span> <span class="muted">(can power the board)</span></td></tr>
+        <tr><td translate="no">2 · TX</td><td translate="no">GPIO <b id="pinRx">16</b> <span class="muted">(RX)</span></td></tr>
+        <tr><td translate="no">3 · RX</td><td translate="no">GPIO <b id="pinTx">17</b> <span class="muted">(TX)</span></td></tr>
+        <tr><td translate="no">5 · GND</td><td><span translate="no">GND</span> <span class="muted">(always connect it, even when powered by USB)</span></td></tr>
       </tbody>
     </table>
-    <p class="muted">The pins can be changed later in the web interface (Settings). ROTEX units with an 8-pin X10A: see the <a href="https://github.com/raomin/ESPAltherma#8-pin-x10a-connection">wiring guide</a>.</p>
+    <p class="muted" data-th>The pins can be changed later in the web interface (Settings). ROTEX units with an 8-pin X10A: see the <a href="https://github.com/raomin/ESPAltherma#8-pin-x10a-connection">wiring guide</a>.</p>
   </div>
 
   <div class="card">
-    <h2><span class="n">4</span>Finish in the web interface</h2>
+    <h2><span class="n" translate="no">4</span>Finish in the web interface</h2>
     <ol>
-      <li>Open <a href="http://espaltherma.local" id="devLink">http://espaltherma.local</a> (or the address shown by the installer).</li>
+      <li data-th>Open <a href="http://espaltherma.local">http://espaltherma.local</a> (or the address shown by the installer).</li>
       <li>ESPAltherma reads your heat pump and detects its model. Confirm it.</li>
-      <li>Click <b>Find my Home Assistant</b> to connect it to your MQTT broker. The sensors appear in Home Assistant automatically.</li>
+      <li data-th>Click <b>Find my Home Assistant</b> to connect it to your MQTT broker. The sensors appear in Home Assistant automatically.</li>
     </ol>
-    <p class="muted">No WiFi entered, or the network changed? The board opens a setup network <b>ESPAltherma-XXXX</b> (password <code>espaltherma</code>): join it and follow the page that opens.</p>
+    <p class="muted" data-th>No WiFi entered, or the network changed? The board opens a setup network <b>ESPAltherma-XXXX</b> (password <code>espaltherma</code>): join it and follow the page that opens.</p>
   </div>
 
-  <footer>
-    <a href="https://github.com/raomin/ESPAltherma">ESPAltherma on GitHub</a> ·
-    Prefer PlatformIO? <a href="https://github.com/raomin/ESPAltherma#getting-started">Build it yourself</a>
-  </footer>
+  <footer data-th><a href="https://github.com/raomin/ESPAltherma">ESPAltherma on GitHub</a> · Prefer PlatformIO? <a href="https://github.com/raomin/ESPAltherma#getting-started">Build it yourself</a></footer>
 </main>
 <script>
+// Translations: i18n/<lang>.json ({"English text": "translation"}); English is the source text.
+// Text of the page is translated where it stands, elements marked data-th as a whole (they hold links or bold).
+const LANGS = {en: 'English', fr: 'Français', de: 'Deutsch', it: 'Italiano', es: 'Español'};
+const norm = s => s.replace(/\s+/g, ' ').trim();
+let dict = {}, lang = 'en';
+function t(s, p) {
+  let r = dict[norm(s)] || s;
+  if (p) r = r.replace(/\{(\w+)\}/g, (m, k) => p[k] != null ? p[k] : m);
+  return r;
+}
+function pickLang() {
+  try { const saved = localStorage.getItem('lang'); if (LANGS[saved]) return saved; } catch (e) {}
+  for (const l of navigator.languages || [navigator.language || 'en']) { const c = l.slice(0, 2).toLowerCase(); if (LANGS[c]) return c; }
+  return 'en';
+}
+const source = new WeakMap();
+function translatePage() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-th]').forEach(e => { if (!source.has(e)) source.set(e, e.innerHTML); e.innerHTML = t(source.get(e)); });
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT,
+    {acceptNode: n => n.parentElement.closest('script,style,[translate=no],[data-th]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+  for (let n; (n = walk.nextNode());) {
+    if (!source.has(n)) source.set(n, n.nodeValue);
+    const src = source.get(n);
+    if (norm(src)) n.nodeValue = src.replace(src.trim(), t(src));
+  }
+}
+async function setLang(code) {
+  lang = code;
+  dict = {};
+  if (code !== 'en') { try { dict = await (await fetch('i18n/' + code + '.json')).json(); } catch (e) {} }
+  for (const k of Object.keys(dict)) if (!dict[k]) delete dict[k];
+  translatePage();
+  renderBoards();
+}
+
 const button = document.getElementById('install');
-async function select(board, el) {
-  document.querySelectorAll('.board').forEach(b => b.classList.toggle('on', b === el));
+let boards = [], current = 0;
+async function select(i) {
+  current = i;
+  const board = boards[i];
+  document.querySelectorAll('.board').forEach((b, j) => b.classList.toggle('on', j === i));
   button.manifest = 'manifest-' + board.id + '.json';
   document.getElementById('pinRx').textContent = board.rx;
   document.getElementById('pinTx').textContent = board.tx;
   try {
     const m = await (await fetch(button.manifest)).json();
-    document.getElementById('version').textContent = 'Version ' + m.version + ' for ' + board.name;
+    document.getElementById('version').textContent = t('Version {version} for {board}', {version: m.version, board: board.name});
   } catch (e) {
-    document.getElementById('version').textContent = 'This firmware is not available yet.';
+    document.getElementById('version').textContent = t('This firmware is not available yet.');
   }
 }
-fetch('boards.json').then(r => r.json()).then(boards => {
+function renderBoards() {
   const list = document.getElementById('boards');
+  list.replaceChildren();
   boards.forEach((b, i) => {
     const el = document.createElement('button');
     el.className = 'board';
-    el.innerHTML = '<b></b><span></span>';
+    el.innerHTML = '<b translate="no"></b><span></span>';
     el.querySelector('b').textContent = b.name;
-    el.querySelector('span').textContent = b.note;
-    el.onclick = () => select(b, el);
+    el.querySelector('span').textContent = t(b.note);
+    el.onclick = () => select(i);
     list.append(el);
-    if (i === 0) select(b, el);
   });
-});
+  if (boards.length) select(current);
+}
+const langSel = document.getElementById('lang');
+for (const [code, name] of Object.entries(LANGS)) langSel.append(new Option(name, code));
+langSel.onchange = () => { try { localStorage.setItem('lang', langSel.value); } catch (e) {} setLang(langSel.value); };
+lang = pickLang();
+langSel.value = lang;
+fetch('boards.json').then(r => r.json()).then(list => { boards = list; setLang(lang); });
 </script>
 </body>
 </html>

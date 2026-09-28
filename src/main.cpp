@@ -73,6 +73,7 @@ LayoutChecker layoutChecker;         //checks the model's layout against the rep
 LayoutCycle layoutCycle;             //replies of the last query cycle
 #endif
 volatile bool surveyRequested = false;
+volatile bool surveyInProgress = false; //the survey is being written: readers must not use it
 volatile bool surveyReady = false;
 
 #ifdef HAS_HP_TASK
@@ -417,7 +418,7 @@ void initLabels(){
   }
   lastFixCount = config.fixCount;
   lastLayoutCheck = config.layoutCheck;
-  int refrigerant = catalogBuildLabels(model, config.labels, config.labelCount, catalogLabels, fixes, fixCount);
+  int refrigerant = catalogBuildLabels(model, config.labels, config.labelCount, catalogLabels, fixes, fixCount, catalogLanguage(config.lang));
   converter.RType = refrigerant ? refrigerant : 802;
   converter.setLabels(catalogLabels.data(), catalogLabels.size());
   mqttSerial.printf("Model: %s (%s), %d values\n", config.model, config.modelConfirmed ? "confirmed" : "to be confirmed", (int)catalogLabels.size());
@@ -641,7 +642,9 @@ void runSurvey()
   surveyRequested = false;
   lastSurvey = millis();
   mqttSerial.println("Starting heat pump survey...");
+  surveyInProgress = true;
   surveyRun(survey, surveyQuery);
+  surveyInProgress = false;
   const char *detectJson = nullptr;
 #ifdef HAS_CATALOG
   static char detectBuf[1024];
