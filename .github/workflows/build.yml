@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/web-flasher-autodetect]
   pull_request:
 
 jobs:
@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install platformio
-      - name: Label catalog up to date with include/def
+      - name: Label catalog up to date with definitions/
         run: python scripts/gen_catalog.py --check
       - name: Translations complete (web/i18n, flasher/i18n)
         run: python scripts/check_i18n.py --check
@@ -27,13 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - esp32
-          - esp32c3
-          - m5stickc
-          - m5stickcplus
-          - m5stickcplus2
-          - m5stack-tough
-          - nodemcuv2
           - web-esp32
           - web-esp32c3
           - web-esp32s3

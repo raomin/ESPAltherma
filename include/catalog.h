@@ -1,7 +1,7 @@
 #ifndef ESPALTHERMA_CATALOG_H
 #define ESPALTHERMA_CATALOG_H
 
-// Label catalog of the generic firmware: the values of every model, merged from include/def/*.h
+// Label catalog of the firmware: the values of every model, merged from definitions/*.h
 // by scripts/gen_catalog.py into include/catalog_data.h. Each entry carries the mask of the models
 // (definition files) that have it.
 
@@ -45,7 +45,7 @@ struct CatalogAsNumber
   uint64_t models; // candidate models (definition files)
 };
 
-// Sensor names in another language (gen_catalog.py, from include/def/<Language>/)
+// Sensor names in another language (gen_catalog.py, from definitions/<Language>/)
 struct CatalogTranslation
 {
   uint16_t label; // offset of the English name in CATALOG_LABELS

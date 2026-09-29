@@ -16,13 +16,9 @@
 
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
 
-WiFiClient plainClient;
-#if defined(ESPALTHERMA_GENERIC) || defined(MQTT_ENCRYPTED)
-// TLS is a runtime option of the generic firmware; builds from my_setup.h opt in with MQTT_ENCRYPTED (~100KB of flash)
 #include <WiFiClientSecure.h>
-#define HAS_TLS_CLIENT
-WiFiClientSecure secureClient;
-#endif
+WiFiClient plainClient;
+WiFiClientSecure secureClient; // MQTT over TLS, a runtime option
 PubSubClient client;
 Client *mqttNet = &plainClient; // the network client under PubSubClient
 
@@ -55,7 +51,6 @@ void resetJson()
 // Selects the (plain or TLS) network client and the broker, from the configuration.
 void setupMqttClient()
 {
-#ifdef HAS_TLS_CLIENT
   if (config.mqttTls)
   {
     // Required to establish encrypted connections.
@@ -67,7 +62,6 @@ void setupMqttClient()
     Serial.printf("Wifi client timeout: %d\n", secureClient.getTimeout());
   }
   else
-#endif
   {
     client.setClient(plainClient);
     mqttNet = &plainClient;
@@ -148,11 +142,6 @@ void readEEPROM(){
   }
 }
 
-// Defined in main.cpp; used to keep the screen/button responsive and WiFi
-// recovering while we wait between MQTT connection attempts.
-void handleScreen();
-void checkWifi();
-
 // One connection attempt; on success publishes the discovery messages and subscribes.
 bool mqttConnectOnce()
 {
@@ -207,36 +196,6 @@ bool mqttConnectOnce()
     }
     mqttSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
     return false;
-}
-
-// Blocks until connected (ESP8266; the ESP32 retries from the main loop, see netmgr.h)
-void reconnectMqtt()
-{
-  // Loop until we're reconnected
-  int i = 0;
-  while (!client.connected())
-  {
-    if (WiFi.status() != WL_CONNECTED)
-    { // No point retrying MQTT without WiFi; recover it first
-      checkWifi();
-    }
-    if (!mqttConnectOnce())
-    {
-      unsigned long start = millis();
-      while (millis() < start + 5000)
-      {
-        ArduinoOTA.handle();
-        handleScreen();//Keep the button responsive while retrying
-        mqttSerial.drain();
-        delay(10);
-      }
-
-      if (i++ == 100) {
-        mqttSerial.printf("Tried for 500 sec, rebooting now.");
-        restart_board("MQTT broker unreachable for 500 seconds");
-      }
-    }
-  }
 }
 
 void callbackTherm(byte *payload, unsigned int length)

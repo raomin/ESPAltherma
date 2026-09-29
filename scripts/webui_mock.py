@@ -8,8 +8,8 @@ The responses mirror include/webserver.h; values change every few seconds.
 
 import argparse
 import json
+import math
 import os
-import random
 import sys
 import threading
 import time
@@ -41,11 +41,26 @@ CATALOG = [
     (0x61, 10, 105, "DHW tank temp. (R5T)", True),
     (0x62, 12, 105, "Flow sensor (l/min)", True),
     (0x62, 14, 105, "Water pressure", True),
+    (0x60, 7, 105, "DHW setpoint", True),
+    (0x60, 9, 105, "LW setpoint (main)", True),
+    (0x61, 6, 105, "Refrig. Temp. liquid side (R3T)", True),
+    (0x61, 12, 105, "Indoor ambient temp. (R1T)", True),
+    (0x62, 5, 105, "RT setpoint", True),
     (0x20, 2, 105, "Discharge pipe temp.", False),
     (0x20, 4, 105, "Heat exchanger mid-temp.", False),
     (0x62, 0, 307, "Not in use", False),
     (0x63, 2, 215, "I/U EEPROM (3rd digit)", False),
 ]
+
+
+# Readings of a heat pump heating a house on a mild day: (typical value, drift)
+READINGS = {
+    "R1T-Outdoor air temp.": (6.5, 0.3), "INV primary current (A)": (4.8, 0.3), "INV frequency (rps)": (42, 2),
+    "Leaving water temp. before BUH (R1T)": (34.6, 0.3), "Leaving water temp. after BUH (R2T)": (34.8, 0.3),
+    "Inlet water temp.(R4T)": (30.2, 0.3), "DHW tank temp. (R5T)": (47.6, 0.2), "Flow sensor (l/min)": (16.4, 0.4),
+    "Water pressure": (1.7, 0.02), "DHW setpoint": (48, 0), "LW setpoint (main)": (35, 0),
+    "Refrig. Temp. liquid side (R3T)": (36.2, 0.4), "Indoor ambient temp. (R1T)": (21.3, 0.1), "RT setpoint": (21, 0), "Discharge pipe temp.": (68, 1), "Heat exchanger mid-temp.": (33.1, 0.5),
+}
 
 
 def key(reg, off, conv, size=2):
@@ -84,7 +99,7 @@ class Device:
                      "bssid": "80:3F:5D:67:A1:91" if wifi_ok else "", "channel": 12 if wifi_ok else 0, "last_disconnect": "",
                      "ap": link == "none", "ap_ssid": "ESPAltherma-1A2B", "ap_ip": "192.168.4.1"},
             "mqtt": {"configured": bool(c["mqtt"]["server"]), "connected": bool(c["mqtt"]["server"]) and link != "none", "server": c["mqtt"]["server"], "state": 0},
-            "hp": {"generic": True, "protocol": c["hp"]["protocol"], "model": c["hp"]["model"], "confirmed": c["hp"]["confirmed"],
+            "hp": {"protocol": c["hp"]["protocol"], "model": c["hp"]["model"], "confirmed": c["hp"]["confirmed"],
                    "values": len(self.values()), "last_poll": 12 if c["hp"]["model"] else -1,
                    "survey_running": time.time() < self.survey_until, "survey_done": time.time() >= self.survey_until},
             "detect": {"model": MODELS[0][0], "family": "G", "confidence": "low"},
@@ -129,6 +144,11 @@ class Device:
             return set(labels)
         return {key(r, o, c) for r, o, c, _, rec in CATALOG if rec}
 
+    @staticmethod
+    def reading(r, o, c, l):
+        base, drift = READINGS.get(l, (0, 0))
+        return {217: "Heating", 304: "OFF"}.get(c, "%.1f" % (base + drift * math.sin(time.time() / 40 + r + o)))
+
     def values(self):
         model = self.config["hp"]["model"]
         if not model:
@@ -138,8 +158,7 @@ class Device:
         for r, o, c, l, _ in CATALOG:
             if key(r, o, c) not in sel:
                 continue
-            v = {217: "Heating", 304: "OFF"}.get(c, "%.1f" % (20 + random.random() * 30))
-            out.append({"l": l, "v": v, "r": r})
+            out.append({"l": l, "v": self.reading(r, o, c, l), "r": r})
         return out
 
 
@@ -180,7 +199,8 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/catalog":
             model = parse_qs(url.query).get("model", [d.config["hp"]["model"]])[0]
             sel = d.selected_keys(model)
-            return self.send(200, [{"k": key(r, o, c), "r": r, "o": o, "c": c, "l": l, "rec": rec, "sel": key(r, o, c) in sel} for r, o, c, l, rec in CATALOG])
+            return self.send(200, [{"k": key(r, o, c), "r": r, "o": o, "c": c, "l": l, "rec": rec, "sel": key(r, o, c) in sel, "v": d.reading(r, o, c, l)}
+                                  for r, o, c, l, rec in CATALOG])
         if p == "/api/values":
             return self.send(200, d.values())
         if p == "/api/wifi/scan":

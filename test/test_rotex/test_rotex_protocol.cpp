@@ -5,7 +5,7 @@
 // Few defines to mimic Arduino framework
 #include "../arduino_to_native.h"
 
-#include "def/PROTOCOL_S_ROTEX.h"
+#include "../../definitions/PROTOCOL_S_ROTEX.h"
 #include "converters.h"
 
 void setUp(void)

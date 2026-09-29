@@ -9,19 +9,12 @@
 #include <memory>
 #include <Update.h>
 #include "webui_data.h"
-#ifdef HAS_TLS_CLIENT
 #include <HTTPClient.h>
-#endif
 
 #ifndef TELEMETRY_URL
 #define TELEMETRY_URL "" // Collection endpoint of the opt-in telemetry; nothing is sent while empty
 #endif
-// Telemetry goes over HTTPS: only with the TLS client (generic firmware, or MQTT_ENCRYPTED)
-#ifdef HAS_TLS_CLIENT
 #define TELEMETRY_AVAILABLE (strlen(TELEMETRY_URL) > 0)
-#else
-#define TELEMETRY_AVAILABLE false
-#endif
 
 #define MAX_BODY_SIZE 8192
 
@@ -33,9 +26,7 @@ extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
 extern unsigned long lastPollMs;
-#ifdef HAS_CATALOG
 extern DetectResult detection;
-#endif
 void requestSurvey();
 void valuesLock();
 void valuesUnlock();
@@ -215,11 +206,6 @@ static void statusJson(JsonDocument &doc)
   mqtt["state"] = (int)mqttStateCache;
 
   JsonObject hp = doc["hp"].to<JsonObject>();
-#ifdef HAS_STATIC_LABELS
-  hp["generic"] = false; // values compiled in (my_setup.h)
-#else
-  hp["generic"] = true;
-#endif
   hp["protocol"] = String(config.protocol);
   hp["model"] = config.model;
   hp["confirmed"] = config.modelConfirmed;
@@ -234,7 +220,6 @@ static void statusJson(JsonDocument &doc)
     fix["reg"] = config.fixReg[f];
     fix["model"] = config.fixModel[f];
   }
-#ifdef HAS_CATALOG
   if (detection.model >= 0)
   {
     JsonObject d = doc["detect"].to<JsonObject>();
@@ -242,7 +227,6 @@ static void statusJson(JsonDocument &doc)
     d["family"] = String(CATALOG_MODELS[detection.model].family);
     d["confidence"] = detectConfidenceName(detection.confidence);
   }
-#endif
   doc["telemetry_available"] = TELEMETRY_AVAILABLE;
   doc["reset_reason"] = resetReasonName();
   doc["restart_cause"] = restartCause; // saved by the firmware before restarting itself, "" otherwise
@@ -297,7 +281,6 @@ String telemetryPayload()
   return s;
 }
 
-#ifdef HAS_CATALOG
 // The catalog of a model, sent item by item: the whole list (25KB with the translated names) may not fit in one
 // piece of a fragmented heap, which crashed the device when it was built in memory first.
 struct CatalogStream
@@ -393,11 +376,9 @@ struct CatalogStream
     return n;
   }
 };
-#endif
 
 static void handleCatalog(AsyncWebServerRequest *r)
 {
-#ifdef HAS_CATALOG
   String name = r->hasParam("model") ? r->getParam("model")->value() : String(config.model);
   int model = catalogFindModel(name.c_str());
   if (model < 0)
@@ -421,9 +402,6 @@ static void handleCatalog(AsyncWebServerRequest *r)
   r->sendChunked("application/json", [stream](uint8_t *buffer, size_t maxLen, size_t) -> size_t {
     return stream->fill(buffer, maxLen);
   });
-#else
-  r->send(404);
-#endif
 }
 
 void webBegin()
@@ -491,7 +469,6 @@ void webBegin()
   });
 
   webServer.on("/api/models", HTTP_GET, [](AsyncWebServerRequest *r) {
-#ifdef HAS_CATALOG
     AsyncResponseStream *resp = r->beginResponseStream("application/json");
     resp->print("[");
     for (int i = 0; i < CATALOG_MODEL_COUNT; i++)
@@ -506,9 +483,6 @@ void webBegin()
     }
     resp->print("]");
     r->send(resp);
-#else
-    r->send(200, "application/json", "[]");
-#endif
   });
 
   webServer.on("/api/catalog", HTTP_GET, handleCatalog);
@@ -721,14 +695,12 @@ static void runMqttTest()
   WiFiClient plain;
   PubSubClient test;
   test.setClient(plain);
-#ifdef HAS_TLS_CLIENT
   WiFiClientSecure secure;
   if (mqttTestConfig.mqttTls)
   {
     secure.setInsecure();
     test.setClient(secure);
   }
-#endif
   test.setServer(mqttTestConfig.mqttServer, mqttTestConfig.mqttPort);
   char id[48];
   snprintf(id, sizeof(id), "%s-test", mqttTestConfig.mqttClientId);
@@ -750,7 +722,6 @@ static void sendTelemetry()
 {
   LOOP_STAGE("telemetry");
   telemetryPending = false;
-#ifdef HAS_TLS_CLIENT
   if (!config.telemetry || !TELEMETRY_AVAILABLE || !netOnline() || !surveyJson[0])
     return;
   WiFiClientSecure tls;
@@ -762,7 +733,6 @@ static void sendTelemetry()
   int code = http.POST(telemetryPayload());
   http.end();
   mqttSerial.printf("Telemetry sent (%d). Thank you!\n", code);
-#endif
 }
 
 // Applies what the request handlers queued. Main loop only.

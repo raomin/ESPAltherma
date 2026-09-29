@@ -2,8 +2,6 @@
 #define ESPALTHERMA_RESTART_H
 
 #include <Arduino.h>
-
-#ifdef ARDUINO_ARCH_ESP32
 #include <esp_attr.h>
 #include <esp_system.h>
 #include "eventlog.h"
@@ -31,19 +29,14 @@ void restartCauseSave(const char *cause)
   strlcpy(restartCauseSaved, cause, sizeof(restartCauseSaved));
   restartCauseMagic = RESTART_CAUSE_MAGIC;
 }
-#endif
 
 void restart_board(const char *cause = nullptr)
 {
-  #if defined(ARDUINO_ARCH_ESP8266)
-  system_restart();
-  #else
   eventAddf("Restart: %s", cause != nullptr ? cause : "requested");
   eventSave(); // the history must survive if the power goes next
   if (cause != nullptr)
     restartCauseSave(cause);
   esp_restart();
-  #endif
 }
 
 #endif

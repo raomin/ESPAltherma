@@ -5,7 +5,6 @@
 // A board powered by the X10A 5V can brown out: the reset reason tells, and the supply voltage shows the drops.
 
 #include <Arduino.h>
-#ifdef ARDUINO_ARCH_ESP32
 #include <esp_system.h>
 
 const char *resetReasonName()
@@ -24,7 +23,6 @@ const char *resetReasonName()
   default: return "unknown";
   }
 }
-#endif
 
 #if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
 #define HAS_POWER_MONITOR

@@ -36,7 +36,7 @@ Both are reported, not used.
 
 ## fingerprints.json
 
-Known heat pumps, for an exact detection when the AS number is not enough or not known. Each entry maps an identification key to a model (a definition file name of `include/def/`, without `.h`):
+Known heat pumps, for an exact detection when the AS number is not enough or not known. Each entry maps an identification key to a model (a definition file name of `definitions/`, without `.h`):
 
 ```json
 [
@@ -48,6 +48,4 @@ Known heat pumps, for an exact detection when the AS number is not enough or not
 - The full key is `I|63:<registry 0x63 offsets 2-7>|60:<software id>|CAP:<capacity>|11:<outdoor board>|00:<outdoor MPU>`, in hex.
 - A match gives a high confidence.
 
-Keys come from two sources:
-- users who share their report (opt-in telemetry, web interface → System);
-- reports of users building with `my_setup.h`. Their `"detect"` object lists the `"configured"` models, the ones containing every value they compiled in. Their definition works, so this is the ground truth, useful for DA vs DJ.
+Keys come from users who share their detection report (the `espaltherma/detect` topic, or Diagnostics → Heat pump survey in the web interface) together with the model they confirmed: a confirmed model is the ground truth, useful for DA vs DJ.

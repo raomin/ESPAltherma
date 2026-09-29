@@ -3,29 +3,17 @@
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
-#ifdef ARDUINO_ARCH_ESP8266
-#include <SoftwareSerial.h>
-SoftwareSerial MySerial;
-#define SERIAL_CONFIG (SWSERIAL_8E1)
-#define SERIAL_FLUSH_TX_ONLY // empty, as SoftwareSerial.flush() takes no parameter
-#else
 HardwareSerial MySerial(1);
 #define SERIAL_CONFIG (SERIAL_8E1)
 #define SERIAL_FLUSH_TX_ONLY false
-#endif
 #define SER_TIMEOUT 300 //leave 300ms for the machine to answer
 #define REPLY_BUFFER_SIZE 64 //size of the buffers given to queryRegistry
 
-#ifdef ARDUINO_ARCH_ESP32
 // The X10A link is shared by the polling task, the detection survey and the DebugSerial gateway.
 // Recursive: the DebugSerial callback runs client.loop() while holding it, which can re-enter it.
 SemaphoreHandle_t serialMutex = xSemaphoreCreateRecursiveMutex();
 void serialLock() { xSemaphoreTakeRecursive(serialMutex, portMAX_DELAY); }
 void serialUnlock() { xSemaphoreGiveRecursive(serialMutex); }
-#else
-void serialLock() {}
-void serialUnlock() {}
-#endif
 
 unsigned char getCRC(unsigned char *src, int len)
 {

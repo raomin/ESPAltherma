@@ -1,14 +1,10 @@
 #ifndef ESPALTHERMA_CONFIG_H
 #define ESPALTHERMA_CONFIG_H
 
-// Runtime configuration.
-// Defaults ("seed") come from the #defines of my_setup.h / setup.h so legacy builds behave as before.
-// On ESP32 the configuration is persisted in NVS (as JSON) and can be changed at runtime.
-// The seed wins again whenever it changes, i.e. when my_setup.h was edited and the firmware re-flashed.
+// Runtime configuration, persisted in NVS (as JSON) and changed from the web interface.
 
 #include <Arduino.h>
 #include "board.h"
-#ifdef HAS_NVS_CONFIG
 #include <Preferences.h>
 // Not <ArduinoJson.h>: its "using namespace ArduinoJson" clashes with our Converter class
 #include <ArduinoJson.hpp>
@@ -20,7 +16,6 @@ using ArduinoJson::JsonObject;
 using ArduinoJson::JsonVariantConst;
 using ArduinoJson::deserializeJson;
 using ArduinoJson::serializeJson;
-#endif
 
 #define CONFIG_MAX_LABELS 128
 #define CONFIG_MAX_FIXES 4
@@ -87,155 +82,29 @@ struct AppConfig
 
 AppConfig config;
 
-// Fills the configuration with the compile time values of my_setup.h / setup.h.
-void configSeed(AppConfig &c)
+// Defaults of a freshly installed board.
+void configDefaults(AppConfig &c)
 {
-  memset(&c, 0, sizeof(c)); // also clears padding, configHash() depends on it
-
-#if defined(WIFI_SSID)
-  if (strcmp(WIFI_SSID, "SSID") != 0) // Placeholder of the stock setup.h: leave empty so provisioning kicks in
-  {
-    strlcpy(c.wifiSsid, WIFI_SSID, sizeof(c.wifiSsid));
-#if defined(WIFI_PWD)
-    strlcpy(c.wifiPwd, WIFI_PWD, sizeof(c.wifiPwd));
-#endif
-  }
-#endif
-
-#if defined(WIFI_IP) && defined(WIFI_GATEWAY) && defined(WIFI_SUBNET)
-  c.staticIp = true;
-  c.ip = (uint32_t)IPAddress(WIFI_IP);
-  c.gateway = (uint32_t)IPAddress(WIFI_GATEWAY);
-  c.subnet = (uint32_t)IPAddress(WIFI_SUBNET);
-#if defined(WIFI_PRIMARY_DNS)
-  c.dns1 = (uint32_t)IPAddress(WIFI_PRIMARY_DNS);
-#endif
-#if defined(WIFI_SECONDARY_DNS)
-  c.dns2 = (uint32_t)IPAddress(WIFI_SECONDARY_DNS);
-#endif
-#endif
-
+  memset(&c, 0, sizeof(c));
   strlcpy(c.hostname, "ESPAltherma", sizeof(c.hostname));
-  c.lang[0] = 0;
   c.layoutCheck = true;
-
-#if defined(MQTT_SERVER)
-  strlcpy(c.mqttServer, MQTT_SERVER, sizeof(c.mqttServer));
-#endif
-#if defined(MQTT_PORT)
-  c.mqttPort = MQTT_PORT;
-#else
   c.mqttPort = 1883;
-#endif
-#if defined(MQTT_USERNAME)
-  strlcpy(c.mqttUser, MQTT_USERNAME, sizeof(c.mqttUser));
-#endif
-#if defined(MQTT_PASSWORD)
-  strlcpy(c.mqttPwd, MQTT_PASSWORD, sizeof(c.mqttPwd));
-#endif
-#if defined(MQTT_ENCRYPTED)
-  c.mqttTls = true;
-#endif
   strlcpy(c.mqttClientId, "ESPAltherma-dev", sizeof(c.mqttClientId));
-
-#if defined(PROTOCOL)
-  c.protocol = PROTOCOL;
-#else
   c.protocol = 'I';
-#endif
-#if defined(FREQUENCY)
-  c.frequency = FREQUENCY;
-#else
   c.frequency = 30000;
-#endif
-#if defined(RX_PIN) && defined(TX_PIN)
-  c.rxPin = RX_PIN;
-  c.txPin = TX_PIN;
-#else
   c.rxPin = BOARD_DEFAULT_RX_PIN;
   c.txPin = BOARD_DEFAULT_TX_PIN;
-#endif
-
-#if defined(PIN_THERM)
-  c.thermPin = PIN_THERM;
-  c.thermActiveHigh = PIN_THERM_ACTIVE_STATE == HIGH;
-#else
   c.thermPin = -1;
   c.thermActiveHigh = true;
-#endif
-
-#if defined(PIN_SG1) && defined(PIN_SG2)
-  c.sg1Pin = PIN_SG1;
-  c.sg2Pin = PIN_SG2;
-#else
   c.sg1Pin = -1;
   c.sg2Pin = -1;
-#endif
-#if defined(SG_RELAY_ACTIVE_STATE)
-  c.sgActiveHigh = SG_RELAY_ACTIVE_STATE == HIGH;
-#else
   c.sgActiveHigh = true;
-#endif
-
-#if defined(SAFETY_RELAY_PIN)
-  c.safetyPin = SAFETY_RELAY_PIN;
-  c.safetyActiveHigh = SAFETY_RELAY_ACTIVE_STATE == HIGH;
-#else
   c.safetyPin = -1;
   c.safetyActiveHigh = true;
-#endif
-
-#if defined(ONEVAL_ONETOPIC)
-  c.oneValOneTopic = true;
-#endif
-#if defined(MQTT_OneTopic)
-  strlcpy(c.oneTopicPrefix, MQTT_OneTopic, sizeof(c.oneTopicPrefix));
-#else
   strlcpy(c.oneTopicPrefix, "espaltherma/OneATTR/", sizeof(c.oneTopicPrefix));
-#endif
-#if defined(JSONTABLE)
-  c.jsonTable = true;
-#endif
-#if defined(DISABLE_LOG_MESSAGES)
-  c.disableLogMessages = true;
-#endif
-#if defined(DEBUG_SERIAL)
-  c.debugSerial = true;
-#endif
 }
-
-#ifdef HAS_NVS_CONFIG
 
 #define CONFIG_NVS_NAMESPACE "espaltherma"
-
-static void configHashBytes(uint32_t &h, const void *data, size_t len)
-{
-  const uint8_t *p = static_cast<const uint8_t *>(data);
-  for (size_t i = 0; i < len; i++)
-  {
-    h ^= p[i];
-    h *= 16777619u;
-  }
-}
-
-// FNV-1a of the values my_setup.h sets, to find out if it changed since the last boot.
-// Field by field, not the whole structure: a firmware that adds a setting must not look like an edited my_setup.h
-// (that re-seeded, and wiped what was set in the web interface).
-uint32_t configHash(const AppConfig &c)
-{
-  uint32_t h = 2166136261u;
-  auto str = [&](const char *v) { configHashBytes(h, v, strlen(v) + 1); };
-  auto num = [&](int32_t v) { configHashBytes(h, &v, sizeof(v)); };
-  str(c.wifiSsid); str(c.wifiPwd);
-  num(c.staticIp); num(c.ip); num(c.gateway); num(c.subnet); num(c.dns1); num(c.dns2);
-  str(c.hostname);
-  str(c.mqttServer); num(c.mqttPort); str(c.mqttUser); str(c.mqttPwd); num(c.mqttTls); str(c.mqttClientId);
-  num(c.protocol); num(c.frequency); num(c.rxPin); num(c.txPin);
-  num(c.thermPin); num(c.thermActiveHigh); num(c.sg1Pin); num(c.sg2Pin); num(c.sgActiveHigh);
-  num(c.safetyPin); num(c.safetyActiveHigh);
-  num(c.oneValOneTopic); str(c.oneTopicPrefix); num(c.jsonTable); num(c.disableLogMessages); num(c.debugSerial);
-  return h;
-}
 
 static String ipToString(uint32_t ip)
 {
@@ -442,49 +311,32 @@ void configSave()
   prefs.end();
 }
 
-// Loads the configuration: the seed if it changed since last boot, the persisted one otherwise.
+// Loads the configuration: the defaults, then what is stored on top.
 void configLoad()
 {
-  configSeed(config);
-  uint32_t seedHash = configHash(config);
-
+  configDefaults(config);
   Preferences prefs;
   prefs.begin(CONFIG_NVS_NAMESPACE, false);
-#ifdef ESPALTHERMA_GENERIC
-  // No compile time settings: the stored configuration always wins
-  bool seedChanged = false;
-#else
-  bool seedChanged = prefs.getUInt("seed", 0) != seedHash;
-#endif
   String stored = prefs.getString("cfg", "");
-  if (seedChanged)
-  {
-    prefs.putUInt("seed", seedHash);
-  }
   prefs.end();
 
   JsonDocument doc;
   bool parsed = stored.length() > 0 && deserializeJson(doc, stored) == DeserializationError::Ok;
   if (parsed)
-  {
-    if (seedChanged)
-      readStr(doc["telemetry"]["install_id"], config.installId, sizeof(config.installId)); // keep the identity
-    else
-      configFromJson(config, doc.as<JsonVariantConst>());
-  }
+    configFromJson(config, doc.as<JsonVariantConst>());
 
   bool newId = config.installId[0] == 0;
   if (newId)
   {
     snprintf(config.installId, sizeof(config.installId), "%08lx%08lx", (unsigned long)esp_random(), (unsigned long)esp_random());
   }
-  if (seedChanged || !parsed || newId)
+  if (!parsed || newId)
   {
     configSave();
   }
 }
 
-// Wipes the persisted configuration, the seed is used on next boot.
+// Wipes the persisted configuration: the defaults apply on next boot.
 void configReset()
 {
   Preferences prefs;
@@ -492,16 +344,5 @@ void configReset()
   prefs.clear();
   prefs.end();
 }
-
-#else
-
-void configLoad()
-{
-  configSeed(config);
-}
-
-void configSave() {}
-
-#endif // HAS_NVS_CONFIG
 
 #endif

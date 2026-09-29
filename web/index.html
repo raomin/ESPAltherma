@@ -6,15 +6,16 @@
 <title>ESPAltherma</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 158'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2357d1bd'/%3E%3Cstop offset='1' stop-color='%2367dcf4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M82 1L158 77H140V157H24V77H6Z' fill='url%28%23g%29'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='8' stroke-linecap='round'%3E%3Cpath d='M46.9 88.3A48 48 0 0 1 117.1 88.3'/%3E%3Cpath d='M57.9 98.5A33 33 0 0 1 106.1 98.5'/%3E%3Cpath d='M69.6 109.4A17 17 0 0 1 94.4 109.4'/%3E%3C/g%3E%3Ccircle cx='82' cy='121' r='4.6' fill='%23fff'/%3E%3Crect x='2.5' y='115.5' width='52' height='41' rx='6' fill='%235bcad3' stroke='%23294646' stroke-width='3'/%3E%3Ccircle cx='19.5' cy='136' r='11' fill='%23e6f3f5' stroke='%23294646' stroke-width='3'/%3E%3Cg fill='%23294646'%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6'/%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6' transform='rotate%28120 19.5 136%29'/%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6' transform='rotate%28240 19.5 136%29'/%3E%3C/g%3E%3Cpath d='M38 123.5h9.5M38 131.5h9.5M38 139.5h9.5M38 147.5h9.5' stroke='%23294646' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-/* page colours: "Deep Sea Blue" from coolors.co; --hot, --cold and --refr belong to the heating diagram */
+/* page colours: "Deep Sea Blue" from coolors.co. The heating diagram has its own: water temperature from --cold (15°)
+   through --t1..--t3 to --hot (55°), a blue to red blend in OKLab, and --refr for the refrigerant lines */
 :root{--bg:#edf0f7;--card:#f8faff;--soft:#e4e8f1;--ink:#0a1a33;--ink2:#5c677d;--line:#d6dce8;
---hot:#e58c5b;--warm:#f0b545;--cold:#6fa8c7;--refr:#a896cf;--acc:#0466c8;--acc-ink:#f8faff;--ok:#23805f;--bad:#c2413b;
---note-bg:#fbeccb;--note:#6b4800;--info-bg:#dde9f8;--info:#083d78;
+--hot:#e0433a;--warm:#f0b545;--cold:#2e86de;--refr:#7d8597;--acc:#0466c8;--acc-ink:#f8faff;--ok:#23805f;--bad:#c2413b;
+--note-bg:#fbeccb;--note:#6b4800;--info-bg:#dde9f8;--info:#083d78;--t1:#737fb9;--t2:#9e7494;--t3:#c1626c;
 --shadow:0 1px 2px rgba(0,24,69,.06),0 8px 22px rgba(0,24,69,.07);--r:20px;
 --f:ui-rounded,"SF Pro Rounded","Avenir Next",Avenir,"Segoe UI Variable Display","Segoe UI",Nunito,system-ui,sans-serif;--mono:ui-monospace,"SF Mono",Consolas,monospace}
 @media (prefers-color-scheme:dark){:root{--bg:#0b1526;--card:#131f33;--soft:#1a283e;--ink:#e3e9f5;--ink2:#979dac;--line:#24334b;
---hot:#f2a071;--warm:#f3c160;--cold:#86bcd8;--refr:#b9a8e0;--acc:#5aa2f5;--acc-ink:#0b1526;--ok:#62c29b;--bad:#f07a70;
---note-bg:#3b3018;--note:#f3d9a4;--info-bg:#16304f;--info:#c3dcfb;
+--hot:#f2645a;--warm:#f3c160;--cold:#4f9cf0;--refr:#979dac;--acc:#5aa2f5;--acc-ink:#0b1526;--ok:#62c29b;--bad:#f07a70;
+--note-bg:#3b3018;--note:#f3d9a4;--info-bg:#16304f;--info:#c3dcfb;--t1:#8995ce;--t2:#b18aaa;--t3:#d37b85;
 --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 26px rgba(0,0,0,.28)}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -75,7 +76,7 @@ p.sub{margin:4px 0 0}
 .tog{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px}
 .tog i{width:30px;height:18px;border-radius:999px;background:var(--line);position:relative;flex:none}
 .tog i::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--card)}
-.tog.on i{background:var(--hot)}.tog.on i::after{left:15px}
+.tog.on i{background:var(--acc)}.tog.on i::after{left:15px}
 details.all{margin-top:16px;padding:4px 20px 10px}
 details.all summary{cursor:pointer;font-weight:700;padding:12px 0;list-style:none}
 details.all summary::-webkit-details-marker{display:none}
@@ -101,7 +102,8 @@ details.all[open] summary::before{content:"▾"}
 @keyframes drift{0%{transform:rotate(0)}10%{transform:rotate(8deg)}18%{transform:rotate(6deg)}34%{transform:rotate(38deg)}42%{transform:rotate(44deg)}50%{transform:rotate(41deg)}68%{transform:rotate(82deg)}80%{transform:rotate(96deg)}90%{transform:rotate(104deg)}100%{transform:rotate(120deg)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .valve path{fill:var(--card);stroke:var(--ink2);stroke-width:1.5}.valve path.shut{fill:var(--ink2)}
-#comp{fill:var(--card)}.comp #comp{fill:var(--hot)}
+/* compressor running: filled with the accent, the colour of everything that is on */
+.comp #comp{fill:var(--acc);stroke:var(--acc)}
 .sens{fill:var(--ink2)}
 @media (prefers-reduced-motion:reduce){.flowing .act .fl,#fan{animation:none!important}}
 /* forms */
@@ -193,7 +195,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <div class="dash">
   <div class="schem card">
    <svg id="sch" viewBox="0 0 800 560" role="img" aria-label="Diagram of the heating installation">
-    <defs><linearGradient id="lg"><stop offset="0" stop-color="var(--cold)"/><stop offset=".5" stop-color="#d4c0a5"/><stop offset="1" stop-color="var(--hot)"/></linearGradient></defs>
+    <defs><linearGradient id="lg"><stop offset="0" stop-color="var(--cold)"/><stop offset=".25" stop-color="var(--t1)"/><stop offset=".5" stop-color="var(--t2)"/><stop offset=".75" stop-color="var(--t3)"/><stop offset="1" stop-color="var(--hot)"/></linearGradient></defs>
     <rect class="area" x="190" y="30" width="340" height="515" rx="26"/>
     <text class="tl" x="210" y="56">Indoor unit</text>
     <text class="tl" x="95" y="392" text-anchor="middle">Outdoor unit</text>
@@ -201,9 +203,10 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <circle class="ln" cx="95" cy="238" r="48"/>
     <g id="fan" style="fill:var(--cold);opacity:.8"><ellipse cx="95" cy="215" rx="8" ry="20"/><ellipse cx="95" cy="215" rx="8" ry="20" transform="rotate(120 95 238)"/><ellipse cx="95" cy="215" rx="8" ry="20" transform="rotate(240 95 238)"/></g>
     <circle cx="95" cy="238" r="5" class="eq"/>
-    <circle id="comp" cx="72" cy="322" r="18" style="stroke:var(--ink2);stroke-width:1.6"/>
-    <path class="ln" d="M57 312l30 5M57 332l30-5"/>
-    <text class="tv" x="98" y="329" id="sInv" translate="no"></text>
+    <rect class="eq" x="33" y="310" width="13" height="30" rx="6.5"/><path class="ln" d="M46 331H52"/>
+    <rect class="eq" id="comp" x="52" y="300" width="30" height="50" rx="12"/>
+    <text class="tl" x="92" y="318">Compressor</text>
+    <text class="tv" x="92" y="340" id="sInv" translate="no"></text>
     <path d="M170 240H230M170 330H230" style="stroke:var(--refr);stroke-width:7;fill:none;stroke-linecap:round"/>
     <path d="M170 240H230M170 330H230" style="stroke:var(--card);stroke-width:3;fill:none"/>
     <circle class="sens" cx="206" cy="330" r="4.5"/>
@@ -488,7 +491,7 @@ const nm = l => names[l] || l;
 const catalogUrl = () => '/api/catalog?model=' + encodeURIComponent(status.hp.model) + '&lang=' + lang;
 async function loadNames() {
   names = {};
-  if (lang === 'en' || !status.hp || !status.hp.generic || !status.hp.model) return renderReadings();
+  if (lang === 'en' || !status.hp || !status.hp.model) return renderReadings();
   try { for (const v of await api(catalogUrl())) if (v.n) names[v.l] = v.n; } catch (e) {}
   renderReadings();
 }
@@ -520,10 +523,10 @@ function onEthernet(s = status) { return !!(s.net && s.net.link === 'ethernet');
 function firstStep() {
   if (!online()) return 'wifi';
   if (!status.mqtt.configured) return 'mqtt';
-  if (status.hp.generic && !status.hp.confirmed) return 'hp';
+  if (!status.hp.confirmed) return 'hp';
   return 'wifi';
 }
-const stepDone = s => s === 'wifi' ? online() : s === 'mqtt' ? status.mqtt.configured : s === 'hp' ? (status.hp.confirmed || !status.hp.generic) : false;
+const stepDone = s => s === 'wifi' ? online() : s === 'mqtt' ? status.mqtt.configured : s === 'hp' ? status.hp.confirmed : false;
 function showStep(step) {
   document.querySelectorAll('#setup .panel').forEach(p => p.hidden = p.dataset.step !== step);
   document.querySelectorAll('#steps li').forEach(li => li.className = li.dataset.step === step ? 'cur' : stepDone(li.dataset.step) ? 'done' : '');
@@ -583,8 +586,8 @@ function renderBanners() {
   if (!online(s)) banner('warn', t('ESPAltherma is not connected to your network yet.'), t('Set up Wi-Fi'), '#setup/wifi');
   else if (!m.configured) banner('warn', t('Connect ESPAltherma to Home Assistant to get your heat pump sensors.'), t('Connect'), '#setup/mqtt');
   else if (!m.connected) banner('warn', t('The MQTT broker is unreachable ({server}).', {server: m.server}), t('Check'), '#setup/mqtt');
-  if (hp.generic && hp.model && !hp.confirmed) banner('info', t('Heat pump found: {family}. Please confirm your exact model to read all its values.', {family: family((s.detect || {}).family) || '?'}), t('Confirm model'), '#setup/hp');
-  if (hp.generic && !hp.model && !hp.survey_running) banner('warn', t('No heat pump answered yet. Check the X10A cable, or choose your model.'), t('Heat pump'), '#setup/hp');
+  if (hp.model && !hp.confirmed) banner('info', t('Heat pump found: {family}. Please confirm your exact model to read all its values.', {family: family((s.detect || {}).family) || '?'}), t('Confirm model'), '#setup/hp');
+  if (!hp.model && !hp.survey_running) banner('warn', t('No heat pump answered yet. Check the X10A cable, or choose your model.'), t('Heat pump'), '#setup/hp');
 }
 function renderSystem() {
   const s = status;
@@ -626,13 +629,13 @@ const TAGS = [[N_('Outside'), 'out', 40, 118, 84, 'R1T'], [N_('Heat pump out'), 
 $('#tags').innerHTML = TAGS.map(g => `<g class="tag" transform="translate(${g[2]},${g[3]})"><title>${g[5]}</title><rect width="${g[4]}" height="46" rx="14"/><text class="tl" x="12" y="18" style="font-size:11.5px" id="gl_${g[1]}"></text><text class="tv" x="12" y="38" id="g_${g[1]}"></text></g>`).join('');
 const FL = [['thermo', N_('Thermostat')], ['defrost', N_('Defrost')], ['silent', N_('Silent')], ['freeze', N_('Frost protection')], ['powerful', N_('Powerful hot water')], ['circ', N_('Circulation')]];
 const DK = matchMedia('(prefers-color-scheme: dark)');
-// water colour: soft blue (15°) -> sand -> apricot (55°)
+// water colour: blue (15°) to red (55°), between the stops of the legend (CSS colours #rrggbb)
+const TSTOPS = ['--cold', '--t1', '--t2', '--t3', '--hot'];
 function tcol(v) {
   if (v == null) return 'var(--line)';
-  const P = DK.matches ? [[134, 188, 216], [140, 121, 101], [242, 160, 113]] : [[111, 168, 199], [212, 192, 165], [229, 140, 91]];
-  const x = Math.max(0, Math.min(1, (v - 15) / 40));
-  const [a, b, k] = x < .5 ? [P[0], P[1], x * 2] : [P[1], P[2], (x - .5) * 2];
-  return 'rgb(' + a.map((c, i) => Math.round(c + (b[i] - c) * k)) + ')';
+  const x = Math.max(0, Math.min(1, (v - 15) / 40)) * 4, i = Math.min(3, Math.floor(x)), css = getComputedStyle(document.documentElement);
+  const [a, b] = [TSTOPS[i], TSTOPS[i + 1]].map(n => { const h = css.getPropertyValue(n).trim(); return [1, 3, 5].map(j => parseInt(h.slice(j, j + 2), 16)); });
+  return 'rgb(' + a.map((c, j) => Math.round(c + (b[j] - c) * (x - i))) + ')';
 }
 const sch = $('#sch');
 sch.querySelectorAll('.pipe').forEach(p => { const c = p.cloneNode(); c.removeAttribute('id'); c.setAttribute('class', 'fl'); p.after(c); });
@@ -647,7 +650,7 @@ function paint() {
   $('#gDhw').classList.toggle('act', v3); $('#gSp').classList.toggle('act', !v3);
   $('#vR').classList.toggle('shut', !v3); $('#vB').classList.toggle('shut', v3);
   sch.classList.toggle('flowing', pump); sch.classList.toggle('comp', inv > 0); sch.classList.toggle('fanon', inv > 0);
-  tx('sInv', inv == null ? '' : inv + ' rps');
+  tx('sInv', inv == null ? '' : inv > 0 ? inv + ' rps' : t('Resting'));
   tx('sV3', r.v3 == null ? '' : v3 ? t('to the hot water') : t('to the house'));
   tx('sPump', r.pump == null && flow == null ? '' : pump ? t('Pump on') : t('Pump off'));
   const bar = n('bar');
@@ -678,7 +681,7 @@ let allToggled = false;
 $('#allBox').addEventListener('toggle', () => allToggled = true);
 function renderReadings() {
   const tb = $('#dValues'); tb.replaceChildren();
-  if (!lastValues.length) tb.append(el('tr', {}, el('td', {class: 'sub'}, status.hp && status.hp.generic && !status.hp.model ? t('No values yet: the heat pump model is not known.') : t('Waiting for the first readings…'))));
+  if (!lastValues.length) tb.append(el('tr', {}, el('td', {class: 'sub'}, status.hp && !status.hp.model ? t('No values yet: the heat pump model is not known.') : t('Waiting for the first readings…'))));
   for (const v of lastValues) tb.append(el('tr', {}, el('td', {}, nm(v.l)), el('td', {class: 'n'}, v.v === '' ? '—' : v.v)));
   $('#valAge').textContent = lastValues.length ? t('{n} readings, updated {time}', {n: lastValues.length, time: new Date().toLocaleTimeString(lang)}) : '';
   // The drawing fits the Altherma units; for the others, the list is what matters
@@ -777,7 +780,6 @@ const niceModel = m => m.replace(/^Altherma\((.*)\)$/, 'Altherma $1');
 async function setupHp() {
   const box = $('#hpDetect');
   $('#hpConfirm').hidden = true; $('#tmBox').hidden = true; hpChoice = null;
-  if (!status.hp.generic) { box.replaceChildren(el('p', {}, t('The values are defined at build time (my_setup.h). The detection result is in Diagnostics.'))); $('#hpManual').hidden = true; return; }
   box.replaceChildren(el('p', {class: 'sub'}, t('Reading the heat pump…')));
   if (!models.length) models = await api('/api/models');
   const sel = $('#hpModel'); sel.replaceChildren();
@@ -846,7 +848,7 @@ function deviceRows() {
 }
 async function loadCatalog() {
   const info = $('#valInfo');
-  if (!status.hp || !status.hp.generic) { info.textContent = t('The values are defined at build time in my_setup.h.'); catalog = []; return renderCatalog(); }
+  if (!status.hp) { catalog = []; return renderCatalog(); }
   if (!status.hp.model) { info.textContent = t('Choose your heat pump model first (Setup → Heat pump).'); catalog = []; return renderCatalog(); }
   catalog = await api(catalogUrl());
   for (const v of catalog) if (v.n) names[v.l] = v.n;

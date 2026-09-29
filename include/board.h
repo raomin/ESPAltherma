@@ -2,7 +2,11 @@
 #define ESPALTHERMA_BOARD_H
 
 // Board profile: name reported in diagnostics/telemetry and default X10A pins
-// used when the configuration does not set them (generic web-flasher builds).
+// used when the configuration does not set them.
+
+#if !defined(ARDUINO_ARCH_ESP32)
+#error "ESPAltherma 2 runs on the ESP32 family. For the ESP8266, use ESPAltherma 1.x (main branch)."
+#endif
 
 #if defined(ARDUINO_M5Stick_C_Plus2)
 #define BOARD_NAME "m5stickcplus2"
@@ -16,8 +20,6 @@
 #define BOARD_NAME "wt32-eth01"
 #elif defined(ARDUINO_ESP32_POE) || defined(ARDUINO_ESP32_POE_ISO)
 #define BOARD_NAME "esp32-poe"
-#elif defined(ARDUINO_ARCH_ESP8266)
-#define BOARD_NAME "esp8266"
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 #define BOARD_NAME "esp32c3"
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
@@ -45,31 +47,15 @@
 
 // The C3/S3 web flasher builds use the chip's USB port as Serial (ARDUINO_USB_CDC_ON_BOOT). Boards with a
 // USB-UART bridge talk on UART0 instead: the log and Improv use both, so one firmware fits both kinds.
-#if defined(ARDUINO_ARCH_ESP32) && ARDUINO_USB_CDC_ON_BOOT && (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3))
+#if ARDUINO_USB_CDC_ON_BOOT && (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3))
 #define SECOND_CONSOLE Serial0
 #endif
 
 // Wired Ethernet: build with -D HAS_ETHERNET. The PHY settings (ETH_PHY_TYPE, ETH_PHY_ADDR, ETH_PHY_POWER,
 // ETH_PHY_MDC, ETH_PHY_MDIO, ETH_CLK_MODE) come from the board variant (WT32-ETH01, Olimex ESP32-PoE) or from
 // build flags, eg. for an IP101 PHY: -D ETH_PHY_TYPE=ETH_PHY_IP101 -D ETH_PHY_ADDR=1 -D ETH_PHY_POWER=5
-#if defined(HAS_ETHERNET) && (defined(ARDUINO_ARCH_ESP8266) || defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3))
+#if defined(HAS_ETHERNET) && (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3))
 #error "HAS_ETHERNET: wired Ethernet (RMII PHY) needs a classic ESP32"
-#endif
-#if defined(HAS_ETHERNET) && defined(DISABLE_WEBUI)
-#error "HAS_ETHERNET relies on the network manager of the web interface: remove DISABLE_WEBUI"
-#endif
-
-// Features that need more than the ESP8266 can offer (NVS, FreeRTOS tasks).
-// The ESP8266 keeps the legacy compile-time configuration.
-// The label catalog (catalog.h) is const data: in flash on ESP32, but it would take ~18KB of RAM on ESP8266.
-#if defined(ARDUINO_ARCH_ESP32)
-#define HAS_NVS_CONFIG
-#define HAS_HP_TASK
-#define HAS_CATALOG
-// Web interface, setup access point and Improv provisioning. #define DISABLE_WEBUI in my_setup.h to leave it out.
-#if !defined(DISABLE_WEBUI)
-#define HAS_WEBUI
-#endif
 #endif
 
 #endif
