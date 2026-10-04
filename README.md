@@ -3,9 +3,9 @@
 <hr/>
 
 <p align="center">
-<a href="https://github.com/raomin/ESPAltherma/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/raomin/ESPAltherma/build.yml?branch=feature%2Fweb-flasher-autodetect&style=for-the-badge" /></a>
+<a href="https://github.com/raomin/ESPAltherma/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/raomin/ESPAltherma/build.yml?branch=beta&style=for-the-badge" /></a>
 &nbsp;
-<img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma/feature%2Fweb-flasher-autodetect?style=for-the-badge" />
+<img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma/beta?style=for-the-badge" />
 &nbsp;
 <img src="https://img.shields.io/github/license/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
@@ -69,7 +69,7 @@ Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5St
 
 ## Step 1: Installing the firmware
 
-1. Open the **[ESPAltherma web installer](https://raomin.github.io/ESPAltherma/flasher/)** in Chrome or Edge, on a computer.
+1. Open the **[ESPAltherma web installer](https://espaltherma.pages.dev/)** in Chrome or Edge, on a computer.
 2. Choose your board.
 3. Plug the board into the computer with the USB cable and click **Install ESPAltherma**. Pick the serial port of your board in the list the browser shows, then confirm.
 4. When the installation is done, the installer asks for your Wi-Fi network: enter it. It then shows the address of ESPAltherma on your network.
@@ -206,14 +206,14 @@ Note: Smart Grid needs to be switched ON in the heatpump configuration menu, oth
 # Updating
 
 - **From the web interface:** in **System → Firmware update**, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) (for example `m5stickcplus2-ota.bin`). If the new version cannot get back online, the board goes back to the previous one by itself.
-- **Or run the [web installer](https://raomin.github.io/ESPAltherma/flasher/) again** over USB. It keeps the settings.
+- **Or run the [web installer](https://espaltherma.pages.dev/) again** over USB. It keeps the settings.
 
 # Building it yourself
 
 The web installer is the easiest way, but you can build and upload the same firmware with [PlatformIO](https://platformio.org/):
 
 ```bash
-git clone -b feature/web-flasher-autodetect https://github.com/raomin/ESPAltherma.git
+git clone -b beta https://github.com/raomin/ESPAltherma.git
 cd ESPAltherma
 pio run -e web-m5stickcplus2 -t upload
 ```
