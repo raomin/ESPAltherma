@@ -57,7 +57,7 @@ And in Home Assistant:
 
 Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5StickC, M5StickC Plus, M5StickC Plus2, M5Stack Tough, WT32-ETH01 and Olimex ESP32-PoE.
 
-*The ESP8266 is not supported by ESPAltherma 2. Keep using [ESPAltherma 1.x](https://github.com/raomin/ESPAltherma/tree/main) on it.*
+*The ESP8266 is not supported by ESPAltherma v2. Keep using [ESPAltherma 1.x](https://github.com/raomin/ESPAltherma/tree/main) on it.*
 
 ## Software
 
@@ -133,6 +133,8 @@ Whatever you do, **make sure you keep a wire connecting the GND of the ESP32 to 
 Open `http://espaltherma.local`, or the address shown by the installer (and on the screen of the M5). The **Setup** tab walks you through the rest.
 
 1. **Heat pump.** ESPAltherma reads the heat pump and detects its model. Check it and click **Confirm this model**. If several models match, pick yours; if yours is not proposed, choose it from the full list ("Not this one?"). Until you confirm, only the values every candidate model reads the same way are published.
+
+    The **Help others get their heat pump recognised** box, ticked by default, sends one report when you confirm: the identification codes of your unit, the readings taken during the detection and the model. It lets ESPAltherma recognise the next unit of the same model without asking its owner. No network, MQTT or personal data is sent (the site keeps the country and city the report comes from, not the IP address); **See exactly what is sent** shows the report, and [this page](https://espaltherma-telemetry.pages.dev/) explains how reports are used. Untick it to send nothing.
 
     ![Confirming the heat pump model](doc/images/setup-heatpump.png)
 
@@ -251,7 +253,7 @@ All the definition files of [definitions](definitions) (34 models) are merged at
 1. **Protocol.** ESPAltherma asks registry `0x60` in protocol I. If nothing answers, it tries registry `0x53` in protocol S (older units).
 2. **Survey.** It reads once every registry the definition files use (on protocol I, `0x61`, `0x62`... are walked until the first missing one, like D-Checker does). The result is the detection report, published on `espaltherma/detect` and shown in Diagnostics → Heat pump survey.
 3. **Identification.** Registry `0x63` holds the AS number of the indoor board, as printed on its label: `AS1708171-30 F` reads `01 70 81 71 03 06`. ESPAltherma looks it up in a table of 731 known AS numbers and the models they are fitted in ([data/as_numbers.json](data/as_numbers.json)), which gives the candidate definitions. The AS number, the software ID (`0x60`), the outdoor capacity (`0x00`, offset 12, in kW x10) and the outdoor board part number (`0x11`) together form an identification key.
-4. **Known units.** A key listed in [data/fingerprints.json](data/fingerprints.json) names the model directly. The table grows from the reports users share.
+4. **Known units.** A key listed in [data/fingerprints.json](data/fingerprints.json) names the model directly. The table grows from the reports users share (the box ticked when confirming the model, see [Step 3](#step-3-finishing-in-the-web-interface)).
 5. **Scoring.** The candidates (every model when the AS number is unknown) are scored against the survey:
     - the registries the model reads must answer, and the family-specific ones it does not know (`0xA0`, `0xA1`, `0x65`) should not;
     - replies must be at least as long as what the model reads, ideally exactly as long;
@@ -281,7 +283,7 @@ Registries without evidence, for instance all zero while the unit is idle, are n
 
 The corrected registry is then read with the layout (and the labels) of that other definition. Corrections are logged and listed in Diagnostics → Definition corrections, where you can undo them or turn off *Correct automatically*. They are cleared when the model changes.
 
-Posting your detection report and your exact model in an issue helps: it adds your unit to the known keys, and a correction found on your unit shows which definition needs fixing.
+Sharing your report when you confirm the model (or posting your detection report and your exact model in an issue) helps: it adds your unit to the known keys, and a correction found on your unit shows which definition needs fixing.
 
 # Troubleshooting
 

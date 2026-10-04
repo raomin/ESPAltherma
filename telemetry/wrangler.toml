@@ -1,0 +1,9 @@
+# Cloudflare Pages project: the page in public/ and the function in functions/ (POST /api/report), with a D1 database.
+name = "espaltherma-telemetry"
+pages_build_output_dir = "public"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "espaltherma-telemetry"
+database_id = "ca7de150-221f-47e9-92f3-e579879d63bd"

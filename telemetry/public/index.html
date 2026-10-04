@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESPAltherma heat pump reports</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 158'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2357d1bd'/%3E%3Cstop offset='1' stop-color='%2367dcf4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M82 1L158 77H140V157H24V77H6Z' fill='url%28%23g%29'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='8' stroke-linecap='round'%3E%3Cpath d='M46.9 88.3A48 48 0 0 1 117.1 88.3'/%3E%3Cpath d='M57.9 98.5A33 33 0 0 1 106.1 98.5'/%3E%3Cpath d='M69.6 109.4A17 17 0 0 1 94.4 109.4'/%3E%3C/g%3E%3Ccircle cx='82' cy='121' r='4.6' fill='%23fff'/%3E%3Crect x='2.5' y='115.5' width='52' height='41' rx='6' fill='%235bcad3' stroke='%23294646' stroke-width='3'/%3E%3Ccircle cx='19.5' cy='136' r='11' fill='%23e6f3f5' stroke='%23294646' stroke-width='3'/%3E%3Cg fill='%23294646'%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6'/%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6' transform='rotate%28120 19.5 136%29'/%3E%3Cellipse cx='19.5' cy='131.2' rx='2.7' ry='4.6' transform='rotate%28240 19.5 136%29'/%3E%3C/g%3E%3Cpath d='M38 123.5h9.5M38 131.5h9.5M38 139.5h9.5M38 147.5h9.5' stroke='%23294646' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="description" content="What the opt-in heat pump reports of ESPAltherma contain, and how they are used.">
+<style>
+/* colours, font and shapes as in the device page and the installer */
+:root{--bg:#edf0f7;--card:#f8faff;--soft:#e4e8f1;--ink:#0a1a33;--ink2:#5c677d;--line:#d6dce8;--acc:#0466c8;
+--info-bg:#dde9f8;--info:#083d78;--shadow:0 1px 2px rgba(0,24,69,.06),0 8px 22px rgba(0,24,69,.07);--r:20px;
+--f:ui-rounded,"SF Pro Rounded","Avenir Next",Avenir,"Segoe UI Variable Display","Segoe UI",Nunito,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1526;--card:#131f33;--soft:#1a283e;--ink:#e3e9f5;--ink2:#979dac;--line:#24334b;
+--acc:#5aa2f5;--info-bg:#16304f;--info:#c3dcfb;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 26px rgba(0,0,0,.28)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--f)}
+main{max-width:760px;margin:0 auto;padding:28px 16px 48px}
+h1.brand{display:flex;align-items:center;gap:14px;margin:0 0 14px;font:300 30px/1 "Bahnschrift SemiCondensed",Bahnschrift,"Roboto Condensed","Arial Narrow",var(--f);letter-spacing:.05em;color:var(--ink2);font-stretch:condensed}
+h1.brand b{font-weight:700;color:var(--ink);letter-spacing:.02em}
+h1.brand small{display:block;font:600 15px/1.2 var(--f);letter-spacing:0;color:var(--ink2);margin-top:6px}
+.logo{width:54px;height:54px;border-radius:17px;background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+.lead{color:var(--ink2);font-size:17px;margin:0 0 22px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:22px 24px;margin-bottom:16px}
+h2{font-size:19px;margin:0 0 8px}
+ul{padding-left:22px;margin:8px 0 0}li{margin:6px 0}
+p{margin:8px 0 0}
+.note{background:var(--info-bg);color:var(--info);border-radius:16px;padding:12px 16px;margin-top:14px}
+a{color:var(--acc);text-underline-offset:3px}
+footer{color:var(--ink2);font-size:14px;text-align:center;margin-top:28px}footer a{color:inherit}
+@media (max-width:620px){h1.brand{font-size:25px}.logo{width:46px;height:46px;border-radius:15px}.logo svg{width:32px!important;height:32px!important}.card{padding:18px}}
+</style>
+</head>
+<body>
+<main>
+  <h1 class="brand"><span class="logo"><svg class="mark" style="width:38px;height:38px" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 158"><defs><linearGradient id="logoG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#57d1bd"/><stop offset="1" stop-color="#67dcf4"/></linearGradient></defs><path d="M82 1L158 77H140V157H24V77H6Z" fill="url(#logoG)"/><g fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"><path d="M46.9 88.3A48 48 0 0 1 117.1 88.3"/><path d="M57.9 98.5A33 33 0 0 1 106.1 98.5"/><path d="M69.6 109.4A17 17 0 0 1 94.4 109.4"/></g><circle cx="82" cy="121" r="4.6" fill="#fff"/><rect x="2.5" y="115.5" width="52" height="41" rx="6" fill="#5bcad3" stroke="#294646" stroke-width="3"/><circle cx="19.5" cy="136" r="11" fill="#e6f3f5" stroke="#294646" stroke-width="3"/><g fill="#294646"><ellipse cx="19.5" cy="131.2" rx="2.7" ry="4.6"/><ellipse cx="19.5" cy="131.2" rx="2.7" ry="4.6" transform="rotate(120 19.5 136)"/><ellipse cx="19.5" cy="131.2" rx="2.7" ry="4.6" transform="rotate(240 19.5 136)"/></g><path d="M38 123.5h9.5M38 131.5h9.5M38 139.5h9.5M38 147.5h9.5" stroke="#294646" stroke-width="2.6" stroke-linecap="round"/></svg></span><span><span translate="no"><b>ESP</b>ALTHERMA</span><small>Heat pump reports</small></span></h1>
+  <p class="lead">When you confirm your heat pump model with <b>Help others get their heat pump recognised</b> ticked, ESPAltherma sends one report here. It lets ESPAltherma recognise the next heat pump of the same model without asking its owner.</p>
+
+  <div class="card">
+    <h2>What a report contains</h2>
+    <ul>
+      <li>The model you confirmed, and the registries ESPAltherma had to correct on your unit.</li>
+      <li>The identification codes of your heat pump: the board numbers of the indoor and outdoor units, their software version and capacity.</li>
+      <li>The replies of the heat pump registries, read once during the detection. They include the readings of that moment (temperatures, pressures...).</li>
+      <li>The ESPAltherma version and the type of board.</li>
+      <li>A random installation ID, so that a board sending again replaces its report instead of adding one.</li>
+    </ul>
+    <p>The site also records the country and city the report comes from, as Cloudflare (which hosts it) locates the connection. It shows in which regions each model is installed.</p>
+    <p class="note">The web interface shows the exact report before anything is sent: <b>See exactly what is sent</b>, next to the checkbox.</p>
+  </div>
+
+  <div class="card">
+    <h2>What is not sent</h2>
+    <p>Your Wi-Fi and network settings, the MQTT broker and its login, passwords, your name, e-mail address or location. The IP address of the connection is not stored: only its country and city, and the day of each report.</p>
+  </div>
+
+  <div class="card">
+    <h2>How reports are used</h2>
+    <p>The identification keys of confirmed models are added, with the model name only, to the list of known heat pumps of ESPAltherma (<a href="https://github.com/raomin/ESPAltherma">data/fingerprints.json on GitHub</a>). Reports also show where a definition file does not match real units.</p>
+  </div>
+
+  <div class="card">
+    <h2>Changing your mind</h2>
+    <p>Untick the box in the web interface: nothing more is sent. To remove a report already sent, <a href="https://github.com/raomin/ESPAltherma/issues">open an issue</a> with the installation ID shown in the report.</p>
+  </div>
+
+  <footer><a href="https://github.com/raomin/ESPAltherma">ESPAltherma on GitHub</a></footer>
+</main>
+</body>
+</html>
