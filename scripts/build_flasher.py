@@ -55,7 +55,8 @@ def main():
     os.makedirs(firmware_dir, exist_ok=True)
     missing = []
     for b in boards:
-        build = os.path.join(ROOT, ".pio", "build", b["env"])
+        # PLATFORMIO_BUILD_DIR: a build folder of its own, eg. while the IDE's PlatformIO uses .pio/build
+        build = os.path.join(os.environ.get("PLATFORMIO_BUILD_DIR") or os.path.join(ROOT, ".pio", "build"), b["env"])
         factory = os.path.join(build, "firmware-factory.bin")
         if not os.path.exists(factory) or not os.path.exists(os.path.join(build, "flash-parts.json")):
             missing.append(b["env"])
