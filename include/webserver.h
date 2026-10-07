@@ -718,12 +718,26 @@ static void runMqttTest()
   }
 }
 
+// What a report is about: the identification key of the heat pump and the model, hashed (FNV-1a). A board reports
+// each heat pump + model once; re-confirming the same model sends nothing, a new unit or another model does.
+static uint32_t telemetrySubject()
+{
+  char key[96];
+  surveyKey(survey, key, sizeof(key));
+  uint32_t h = 2166136261u;
+  for (const char *p : {(const char *)key, "|", (const char *)config.model})
+    for (; *p; p++)
+      h = (h ^ (uint8_t)*p) * 16777619u;
+  return h ? h : 1;
+}
+
 static void sendTelemetry()
 {
   LOOP_STAGE("telemetry");
   telemetryPending = false;
-  if (!config.telemetry || !TELEMETRY_AVAILABLE || !netOnline() || !surveyJson[0])
+  if (!config.telemetry || !config.modelConfirmed || !TELEMETRY_AVAILABLE || !netOnline() || !surveyJson[0] || surveyInProgress)
     return;
+  uint32_t subject = telemetrySubject();
   WiFiClientSecure tls;
   tls.setInsecure();
   HTTPClient http;
@@ -733,6 +747,32 @@ static void sendTelemetry()
   int code = http.POST(telemetryPayload());
   http.end();
   mqttSerial.printf("Telemetry sent (%d). Thank you!\n", code);
+  // Done when accepted, or refused for good (4xx but 429): retried later otherwise
+  if ((code >= 200 && code < 300) || (code >= 400 && code < 500 && code != 429))
+  {
+    config.telemetrySent = subject;
+    configSave();
+  }
+}
+
+// Sends the report when this heat pump + model has not been reported yet (eg. the box was ticked before the
+// firmware could send, or a report failed). Once a minute at most, and 6 hours after a failed attempt.
+static void telemetryLoop()
+{
+  static unsigned long lastCheck = 0, lastAttempt = 0;
+  static bool attempted = false;
+  if (millis() - lastCheck < 60000UL)
+    return;
+  lastCheck = millis();
+  if (!config.telemetry || !config.modelConfirmed || !TELEMETRY_AVAILABLE || !netOnline() || !surveyJson[0] || surveyInProgress)
+    return;
+  if (telemetrySubject() == config.telemetrySent)
+    return;
+  if (attempted && millis() - lastAttempt < 6UL * 3600UL * 1000UL)
+    return;
+  attempted = true;
+  lastAttempt = millis();
+  sendTelemetry();
 }
 
 // Applies what the request handlers queued. Main loop only.
@@ -784,6 +824,7 @@ void webLoop()
     runMqttTest();
   if (telemetryPending)
     sendTelemetry();
+  telemetryLoop();
 
   if (factoryResetRequested)
   {

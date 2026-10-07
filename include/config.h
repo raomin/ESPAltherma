@@ -78,6 +78,7 @@ struct AppConfig
   // Opt-in telemetry: sends the heat pump identification to help the auto-detection
   bool telemetry;
   char installId[17]; // random, to deduplicate reports
+  uint32_t telemetrySent; // hash of the identification key + model last reported, 0 when none
 };
 
 AppConfig config;
@@ -190,6 +191,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   JsonObject telemetry = doc["telemetry"].to<JsonObject>();
   telemetry["enabled"] = c.telemetry;
   telemetry["install_id"] = c.installId;
+  telemetry["sent"] = c.telemetrySent;
 
   if (!includeSecrets)
   {
@@ -297,6 +299,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));
   readNum(src["telemetry"]["enabled"], c.telemetry);
   readStr(src["telemetry"]["install_id"], c.installId, sizeof(c.installId));
+  readNum(src["telemetry"]["sent"], c.telemetrySent);
 }
 
 void configSave()
