@@ -205,7 +205,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <circle cx="95" cy="238" r="5" class="eq"/>
     <rect class="eq" x="33" y="310" width="13" height="30" rx="6.5"/><path class="ln" d="M46 331H52"/>
     <rect class="eq" id="comp" x="52" y="300" width="30" height="50" rx="12"/>
-    <text class="tl" x="92" y="318">Compressor</text>
+    <text class="tl" x="92" y="318" id="lComp">Compressor</text>
     <text class="tv" x="92" y="340" id="sInv" translate="no"></text>
     <path d="M170 240H230M170 330H230" style="stroke:var(--refr);stroke-width:7;fill:none;stroke-linecap:round"/>
     <path d="M170 240H230M170 330H230" style="stroke:var(--card);stroke-width:3;fill:none"/>
@@ -639,6 +639,9 @@ function tcol(v) {
 }
 const sch = $('#sch');
 sch.querySelectorAll('.pipe').forEach(p => { const c = p.cloneNode(); c.removeAttribute('id'); c.setAttribute('class', 'fl'); p.after(c); });
+// Shrinks an SVG text to max units wide (translations can be longer than the English the drawing was made for)
+const fit = (el, max) => { el.style.fontSize = ''; const w = el.getComputedTextLength ? el.getComputedTextLength() : 0;
+  if (w > max) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * max / w).toFixed(1) + 'px'; };
 function paint() {
   const r = reading(lastValues), n = k => num(r[k]);
   const deg = v => v == null ? '—' : f1(v) + '°';
@@ -651,6 +654,7 @@ function paint() {
   $('#vR').classList.toggle('shut', !v3); $('#vB').classList.toggle('shut', v3);
   sch.classList.toggle('flowing', pump); sch.classList.toggle('comp', inv > 0); sch.classList.toggle('fanon', inv > 0);
   tx('sInv', inv == null ? '' : inv > 0 ? inv + ' rps' : t('Resting'));
+  requestAnimationFrame(() => { fit($('#lComp'), 70); fit($('#sInv'), 70); }); // once displayed: hidden texts have no width
   tx('sV3', r.v3 == null ? '' : v3 ? t('to the hot water') : t('to the house'));
   tx('sPump', r.pump == null && flow == null ? '' : pump ? t('Pump on') : t('Pump off'));
   const bar = n('bar');

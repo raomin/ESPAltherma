@@ -35,7 +35,7 @@ AS_NUMBERS = os.path.join(ROOT, "data", "as_numbers.json")
 # Not models: the user's own file, and DEFAULT.h which conflicts with every family.
 EXCLUDED = {"mydef.h", "DEFAULT.h"}
 
-# Family of each definition file (see doc/PLAN_web_flasher.md §1.3).
+# Family of each definition file.
 #  G: Gen-2 (R32 D/E series): 0x20/12 is the high pressure, has 0xA0/0xA1
 #  L: Gen-1 (LT, Hybrid, GEO2...): 0x20/12 is the heat sink temperature, no 0xA0
 #  S: Protocol S, R: Protocol S (ROTEX)

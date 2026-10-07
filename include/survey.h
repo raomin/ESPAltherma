@@ -266,7 +266,7 @@ static void surveyAppendHexField(const Survey &s, const char *name, uint8_t reg,
 }
 
 // Canonical identification key, eg. "I|63:0A1B2C3D4E05|60:9182|CAP:5A|11:010203040506|00:0102".
-// Registry:hex of the identification bytes (see doc/PLAN_web_flasher.md §1.2).
+// Registry:hex of the identification bytes.
 void surveyKey(const Survey &s, char *out, size_t size)
 {
   size_t pos = 0;

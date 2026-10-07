@@ -337,6 +337,15 @@ The "Daikin Altherma via ESPAltherma" device will contain all the values you sel
 - `sensor.althermasensors` holds the sensor values as attributes.
 - `switch.altherma` activates the thermostat relay (Step 4), when one is set.
 
+## A dashboard
+
+The [ESPAltherma card](homeassistant/README.md) brings the live drawing of the web page to Home Assistant, and builds a whole dashboard with the drawing, your thermostat, the key values and their history. Install it with HACS (or by hand), then create a dashboard whose configuration is just:
+
+```yaml
+strategy:
+  type: custom:espaltherma
+```
+
 ## Device Discovery
 
 ESPAltherma will generate a device discovery JSON and publish that to MQTT topic `homeassistant/device/espaltherma-mqtt-discovery/config` for Home Assistant to pick up. The software will attempt to make the devices as specific to their unit as possible. Other characteristics:
