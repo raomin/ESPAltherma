@@ -172,10 +172,10 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
         return "\"p\":\"sensor\",\"dev_cla\":\"current\",\"unit_of_meas\":\"A\",";
     }
 
-    // Fan speed (rotations per second).
+    // Compressor and fan speeds, in rotations per second (no device class: Home Assistant's "frequency" only takes Hz).
     if (label.convid == 152 && strstr(label.label, "(rps)") != NULL)
     {
-        return "\"p\":\"sensor\",\"dev_cla\":\"frequency\",\"unit_of_meas\":\"Hz\",";
+        return "\"p\":\"sensor\",\"unit_of_meas\":\"rps\",";
     }
 
     return "\"p\":\"sensor\",";
