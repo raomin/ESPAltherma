@@ -15,11 +15,14 @@ src = open(os.path.join(HERE, "src", "espaltherma-card.js"), encoding="utf-8").r
 # Texts of the card: data-t attributes, tag labels and tr(hass, "...") calls
 texts = set(re.findall(r'data-t="([^"]+)"', src)) | set(re.findall(r'tr\(hass, "([^"]+)"', src))
 texts |= {t for t in re.findall(r'\["([^"]+)", "\w+", \d+, \d+, \d+\]', src)}
+texts = {t for t in texts if "${" not in t}
+# The card's own translations (OWN) cover the texts the web page does not have
+own = set(re.findall(r'"([^"]+)": "', re.search(r"const OWN = \{(.*?)\n\};", src, re.S).group(1)))
 i18n, missing = {}, {}
 for lang in LANGS:
     d = json.load(open(os.path.join(ROOT, "web", "i18n", lang + ".json"), encoding="utf-8"))
     i18n[lang] = {t: d[t] for t in sorted(texts) if d.get(t)}
-    missing[lang] = sorted(t for t in texts if not d.get(t))
+    missing[lang] = sorted(t for t in texts if not d.get(t) and t not in own)
 out = src.replace("/*I18N*/{}", json.dumps(i18n, ensure_ascii=False, separators=(",", ":")))
 os.makedirs(os.path.join(HERE, "dist"), exist_ok=True)
 open(os.path.join(HERE, "dist", "espaltherma-card.js"), "w", encoding="utf-8", newline="\n").write(out)

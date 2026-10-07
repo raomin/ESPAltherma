@@ -2,7 +2,7 @@
 // ESPAltherma web page, fed by the entities ESPAltherma publishes through MQTT discovery.
 //   card:      type: custom:espaltherma-card   (options: climate, entities: {key: entity_id})
 //   dashboard: strategy: {type: custom:espaltherma}   (options: climate)
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 
 // Entities, by the ids ESPAltherma's discovery gives them (built from the English labels, the same everywhere)
 const FIND = {
@@ -18,7 +18,14 @@ const FIND = {
   defrost: /^binary_sensor\.espaltherma_defrost_operation$/,
 };
 
-const I18N = {"fr":{"3-way valve":"Vanne 3 voies","Backup heater":"Appoint électrique","Compressor":"Compresseur","Flow":"Débit","Heat exchanger":"Échangeur","Heat pump out":"Sortie PAC","Hot water":"Eau chaude","Indoor unit":"Unité intérieure","Leaving":"Départ","Living room":"Séjour","Outdoor unit":"Unité extérieure","Outside":"Extérieur","Pump off":"Pompe arrêtée","Pump on":"Pompe en marche","Refrigerant":"Réfrigérant","Resting":"Au repos","Return":"Retour","Water temperature":"Température de l'eau","target {n}°":"consigne {n}°","to the hot water":"vers l'eau chaude","to the house":"vers la maison"},"de":{"3-way valve":"3-Wege-Ventil","Backup heater":"Heizstab","Compressor":"Verdichter","Flow":"Durchfluss","Heat exchanger":"Wärmetauscher","Heat pump out":"WP-Austritt","Hot water":"Warmwasser","Indoor unit":"Innengerät","Leaving":"Vorlauf","Living room":"Wohnzimmer","Outdoor unit":"Außengerät","Outside":"Außen","Pump off":"Pumpe aus","Pump on":"Pumpe an","Refrigerant":"Kältemittel","Resting":"In Ruhe","Return":"Rücklauf","Water temperature":"Wassertemperatur","target {n}°":"Soll {n}°","to the hot water":"zum Warmwasser","to the house":"zum Haus"},"it":{"3-way valve":"Valvola a 3 vie","Backup heater":"Resistenza elettrica","Compressor":"Compressore","Flow":"Portata","Heat exchanger":"Scambiatore","Heat pump out":"Uscita PdC","Hot water":"Acqua calda","Indoor unit":"Unità interna","Leaving":"Mandata","Living room":"Soggiorno","Outdoor unit":"Unità esterna","Outside":"Esterno","Pump off":"Pompa spenta","Pump on":"Pompa accesa","Refrigerant":"Refrigerante","Resting":"A riposo","Return":"Ritorno","Water temperature":"Temperatura dell'acqua","target {n}°":"obiettivo {n}°","to the hot water":"verso l'acqua calda","to the house":"verso la casa"},"es":{"3-way valve":"Válvula de 3 vías","Backup heater":"Resistencia de apoyo","Compressor":"Compresor","Flow":"Caudal","Heat exchanger":"Intercambiador","Heat pump out":"Salida BdC","Hot water":"Agua caliente","Indoor unit":"Unidad interior","Leaving":"Impulsión","Living room":"Salón","Outdoor unit":"Unidad exterior","Outside":"Exterior","Pump off":"Bomba parada","Pump on":"Bomba en marcha","Refrigerant":"Refrigerante","Resting":"En reposo","Return":"Retorno","Water temperature":"Temperatura del agua","target {n}°":"consigna {n}°","to the hot water":"hacia el agua caliente","to the house":"hacia la casa"}};
+const I18N = {"fr":{"3-way valve":"Vanne 3 voies","Backup heater":"Appoint électrique","Compressor":"Compresseur","Flow":"Débit","Heat exchanger":"Échangeur","Heat pump out":"Sortie PAC","Hot water":"Eau chaude","Indoor unit":"Unité intérieure","Leaving":"Départ","Living room":"Séjour","Outdoor unit":"Unité extérieure","Outside":"Extérieur","Pump off":"Pompe arrêtée","Pump on":"Pompe en marche","Refrigerant":"Réfrigérant","Resting":"Au repos","Return":"Retour","Water pressure":"Pression d'eau","Water temperature":"Température de l'eau","target {n}°":"consigne {n}°","to the hot water":"vers l'eau chaude","to the house":"vers la maison"},"de":{"3-way valve":"3-Wege-Ventil","Backup heater":"Heizstab","Compressor":"Verdichter","Flow":"Durchfluss","Heat exchanger":"Wärmetauscher","Heat pump out":"WP-Austritt","Hot water":"Warmwasser","Indoor unit":"Innengerät","Leaving":"Vorlauf","Living room":"Wohnzimmer","Outdoor unit":"Außengerät","Outside":"Außen","Pump off":"Pumpe aus","Pump on":"Pumpe an","Refrigerant":"Kältemittel","Resting":"In Ruhe","Return":"Rücklauf","Water pressure":"Wasserdruck","Water temperature":"Wassertemperatur","target {n}°":"Soll {n}°","to the hot water":"zum Warmwasser","to the house":"zum Haus"},"it":{"3-way valve":"Valvola a 3 vie","Backup heater":"Resistenza elettrica","Compressor":"Compressore","Flow":"Portata","Heat exchanger":"Scambiatore","Heat pump out":"Uscita PdC","Hot water":"Acqua calda","Indoor unit":"Unità interna","Leaving":"Mandata","Living room":"Soggiorno","Outdoor unit":"Unità esterna","Outside":"Esterno","Pump off":"Pompa spenta","Pump on":"Pompa accesa","Refrigerant":"Refrigerante","Resting":"A riposo","Return":"Ritorno","Water pressure":"Pressione dell'acqua","Water temperature":"Temperatura dell'acqua","target {n}°":"obiettivo {n}°","to the hot water":"verso l'acqua calda","to the house":"verso la casa"},"es":{"3-way valve":"Válvula de 3 vías","Backup heater":"Resistencia de apoyo","Compressor":"Compresor","Flow":"Caudal","Heat exchanger":"Intercambiador","Heat pump out":"Salida BdC","Hot water":"Agua caliente","Indoor unit":"Unidad interior","Leaving":"Impulsión","Living room":"Salón","Outdoor unit":"Unidad exterior","Outside":"Exterior","Pump off":"Bomba parada","Pump on":"Bomba en marcha","Refrigerant":"Refrigerante","Resting":"En reposo","Return":"Retorno","Water pressure":"Presión del agua","Water temperature":"Temperatura del agua","target {n}°":"consigna {n}°","to the hot water":"hacia el agua caliente","to the house":"hacia la casa"}};
+// Texts of the dashboard that the web page does not have
+const OWN = {
+  fr: {"Mode": "Mode", "Error": "Erreur", "Current": "Courant"},
+  de: {"Mode": "Betriebsart", "Error": "Fehler", "Current": "Strom"},
+  it: {"Mode": "Modalità", "Error": "Errore", "Current": "Corrente"},
+  es: {"Mode": "Modo", "Error": "Error", "Current": "Corriente"},
+};
 
 // Shrinks an SVG text to max units wide (translations can be longer than the English the drawing was made for)
 const fit = (el, max) => { el.style.fontSize = ''; const w = el.getComputedTextLength ? el.getComputedTextLength() : 0;
@@ -26,7 +33,7 @@ const fit = (el, max) => { el.style.fontSize = ''; const w = el.getComputedTextL
 
 function tr(hass, s, p) {
   const lang = ((hass && (hass.locale && hass.locale.language || hass.language)) || "en").slice(0, 2);
-  let r = (I18N[lang] && I18N[lang][s]) || s;
+  let r = (I18N[lang] && I18N[lang][s]) || (OWN[lang] && OWN[lang][s]) || s;
   if (p) r = r.replace(/\{(\w+)\}/g, (m, k) => (p[k] != null ? p[k] : m));
   return r;
 }
@@ -221,9 +228,14 @@ class EspalthermaStrategy {
     const ent = findEntities(hass, config);
     const climate = (config && config.climate) || defaultClimate(hass);
     const has = k => ent[k] && hass.states[ent[k]];
+    // Short names: the entities' own start with the device name, which hides what they are
+    const name = {out: tr(hass, "Outside"), tank: tr(hass, "Hot water"), inv: tr(hass, "Compressor"), flow: tr(hass, "Flow"),
+      bar: tr(hass, "Water pressure"), mode: tr(hass, "Mode"), err: tr(hass, "Error"), lw2: tr(hass, "Leaving"),
+      lw1: tr(hass, "Heat pump out"), inlet: tr(hass, "Return"), amp: tr(hass, "Current")};
     const tiles = ["out", "tank", "inv", "flow", "bar", "mode", "err"].filter(has)
-      .map(k => ({type: "tile", entity: ent[k], grid_options: {columns: 6}}));
-    const water = ["lw2", "lw1", "inlet", "tank", "out"].filter(has).map(k => ent[k]);
+      .map(k => ({type: "tile", entity: ent[k], name: name[k], grid_options: {columns: 6}}));
+    const line = k => ({entity: ent[k], name: name[k]});
+    const water = ["lw2", "lw1", "inlet", "tank", "out"].filter(has).map(line);
     const sections = [
       {type: "grid", column_span: 3, cards: [{type: "custom:espaltherma-card", climate, grid_options: {columns: "full"}}]},
       {type: "grid", cards: [
@@ -233,7 +245,7 @@ class EspalthermaStrategy {
     ];
     const history = [];
     if (water.length) history.push({type: "history-graph", title: tr(hass, "Water temperature"), hours_to_show: 24, entities: water, grid_options: {columns: "full"}});
-    if (has("inv")) history.push({type: "history-graph", title: tr(hass, "Compressor"), hours_to_show: 24, entities: [ent.inv, ...(has("amp") ? [ent.amp] : [])], grid_options: {columns: "full"}});
+    if (has("inv")) history.push({type: "history-graph", title: tr(hass, "Compressor"), hours_to_show: 24, entities: ["inv", "amp"].filter(has).map(line), grid_options: {columns: "full"}});
     if (history.length) sections.push({type: "grid", column_span: 2, cards: history});
     return {title: "ESPAltherma", views: [{title: "ESPAltherma", path: "espaltherma", icon: "mdi:heat-pump", type: "sections", max_columns: 4, sections}]};
   }
