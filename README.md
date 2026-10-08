@@ -355,43 +355,6 @@ ESPAltherma will generate a device discovery JSON and publish that to MQTT topic
 
 To clear the configuration, for example after adding or removing some sensor, publish an empty, retained message to `homeassistant/device/espaltherma-mqtt-discovery/config`.
 
-## Declaring sensor entities
-
-The discovery shown above will create all sensor entities for you, but it's still possible to create your own sensors as before, for example when you need custom conversions or calculations.
-
-In Home Assistant, all values reported by ESPAltherma are `attribute`s of the `entity` sensor.althermasensors.
-
-![](doc/images/attribs.png)
-
-If you want to integrate specific `attribute`s in graphs, gauge etc. you need to declare them as `sensor`s using `template` in your `configuration.yaml`. See [HA doc on Template](https://www.home-assistant.io/integrations/template/).
-
-Eg. this template declares the 2 operation modes as entities, the DHW tank temperature and the current of the primary inverter:
-
-```yaml
-template:
-  - unique_id: "espaltherma"  # will be prefixed to all unique IDs
-    sensor:
-    - name: "Operation mode"
-      unique_id: "operation"
-      state: "{{ state_attr('sensor.althermasensors','Operation Mode') }}"
-    - name: "Indoor Operation mode"
-      unique_id: "iuoperation"
-      state: "{{ state_attr('sensor.althermasensors','I/U operation mode') }}"
-    - name: "DHW Temp"
-      unique_id: "dhw"
-      state: "{{ state_attr('sensor.althermasensors','DHW tank temp. (R5T)') }}"
-      unit_of_measurement: '°C'
-    - name: "Inverter primary current"
-      unique_id: "inv_primary_current"
-      state: "{{ state_attr('sensor.althermasensors','INV primary current (A)') }}"
-      unit_of_measurement: 'A'
-      device_class: current
-```
-
-After restarting Home Assistant, these entities can be added to an history card:
-
-![](doc/images/historycard.png)
-
 ## A Climate entity
 
 To control heating through the On/Off switch, declare a Climate (aka thermostat) entity monitoring a temperature sensor.
