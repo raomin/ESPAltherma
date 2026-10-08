@@ -16,6 +16,9 @@
 
 <hr/>
 
+> [!TIP]
+> **ESPAltherma 2 is in beta.** Install it from your browser with the [web installer](https://espaltherma.pages.dev/), with nothing to edit or compile: it detects your heat pump model, has its own web interface, and comes with a [Home Assistant dashboard](https://github.com/raomin/espaltherma-card). See the [beta branch](https://github.com/raomin/ESPAltherma/tree/beta) and tell us how it goes in the [discussions](https://github.com/raomin/ESPAltherma/discussions). This page documents the stable version, 1.x.
+
 <p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just Arduino on an <b>ESP32</b> or <b>ESP8266</b> Microcontroller.</p>
 
 _If this project has any value for you, please consider [buying me a 🍺](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)! I don't do this for money but it feels good to get some support! Thanks :)_ 
