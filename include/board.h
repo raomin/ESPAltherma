@@ -22,6 +22,8 @@
 #define BOARD_NAME "esp32-poe"
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 #define BOARD_NAME "esp32c3"
+#elif defined(CONFIG_IDF_TARGET_ESP32C6)
+#define BOARD_NAME "esp32c6"
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
 #define BOARD_NAME "esp32s3"
 #else
@@ -37,8 +39,8 @@
 #elif defined(ARDUINO_ESP32_POE) || defined(ARDUINO_ESP32_POE_ISO)
 #define BOARD_DEFAULT_RX_PIN 36 // UEXT connector (GPIO17 is the Ethernet clock)
 #define BOARD_DEFAULT_TX_PIN 4
-#elif defined(CONFIG_IDF_TARGET_ESP32C3)
-#define BOARD_DEFAULT_RX_PIN 4 // GPIO16/17 do not exist on the C3
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6)
+#define BOARD_DEFAULT_RX_PIN 4 // GPIO16/17 do not exist on the C3/C6
 #define BOARD_DEFAULT_TX_PIN 5
 #else
 #define BOARD_DEFAULT_RX_PIN 16 // Default GPIO PINs for Serial2
@@ -47,14 +49,14 @@
 
 // The C3/S3 web flasher builds use the chip's USB port as Serial (ARDUINO_USB_CDC_ON_BOOT). Boards with a
 // USB-UART bridge talk on UART0 instead: the log and Improv use both, so one firmware fits both kinds.
-#if ARDUINO_USB_CDC_ON_BOOT && (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3))
+#if ARDUINO_USB_CDC_ON_BOOT && (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32S3))
 #define SECOND_CONSOLE Serial0
 #endif
 
 // Wired Ethernet: build with -D HAS_ETHERNET. The PHY settings (ETH_PHY_TYPE, ETH_PHY_ADDR, ETH_PHY_POWER,
 // ETH_PHY_MDC, ETH_PHY_MDIO, ETH_CLK_MODE) come from the board variant (WT32-ETH01, Olimex ESP32-PoE) or from
 // build flags, eg. for an IP101 PHY: -D ETH_PHY_TYPE=ETH_PHY_IP101 -D ETH_PHY_ADDR=1 -D ETH_PHY_POWER=5
-#if defined(HAS_ETHERNET) && (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3))
+#if defined(HAS_ETHERNET) && (defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32S3))
 #error "HAS_ETHERNET: wired Ethernet (RMII PHY) needs a classic ESP32"
 #endif
 

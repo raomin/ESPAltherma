@@ -55,7 +55,7 @@ And in Home Assistant, with the [ESPAltherma card](https://github.com/raomin/esp
 - 5 pins JST EH 2.5mm connector (or 4 Dupont wires M-F)
 - A USB data cable (some cables only charge)
 
-Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5StickC, M5StickC Plus, M5StickC Plus2, M5Stack Tough, WT32-ETH01 and Olimex ESP32-PoE.
+Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-C6, ESP32-S3, M5StickC, M5StickC Plus, M5StickC Plus2, M5Stack Tough, WT32-ETH01 and Olimex ESP32-PoE.
 
 *The ESP8266 is not supported by ESPAltherma v2. Keep using [ESPAltherma 1.x](https://github.com/raomin/ESPAltherma/tree/main) on it.*
 
@@ -104,7 +104,7 @@ The RX and TX pins of each board:
 | Board | RX (to X10A pin 2) | TX (to X10A pin 3) |
 | ----- | ------------------ | ------------------ |
 | ESP32 DevKit, ESP32-S3 | GPIO 16 | GPIO 17 |
-| ESP32-C3 | GPIO 4 | GPIO 5 |
+| ESP32-C3, ESP32-C6 | GPIO 4 | GPIO 5 |
 | M5StickC, M5StickC Plus, M5StickC Plus2 | G36 | G26 |
 | M5Stack Tough | G36 (Port B) | G26 (Port B) |
 | WT32-ETH01 | GPIO 5 (RXD) | GPIO 17 (TXD) |
@@ -224,6 +224,7 @@ Use the environment of your board:
 | ----- | ----------- |
 | ESP32 DevKit | `web-esp32` |
 | ESP32-C3 | `web-esp32c3` |
+| ESP32-C6 | `web-esp32c6` |
 | ESP32-S3 | `web-esp32s3` |
 | M5StickC / M5StickC Plus / M5StickC Plus2 | `web-m5stickc` / `web-m5stickcplus` / `web-m5stickcplus2` |
 | M5Stack Tough | `web-m5stack-tough` |
