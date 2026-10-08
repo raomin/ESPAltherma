@@ -42,9 +42,9 @@ _If this project has any value for you, please consider [buying me a 🍺](https
 
 <p align="center"><img src="doc/images/phone-dark.png" width="300" alt="ESPAltherma on a phone, dark mode"></p>
 
-And in Home Assistant:
+And in Home Assistant, with the [ESPAltherma card](https://github.com/raomin/espaltherma-card):
 
-![A Home Assistant dashboard with the values of ESPAltherma](doc/images/screenshot.png)
+![The ESPAltherma dashboard in Home Assistant](doc/images/ha-dashboard.jpg)
 
 # Prerequisites
 
@@ -339,7 +339,7 @@ The "Daikin Altherma via ESPAltherma" device will contain all the values you sel
 
 ## A dashboard
 
-The [ESPAltherma card](homeassistant/README.md) brings the live drawing of the web page to Home Assistant, and builds a whole dashboard with the drawing, your thermostat, the key values and their history. Install it with HACS (or by hand), then create a dashboard whose configuration is just:
+The [ESPAltherma card](https://github.com/raomin/espaltherma-card) brings the live drawing of the web page to Home Assistant, and builds a whole dashboard with the drawing, your thermostat, the key values and their history. Install it with HACS (custom repository `https://github.com/raomin/espaltherma-card`, type *Dashboard*), then create a dashboard whose configuration is just:
 
 ```yaml
 strategy:
