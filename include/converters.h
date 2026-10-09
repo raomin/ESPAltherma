@@ -190,10 +190,8 @@ public:
                 strcat(def->asString, "---");
                 return;
             }
-            unsigned short num3 = (unsigned short)((int)data[1] * 256);
-            num3 |= (unsigned short)(data[0] & 127);
-            dblData = (double)((num3 & 65280) / 256);
-            dblData += (double)(num3 & 255) / 256.0;
+            // Signed (#543): read as unsigned, a heat exchanger at -6° showed 250°
+            dblData = (double)getSignedValue(data, num, 0) / 256.0;
             break;
         }
         case 151:
