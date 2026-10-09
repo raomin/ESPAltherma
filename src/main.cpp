@@ -81,15 +81,21 @@ void updateValues(char regID)
   converter.getLabels(regID, labels, num);
   for (int i = 0; i < num; i++)
   {
-    bool alpha = false;
+    // A number goes in the JSON without quotes: digits, a dot, a leading minus, and at least one digit
+    // ("-" alone, as conversion 203 returns, broke the JSON: #418)
+    bool alpha = false, digit = false;
     for (size_t j = 0; j < strlen(labels[i]->asString); j++)
     {
       char c = labels[i]->asString[j];
-      if (!isdigit(c) && c!='.' && !(c=='-' && j==0)){
+      if (isdigit(c))
+        digit = true;
+      else if (c!='.' && !(c=='-' && j==0)){
         alpha = true;
         break;
       }
     }
+    if (!digit)
+      alpha = true;
 
     if (config.oneValOneTopic)
     {
