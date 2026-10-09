@@ -738,6 +738,9 @@ static void sendTelemetry()
   if (!config.telemetry || !config.modelConfirmed || !TELEMETRY_AVAILABLE || !netOnline() || !surveyJson[0] || surveyInProgress)
     return;
   uint32_t subject = telemetrySubject();
+  // Already reported: changing the selected values or the language re-confirms the model, but sends nothing new
+  if (subject == config.telemetrySent)
+    return;
   WiFiClientSecure tls;
   tls.setInsecure();
   HTTPClient http;
