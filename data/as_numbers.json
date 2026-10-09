@@ -176,6 +176,35 @@
    ]
   },
   {
+   "body": "1706406",
+   "suffix": "22",
+   "letter": "A",
+   "defs": [
+    "Altherma(LT_CA_CB_11-16kW)"
+   ],
+   "models": [
+    "BELARIASR16I4",
+    "EHBX16CB9W"
+   ],
+   "software": [],
+   "note": "from a heat pump report: numbered like 1706432-22 A, and its outdoor unit is 14 kW"
+  },
+  {
+   "body": "1706406",
+   "suffix": "29",
+   "letter": "",
+   "defs": [
+    "Altherma(LT_CA_CB_04-08kW)"
+   ],
+   "models": [
+    "EHVH08S18CB3V"
+   ],
+   "software": [
+    "ID4562"
+   ],
+   "note": "from the display of an EHVH08S18CB3V"
+  },
+  {
    "body": "1706407",
    "suffix": "10",
    "letter": "",

@@ -26,6 +26,9 @@ The AS numbers of the known indoor unit boards, with the models they are fitted 
 - the EBLA/EDLA 04–08 E monobloc → the D 4–8 kW definition;
 - the Rotex RBLQ C2 → the LT 5–7 kW monobloc.
 
+**Added from the field** (they carry a `note`):
+- AS1706406, another board of the LT CA/CB indoor units, numbered like AS1706432. Suffix -29 is an EHVH08S18CB3V (seen on its display), and suffix -22 comes from a heat pump report: its outdoor unit is 14 kW, and it matches 1706432-22. The other suffixes of this board get both LT CA/CB definitions as candidates.
+
 **Not in the table:**
 - the outdoor unit board number in registry 0x11 (a 1Pxxxxxx board part number);
 - the software ID in registry 0x60.

@@ -2349,7 +2349,7 @@ static const CatalogFingerprint CATALOG_FINGERPRINTS[CATALOG_FINGERPRINT_COUNT +
 };
 
 // Indoor unit AS numbers (data/as_numbers.json, known indoor unit boards, 2026-09): body, suffix digits (0xFF = any), candidates
-#define CATALOG_AS_COUNT 229
+#define CATALOG_AS_COUNT 233
 static const CatalogAsNumber CATALOG_AS[CATALOG_AS_COUNT + 1] = {
     {1008467, 0x01, 0xff, 0x0000000000040000ULL},
     {1008467, 0xff, 0xff, 0x0000000000040000ULL},
@@ -2357,6 +2357,10 @@ static const CatalogAsNumber CATALOG_AS[CATALOG_AS_COUNT + 1] = {
     {1008468, 0xff, 0xff, 0x0000000000040000ULL},
     {1705393, 0x01, 0xff, 0x0000000000300000ULL},
     {1705393, 0xff, 0xff, 0x0000000000300000ULL},
+    {1706406, 0x02, 0x02, 0x0000000000200000ULL},
+    {1706406, 0x02, 0x09, 0x0000000000100000ULL},
+    {1706406, 0x02, 0xff, 0x0000000000300000ULL},
+    {1706406, 0xff, 0xff, 0x0000000000300000ULL},
     {1706407, 0x01, 0xff, 0x0000000000080000ULL},
     {1706407, 0xff, 0xff, 0x0000000000080000ULL},
     {1706408, 0x01, 0xff, 0x0000000000000008ULL},
