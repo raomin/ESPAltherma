@@ -84,7 +84,7 @@ Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5St
 
 1. Turn OFF your heat pump at the circuit breaker.
 2. Unscrew your panel to access the main PCB of your unit.
-3. Localize the X10A connector on the PCB. This is the serial port on the main PCB. If your installation includes a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
+3. Locate the X10A connector on the PCB. This is the serial port on the main PCB. If your installation includes a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follows. Pay attention to the orientation of the socket.
 
 ### Daikin Altherma 4 pin X10A Connection
