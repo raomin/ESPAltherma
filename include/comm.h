@@ -27,10 +27,12 @@ unsigned char getCRC(unsigned char *src, int len)
 
 void logBuffer(unsigned char *buffer, size_t len)
 {
-  char bufflog[250] = {0};
+  char bufflog[REPLY_BUFFER_SIZE * 5 + 1] = {0}; // "0x%02x " is 5 characters a byte (#595)
+  if (len > REPLY_BUFFER_SIZE)
+    len = REPLY_BUFFER_SIZE;
   for (size_t i = 0; i < len; i++)
   {
-    sprintf(bufflog + i * 5, "0x%02x ", buffer[i]);
+    snprintf(bufflog + i * 5, sizeof(bufflog) - i * 5, "0x%02x ", buffer[i]);
   }
   mqttSerial.print(bufflog);
 }
