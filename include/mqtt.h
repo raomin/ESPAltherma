@@ -305,7 +305,7 @@ void callbackDebugSerial(byte *payload, unsigned int length)
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  mqttSerial.printf("Message arrived [%s] : %s\n", topic, payload);
+  Serial.printf("Message arrived [%s] : %.*s\n", topic, (int)length, (const char *)payload);
 
   if (strcmp(topic, "espaltherma/POWER") == 0)
   {
