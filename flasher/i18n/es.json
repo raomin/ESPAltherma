@@ -25,6 +25,7 @@
  "This firmware is not available yet.": "Este firmware todavía no está disponible.",
  "Most ESP32 development boards (DevKit, WROOM-32, DOIT…)": "La mayoría de placas de desarrollo ESP32 (DevKit, WROOM-32, DOIT…)",
  "ESP32-C3 DevKit, SuperMini and similar": "ESP32-C3 DevKit, SuperMini y similares",
+ "ESP32-C6 DevKitC-1 and similar": "ESP32-C6 DevKitC-1 y similares",
  "ESP32-S3 DevKit and modules": "ESP32-S3 DevKit y módulos",
  "With screen, fits next to the board": "Con pantalla, cabe junto a la placa",
  "Rugged, touch screen (Port B)": "Robusto, pantalla táctil (Port B)",
