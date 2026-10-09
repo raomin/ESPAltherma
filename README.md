@@ -381,23 +381,42 @@ Then, add a Thermostat card somewhere:
 
 ## Calculating COP
 
-The information returned by ESPAltherma allows to calculate the coefficient of performance (COP). It is the ratio of the heat delivered by your heat pump to the energy consumed by it.
+The COP (coefficient of performance) is the heat delivered by the heat pump divided by the electricity it uses. ESPAltherma gives the heat side: the water flow and the temperatures of the water leaving and coming back. For the electricity side, the most accurate is an external power meter on the supply of the heat pump (a Shelly, a DIN rail meter...) that reports to Home Assistant. Many older heat pumps don't report their own consumption at all.
 
-When put in terms of ESPAltherma variables, the COP can be define as a sensor like this in the `sensor:` section of Home Assistant:
+**Heat delivered**, in kW: flow (l/min) × 0.06 (to m³/h) × 1.16 (kWh per m³ and °C) × (leaving − return temperature). This needs the flow: if your model doesn't report "Flow sensor (l/min)", you need a heat meter.
+
+In `configuration.yaml`:
 
 ```yaml
-    - name: "COP"
-      unique_id: "espaltherma_cop"
-      unit_of_measurement: 'COP'
-      state: "{% if is_state_attr('sensor.althermasensors','Operation Mode', 'Heating') and is_state_attr('sensor.althermasensors','Freeze Protection', 'OFF')  %}
-{{
-  ((state_attr('sensor.althermasensors','Flow sensor (l/min)')| float * 0.06 * 1.16 * (state_attr('sensor.althermasensors','Leaving water temp. before BUH (R1T)') | float - state_attr('sensor.althermasensors','Inlet water temp.(R4T)')|float) )
-    /
-  (state_attr('sensor.althermasensors','INV primary current (A)') | float * state_attr('sensor.althermasensors','Voltage (N-phase) (V)')|float / 1000))
-  |round(2)
-}}
-{% else %} 0 {%endif%}"
+template:
+  - sensor:
+      - name: "Heat pump heat output"
+        unique_id: espaltherma_heat_output
+        unit_of_measurement: "kW"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set flow = states('sensor.espaltherma_flow_sensor_lmin') | float(0) %}
+          {% set dt = states('sensor.espaltherma_leaving_water_temp_before_buh_r1t') | float(0)
+                    - states('sensor.espaltherma_inlet_water_tempr4t') | float(0) %}
+          {{ [flow * 0.06 * 1.16 * dt, 0] | max | round(2) }}
+      - name: "Heat pump COP"
+        unique_id: espaltherma_cop
+        state_class: measurement
+        state: >
+          {% set heat = states('sensor.heat_pump_heat_output') | float(0) %}
+          {% set power = states('sensor.my_heat_pump_power') | float(0) / 1000 %}
+          {{ (heat / power) | round(2) if power > 0.05 else 0 }}
 ```
+
+- Replace `sensor.my_heat_pump_power` with your power meter, in W (drop the `/ 1000` if it reports kW).
+- Check the entity ids in Settings → Devices & services → Entities: they come from the English labels and can differ a bit between models.
+- If the meter also powers the backup heater, use the water after it: `sensor.espaltherma_leaving_water_temp_after_buh_r2t`.
+- During a defrost the heat output is negative: it shows 0.
+
+**COP of a day.** The instant COP jumps around (start, defrost, hot water). Over a day, divide energies instead: create an *Integral* helper (Settings → Devices & services → Helpers → *Create helper* → *Integral sensor*, method *Left*) on "Heat pump heat output", and one on your power meter, unless it already gives kWh. Put a daily *Utility meter* helper on each, and divide the two in a template like the one above.
+
+**Without a power meter**, you can estimate the power from the inverter current: `sensor.espaltherma_inv_primary_current_a` × `sensor.espaltherma_voltage_nphase_v` (or × 230 if your model doesn't report the voltage), on single-phase units. It leaves out the water pump and the electronics, so the COP comes out a bit high.
 
 ## MQTT topics
 
