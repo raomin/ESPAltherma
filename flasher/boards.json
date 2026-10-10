@@ -3,6 +3,8 @@
    "note": "Most ESP32 development boards (DevKit, WROOM-32, DOIT…)"},
   {"id": "esp32c3", "name": "ESP32-C3", "chip": "ESP32-C3", "env": "web-esp32c3", "rx": 4, "tx": 5,
    "note": "ESP32-C3 DevKit, SuperMini and similar"},
+  {"id": "esp32c6", "name": "ESP32-C6", "chip": "ESP32-C6", "env": "web-esp32c6", "rx": 4, "tx": 5,
+   "note": "ESP32-C6 DevKitC-1 and similar"},
   {"id": "esp32s3", "name": "ESP32-S3", "chip": "ESP32-S3", "env": "web-esp32s3", "rx": 16, "tx": 17,
    "note": "ESP32-S3 DevKit and modules"},
   {"id": "m5stickc", "name": "M5StickC", "chip": "ESP32", "env": "web-m5stickc", "rx": 36, "tx": 26,
