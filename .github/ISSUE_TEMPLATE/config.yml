@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions, model support and ideas
+    url: https://github.com/raomin/ESPAltherma/discussions
+    about: Ask and share in the Discussions. Issues are for bugs.
+  - name: ESPAltherma 2 beta feedback
+    url: https://github.com/raomin/ESPAltherma/discussions/599
+    about: Tell how the beta went with your board and heat pump, and whether it was detected right.
