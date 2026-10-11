@@ -230,7 +230,8 @@ static void setAsBytes(Survey &s, const uint8_t bytes[6])
     memcpy(r->payload + 2, bytes, 6);
 }
 
-// A real unit: EPGA16DAV3 + EAVH16S18DA6V, whose registry 0x63 reads 01 70 81 71 03 (AS1708171-30)
+// A real unit: EPGA16DAV3 + EAVH16S18DA6V, whose registry 0x63 reads 01 70 81 71 03 06 (AS1708171-3 F, the spare
+// part image of the EAV S18 class: the first digit entry 3x of the body gives the EPGA definition)
 void test_detect_as_number_real_unit(void)
 {
     int epga = catalogFindModel("Altherma(EPGA D EAB-EAV-EAVZ D(J) series 11-16kW)");
@@ -246,7 +247,12 @@ void test_detect_as_number_real_unit(void)
     uint32_t keys[CATALOG_MAX_SELECTED];
     TEST_ASSERT_EQUAL_INT(-1, detectSafeKeys(r, keys, CATALOG_MAX_SELECTED));
 
-    // Spare part board (AS1708171-2, suffix not in the model list): the whole body tells
+    // The model image (AS1708171-30 F) and another spare part (AS1708171-2, no entry of its own): same answer
+    const uint8_t model30[6] = {0x01, 0x70, 0x81, 0x71, 0x30, 0x06};
+    setAsBytes(s, model30);
+    detectModel(s, r);
+    TEST_ASSERT_EQUAL_INT(epga, r.model);
+    TEST_ASSERT_EQUAL_INT(DETECT_HIGH, r.confidence);
     const uint8_t spare[6] = {0x01, 0x70, 0x81, 0x71, 0x02, 0x06};
     setAsBytes(s, spare);
     detectModel(s, r);
@@ -260,7 +266,7 @@ void test_detect_as_number_da_dj(void)
 {
     int da = catalogFindModel("Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW)");
     int dj = catalogFindModel("Altherma(ERGA D EHV-EHB-EHVZ DJ series 04-08 kW)");
-    const uint8_t as[6] = {0x01, 0x70, 0x74, 0x50, 0x03, 0x01};
+    const uint8_t as[6] = {0x01, 0x70, 0x74, 0x50, 0x31, 0x01};
     for (int model : {da, dj})
     {
         Survey s;
@@ -305,8 +311,8 @@ static bool hasFullSuffix(uint32_t body, int s1, int s2)
 }
 
 // Every known AS number, on a synthetic survey of each of its candidate models: the candidate must
-// be detected (or an equivalent one), with a high confidence when it is the only candidate. The second suffix
-// digit is written in both layouts that fit the real unit (offset 6 or offset 7 high nibble): same result.
+// be detected (or an equivalent one), with a high confidence when it is the only candidate. The suffix is BCD at
+// offset 6; the high nibble of offset 7 is not part of the letter, so setting it must not change the result.
 void test_detect_all_as_numbers(void)
 {
     int cases = 0, right = 0, high = 0;
@@ -325,7 +331,7 @@ void test_detect_all_as_numbers(void)
                 continue;
         }
         const uint8_t letter = 3; // C
-        const uint8_t layouts[2][2] = {{(uint8_t)(s2 << 4 | a.suffix1), letter}, {a.suffix1, (uint8_t)(s2 << 4 | letter)}};
+        const uint8_t layouts[2][2] = {{(uint8_t)(a.suffix1 << 4 | s2), letter}, {(uint8_t)(a.suffix1 << 4 | s2), (uint8_t)(0x10 | letter)}};
         for (int model = 0; model < CATALOG_MODEL_COUNT; model++)
         {
             if (!((a.models >> model) & 1))

@@ -206,41 +206,31 @@ struct AsNumber
 {
   uint32_t body; // 7 digits, eg. 1708171 for AS1708171-30 F
   int suffix1;   // first suffix digit
-  int suffix2;   // second suffix digit, -1 when it cannot be told
+  int suffix2;   // second suffix digit, -1 when the suffix has one digit (spare part boards)
   char letter;   // revision letter, ' ' when none
 };
 
-// Indoor unit AS number, from registry 0x63 which holds its printed digits in order, one per nibble.
-// AS1708171-30 F reads 01 70 81 71 03 06 at offsets 2-7 (a real unit).
-// Offset 7 low nibble is the revision letter code (6 = F). The second suffix digit is the high nibble of offset 6
-// or of offset 7 (not told apart yet: that unit has suffix 30); the other one carries the high bit of the letter
-// code, 0 for the letters A-Q, which are the only ones the known boards use. So the non-zero nibble is the digit.
+// Indoor unit AS number, from registry 0x63 which holds its printed digits in order, two per byte (BCD, high
+// nibble first): AS1706432-27 A reads 01 70 64 32 27 01 at offsets 2-7. Offset 6 is the suffix, 27; a one-digit
+// suffix, the spare part boards' (AS1708171-3 F reads 03), has a 0 high nibble. Offset 7 low nibble is the
+// revision letter code (1 = A, in the Daikin alphabet without I and O), 0 when none.
 bool surveyAsNumber(const Survey &s, AsNumber &as)
 {
   int d1 = s.byteAt(0x63, 2);
   int d23 = surveyBcd(s.byteAt(0x63, 3));
   int d45 = surveyBcd(s.byteAt(0x63, 4));
   int d67 = surveyBcd(s.byteAt(0x63, 5));
-  int o6 = s.byteAt(0x63, 6);
+  int suffix = surveyBcd(s.byteAt(0x63, 6));
   int o7 = s.byteAt(0x63, 7);
-  if (d1 < 1 || d1 > 9 || d23 < 0 || d45 < 0 || d67 < 0 || o6 < 0 || (o6 & 0xF) > 9)
+  if (d1 < 1 || d1 > 9 || d23 < 0 || d45 < 0 || d67 < 0 || suffix < 0)
     return false;
   as.body = (uint32_t)d1 * 1000000 + d23 * 10000 + d45 * 100 + d67;
-  as.suffix1 = o6 & 0xF;
-  as.suffix2 = -1;
+  as.suffix1 = suffix >= 10 ? suffix / 10 : suffix;
+  as.suffix2 = suffix >= 10 ? suffix % 10 : -1;
   as.letter = ' ';
-  if (o7 >= 0)
-  {
-    int hi6 = o6 >> 4, hi7 = o7 >> 4;
-    if (hi6 == 0 || hi7 == 0)
-    {
-      int digit = hi6 | hi7;
-      as.suffix2 = digit <= 9 ? digit : -1;
-      int code = o7 & 0xF; // Daikin revision letters, without I and O
-      if (code >= 1)
-        as.letter = "ABCDEFGHJKLMNPQ"[code - 1];
-    }
-  }
+  int code = o7 >= 0 ? o7 & 0xF : 0;
+  if (code >= 1)
+    as.letter = "ABCDEFGHJKLMNPQ"[code - 1];
   return true;
 }
 

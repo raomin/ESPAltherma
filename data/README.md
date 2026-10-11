@@ -11,11 +11,10 @@ Both files are compiled into `include/catalog_data.h` by `python scripts/gen_cat
 
 The AS numbers of the known indoor unit boards, with the models they are fitted in and the matching definition files.
 
-**How the AS number is read.** Registry 0x63 holds the printed AS number digits in order, one per nibble, at payload offsets 2–7. For example, AS1708171-30 F reads `01 70 81 71 03 06`.
-- Checked on a real unit (EPGA16DAV3 + EAVH16S18DA6V): it returns AS1708171-30 F, the board of that indoor unit.
-- **Offset 7:** its low nibble is the revision letter code, in the Daikin alphabet without I and O (6 = F). The same reading printed `F` with converter 214, which rules out the `[letter|digit]` layout.
-- **Second suffix digit:** it is the high nibble of offset 6 or of offset 7. That unit's suffix is 30, so the two cannot be told apart yet. The other nibble carries the high bit of the letter code, which is 0 for A–Q, and the known boards only use A–H and M. So the non-zero nibble is the digit, whichever layout is right.
-- The EEPROM image stores the same digits packed in a different order. This was checked on a real EEPROM dump.
+**How the AS number is read.** Registry 0x63 holds the printed AS number digits in order, two per byte (BCD, high nibble first), at payload offsets 2-7: AS1706432-27 A reads `01 70 64 32 27 01`.
+- **Offset 6** is the suffix. A one-digit suffix reads with a 0 high nibble: `03` is "-3", a spare part board. Checked on 16 reported units (ESPAltherma 2 beta, October 2026): every reading matches a board of the table, with the outdoor unit's size and the owner's model.
+- **Offset 7:** its low nibble is the revision letter code, in the Daikin alphabet without I and O (1 = A, 6 = F). Units may carry an older revision letter than the table's.
+- A unit can carry the spare part image of its class rather than its model's: the EPGA16DAV3 + EAVH16S18DA6V that checked this reads AS1708171-3 F, the "EAV S18" spare part, with the model name stored separately. The first digit entry of the body (3x) still gives its definition.
 
 **What the AS number cannot tell:**
 - DA and DJ units share their AS numbers (ERGA D EHV/EHVZ, 38 numbers). The two definitions are in different families, so the survey rules separate them.

@@ -79,7 +79,7 @@ static const FakeReg L_UNIT[] = {
     {0x60, 17, {0x00, 0x00, 0x00, 0x00, 0xAB, 0xCD, 0x5A, 0, 0, 0, 0, 0, 0, 0x02, 0x91, 0x82, 0x07}},
     {0x61, 16, {0}},
     {0x62, 16, {0}},
-    {0x63, 9, {0x00, 0x00, 0x01, 0x70, 0x81, 0x71, 0x03, 0x06, 0x00}}, // indoor AS1708171-30 (a real EAVH16S18DA6V)
+    {0x63, 9, {0x00, 0x00, 0x01, 0x70, 0x81, 0x71, 0x03, 0x06, 0x00}}, // indoor AS1708171-3 F (a real EAVH16S18DA6V, on the spare part image of its class)
     {0x64, 12, {0}},
 };
 
@@ -125,7 +125,7 @@ void test_survey_protocol_i(void)
     TEST_ASSERT_TRUE(surveyAsNumber(s, as));
     TEST_ASSERT_EQUAL_UINT32(1708171, as.body);
     TEST_ASSERT_EQUAL_INT(3, as.suffix1);
-    TEST_ASSERT_EQUAL_INT(0, as.suffix2);
+    TEST_ASSERT_EQUAL_INT(-1, as.suffix2); // one digit: the spare part image of the EAV S18 class
     TEST_ASSERT_EQUAL_CHAR('F', as.letter);
 }
 
@@ -141,7 +141,7 @@ void test_survey_json(void)
     TEST_ASSERT_EQUAL_size_t(strlen(json), len);
     TEST_ASSERT_EQUAL_STRING("{\"v\":1,\"fw\":\"1.2.3\",\"board\":\"esp32\",\"protocol\":\"I\",", j.substr(0, 51).c_str());
     TEST_ASSERT_TRUE(j.find("\"iu_eeprom\":\"017081710306\"") != std::string::npos);
-    TEST_ASSERT_TRUE(j.find("\"iu_as\":\"AS1708171-30 F\"") != std::string::npos);
+    TEST_ASSERT_TRUE(j.find("\"iu_as\":\"AS1708171-3 F\"") != std::string::npos);
     TEST_ASSERT_TRUE(j.find("\"iu_sw\":\"9182\"") != std::string::npos);
     TEST_ASSERT_TRUE(j.find("\"iu_cap\":90") != std::string::npos);
     TEST_ASSERT_TRUE(j.find("\"iu_eeprom_ver\":7") != std::string::npos);
