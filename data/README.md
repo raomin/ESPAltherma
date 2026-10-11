@@ -27,7 +27,7 @@ The AS numbers of the known indoor unit boards, with the models they are fitted 
 - the Rotex RBLQ C2 → the LT 5–7 kW monobloc.
 
 **Added from the field** (they carry a `note`):
-- AS1706406, another board of the LT CA/CB indoor units, numbered like AS1706432. Suffix -29 is an EHVH08S18CB3V (seen on its display), and suffix -22 comes from a heat pump report: its outdoor unit is 14 kW, and it matches 1706432-22. The other suffixes of this board get both LT CA/CB definitions as candidates.
+- AS1706406: some Hybrid, GEO2 and LT CA/CB indoor units report this number with their own model suffix, numbered like the AS1706407 (Hybrid), AS1706408 (GEO2), AS1706409 (LT CA) and AS1706432 (LT CB) boards. Each suffix gets the definitions of those boards; where they share a suffix (10–12), the rules choose. Seen in the field: -29 on the display of an EHVH08S18CB3V, -22 from a 14 kW LT CB, and -03 from a replacement board. Spare part suffixes (2–7) get any of the board's definitions.
 
 **Not in the table:**
 - the outdoor unit board number in registry 0x11 (a 1Pxxxxxx board part number);
