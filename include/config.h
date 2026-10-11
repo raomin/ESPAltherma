@@ -69,6 +69,7 @@ struct AppConfig
   bool oneValOneTopic;
   char oneTopicPrefix[65];
   bool jsonTable;
+  bool binaryAsNumber; // ON/OFF values published as 1/0 (EmonCMS...)
   bool disableLogMessages;
   bool debugSerial;
 
@@ -180,6 +181,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   out["one_topic"] = c.oneValOneTopic;
   out["one_topic_prefix"] = c.oneTopicPrefix;
   out["json_table"] = c.jsonTable;
+  out["binary_num"] = c.binaryAsNumber;
   out["no_log"] = c.disableLogMessages;
   out["debug_serial"] = c.debugSerial;
 
@@ -293,6 +295,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(out["one_topic"], c.oneValOneTopic);
   readStr(out["one_topic_prefix"], c.oneTopicPrefix, sizeof(c.oneTopicPrefix));
   readNum(out["json_table"], c.jsonTable);
+  readNum(out["binary_num"], c.binaryAsNumber);
   readNum(out["no_log"], c.disableLogMessages);
   readNum(out["debug_serial"], c.debugSerial);
 

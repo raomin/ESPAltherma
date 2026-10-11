@@ -347,7 +347,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   <div class="card"><h2>MQTT output</h2><p class="sub">For other home automation systems; Home Assistant needs nothing here.</p>
    <label class="chk"><input type="checkbox" id="sOneTopic">One topic per value</label>
    <label class="f"><span class="k">Topic prefix (one topic per value)</span><input type="text" id="sPrefix"></label>
-   <label class="chk"><input type="checkbox" id="sJsonTable">JSON table format (ioBroker)</label><label class="chk"><input type="checkbox" id="sNoLog">Do not publish logs on MQTT</label><label class="chk"><input type="checkbox" id="sDebug">MQTT ↔ serial gateway (DebugSerial)</label></div>
+   <label class="chk"><input type="checkbox" id="sJsonTable">JSON table format (ioBroker)</label><label class="chk"><input type="checkbox" id="sBinNum">On/off values as 1/0 (EmonCMS…)</label><label class="chk"><input type="checkbox" id="sNoLog">Do not publish logs on MQTT</label><label class="chk"><input type="checkbox" id="sDebug">MQTT ↔ serial gateway (DebugSerial)</label></div>
   <div class="card"><h2>This device</h2>
    <div class="row"><label class="f"><span class="k">Language</span><select id="sLang"></select></label><label class="f"><span class="k">Name on the network</span><input type="text" id="sHost"></label><label class="f"><span class="k">Admin password <span id="sAdminState" translate="no"></span></span><input type="password" id="sAdmin" autocomplete="new-password" placeholder="unchanged"></label></div>
    <p class="sub">The language also names the Home Assistant sensors (in English when automatic).</p>
@@ -917,7 +917,7 @@ function fillSettings() {
   tx('pinRx', 'G' + cfg.hp.rx); tx('pinTx', 'G' + cfg.hp.tx); tx('pinBoard', status.board || 'ESP32');
   $('#sTherm').value = r.therm_pin; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
-  $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sJsonTable').checked = o.json_table; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
+  $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sJsonTable').checked = o.json_table; $('#sBinNum').checked = !!o.binary_num; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
   $('#sHost').value = cfg.hostname; $('#sAdminState').textContent = cfg.admin.has_pwd ? t('(set)') : t('(none)');
   fillLangs();
   $('#sStatic').checked = w.static; $('#sIp').value = w.ip; $('#sGw').value = w.gateway; $('#sMask').value = w.subnet; $('#sDns1').value = w.dns1;
@@ -929,7 +929,7 @@ $('#sSave').onclick = async () => {
   const d = {
     hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000},
     relays: {therm_pin: n('#sTherm'), sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
-    output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
+    output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
     hostname: $('#sHost').value.trim() || 'ESPAltherma',
     lang: $('#sLang').value,
     wifi: {static: $('#sStatic').checked, ip: $('#sIp').value, gateway: $('#sGw').value, subnet: $('#sMask').value, dns1: $('#sDns1').value},

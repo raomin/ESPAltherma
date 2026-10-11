@@ -81,6 +81,7 @@
  "One topic per value": "Ein Topic pro Wert",
  "Topic prefix (one topic per value)": "Topic-Präfix (ein Topic pro Wert)",
  "JSON table format (ioBroker)": "JSON-Tabellenformat (ioBroker)",
+ "On/off values as 1/0 (EmonCMS…)": "Ein/Aus-Werte als 1/0 (EmonCMS…)",
  "Do not publish logs on MQTT": "Protokoll nicht über MQTT senden",
  "MQTT ↔ serial gateway (DebugSerial)": "MQTT ↔ Seriell-Gateway (DebugSerial)",
  "This device": "Dieses Gerät",

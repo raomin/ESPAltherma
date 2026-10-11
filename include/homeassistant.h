@@ -1,6 +1,9 @@
 #include <string>
 #include "labeldef.h"
 
+// ON/OFF values are published as 1/0 (setting "binary_num"): binary sensors then use 1/0 as their payloads
+extern bool haBinaryAsNumber;
+
 /*
  * Sink callback used to stream the Device Discovery payload one chunk at a time.
  */

@@ -791,7 +791,7 @@ void webLoop()
     bool mqttChanged = strcmp(next->mqttServer, config.mqttServer) != 0 || next->mqttPort != config.mqttPort ||
                        strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
                        next->mqttTls != config.mqttTls || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
-                       next->jsonTable != config.jsonTable;
+                       next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber;
     bool labelsChanged = strcmp(next->model, config.model) != 0 || next->labelCount != config.labelCount ||
                          memcmp(next->labels, config.labels, sizeof(uint32_t) * next->labelCount) != 0 ||
                          next->fixCount != config.fixCount || next->layoutCheck != config.layoutCheck;

@@ -81,12 +81,21 @@ void updateValues(char regID)
   converter.getLabels(regID, labels, num);
   for (int i = 0; i < num; i++)
   {
+    // ON/OFF as 1/0 when set (EmonCMS...). Only on MQTT: the web interface reads asString.
+    const char *v = labels[i]->asString;
+    if (config.binaryAsNumber)
+    {
+      if (strcmp(v, "ON") == 0)
+        v = "1";
+      else if (strcmp(v, "OFF") == 0)
+        v = "0";
+    }
     // A number goes in the JSON without quotes: digits, a dot, a leading minus, and at least one digit
     // ("-" alone, as conversion 203 returns, broke the JSON: #418)
     bool alpha = false, digit = false;
-    for (size_t j = 0; j < strlen(labels[i]->asString); j++)
+    for (size_t j = 0; v[j]; j++)
     {
-      char c = labels[i]->asString[j];
+      char c = v[j];
       if (isdigit(c))
         digit = true;
       else if (c!='.' && !(c=='-' && j==0)){
@@ -101,14 +110,14 @@ void updateValues(char regID)
     {
       char topicBuff[128];
       snprintf(topicBuff, sizeof(topicBuff), "%s%s", config.oneTopicPrefix, labels[i]->label);
-      mqttPublish(topicBuff, labels[i]->asString);
+      mqttPublish(topicBuff, v);
     }
     else if (alpha){
 
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, labels[i]->asString);
+      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, v);
     }
     else{//number, no quotes
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, labels[i]->asString);
+      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, v);
     }
   }
 }

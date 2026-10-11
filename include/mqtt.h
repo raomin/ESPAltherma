@@ -402,6 +402,7 @@ void publishHomeAssistantDeviceDiscovery()
   const LabelDef *labels = converter.activeLabels;
   const size_t count = converter.activeCount;
   const char *topic = "homeassistant/device/espaltherma-mqtt-discovery/config";
+  haBinaryAsNumber = config.binaryAsNumber; // binary sensors then read 1/0
 
   // First pass: compute the exact payload length, required up-front for the MQTT fixed header.
   size_t payloadLen = streamDeviceDiscoveryPayload(labels, count, nullptr, nullptr);

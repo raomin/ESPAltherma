@@ -430,6 +430,8 @@ template:
 | `espaltherma/sg/set`, `espaltherma/sg/state` | Smart Grid mode, `0` to `3` |
 | `espaltherma/SAFETY`, `espaltherma/SAFETY_STATE` | Safety relay: `1` stops the heat pump, `0` releases it |
 
+Settings → MQTT output can also publish one topic per value, use the JSON table format of ioBroker, and send the on/off values as `1`/`0` (for EmonCMS and the like; Home Assistant follows it).
+
 # FAQ
 
 ## Great! I can now monitor my heat pump! Can I change the configuration values too?
