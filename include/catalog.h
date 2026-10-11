@@ -17,6 +17,7 @@ struct CatalogModel
   char protocol;    // 'I' or 'S'
   uint8_t capMin;   // capacity range in kW, from the definition name (0: not told)
   uint8_t capMax;
+  uint8_t asOnly;   // 1: only its AS number tells it (the same registries as another model): the rules never propose it
 };
 
 struct CatalogEntry

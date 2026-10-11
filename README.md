@@ -246,7 +246,7 @@ To update a board that is already installed, upload `.pio/build/<environment>/fi
 
 # How it works
 
-All the definition files of [definitions](definitions) (34 models) are merged at build time into one catalog of 646 distinct values (`scripts/gen_catalog.py`). One firmware therefore knows every model: it only has to find out which one it is connected to, and check that the definition really matches the unit.
+All the definition files of [definitions](definitions) (36 models) are merged at build time into one catalog of 656 distinct values (`scripts/gen_catalog.py`). One firmware therefore knows every model: it only has to find out which one it is connected to, and check that the definition really matches the unit.
 
 ## Detecting the heat pump
 
@@ -309,6 +309,10 @@ Once fixed, click **Detect again** in Setup → Heat pump.
 ## Older heat pumps (S protocol)
 
 Older Altherma heat pumps (around 2010 or before) use the older S protocol. ESPAltherma detects it by itself. If it does not, choose the `PROTOCOL_S` (or `PROTOCOL_S_ROTEX`) model from the full list in Setup → Heat pump.
+
+## Altherma 4 (EPSK outdoor units)
+
+The X10A connector is on the A1P switch box of the indoor unit, and the unit answers like the R32 generation, so ESPAltherma 2 recognises it (its hydro board is the same for every model) and reads the outdoor unit, the leaving water, the flow and the pressure. Some values are not on this port: the return water is measured in the outdoor unit ("Inlet water temp. (water heat exchanger)"), and the room and hot water tank temperatures are read by the user interface. The Altherma 4 also has an official local interface, Modbus TCP on the indoor unit's RJ45 port (through the HomeHub, or directly with recent firmware), which gives those values. Reports from Altherma 4 owners are welcome: the definition was built from what owners read, not from a Daikin definition.
 
 ## The board restarts or drops off the network
 

@@ -40,6 +40,7 @@ EXCLUDED = {"mydef.h", "DEFAULT.h"}
 #  L: Gen-1 (LT, Hybrid, GEO2...): 0x20/12 is the heat sink temperature, no 0xA0
 #  S: Protocol S, R: Protocol S (ROTEX)
 FAMILIES = {
+    "Altherma 4(EPSK-EPSKS EPBX-EPSX-EPVX-EPVZ series 04-14kW).h": "G",
     "Altherma(EBLA-EDLA D series 4-8kW Monobloc).h": "G",
     "Altherma(EBLA-EDLA D series 9-16kW Monobloc).h": "G",
     "Altherma(EGSAH-X-EWSAH-X-D series 6-10kW GEO3).h": "G",
@@ -78,6 +79,10 @@ FAMILIES = {
 }
 FAMILY_ORDER = "GLSR"
 
+# Models that answer the registries of another model: only their AS number tells them, so the survey rules
+# never propose them (the Altherma 4 hydro board always reports AS1709968).
+AS_ONLY = {"Altherma 4(EPSK-EPSKS EPBX-EPSX-EPVX-EPVZ series 04-14kW).h"}
+
 # Values enabled by default on Protocol I models (exact label match). Protocol S models default to the
 # lines their definition file ships uncommented.
 RECOMMENDED = {
@@ -85,7 +90,7 @@ RECOMMENDED = {
     "R1T-Outdoor air temp.", "Outdoor air temp.",
     "INV primary current (A)", "INV frequency (rps)", "Voltage (N-phase) (V)",
     "Leaving water temp. before BUH (R1T)", "Leaving water temp. after BUH (R2T)",
-    "Inlet water temp.(R4T)", "DHW tank temp. (R5T)", "Indoor ambient temp. (R1T)",
+    "Inlet water temp.(R4T)", "Inlet water temp. (water heat exchanger)", "DHW tank temp. (R5T)", "Indoor ambient temp. (R1T)",
     "Refrig. Temp. liquid side (R3T)", "Discharge pipe temp.",
     "Flow sensor (l/min)", "Water pressure",
     "LW setpoint (main)", "DHW setpoint", "RT setpoint",
@@ -239,13 +244,13 @@ def build():
     out.append("#define CATALOG_MODEL_COUNT %d" % len(models))
     out.append("#define CATALOG_ENTRY_COUNT %d" % len(ordered))
     out.append("")
-    out.append("// name, family, protocol, capacity range in kW from the name (0: not told)")
+    out.append("// name, family, protocol, capacity range in kW from the name (0: not told), AS number only")
     out.append("static const CatalogModel CATALOG_MODELS[CATALOG_MODEL_COUNT] = {")
     for name, family in models:
         protocol = "S" if family in "SR" else "I"
         m = CAPACITY.search(name)
         low, high = (int(m.group(1)), int(m.group(2) or m.group(1))) if m else (0, 0)
-        out.append("    {%s, '%s', '%s', %d, %d}," % (c_string(name), family, protocol, low, high))
+        out.append("    {%s, '%s', '%s', %d, %d, %d}," % (c_string(name), family, protocol, low, high, 1 if name + ".h" in AS_ONLY else 0))
     out.append("};")
     out.append("")
     out.append("static const char CATALOG_LABELS[] =")

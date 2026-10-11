@@ -190,8 +190,14 @@ void test_detect_no_answer(void)
 void test_detect_synthetic_surveys(void)
 {
     int exact = 0, equivalent = 0, familyOk = 0, high = 0;
+    int skipped = 0;
     for (int model = 0; model < CATALOG_MODEL_COUNT; model++)
     {
+        if (CATALOG_MODELS[model].asOnly)
+        {
+            skipped++; // only its AS number tells it: test_detect_all_as_numbers covers it
+            continue;
+        }
         Survey s;
         syntheticSurvey(model, s);
         DetectResult r;
@@ -218,7 +224,7 @@ void test_detect_synthetic_surveys(void)
             TEST_ASSERT_TRUE(detectModelHasKey(model, keys[k]));
     }
     printf("exact %d, equivalent %d, family %d, high confidence %d / %d\n", exact, equivalent, familyOk, high, CATALOG_MODEL_COUNT);
-    TEST_ASSERT_EQUAL_INT(CATALOG_MODEL_COUNT, familyOk);
+    TEST_ASSERT_EQUAL_INT(CATALOG_MODEL_COUNT - skipped, familyOk);
 }
 
 // Writes the identification bytes of registry 0x63 (payload offsets 2-7)

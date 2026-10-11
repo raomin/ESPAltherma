@@ -322,7 +322,8 @@ void detectModel(const Survey &s, DetectResult &r)
   int *scores = r.allScores;
   for (int i = 0; i < CATALOG_MODEL_COUNT; i++)
   {
-    bool candidate = r.asCandidates == 0 || ((r.asCandidates >> i) & 1);
+    // Without an AS number, every model but the ones only an AS number tells
+    bool candidate = r.asCandidates ? ((r.asCandidates >> i) & 1) != 0 : !CATALOG_MODELS[i].asOnly;
     scores[i] = candidate ? detectScore(s, i) : -10000;
     int score = scores[i];
     if (score <= -10000)

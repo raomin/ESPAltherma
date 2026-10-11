@@ -7814,7 +7814,9 @@
    "body": "1709968",
    "suffix": "1",
    "letter": "A",
-   "defs": [],
+   "defs": [
+    "Altherma 4(EPSK-EPSKS EPBX-EPSX-EPVX-EPVZ series 04-14kW)"
+   ],
    "models": [
     "EPBX*",
     "EPSX*",
@@ -7823,13 +7825,16 @@
    ],
    "software": [
     "ID23015103"
-   ]
+   ],
+   "note": "one image for every Altherma 4 indoor unit: the model is not in the AS number"
   },
   {
    "body": "1710115",
    "suffix": "11",
    "letter": "",
-   "defs": [],
+   "defs": [
+    "CKHWS-BJV3(Multi DHW tank 2)"
+   ],
    "models": [
     "CKHWS180BJV3"
    ],
@@ -7841,7 +7846,9 @@
    "body": "1710115",
    "suffix": "12",
    "letter": "",
-   "defs": [],
+   "defs": [
+    "CKHWS-BJV3(Multi DHW tank 2)"
+   ],
    "models": [
     "CKHWS230BJV3"
    ],
@@ -7853,7 +7860,9 @@
    "body": "1710115",
    "suffix": "13",
    "letter": "",
-   "defs": [],
+   "defs": [
+    "CKHWS-BJV3(Multi DHW tank 2)"
+   ],
    "models": [
     "CKHWSU230BJV3"
    ],
