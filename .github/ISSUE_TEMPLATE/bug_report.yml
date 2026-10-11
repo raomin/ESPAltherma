@@ -1,0 +1,88 @@
+name: Bug report
+description: Something does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report it! Questions, model support and ideas go to the [Discussions](https://github.com/raomin/ESPAltherma/discussions).
+        Before opening an issue, have a look at the Troubleshooting section of the README: [ESPAltherma 2](https://github.com/raomin/ESPAltherma/tree/beta#troubleshooting) · [ESPAltherma 1.x](https://github.com/raomin/ESPAltherma#troubleshooting).
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      options:
+        - ESPAltherma 2 (installed with the web installer)
+        - ESPAltherma 1.x (built with setup.h)
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      description: "ESPAltherma 2: Diagnostics tab, Firmware (for example 2.0.0-beta.2). ESPAltherma 1.x: the date or commit you built."
+      placeholder: 2.0.0-beta.2
+    validations:
+      required: true
+
+  - type: input
+    id: board
+    attributes:
+      label: Board
+      placeholder: M5StickC Plus, ESP32 DevKit, WT32-ETH01…
+    validations:
+      required: true
+
+  - type: input
+    id: heatpump
+    attributes:
+      label: Heat pump
+      description: The model numbers of the indoor and outdoor units, as on their labels.
+      placeholder: "Indoor EHVH08S18CB3V, outdoor ERLQ008CAV3"
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model chosen in ESPAltherma
+      description: "ESPAltherma 2: Settings → Heat pump (and whether it was detected or chosen by hand). ESPAltherma 1.x: the definition file in setup.h."
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: What you did, what you expected, and what happened instead. Screenshots welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: events
+    attributes:
+      label: Event history (ESPAltherma 2)
+      description: Diagnostics tab → Event history → Copy, then paste here. It tells why the board restarted or lost the network.
+      render: text
+
+  - type: textarea
+    id: survey
+    attributes:
+      label: Heat pump survey (ESPAltherma 2)
+      description: Diagnostics tab → Heat pump survey → Copy, then paste here. It holds what your heat pump answers and what was detected.
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (ESPAltherma 1.x)
+      description: The serial monitor output, or the messages on the MQTT topic espaltherma/log.
+      render: text
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Wiring (a photo helps), power supply, Home Assistant version…
