@@ -91,6 +91,15 @@ static const FakeReg ROTEX_UNIT[] = {
     {0x56, 2, {0x00, 0x01}},
 };
 
+// Altherma HT hydrobox (EKHBRD): no indoor registries, the outdoor-style ones of its own refrigerant stage.
+static const FakeReg HT_UNIT[] = {
+    {0x00, 10, {0x0A, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x04, 0x01}},
+    {0x10, 15, {0x00}},
+    {0x20, 20, {0x00}},
+    {0x21, 20, {0x00}},
+    {0x30, 12, {0x00}},
+};
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -236,6 +245,23 @@ void test_survey_keeps_s_when_i_stays_silent(void)
     TEST_ASSERT_FALSE(s.has(0x60));
 }
 
+// A unit without indoor registries: 0x10 is the second probe, the indoor walk is skipped
+void test_survey_hydrobox_without_indoor_registries(void)
+{
+    useFake('I', HT_UNIT, sizeof(HT_UNIT) / sizeof(FakeReg));
+    Survey s;
+    surveyRun(s, fakeQuery);
+    TEST_ASSERT_EQUAL_CHAR('I', s.protocol);
+    TEST_ASSERT_FALSE(s.has(0x60));
+    TEST_ASSERT_TRUE(s.has(0x10));
+    TEST_ASSERT_TRUE(s.has(0x20));
+    TEST_ASSERT_FALSE(s.has(0xA0));
+    TEST_ASSERT_NULL(s.find(0x61)); // no indoor walk
+    TEST_ASSERT_EQUAL_UINT8(9, s.count); // 0x60 (no answer), 0x10, and the 7 other listed registries
+    AsNumber as;
+    TEST_ASSERT_FALSE(surveyAsNumber(s, as));
+}
+
 void test_survey_json_never_overflows(void)
 {
     useFake('I', L_UNIT, sizeof(L_UNIT) / sizeof(FakeReg));
@@ -259,6 +285,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_survey_retries_lost_frame);
     RUN_TEST(test_survey_prefers_i_after_s);
     RUN_TEST(test_survey_keeps_s_when_i_stays_silent);
+    RUN_TEST(test_survey_hydrobox_without_indoor_registries);
     RUN_TEST(test_survey_json_never_overflows);
     UNITY_END();
     return 0;

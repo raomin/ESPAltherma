@@ -122,14 +122,27 @@ static bool surveyRead(Survey &s, SurveyQueryFn query, uint8_t regID, char proto
 static bool surveyRunI(Survey &s, SurveyQueryFn query)
 {
   memset(&s, 0, sizeof(s));
-  if (!surveyRead(s, query, 0x60, 'I'))
-    return false;
+  // 0x60 is the indoor unit's. The Altherma HT hydrobox (EKHBRD, read on its inverter board) has no indoor
+  // registries and answers the outdoor-style ones only, so 0x10 is the second probe. When it answers, 0x60 gets a
+  // second chance, so that a frame lost for a moment does not make an indoor unit look like a hydrobox.
+  bool indoor = surveyRead(s, query, 0x60, 'I');
+  if (!indoor)
+  {
+    if (!surveyRead(s, query, 0x10, 'I'))
+      return false;
+    s.count = 0;
+    indoor = surveyRead(s, query, 0x60, 'I');
+    if (!indoor)
+      surveyRead(s, query, 0x10, 'I');
+  }
   s.protocol = 'I';
   for (uint8_t reg : SURVEY_REGS_I)
   {
+    if (reg == 0x10 && !indoor)
+      continue; // read as the probe
     surveyRead(s, query, reg, 'I');
   }
-  for (uint8_t reg = 0x61; reg <= 0x6F; reg++)
+  for (uint8_t reg = 0x61; indoor && reg <= 0x6F; reg++)
   {
     if (!surveyRead(s, query, reg, 'I'))
       break;

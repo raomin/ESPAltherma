@@ -63,6 +63,7 @@ FAMILIES = {
     "Altherma(ERGA D EHSH-X P30-50 D series 04-08kW-ECH2O).h": "L",
     "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW).h": "L",
     "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW).h": "L",
+    "Altherma(HT EKHBRD-ERRQ series 11-16kW).h": "L",
     "Altherma(Hybrid).h": "L",
     "Altherma(LT_CA_CB_04-08kW).h": "L",
     "Altherma(LT_CA_CB_11-16kW).h": "L",
@@ -97,6 +98,9 @@ RECOMMENDED = {
     "I/U operation mode", "3way valve(On:DHW_Off:Space)", "Water pump operation",
     "Circulation pump operation", "Powerful DHW Operation. ON/OFF", "Silent Mode",
     "Freeze Protection for water piping", "Brine inlet temp.", "Brine outlet temp.", "Mixed water temp.",
+    # Altherma HT hydrobox (its own refrigerant stage)
+    "R3T (accumulator inlet temp.)", "R9T (plate hex inlet)", "R10T (plate hex outlet)", "R6T (RV outlet)", "R7T (hex liq)",
+    "Low Pressure (stage)", "EV (main)", "Water flow control(%)", "Operation control mode",
 }
 # Only recommended on the models whose definition file name contains the given word: other definitions carry
 # these labels on slots that mean something else on the unit (eg. "Brine" temperatures on air units).
@@ -112,7 +116,7 @@ LINE = re.compile(r'^\s*(//)?\s*\{\s*0x([0-9A-Fa-f]{2})\s*,\s*(\d+)\s*,\s*(\d+)\
 
 
 # D-Checker layout markers and override commands found in the definition files: no value to read
-NOT_VALUES = {995, 996, 998}
+NOT_VALUES = {995, 996, 998, 999}
 
 
 def parse(path):

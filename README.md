@@ -314,6 +314,10 @@ Older Altherma heat pumps (around 2010 or before) use the older S protocol. ESPA
 
 The X10A connector is on the A1P switch box of the indoor unit, and the unit answers like the R32 generation, so ESPAltherma 2 recognises it (its hydro board is the same for every model) and reads the outdoor unit, the leaving water, the flow and the pressure. Some values are not on this port: the return water is measured in the outdoor unit ("Inlet water temp. (water heat exchanger)"), and the room and hot water tank temperatures are read by the user interface. The Altherma 4 also has an official local interface, Modbus TCP on the indoor unit's RJ45 port (through the HomeHub, or directly with recent firmware), which gives those values. Reports from Altherma 4 owners are welcome: the definition was built from what owners read, not from a Daikin definition.
 
+## Altherma HT (EKHBRD hydrobox)
+
+The high temperature Altherma (an EKHBRD011-016 hydrobox on an ERRQ outdoor unit) has no X10A. Its service port is X41A on the hydrobox's inverter board (A5P on single phase units, A4P on three phase ones), with the same five pins as X10A (V+, TX, RX, NC, GND). The hydrobox answers the values of its own refrigerant stage, not the indoor unit ones: if it is not recognised, choose "Altherma(HT EKHBRD-ERRQ series 11-16kW)" from the list.
+
 ## The board restarts or drops off the network
 
 Open Diagnostics → Event history: it tells why the board restarted (power, crash, watchdog, Wi-Fi lost for too long...). A weak 5V from the X10A is a common cause: on M5 boards, the supply voltage is shown in the Values tab. Power the board from a USB charger in that case (and keep the GND wire).

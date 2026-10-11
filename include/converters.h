@@ -353,6 +353,12 @@ public:
             return;
         }
 
+        case 218:
+            convertTable218(getUnsignedValue(data, num, 1), def->asString);
+            return;
+        case 313:
+            convertTable313(data, def->asString);
+            return;
         case 219:
         {
             // capacity (kW class) code lookup
@@ -590,6 +596,52 @@ private:
                            "UseStrdThrm(ht)3",
                            "UseStrdThrm(ht)4"};
         sprintf(ret, r217[(int)data[0]]);
+    }
+
+    // Operation control mode of a refrigerant stage (Altherma HT hydrobox); HR = heat recovery
+    void convertTable218(unsigned v, char *ret)
+    {
+        static const char *const r218[] = {
+            "Stop control",
+            "Restart stand by",
+            "Before startup control",
+            "Cool startup control",
+            "Cool normal control",
+            "Cool before oil return",
+            "Cool oil return",
+            "Cool after oil return",
+            "Cool pump down residual",
+            "HR startup control",
+            "HR normal control",
+            "HR before oil return",
+            "HR oil return",
+            "HR after oil return",
+            "HR before defrost",
+            "HR defrost",
+            "HR after defrost",
+            "HR pump down residual",
+            "Heat startup control",
+            "Heat fixed control",
+            "Heat before oil return",
+            "Heat oil return",
+            "Heat after oil return",
+            "Heat before defrost",
+            "Heat defrost",
+            "Heat after defrost",
+            "Heat pump down residual",
+            "Mode switch (cool to heat)",
+            "Mode switch (heat to cool)",
+            "Rotation control",
+            "4 way valve initial control"};
+        snprintf(ret, sizeof(LabelDef::asString), "%s", v < sizeof(r218) / sizeof(r218[0]) ? r218[v] : "???");
+    }
+
+    // Indoor unit operation mode, high nibble
+    void convertTable313(unsigned char *data, char *ret)
+    {
+        static const char *const r313[] = {"Fan Only", "Heating", "Cooling", "Auto", "Ventilation", "Auto Heat", "Auto Cool", "Dry", "Aux."};
+        unsigned v = data[0] >> 4;
+        snprintf(ret, sizeof(LabelDef::asString), "%s", v < 8 ? r313[v] : "Aux.");
     }
 
     unsigned short getUnsignedValue(unsigned char *data, int dataSize, int cnvflg)
