@@ -260,6 +260,7 @@
  "We recognised your heat pump from its identification number:": "Abbiamo riconosciuto la tua pompa di calore dal suo numero identificativo:",
  "We recognised your heat pump:": "Abbiamo riconosciuto la tua pompa di calore:",
  "Several models match — please pick yours:": "Più modelli corrispondono — scegli il tuo:",
+ "Some Altherma units also answer this protocol, with fewer values. If yours is not a ROTEX, check the X10A cable and detect again.": "Alcune unità Altherma rispondono anche a questo protocollo, con meno valori. Se la vostra non è una ROTEX, controllate il cavo X10A e rilanciate il rilevamento.",
  "Model saved. Thank you for sharing!": "Modello salvato. Grazie per la condivisione!",
  "Model saved.": "Modello salvato.",
  "Detecting…": "Rilevamento…",

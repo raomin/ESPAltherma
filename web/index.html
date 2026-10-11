@@ -802,6 +802,7 @@ async function setupHp() {
   if (id.iu_as) chain.push(icon('arrow'), el('div', {}, el('div', {class: 'k'}, t('Indoor unit')), el('div', {class: 'v'}, id.iu_as)));
   if (id.ou_pn) chain.push(icon('arrow'), el('div', {}, el('div', {class: 'k'}, t('Outdoor unit')), el('div', {class: 'v'}, id.ou_pn)));
   box.append(el('div', {class: 'chain'}, ...chain));
+  if ((report.protocol || status.hp.protocol) === 'S') box.append(el('p', {class: 'sub'}, t('Some Altherma units also answer this protocol, with fewer values. If yours is not a ROTEX, check the X10A cable and detect again.')));
   const byNumber = d.method && d.method.startsWith('as_number');
   const inUse = c => status.hp.model === c.model ? el('span', {class: 'tagx ' + (status.hp.confirmed ? 'ok' : 'warn')}, status.hp.confirmed ? t('in use') : t('in use, to confirm')) : null;
   if (high) {

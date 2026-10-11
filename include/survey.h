@@ -118,39 +118,54 @@ static bool surveyRead(Survey &s, SurveyQueryFn query, uint8_t regID, char proto
   return r.answered;
 }
 
-void surveyRun(Survey &s, SurveyQueryFn query)
+// Protocol I: 0x60 is D-Checker's probe, all Altherma indoor units answer it.
+static bool surveyRunI(Survey &s, SurveyQueryFn query)
 {
   memset(&s, 0, sizeof(s));
-
-  // Protocol I: 0x60 is D-Checker's probe, all Altherma indoor units answer it.
-  if (surveyRead(s, query, 0x60, 'I'))
+  if (!surveyRead(s, query, 0x60, 'I'))
+    return false;
+  s.protocol = 'I';
+  for (uint8_t reg : SURVEY_REGS_I)
   {
-    s.protocol = 'I';
-    for (uint8_t reg : SURVEY_REGS_I)
-    {
-      surveyRead(s, query, reg, 'I');
-    }
-    for (uint8_t reg = 0x61; reg <= 0x6F; reg++)
-    {
-      if (!surveyRead(s, query, reg, 'I'))
-        break;
-    }
-    return;
+    surveyRead(s, query, reg, 'I');
   }
+  for (uint8_t reg = 0x61; reg <= 0x6F; reg++)
+  {
+    if (!surveyRead(s, query, reg, 'I'))
+      break;
+  }
+  return true;
+}
+
+// Protocol I tries once protocol S has answered, before protocol S is kept
+#define SURVEY_I_RETRIES_AFTER_S 2
+
+void surveyRun(Survey &s, SurveyQueryFn query)
+{
+  if (surveyRunI(s, query))
+    return;
 
   // Protocol S: 0x53 is D-Checker's probe.
-  s.count = 0;
-  if (surveyRead(s, query, 0x53, 'S'))
+  memset(&s, 0, sizeof(s));
+  if (!surveyRead(s, query, 0x53, 'S'))
   {
-    s.protocol = 'S';
-    for (uint8_t reg : SURVEY_REGS_S)
-    {
-      surveyRead(s, query, reg, 'S');
-    }
+    s.count = 0; // No answer at all
     return;
   }
-
-  s.count = 0; // No answer at all
+  // Older LT units answer both protocols (a ROTEX HPSU is one), and protocol I reads many more values. Protocol S
+  // answering shows the cable works: when protocol I failed only for a moment (a loose contact), it answers now.
+  for (int i = 0; i < SURVEY_I_RETRIES_AFTER_S; i++)
+  {
+    if (surveyRunI(s, query))
+      return;
+  }
+  memset(&s, 0, sizeof(s));
+  surveyRead(s, query, 0x53, 'S');
+  s.protocol = 'S';
+  for (uint8_t reg : SURVEY_REGS_S)
+  {
+    surveyRead(s, query, reg, 'S');
+  }
 }
 
 // printf-style append that never overflows out

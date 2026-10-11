@@ -196,6 +196,46 @@ void test_survey_retries_lost_frame(void)
     TEST_ASSERT_TRUE(s.has(0x60));
 }
 
+// An older LT unit answers both protocols. Protocol I lost for a moment (a loose contact) must not leave it on
+// protocol S, which reads far fewer values.
+static int dropFirstI;
+static bool dualQuery(uint8_t regID, unsigned char *buffer, char protocol)
+{
+    if (protocol == 'I' && dropFirstI > 0)
+    {
+        dropFirstI--;
+        queryCount++;
+        return false;
+    }
+    fakeProtocol = protocol;
+    fakeRegs = protocol == 'I' ? L_UNIT : ROTEX_UNIT;
+    fakeRegCount = protocol == 'I' ? sizeof(L_UNIT) / sizeof(FakeReg) : sizeof(ROTEX_UNIT) / sizeof(FakeReg);
+    return fakeQuery(regID, buffer, protocol);
+}
+
+void test_survey_prefers_i_after_s(void)
+{
+    useFake('I', L_UNIT, sizeof(L_UNIT) / sizeof(FakeReg));
+    dropFirstI = 2; // both tries of the first 0x60 probe are lost, protocol S answers
+    Survey s;
+    surveyRun(s, dualQuery);
+    TEST_ASSERT_EQUAL_CHAR('I', s.protocol);
+    TEST_ASSERT_TRUE(s.has(0x60));
+    TEST_ASSERT_FALSE(s.has(0x53));
+    TEST_ASSERT_EQUAL_UINT8(14, s.count);
+}
+
+void test_survey_keeps_s_when_i_stays_silent(void)
+{
+    useFake('I', L_UNIT, sizeof(L_UNIT) / sizeof(FakeReg));
+    dropFirstI = 100; // protocol I never answers
+    Survey s;
+    surveyRun(s, dualQuery);
+    TEST_ASSERT_EQUAL_CHAR('S', s.protocol);
+    TEST_ASSERT_TRUE(s.has(0x53));
+    TEST_ASSERT_FALSE(s.has(0x60));
+}
+
 void test_survey_json_never_overflows(void)
 {
     useFake('I', L_UNIT, sizeof(L_UNIT) / sizeof(FakeReg));
@@ -217,6 +257,8 @@ int main(int argc, char **argv)
     RUN_TEST(test_survey_protocol_s);
     RUN_TEST(test_survey_no_answer);
     RUN_TEST(test_survey_retries_lost_frame);
+    RUN_TEST(test_survey_prefers_i_after_s);
+    RUN_TEST(test_survey_keeps_s_when_i_stays_silent);
     RUN_TEST(test_survey_json_never_overflows);
     UNITY_END();
     return 0;
