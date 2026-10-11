@@ -97,7 +97,6 @@ LabelDef labelDefs[] = {
 //{0x30,4,151,2,-1,"Détendeur électronique 3 (pls)"},
 //{0x30,6,151,2,-1,"Détendeur électronique 4 (pls)"},
 //{0x30,8,151,2,-1,"Détendeur électronique 5 (pls)"},
-//{0x30,7,307,1,-1,"Vanne à 4 voies 1"},
 //{0x30,0,306,1,-1,"Vanne à 4 voies 2"},
 //{0x30,0,305,1,-1,"Vanne à 4 voies 3"},
 //{0x30,0,304,1,-1,"Vanne à 4 voies 4"},

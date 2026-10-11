@@ -97,7 +97,6 @@ LabelDef labelDefs[] = {
 //{0x30,4,151,2,-1,"Valvola di espansione 3 (pls)"},
 //{0x30,6,151,2,-1,"Valvola di espansione 4 (pls)"},
 //{0x30,8,151,2,-1,"Valvola di espansione 5 (pls)"},
-//{0x30,7,307,1,-1,"Valvola a 4 vie 1"},
 //{0x30,0,306,1,-1,"Valvola a 4 vie 2"},
 //{0x30,0,305,1,-1,"Valvola a 4 vie 3"},
 //{0x30,0,304,1,-1,"Valvola a 4 vie 4"},

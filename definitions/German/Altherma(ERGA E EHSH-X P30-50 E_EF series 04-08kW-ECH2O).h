@@ -185,7 +185,7 @@ LabelDef labelDefs[] = {
 //{0x62,8,301,1,-1,"Alarmausgang"},
 //{0x62,8,300,1,-1,"Ausgang Raumheizbetrieb"},
 //{0x62,9,105,2,-1,"Durchflussmenge (l/min)"},
-//{0x62,11,405,1,1,"Wasserdruck"},
+//{0x62,11,105,1,2,"Wasserdruck"},
 //{0x62,12,152,1,-1,"Pumpensignal (0:max-100:Stopp)"},
 //{0x62,13,152,1,-1,"[Zukunft] 3-Wege-Mischventil 1"},
 //{0x62,14,152,1,-1,"[Zukunft] 3-Wege-Mischventil 2"},

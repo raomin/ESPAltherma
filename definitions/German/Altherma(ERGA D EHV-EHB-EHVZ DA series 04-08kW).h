@@ -97,7 +97,6 @@ LabelDef labelDefs[] = {
 //{0x30,4,151,2,-1,"Expansionsventil 3 (pls)"},
 //{0x30,6,151,2,-1,"Expansionsventil 4 (pls)"},
 //{0x30,8,151,2,-1,"Expansionsventil 5 (pls)"},
-//{0x30,7,307,1,-1,"4-Wege-Ventil 1"},
 //{0x30,0,306,1,-1,"4-Wege-Ventil 2"},
 //{0x30,0,305,1,-1,"4-Wege-Ventil 3"},
 //{0x30,0,304,1,-1,"4-Wege-Ventil 4"},

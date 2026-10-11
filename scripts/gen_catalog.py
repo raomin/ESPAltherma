@@ -56,6 +56,7 @@ FAMILIES = {
     "Altherma(ERLA D EBSH-X 16P30-50 D SERIES 11-16kW-ECH2O).h": "G",
     "Altherma(ERLA D EBV-EBB-EBVZ D SERIES 11-16kW).h": "G",
     "Daikin Mini chiller(EWAA-EWYA D series 4-8kW).h": "G",
+    "CKHWS-BJV3(Multi DHW tank 2).h": "G",
     "EKHWET-BAV3(Multi DHW tank).h": "G",
     "Altherma(EGSQH-A series 10kW GEO2).h": "L",
     "Altherma(ERGA D EHSH-X P30-50 D series 04-08kW-ECH2O).h": "L",

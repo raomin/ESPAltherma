@@ -185,7 +185,7 @@ LabelDef labelDefs[] = {
 //{0x62,8,301,1,-1,"Uscita allarme"},
 //{0x62,8,300,1,-1,"Uscita funzionamento riscald. ambienti"},
 //{0x62,9,105,2,-1,"Sensore portata (l/min)"},
-//{0x62,11,405,1,1,"Pressione acqua"},
+//{0x62,11,105,1,2,"Pressione acqua"},
 //{0x62,12,152,1,-1,"Segnale pompa dell'acqua (0:max-100:stop)"},
 //{0x62,13,152,1,-1,"[Futuro] Valvola a 3 vie miscelazione 1"},
 //{0x62,14,152,1,-1,"[Futuro] Valvola a 3 vie miscelazione 2"},
