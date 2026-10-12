@@ -169,6 +169,9 @@ td.r{font:12px var(--mono);color:var(--ink2);white-space:nowrap;text-align:right
 .scroll{max-height:420px;overflow:auto;margin-top:12px}
 table.events td{font-size:13px;overflow-wrap:anywhere}
 td.nowrap{white-space:nowrap;color:var(--ink2)}
+#gZones,.bz{display:none}#sch.bizone #gZones,#sch.bizone .bz{display:block}
+#sch.bizone #pSpace,#sch.bizone #pSpace+.fl,#sch.bizone #bSpace{display:none}
+#gZones .zoff{opacity:.3}#gZones .zoff .fl{animation:none;opacity:0}
 @media (max-width:1000px){.dash{grid-template-columns:1fr}.side{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 24px}.side>div{border-bottom:1px solid var(--line)}}
 @media (max-width:620px){nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;overflow:visible}nav a{flex-direction:column;gap:3px;justify-content:center;padding:8px 4px;font-size:12.5px;white-space:normal;text-align:center;line-height:1.2;border-radius:14px;background:var(--card);box-shadow:var(--shadow)}.c4{width:0}.c3{width:38%}.top,nav,main{padding-left:16px;padding-right:16px}.chips{margin-left:0}.dev{grid-template-columns:1fr 1fr}.big{font-size:30px}.model{font-size:23px}.chain{flex-direction:column;align-items:stretch}.chain>svg{transform:rotate(90deg);align-self:center}td.r{display:none}.rm{display:block}.hint{display:block}.pad{padding:18px}.vlist,.vbar{padding-left:14px;padding-right:14px}}
 </style>
@@ -228,10 +231,24 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
      <path class="pipe" id="pCoil" style="stroke-width:4.5" d="M598 90l40 10-36 14 36 14-36 14 36 14-36 14 36 14-36 14 36 14-36 14-12 4"/>
      <path class="pipe" id="pDhwR" d="M590 232H555V525"/>
     </g>
-    <path d="M547 400H563" style="stroke:var(--card);stroke-width:14"/>
+    <path id="bSpace" d="M547 400H563" style="stroke:var(--card);stroke-width:14"/>
+    <path class="bz" d="M547 368H563M547 446H563" style="stroke:var(--card);stroke-width:14"/>
     <g id="gSp" class="br act">
      <path class="pipe" id="pSpace" d="M482 102V400H600V485"/>
      <path class="pipe" id="pLoop" style="stroke-width:4.5" d="M600 485H770V498H612V511H770V525H580"/>
+     <g id="gZones">
+      <path class="pipe" id="pTrunk" d="M482 102V409"/>
+      <g id="gDirect"><title translate="no">Add pump</title><path class="pipe" id="pDirect" d="M482 368H762V400"/>
+       <circle class="eq" cx="515" cy="368" r="9"/><path d="M523 368l-12-7v14z" style="fill:var(--ink2)"/>
+       <rect class="eq" x="752" y="400" width="20" height="56" rx="4"/><path class="ln" d="M758 406V450M762 406V450M766 406V450"/>
+       <path class="pipe" id="pDirectR" d="M762 456V474H782V525H770"/></g>
+      <g id="gMixed"><title translate="no">Main pump</title><path class="pipe" id="pMixed" d="M482 427V446H600V485"/>
+       <path class="pipe" id="pBypass" d="M464 525V418H470"/>
+       <circle class="eq" cx="600" cy="468" r="8"/><path d="M600 476l-7-12h14z" style="fill:var(--ink2)"/>
+       <g class="valve"><path d="M473 409H491L482 418Z"/><path d="M473 427H491L482 418Z"/><path d="M470 409V427L482 418Z"/></g>
+       <text class="tl" x="474" y="386" text-anchor="end"><title translate="no">R7T</title>Mixed water</text>
+       <text class="tv" x="474" y="404" text-anchor="end" translate="no"><tspan id="sMixed"></tspan><tspan class="ts" dx="6" id="sLwSpMix"></tspan></text></g>
+     </g>
     </g>
     <g class="valve"><path id="vL" d="M470 81V99L482 90Z"/><path id="vR" class="shut" d="M494 81V99L482 90Z"/><path id="vB" d="M473 102H491L482 90Z"/></g>
     <text class="tl" x="494" y="128">3-way valve</text><text class="ts" x="494" y="145" id="sV3" translate="no"></text>
@@ -617,7 +634,8 @@ const KEYS = {out: /outdoor air temp/i, lw1: /^leaving water temp\. before BUH/i
   inlet: /^inlet water temp/i, tank: /^DHW tank temp/i, room: /^indoor ambient temp/i, dhwSp: /^DHW setpoint/i, lwSp: /^LW setpoint \(main\)/i, rtSp: /^RT setpoint/i,
   inv: /^INV frequency/i, v3: /^3way valve/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^error type/i, code: /^error code/i, thermo: /^thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
-  freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i};
+  freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i,
+  mixed: /^mixed water temp/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i};
 function reading(list) {
   const r = {};
   for (const [k, re] of Object.entries(KEYS)) { const v = list.find(x => re.test(x.l)); if (v && String(v.v).trim() !== '') r[k] = String(v.v).trim(); }
@@ -647,7 +665,14 @@ function paint() {
   const deg = v => v == null ? '—' : f1(v) + '°';
   for (const [label, k] of TAGS) { tx('gl_' + k, t(label)); const v = n(k); tx('g_' + k, k === 'flow' ? (v == null ? '—' : f1(Math.max(0, v)) + ' l/min') : deg(v)); }
   const lw = n('lw2') != null ? n('lw2') : n('lw1'), ret = n('inlet'), tank = n('tank'), mid = (a, b) => a != null && b != null ? (a + b) / 2 : a;
-  [['pSup', lw], ['pDhw', lw], ['pCoil', mid(lw, tank)], ['pDhwR', ret], ['pSpace', lw], ['pLoop', mid(lw, ret)], ['pRet', ret]].forEach(([id, v]) => document.getElementById(id).style.stroke = tcol(v));
+  // Two zones (a direct one and a mixed one with its valve, pump and R7T) once the mixed water temperature reads something:
+  // single-zone units answer 0 there
+  const mixed = n('mixed'), two = mixed != null && mixed !== 0;
+  sch.classList.toggle('bizone', two);
+  [['pSup', lw], ['pDhw', lw], ['pCoil', mid(lw, tank)], ['pDhwR', ret], ['pSpace', lw], ['pLoop', mid(two ? mixed : lw, ret)], ['pRet', ret],
+   ['pTrunk', lw], ['pDirect', lw], ['pDirectR', ret], ['pMixed', mixed], ['pBypass', ret]].forEach(([id, v]) => document.getElementById(id).style.stroke = tcol(v));
+  $('#gDirect').classList.toggle('zoff', r.addPump != null && !isOn(r.addPump)); $('#gMixed').classList.toggle('zoff', r.mainPump != null && !isOn(r.mainPump));
+  tx('sMixed', deg(mixed)); tx('sLwSpMix', r.lwSp ? t('target {n}°', {n: n('lwSp')}) : '');
   $('#tankFill').style.fill = tcol(tank);
   const v3 = isOn(r.v3), flow = n('flow'), pump = isOn(r.pump) || (flow || 0) > 0.5, inv = n('inv');
   $('#gDhw').classList.toggle('act', v3); $('#gSp').classList.toggle('act', !v3);
@@ -662,7 +687,10 @@ function paint() {
   const a = (-135 + (bar || 0) / 4 * 270) * Math.PI / 180;
   $('#needle').setAttribute('d', `M500 492L${(500 + 11 * Math.sin(a)).toFixed(1)} ${(492 - 11 * Math.cos(a)).toFixed(1)}`);
   tx('sTank', deg(tank)); tx('sRoom', deg(n('room')));
-  tx('sDhwSp', r.dhwSp ? t('target {n}°', {n: n('dhwSp')}) : ''); tx('sRtSp', r.rtSp ? t('target {n}°', {n: n('rtSp')}) : ''); tx('sLwSp', r.lwSp ? t('target {n}°', {n: n('lwSp')}) : '');
+  tx('sDhwSp', r.dhwSp ? t('target {n}°', {n: n('dhwSp')}) : ''); tx('sRtSp', r.rtSp ? t('target {n}°', {n: n('rtSp')}) : '');
+  // The leaving water target: with two zones, the direct one's (the mixed zone has its own, shown at the valve)
+  const lwSpK = two && r.lwSpAdd ? 'lwSpAdd' : 'lwSp';
+  tx('sLwSp', r[lwSpK] ? t('target {n}°', {n: n(lwSpK)}) : '');
   // side panel
   tx('dMode', r.mode ? t(r.mode) : '—');
   tx('dIu', v3 ? t('Heating the hot water') : r.iu ? t('Indoor unit: {mode}', {mode: t(r.iu)}) : '');

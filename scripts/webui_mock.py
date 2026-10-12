@@ -43,6 +43,10 @@ CATALOG = [
     (0x62, 14, 105, "Water pressure", True),
     (0x60, 7, 105, "DHW setpoint", True),
     (0x60, 9, 105, "LW setpoint (main)", True),
+    (0x62, 3, 105, "LW setpoint (add)", "bizone"),
+    (0x64, 10, 118, "Mixed water temp.", "bizone"),
+    (0x64, 9, 301, "Main pump", "bizone"),
+    (0x64, 9, 302, "Add pump", "bizone"),
     (0x61, 6, 105, "Refrig. Temp. liquid side (R3T)", True),
     (0x61, 12, 105, "Indoor ambient temp. (R1T)", True),
     (0x62, 5, 105, "RT setpoint", True),
@@ -58,7 +62,7 @@ READINGS = {
     "R1T-Outdoor air temp.": (6.5, 0.3), "INV primary current (A)": (4.8, 0.3), "INV frequency (rps)": (42, 2),
     "Leaving water temp. before BUH (R1T)": (34.6, 0.3), "Leaving water temp. after BUH (R2T)": (34.8, 0.3),
     "Inlet water temp.(R4T)": (30.2, 0.3), "DHW tank temp. (R5T)": (47.6, 0.2), "Flow sensor (l/min)": (16.4, 0.4),
-    "Water pressure": (1.7, 0.02), "DHW setpoint": (48, 0), "LW setpoint (main)": (35, 0),
+    "Water pressure": (1.7, 0.02), "DHW setpoint": (48, 0), "LW setpoint (main)": (35, 0), "LW setpoint (add)": (35, 0), "Mixed water temp.": (29.6, 0.3),
     "Refrig. Temp. liquid side (R3T)": (36.2, 0.4), "Indoor ambient temp. (R1T)": (21.3, 0.1), "RT setpoint": (21, 0), "Discharge pipe temp.": (68, 1), "Heat exchanger mid-temp.": (33.1, 0.5),
 }
 
@@ -68,9 +72,10 @@ def key(reg, off, conv, size=2):
 
 
 class Device:
-    def __init__(self, fresh, ethernet=False):
+    def __init__(self, fresh, ethernet=False, bizone=False):
         self.start = time.time()
         self.ethernet = ethernet
+        self.bizone = bizone  # a two-zone unit: its mixed zone values are selected too
         self.lock = threading.Lock()
         self.config = {
             "wifi": {"ssid": "" if fresh else "HomeWiFi", "has_pwd": not fresh, "static": False, "ip": "", "gateway": "", "subnet": "", "dns1": "", "dns2": ""},
@@ -142,12 +147,13 @@ class Device:
         labels = self.config["hp"]["labels"]
         if model == self.config["hp"]["model"] and labels:
             return set(labels)
-        return {key(r, o, c) for r, o, c, _, rec in CATALOG if rec}
+        return {key(r, o, c) for r, o, c, _, rec in CATALOG if rec is True or (rec and self.bizone)}
 
-    @staticmethod
-    def reading(r, o, c, l):
+    def reading(self, r, o, c, l):
         base, drift = READINGS.get(l, (0, 0))
-        return {217: "Heating", 304: "OFF"}.get(c, "%.1f" % (base + drift * math.sin(time.time() / 40 + r + o)))
+        if self.bizone and l == "LW setpoint (main)":
+            base = 30  # the mixed zone target
+        return {217: "Heating", 304: "OFF", 301: "ON", 302: "ON"}.get(c, "%.1f" % (base + drift * math.sin(time.time() / 40 + r + o)))
 
     def values(self):
         model = self.config["hp"]["model"]
@@ -275,8 +281,9 @@ def main():
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--fresh", action="store_true", help="start like a freshly flashed device")
     ap.add_argument("--ethernet", action="store_true", help="a board connected by Ethernet")
+    ap.add_argument("--bizone", action="store_true", help="a two-zone unit (mixed zone values)")
     args = ap.parse_args()
-    Handler.device = Device(args.fresh, args.ethernet)
+    Handler.device = Device(args.fresh, args.ethernet, args.bizone)
     print("Mock ESPAltherma on http://localhost:%d" % args.port)
     ThreadingHTTPServer(("", args.port), Handler).serve_forever()
 
