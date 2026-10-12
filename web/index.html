@@ -635,7 +635,7 @@ function renderControl() {
   let sub;
   if (!ready) sub = reasons[c.status] || c.status;
   else if (c.target < 0) sub = t('Reading the current target…');
-  else if (c.pending >= 0) sub = t('Applying {n} °C…', {n: c.pending});
+  else if (c.pending >= 0 && c.pending !== c.target) sub = t('Applying {n} °C…', {n: c.pending});
   else if (c.target_lo !== c.target) sub = t('The unit follows its own curve, {lo} °C to {hi} °C. Applying a value fixes the target.', {lo: c.target_lo, hi: c.target});
   else sub = t('Target {n} °C, allowed from {min} to {max}.', {n: c.target, min: c.min, max: c.max}) + ' ' + (c.saved === c.target ? t('Saved in the unit.') : t('Applied, saved in the unit in a moment.'));
   $('#dhwSub').textContent = sub;

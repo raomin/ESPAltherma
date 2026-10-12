@@ -205,6 +205,8 @@ bool mqttConnectOnce()
       dhwControl.changed = true;
       if (config.dhwTarget)
         client.subscribe(MQTT_dhw_set);
+      else
+        client.publish(MQTT_dhw_discovery, "", true); // option off: remove the entity from HA
       return true;
     }
     mqttSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
