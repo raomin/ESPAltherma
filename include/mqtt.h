@@ -396,12 +396,15 @@ void publishDhwTarget()
   bool ready = config.dhwTarget && dhwControl.status == CONTROL_READY;
   if (ready && (!dhwDiscoveryOn || dhwDiscoveryMin != dhwControl.minTarget || dhwDiscoveryMax != dhwControl.maxTarget))
   {
+    // Same device as the readings (homeassistant.cpp): its identifier and its name, which Home Assistant
+    // requires in every entity that shares a device. def_ent_id fixes the entity id, like the readings do.
     char json[512];
     snprintf(json, sizeof(json),
-             "{\"name\":\"Hot water target\",\"uniq_id\":\"espaltherma_dhw_target\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\","
+             "{\"name\":\"Hot water target\",\"uniq_id\":\"espaltherma_dhw_target\","
+             "\"def_ent_id\":\"number.espaltherma_hot_water_target\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\","
              "\"avty_t\":\"" MQTT_lwt "\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
              "\"min\":%d,\"max\":%d,\"step\":1,\"unit_of_meas\":\"°C\",\"dev_cla\":\"temperature\",\"mode\":\"box\","
-             "\"icon\":\"mdi:water-boiler\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}}",
+             "\"icon\":\"mdi:water-boiler\",\"dev\":{\"ids\":\"espaltherma-mqtt-discovery\",\"name\":\"Daikin Altherma via ESPAltherma\"}}",
              MQTT_dhw_set, MQTT_dhw_state, dhwControl.minTarget, dhwControl.maxTarget);
     mqttPublish(MQTT_dhw_discovery, json, true);
     dhwDiscoveryOn = true;
