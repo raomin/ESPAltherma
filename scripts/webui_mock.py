@@ -84,10 +84,12 @@ class Device:
             "hp": {"protocol": "I", "frequency": 30000, "rx": 16, "tx": 17, "model": "" if fresh else MODELS[0][0], "confirmed": False, "detected_key": "", "labels": []},
             "relays": {"therm_pin": -1, "therm_high": True, "sg1_pin": -1, "sg2_pin": -1, "sg_high": True, "safety_pin": -1, "safety_high": True},
             "output": {"one_topic": False, "one_topic_prefix": "espaltherma/OneATTR/", "json_table": False, "binary_num": False, "no_log": False, "debug_serial": False},
+            "control": {"dhw_target": False},
             "admin": {"has_pwd": False},
             "telemetry": {"enabled": False, "install_id": "3f2a9c1be07d4411"},
         }
         self.survey_until = time.time() + 6
+        self.dhw = {"target": 48, "target_lo": 52, "saved": -1, "pending": -1, "applied_at": 0}  # hot water target control
         self.discover_until = 0
         self.mqtt_test_until = 0
         self.log = "ESPAltherma mock started\n"
@@ -113,6 +115,14 @@ class Device:
         }
         if self.ethernet:
             st["eth"] = {"up": True, "ip": "192.168.1.43", "mac": "A8:03:2A:11:22:33", "speed": 100, "full_duplex": True}
+        if c["control"]["dhw_target"]:
+            d = self.dhw
+            if d["pending"] >= 0 and time.time() - d["applied_at"] > 2:  # the heat pump task applied it
+                d["target"] = d["target_lo"] = d["pending"]
+                d["pending"] = -1
+            if d["saved"] != d["target"] and d["pending"] < 0 and time.time() - d["applied_at"] > 30:
+                d["saved"] = d["target"]
+            st["control"] = {"status": "ready", "id": "18002904", "min": 45, "max": 55, "target": d["target"], "target_lo": d["target_lo"], "saved": d["saved"], "pending": d["pending"]}
         return st
 
     def events(self):
@@ -264,6 +274,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, {"ok": True, "reboot": "relays" in data})
         if p == "/api/detect":
             d.survey_until = time.time() + 5
+            return self.send(200, {"ok": True})
+        if p == "/api/control":
+            data = self.body()
+            if not d.config["control"]["dhw_target"]:
+                return self.send(409, {"ok": False, "error": "not ready"})
+            if not isinstance(data.get("dhw_target"), int) or not 45 <= data["dhw_target"] <= 55:
+                return self.send(400, {"ok": False, "error": "out of range"})
+            d.dhw["pending"] = data["dhw_target"]
+            d.dhw["applied_at"] = time.time()
             return self.send(200, {"ok": True})
         if p == "/api/discover":
             d.discover_until = time.time() + 3

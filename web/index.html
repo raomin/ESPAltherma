@@ -283,6 +283,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   </div>
  </div>
  <div class="dev" id="tiles" translate="no"></div>
+ <div class="card pad" id="dhwCard" hidden><h2>Hot water target</h2><p class="sub" id="dhwSub"></p>
+  <div class="acts" style="margin-top:12px"><input type="number" id="dhwVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="dhwSet">Apply</button><span class="msg" id="dhwMsg" translate="no"></span></div></div>
  <details class="all card" id="allBox"><summary><span>All readings</span> <span class="sub" id="valAge" translate="no"></span></summary><table><tbody id="dValues" translate="no"></tbody></table></details>
 </section>
 
@@ -365,6 +367,9 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
    <label class="chk"><input type="checkbox" id="sOneTopic">One topic per value</label>
    <label class="f"><span class="k">Topic prefix (one topic per value)</span><input type="text" id="sPrefix"></label>
    <label class="chk"><input type="checkbox" id="sJsonTable">JSON table format (ioBroker)</label><label class="chk"><input type="checkbox" id="sBinNum">On/off values as 1/0 (EmonCMS…)</label><label class="chk"><input type="checkbox" id="sNoLog">Do not publish logs on MQTT</label><label class="chk"><input type="checkbox" id="sDebug">MQTT ↔ serial gateway (DebugSerial)</label></div>
+  <div class="card"><h2>Experimental</h2><p class="sub">Under test: may not work on every unit.</p>
+   <label class="chk"><input type="checkbox" id="sDhwTarget">Hot water target from Home Assistant and this page</label>
+   <p class="sub">ESPAltherma writes the target into the weather-dependent hot water curve of the unit. The tank setpoint mode must be set to weather dependent on the unit's interface, and the hydro board software must be a supported one (18002904 so far). The interface may show its old curve until it restarts.</p></div>
   <div class="card"><h2>This device</h2>
    <div class="row"><label class="f"><span class="k">Language</span><select id="sLang"></select></label><label class="f"><span class="k">Name on the network</span><input type="text" id="sHost"></label><label class="f"><span class="k">Admin password <span id="sAdminState" translate="no"></span></span><input type="password" id="sAdmin" autocomplete="new-password" placeholder="unchanged"></label></div>
    <p class="sub">The language also names the Home Assistant sensors (in English when automatic).</p>
@@ -619,10 +624,36 @@ function renderSystem() {
   $('#sysTiles').replaceChildren(...tiles.map(([k, v, sub]) => el('div', {class: 'card'}, el('div', {class: 'k'}, k), el('div', {class: 'big'}, v), el('div', {class: 'sub'}, sub))));
   $('#sysTmBox').hidden = !s.telemetry_available;
 }
+// Hot water target (experimental): the card shows when the setting is on, the input when the unit allows it
+function renderControl() {
+  const c = status.control, card = $('#dhwCard');
+  card.hidden = !c;
+  if (!c) return;
+  const ready = c.status === 'ready';
+  const reasons = {no_answer: t('The heat pump did not answer.'), unsupported: t('Not available on this unit (hydro board software {id}).', {id: c.id || '?'}),
+    not_curve_mode: t('First set the tank setpoint mode to weather dependent on the interface of the unit.'), off: t('Starting…')};
+  let sub;
+  if (!ready) sub = reasons[c.status] || c.status;
+  else if (c.target < 0) sub = t('Reading the current target…');
+  else if (c.pending >= 0) sub = t('Applying {n} °C…', {n: c.pending});
+  else if (c.target_lo !== c.target) sub = t('The unit follows its own curve, {lo} °C to {hi} °C. Applying a value fixes the target.', {lo: c.target_lo, hi: c.target});
+  else sub = t('Target {n} °C, allowed from {min} to {max}.', {n: c.target, min: c.min, max: c.max}) + ' ' + (c.saved === c.target ? t('Saved in the unit.') : t('Applied, saved in the unit in a moment.'));
+  $('#dhwSub').textContent = sub;
+  const v = $('#dhwVal');
+  v.disabled = $('#dhwSet').disabled = !ready;
+  if (ready) { v.min = c.min; v.max = c.max; if (document.activeElement !== v && !v.dataset.touched) v.value = c.target >= 0 ? c.target : ''; }
+}
+$('#dhwVal').oninput = e => e.target.dataset.touched = '1';
+$('#dhwSet').onclick = async () => {
+  const n = parseInt($('#dhwVal').value, 10);
+  if (isNaN(n)) return msg('#dhwMsg', t('Enter a whole number of degrees.'), false);
+  try { await post('/api/control', {dhw_target: n}); delete $('#dhwVal').dataset.touched; msg('#dhwMsg', t('Sent. Applied within a few seconds.'), true); setTimeout(refreshStatus, 3000); }
+  catch (e) { msg('#dhwMsg', e.message, false); }
+};
 function renderStatus() {
   const hp = status.hp;
   $('#hdrModel').textContent = hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : '';
-  renderChips(); renderTiles(); renderBanners(); renderSystem();
+  renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl();
   // Values appeared (model just detected or chosen): show them without waiting for the next push
   if (hp.values > 0 && hp.last_poll >= 0 && !lastValues.length) api('/api/values').then(renderValues).catch(() => {});
 }
@@ -947,6 +978,7 @@ function fillSettings() {
   $('#sTherm').value = r.therm_pin; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
   $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sJsonTable').checked = o.json_table; $('#sBinNum').checked = !!o.binary_num; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
+  $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target);
   $('#sHost').value = cfg.hostname; $('#sAdminState').textContent = cfg.admin.has_pwd ? t('(set)') : t('(none)');
   fillLangs();
   $('#sStatic').checked = w.static; $('#sIp').value = w.ip; $('#sGw').value = w.gateway; $('#sMask').value = w.subnet; $('#sDns1').value = w.dns1;
@@ -959,6 +991,7 @@ $('#sSave').onclick = async () => {
     hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000},
     relays: {therm_pin: n('#sTherm'), sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
+    control: {dhw_target: $('#sDhwTarget').checked},
     hostname: $('#sHost').value.trim() || 'ESPAltherma',
     lang: $('#sLang').value,
     wifi: {static: $('#sStatic').checked, ip: $('#sIp').value, gateway: $('#sGw').value, subnet: $('#sMask').value, dns1: $('#sDns1').value},

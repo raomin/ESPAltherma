@@ -23,6 +23,13 @@ PubSubClient client;
 Client *mqttNet = &plainClient; // the network client under PubSubClient
 
 extern Converter converter;
+extern DhwControl dhwControl;
+
+#define MQTT_dhw_set "espaltherma/dhw_target/set"
+#define MQTT_dhw_state "espaltherma/dhw_target/state"
+#define MQTT_dhw_discovery "homeassistant/number/espAltherma/dhw_target/config"
+bool dhwDiscoveryOn = false; // the number entity is published (with these limits)
+int dhwDiscoveryMin = 0, dhwDiscoveryMax = 0;
 
 // Publishes, and flags a write the broker did not take (stage.h). A message larger than the buffer is not one.
 bool mqttPublish(const char *topic, const char *payload, bool retained = false)
@@ -192,6 +199,12 @@ bool mqttConnectOnce()
       // DebugSerial - MQTT<>Serial gateway
       client.subscribe("espaltherma/serialTX");
       }
+
+      // Hot water target (experimental): the number entity follows the control's state, published by the main loop
+      dhwDiscoveryOn = false;
+      dhwControl.changed = true;
+      if (config.dhwTarget)
+        client.subscribe(MQTT_dhw_set);
       return true;
     }
     mqttSerial.printf("failed, rc=%d, try again in 5 seconds", client.state());
@@ -356,6 +369,56 @@ void callbackDebugSerial(byte *payload, unsigned int length)
 }
 
 
+// Hot water target requested over MQTT: a whole number of degrees, applied by the heat pump task.
+void callbackDhwTarget(byte *payload, unsigned int length)
+{
+  payload[length] = '\0';
+  char *end = nullptr;
+  long value = strtol((const char *)payload, &end, 10);
+  if (end == (const char *)payload || value < 20 || value > 90)
+  {
+    mqttSerial.printf("Hot water target: ignored '%s'\n", payload);
+    return;
+  }
+  if (dhwControl.status != CONTROL_READY)
+  {
+    mqttSerial.printf("Hot water target: not available (%s)\n", controlStatusName(dhwControl.status));
+    return;
+  }
+  dhwControl.request((int)value);
+}
+
+// The number entity and its state: created when the control is ready, removed when it is not. Main loop only.
+void publishDhwTarget()
+{
+  bool ready = config.dhwTarget && dhwControl.status == CONTROL_READY;
+  if (ready && (!dhwDiscoveryOn || dhwDiscoveryMin != dhwControl.minTarget || dhwDiscoveryMax != dhwControl.maxTarget))
+  {
+    char json[512];
+    snprintf(json, sizeof(json),
+             "{\"name\":\"Hot water target\",\"uniq_id\":\"espaltherma_dhw_target\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\","
+             "\"avty_t\":\"" MQTT_lwt "\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
+             "\"min\":%d,\"max\":%d,\"step\":1,\"unit_of_meas\":\"°C\",\"dev_cla\":\"temperature\",\"mode\":\"box\","
+             "\"icon\":\"mdi:water-boiler\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}}",
+             MQTT_dhw_set, MQTT_dhw_state, dhwControl.minTarget, dhwControl.maxTarget);
+    mqttPublish(MQTT_dhw_discovery, json, true);
+    dhwDiscoveryOn = true;
+    dhwDiscoveryMin = dhwControl.minTarget;
+    dhwDiscoveryMax = dhwControl.maxTarget;
+  }
+  else if (!ready && dhwDiscoveryOn)
+  {
+    mqttPublish(MQTT_dhw_discovery, "", true); // removes the entity
+    dhwDiscoveryOn = false;
+  }
+  if (ready && dhwControl.target >= 0)
+  {
+    char value[8];
+    snprintf(value, sizeof(value), "%d", dhwControl.target);
+    mqttPublish(MQTT_dhw_state, value, true);
+  }
+}
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
   mqttSerial.printf("Message arrived [%s] : %s\n", topic, payload);
@@ -380,6 +443,10 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (config.debugSerial && strcmp(topic, "espaltherma/serialTX") == 0)
   {
     callbackDebugSerial(payload, length);
+  }
+  else if (config.dhwTarget && strcmp(topic, MQTT_dhw_set) == 0)
+  {
+    callbackDhwTarget(payload, length);
   }
 
   else

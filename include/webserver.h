@@ -27,6 +27,7 @@ extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
 extern unsigned long lastPollMs;
 extern DetectResult detection;
+extern DhwControl dhwControl;
 void requestSurvey();
 void valuesLock();
 void valuesUnlock();
@@ -237,6 +238,22 @@ static void statusJson(JsonDocument &doc)
     relays["safety"] = safetyActive;
   if (config.sg1Pin >= 0)
     relays["smart_grid"] = sgMode;
+  if (config.dhwTarget)
+  {
+    // Hot water target (experimental, control.h)
+    JsonObject c = doc["control"].to<JsonObject>();
+    c["status"] = controlStatusName(dhwControl.status);
+    c["id"] = dhwControl.softwareId;
+    if (dhwControl.status == CONTROL_READY)
+    {
+      c["min"] = dhwControl.minTarget;
+      c["max"] = dhwControl.maxTarget;
+      c["target"] = dhwControl.target;
+      c["target_lo"] = dhwControl.targetLo;
+      c["saved"] = dhwControl.saved;
+      c["pending"] = (int)dhwControl.wanted;
+    }
+  }
 #ifdef HAS_POWER_MONITOR
   JsonObject pw = doc["power"].to<JsonObject>();
   if (power.vbus >= 0)
@@ -622,6 +639,33 @@ void webBegin()
     r->send(200, "application/json", telemetryPayload());
   });
 
+  // Hot water target (experimental): {"dhw_target": 50}, applied by the heat pump task
+  webServer.on("/api/control", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
+    JsonDocument doc;
+    if (!parseBody(r, doc))
+      return;
+    if (!doc["dhw_target"].is<int>())
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target missing\"}");
+      return;
+    }
+    if (!config.dhwTarget || dhwControl.status != CONTROL_READY)
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"not ready\"}");
+      return;
+    }
+    int value = doc["dhw_target"].as<int>();
+    if (value < dhwControl.minTarget || value > dhwControl.maxTarget)
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"out of range\"}");
+      return;
+    }
+    dhwControl.request(value);
+    sendOk(r);
+  }, nullptr, collectBody);
+
   webServer.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
@@ -791,7 +835,8 @@ void webLoop()
     bool mqttChanged = strcmp(next->mqttServer, config.mqttServer) != 0 || next->mqttPort != config.mqttPort ||
                        strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
                        next->mqttTls != config.mqttTls || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
-                       next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber;
+                       next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber ||
+                       next->dhwTarget != config.dhwTarget; // subscription and entity follow
     bool labelsChanged = strcmp(next->model, config.model) != 0 || next->labelCount != config.labelCount ||
                          memcmp(next->labels, config.labels, sizeof(uint32_t) * next->labelCount) != 0 ||
                          next->fixCount != config.fixCount || next->layoutCheck != config.layoutCheck;

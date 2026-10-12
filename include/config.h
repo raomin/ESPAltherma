@@ -73,6 +73,9 @@ struct AppConfig
   bool disableLogMessages;
   bool debugSerial;
 
+  // Experimental: the hot water target can be set from Home Assistant and the web interface (control.h)
+  bool dhwTarget;
+
   // Web interface
   char adminPwd[33]; // protects the configuration, updates and OTA when set (user "admin")
 
@@ -184,6 +187,9 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   out["binary_num"] = c.binaryAsNumber;
   out["no_log"] = c.disableLogMessages;
   out["debug_serial"] = c.debugSerial;
+
+  JsonObject control = doc["control"].to<JsonObject>();
+  control["dhw_target"] = c.dhwTarget;
 
   JsonObject admin = doc["admin"].to<JsonObject>();
   admin["has_pwd"] = c.adminPwd[0] != 0;
@@ -298,6 +304,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(out["binary_num"], c.binaryAsNumber);
   readNum(out["no_log"], c.disableLogMessages);
   readNum(out["debug_serial"], c.debugSerial);
+  readNum(src["control"]["dhw_target"], c.dhwTarget);
 
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));
   readNum(src["telemetry"]["enabled"], c.telemetry);

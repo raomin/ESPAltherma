@@ -60,6 +60,33 @@ int get_reply_len(char regID, char protocol='I')
   }
 }
 
+// Sends a raw frame and collects the reply: until 100 ms pass without a byte, or firstByteMs without any.
+// Used by the hot water target control (control.h).
+size_t x10aExchange(const uint8_t *frame, size_t len, uint8_t *reply, size_t maxLen, unsigned long firstByteMs)
+{
+  serialLock();
+  MySerial.flush(SERIAL_FLUSH_TX_ONLY);
+  while (MySerial.available())
+    MySerial.read(); // left over from an earlier exchange
+  MySerial.write(frame, len);
+  unsigned long start = millis(), last = start;
+  size_t n = 0;
+  while (n < maxLen)
+  {
+    if (MySerial.available())
+    {
+      reply[n++] = MySerial.read();
+      last = millis();
+      continue;
+    }
+    if (n == 0 ? millis() - start >= firstByteMs : millis() - last >= 100)
+      break;
+    delay(1);
+  }
+  serialUnlock();
+  return n;
+}
+
 bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol);
 
 bool queryRegistry(char regID, unsigned char *buffer, char protocol='I')

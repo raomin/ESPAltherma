@@ -19,6 +19,7 @@
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"
+#include "control.h"
 #include "survey.h"
 #include "catalog.h"
 #include "detect.h"
@@ -51,6 +52,7 @@ LayoutCycle layoutCycle;             //replies of the last query cycle
 volatile bool surveyRequested = false;
 volatile bool surveyInProgress = false; //the survey is being written: readers must not use it
 volatile bool surveyReady = false;
+DhwControl dhwControl;                 //experimental hot water target (control.h), driven by the heat pump task
 
 // The heat pump task converts values while the main loop publishes them.
 SemaphoreHandle_t valuesMutex = xSemaphoreCreateMutex();
@@ -476,6 +478,30 @@ void hpDelay(unsigned long ms)
   delay(ms);
 }
 
+// Hot water target control: identification, requests, saves. Heat pump task only (it owns the X10A link).
+void controlLoop()
+{
+  bool enabled = config.dhwTarget && config.protocol == 'I' && !busy;
+  if (!enabled)
+  {
+    if (dhwControl.status != CONTROL_OFF)
+      dhwControl.reset();
+    return;
+  }
+  if (dhwControl.exchange == nullptr)
+    dhwControl.exchange = x10aExchange;
+  ControlStatus before = dhwControl.status;
+  dhwControl.tick(millis());
+  if (dhwControl.status != before)
+    mqttSerial.printf("Hot water target control: %s (software %s)\n", controlStatusName(dhwControl.status), dhwControl.softwareId);
+  if (dhwControl.applied >= 0)
+  {
+    mqttSerial.printf("Hot water target set to %d\n", dhwControl.applied);
+    eventAddf("Hot water target set to %d", dhwControl.applied);
+    dhwControl.applied = -1;
+  }
+}
+
 // Owns the X10A link: runs the survey on request and queries the registries every config.frequency ms.
 void hpTask(void *)
 {
@@ -510,6 +536,9 @@ void hpTask(void *)
     while (millis() - start < config.frequency && !surveyRequested && !labelsDirty)
     {
       watchdogHp();
+      HP_STAGE("hot water target");
+      controlLoop();
+      HP_STAGE("wait");
       delay(100);
     }
   }
@@ -619,6 +648,12 @@ void loop()
     discoveryDirty = false;
     LOOP_STAGE("HA discovery");
     publishHomeAssistantDeviceDiscovery();
+  }
+  if (dhwControl.changed && client.connected())
+  {
+    dhwControl.changed = false;
+    LOOP_STAGE("hot water target state");
+    publishDhwTarget();
   }
   LOOP_STAGE("idle");
   delay(5);
