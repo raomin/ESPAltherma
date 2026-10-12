@@ -27,7 +27,7 @@ extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
 extern unsigned long lastPollMs;
 extern DetectResult detection;
-extern DhwControl dhwControl;
+extern CurveControl dhwControl, lwtControl;
 void requestSurvey();
 void valuesLock();
 void valuesUnlock();
@@ -167,6 +167,24 @@ void webSendValues()
   webEvents.send(s.c_str(), "values");
 }
 
+// One target control, for the web interface
+static void controlJson(JsonObject c, const CurveControl &k)
+{
+  c["status"] = controlStatusName(k.status);
+  c["id"] = k.softwareId;
+  if (k.status == CONTROL_READY)
+  {
+    c["min"] = k.minTarget;
+    c["max"] = k.maxTarget;
+    c["target"] = k.target;
+    c["target_lo"] = k.targetLo;
+    c["effective"] = k.effective;
+    c["ceiling"] = k.ceiling;
+    c["saved"] = k.saved;
+    c["pending"] = (int)k.wanted;
+  }
+}
+
 static void statusJson(JsonDocument &doc)
 {
   doc["fw"] = ESPALTHERMA_VERSION;
@@ -238,21 +256,14 @@ static void statusJson(JsonDocument &doc)
     relays["safety"] = safetyActive;
   if (config.sg1Pin >= 0)
     relays["smart_grid"] = sgMode;
-  if (config.dhwTarget)
+  if (config.dhwTarget || config.lwtTarget)
   {
-    // Hot water target (experimental, control.h)
-    JsonObject c = doc["control"].to<JsonObject>();
-    c["status"] = controlStatusName(dhwControl.status);
-    c["id"] = dhwControl.softwareId;
-    if (dhwControl.status == CONTROL_READY)
-    {
-      c["min"] = dhwControl.minTarget;
-      c["max"] = dhwControl.maxTarget;
-      c["target"] = dhwControl.target;
-      c["target_lo"] = dhwControl.targetLo;
-      c["saved"] = dhwControl.saved;
-      c["pending"] = (int)dhwControl.wanted;
-    }
+    // Target controls (experimental, control.h)
+    JsonObject ctl = doc["control"].to<JsonObject>();
+    if (config.dhwTarget)
+      controlJson(ctl["dhw"].to<JsonObject>(), dhwControl);
+    if (config.lwtTarget)
+      controlJson(ctl["lwt"].to<JsonObject>(), lwtControl);
   }
 #ifdef HAS_POWER_MONITOR
   JsonObject pw = doc["power"].to<JsonObject>();
@@ -639,30 +650,32 @@ void webBegin()
     r->send(200, "application/json", telemetryPayload());
   });
 
-  // Hot water target (experimental): {"dhw_target": 50}, applied by the heat pump task
+  // Target controls (experimental): {"dhw_target": 50} or {"lwt_target": 35}, applied by the heat pump task
   webServer.on("/api/control", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
     JsonDocument doc;
     if (!parseBody(r, doc))
       return;
-    if (!doc["dhw_target"].is<int>())
+    bool dhw = doc["dhw_target"].is<int>(), lwt = doc["lwt_target"].is<int>();
+    if (!dhw && !lwt)
     {
-      r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target missing\"}");
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target or lwt_target missing\"}");
       return;
     }
-    if (!config.dhwTarget || dhwControl.status != CONTROL_READY)
+    CurveControl &c = lwt ? lwtControl : dhwControl;
+    if (!(lwt ? config.lwtTarget : config.dhwTarget) || c.status != CONTROL_READY)
     {
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"not ready\"}");
       return;
     }
-    int value = doc["dhw_target"].as<int>();
-    if (value < dhwControl.minTarget || value > dhwControl.maxTarget)
+    int value = doc[lwt ? "lwt_target" : "dhw_target"].as<int>();
+    if (value < c.minTarget || value > c.maxTarget)
     {
       r->send(400, "application/json", "{\"ok\":false,\"error\":\"out of range\"}");
       return;
     }
-    dhwControl.request(value);
+    c.request(value);
     sendOk(r);
   }, nullptr, collectBody);
 
@@ -836,7 +849,7 @@ void webLoop()
                        strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
                        next->mqttTls != config.mqttTls || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
                        next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber ||
-                       next->dhwTarget != config.dhwTarget; // subscription and entity follow
+                       next->dhwTarget != config.dhwTarget || next->lwtTarget != config.lwtTarget; // subscriptions and entities follow
     bool labelsChanged = strcmp(next->model, config.model) != 0 || next->labelCount != config.labelCount ||
                          memcmp(next->labels, config.labels, sizeof(uint32_t) * next->labelCount) != 0 ||
                          next->fixCount != config.fixCount || next->layoutCheck != config.layoutCheck;

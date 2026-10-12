@@ -203,23 +203,26 @@ Depending on your HP model, SG3 might be configurable in "ECO mode", "Normal mod
 
 Note: Smart Grid needs to be switched ON in the heatpump configuration menu, otherwise SG1 and SG2 contacts are not evaluated.
 
-## Step 6 (experimental) - Setting the hot water target
+## Step 6 (experimental) - Setting the hot water and leaving water targets
 
-The user interface of the heat pump owns the setpoints it shows and re-sends them to the hydro board every second, so they cannot be changed through the X10A port. But when the tank setpoint mode is *weather dependent*, the hydro board computes the hot water target itself from its own curve. ESPAltherma can then write the wanted target into both points of that curve: the target holds whatever the weather, it applies within a second, and it is saved in the unit so it survives a restart.
+The user interface of the heat pump owns the setpoints it shows and re-sends them to the hydro board every second, so they cannot be changed through the X10A port. But when a setpoint mode is *weather dependent*, the hydro board computes that target itself from its own curve. ESPAltherma can then write the wanted target into both points of that curve: the target holds whatever the weather, it applies within a second, and it is saved in the unit so it survives a restart. This works for the hot water tank and for the leaving water of the main zone (the water sent to the floor or the radiators).
 
 To try it:
 
-1. On the user interface of the heat pump, set the tank setpoint mode to *weather dependent* (installer settings, DHW; "loi d'eau" on a French interface).
-2. In ESPAltherma, tick **Settings → Experimental → Hot water target from Home Assistant and this page**.
-3. The home page shows a *Hot water target* card with the current target and the allowed range (the unit's own limits, which follow its hot water maximum setting). Home Assistant gets a `Hot water target` number entity; the MQTT topics are `espaltherma/dhw_target/set` (a whole number of degrees) and `espaltherma/dhw_target/state`.
+1. On the user interface of the heat pump, set the tank setpoint mode, or the leaving water setpoint mode of the main zone, to *weather dependent* ("loi d'eau" on a French interface).
+2. In ESPAltherma, tick the corresponding box under **Settings → Experimental**.
+3. The home page shows a *Hot water target* or *Leaving water target* card with the current target and the allowed range (the unit's own limits). Home Assistant gets a `Hot water target` and a `Leaving water target` number entity; the MQTT topics are `espaltherma/dhw_target/set` and `espaltherma/lwt_target/set` (a whole number of degrees), with the state on `.../state`.
 
-The card tells you when it cannot work: the unit did not answer, its tank mode is not weather dependent, or its hydro board software is not supported. The addresses written are specific to the software of the hydro board, read from the unit at start; only the versions known to work are accepted (18002904 so far, found on the EAVH16S18DA6V), nothing is written on any other. If your unit shows "not available", please open an issue with the software version shown.
+Next to the target, the card shows what the thermostat really aims for, with an explanation on hover. The hot water target is capped by the maximum the heat pump reaches on its own at the current outdoor temperature (about 50 °C on a mild day; above that the booster heater would have to finish), so asking for 55 heats the tank to that maximum. The leaving water target carries the shift and the room modulation set on the unit. Home Assistant gets these as the `effective` and `ceiling` attributes of the entities.
+
+The card tells you when it cannot work: the unit did not answer, the setpoint mode is not weather dependent, or the hydro board software is not supported. The addresses written are specific to the software of the hydro board, read from the unit at start; only the versions known to work are accepted (18002904 so far, found on the EAVH16S18DA6V), nothing is written on any other. If your unit shows "not available", please open an issue with the software version shown.
 
 Things to know:
 
 - The target is written in the unit's RAM at once, and in its memory 30 seconds later (at most every 5 minutes) so that a bouncing automation does not wear the memory.
+- The hot water thermostat starts heating when the tank falls a few degrees under the target it aims for (the hysteresis set on the unit, 5 °C by default) and stops at that target. Raising the target by one degree moves both thresholds by one degree, nothing more.
 - The user interface keeps showing its old curve until it restarts; saving that screen again on the interface writes the old curve back.
-- Switching the tank mode back to *absolute* on the interface stops ESPAltherma writing anything; the interface's own setpoint applies again.
+- Switching a setpoint mode back to *absolute* on the interface stops ESPAltherma writing that target; the interface's own setpoint applies again.
 
 # Updating
 
@@ -455,7 +458,8 @@ template:
 | `espaltherma/POWER`, `espaltherma/STATE` | Thermostat relay: `ON` / `OFF` |
 | `espaltherma/sg/set`, `espaltherma/sg/state` | Smart Grid mode, `0` to `3` |
 | `espaltherma/SAFETY`, `espaltherma/SAFETY_STATE` | Safety relay: `1` stops the heat pump, `0` releases it |
-| `espaltherma/dhw_target/set`, `espaltherma/dhw_target/state` | Hot water target in °C (experimental, see [Setting the hot water target](#step-6-experimental---setting-the-hot-water-target)) |
+| `espaltherma/dhw_target/set`, `espaltherma/dhw_target/state` | Hot water target in °C (experimental, see [Setting the hot water and leaving water targets](#step-6-experimental---setting-the-hot-water-and-leaving-water-targets)); `.../attributes` carries the effective target and the ceiling |
+| `espaltherma/lwt_target/set`, `espaltherma/lwt_target/state` | Leaving water target of the main zone in °C (experimental, same section) |
 
 Settings → MQTT output can also publish one topic per value, use the JSON table format of ioBroker, and send the on/off values as `1`/`0` (for EmonCMS and the like; Home Assistant follows it).
 

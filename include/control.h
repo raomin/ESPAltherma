@@ -1,15 +1,19 @@
 #ifndef ESPALTHERMA_CONTROL_H
 #define ESPALTHERMA_CONTROL_H
 
-// Experimental: sets the hot water (DHW) target of the heat pump through the X10A port.
+// Experimental: sets the hot water target and the leaving water target of the heat pump through the X10A port.
 //
-// The user interface owns the setpoints it shows and re-sends them every second, so they cannot be
-// changed from the X10A port. But when the tank setpoint mode is "weather dependent", the hydro board
-// computes the tank target itself from its curve (setpoint at a high outdoor temperature, setpoint at a
-// low one). ESPAltherma writes the wanted target into both points of that curve: a flat curve, so the
-// target holds whatever the weather. The curve lives in the board's RAM (applied within a second) and in
-// its memory (so it survives a restart). Both are written: the RAM at once, the memory 30 s later and at
-// most every 5 minutes, to spare it.
+// The user interface owns the setpoints it shows and re-sends them every second, so they cannot be changed
+// from the X10A port. But when a setpoint mode is "weather dependent", the hydro board computes that target
+// itself from its curve (a setpoint at a low outdoor temperature, one at a high outdoor temperature).
+// ESPAltherma writes the wanted target into both points of the curve: a flat curve, so the target holds
+// whatever the weather. The curve lives in the board's RAM (applied within a second) and in its memory (so
+// it survives a restart). Both are written: the RAM at once, the memory 30 s later and at most every 5
+// minutes, to spare it.
+//
+// What the thermostat really aims for can differ from the curve: the hot water target is capped by the
+// maximum the heat pump reaches on its own at the current outdoor temperature, and the leaving water target
+// carries the interface's shift and any modulation. Both are read back and reported as the effective target.
 //
 // The addresses are specific to a software version of the hydro board, read with the 'L' command. Only the
 // versions listed in CONTROL_PROFILES are supported; nothing is ever written on another one.
@@ -25,32 +29,50 @@
 #define CONTROL_SAVE_INTERVAL_MS 300000UL   // and at most this often
 #define CONTROL_CHECK_INTERVAL_MS 600000UL  // the unit is identified again (mode, limits) this often
 #define CONTROL_READ_INTERVAL_MS 120000UL   // the target is read back this often (the interface may change it)
+#define CONTROL_READ_AFTER_WRITE_MS 5000UL  // and this long after a write, once the board has recomputed
 
 // Sends a frame and collects the reply bytes. Returns the number of bytes received (0: no answer).
 // firstByteMs: how long to wait for the first byte (a memory write is acknowledged once done).
 typedef size_t (*X10aExchangeFn)(const uint8_t *frame, size_t len, uint8_t *reply, size_t maxLen, unsigned long firstByteMs);
 
+// A target the board computes from a two-point curve, and where it keeps everything about it
+struct CurveSpec
+{
+  uint16_t ramA, ramB;     // RAM words (value * 256) of the two curve setpoints
+  uint16_t memA, memB;     // the same settings in the board's memory (6-bit value above a minimum, in bits 7..2)
+  uint16_t slotA, slotB;   // RAM records of their allowed ranges: 5 bytes [?, ?, span, minimum, step]
+  uint16_t modeByte;       // memory byte of the setpoint mode
+  uint8_t modeMask;        // bits set when the target follows the curve
+  uint16_t ramEffective;   // what the thermostat really aims for (0: not known)
+  uint16_t ramCeiling;     // the unit's own maximum, which caps the target (0: none)
+};
+
 struct ControlProfile
 {
   const char *softwareId; // software version of the hydro board, 8 digits as reported by the 'L' command
-  uint16_t ramHi, ramLo;  // RAM words (value * 256) of the curve setpoints at the high and at the low outdoor temperature
-  uint16_t memHi, memLo;  // the same settings in the board's memory (6-bit value above the minimum, in bits 7..2)
-  uint16_t limits;        // RAM block of the allowed ranges: records of 5 bytes (?, ?, span, minimum, step), high then low
-  uint16_t modeByte;      // memory byte of the tank setpoint mode
-  uint8_t modeMask;       // bit set when the tank follows the curve
+  CurveSpec dhw;          // hot water target
+  CurveSpec lwt;          // leaving water target of the main zone
 };
 
 static const ControlProfile CONTROL_PROFILES[] = {
-    {"18002904", 0x187A, 0x18B8, 366, 367, 0x30C0, 278, 0x01},
+    {"18002904",
+     {0x187A, 0x18B8, 366, 367, 0x30C0, 0x30C5, 278, 0x01, 0x1306, 0x1552},
+     {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0}}, // A = mild weather point, B = cold weather point
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
+
+enum ControlKind
+{
+  CONTROL_DHW,
+  CONTROL_LWT
+};
 
 enum ControlStatus
 {
   CONTROL_OFF,            // disabled, or not started yet
   CONTROL_NO_ANSWER,      // the unit did not answer the identification
-  CONTROL_UNSUPPORTED,    // software version without a profile
-  CONTROL_NOT_CURVE_MODE, // the tank setpoint mode is not weather dependent
+  CONTROL_UNSUPPORTED,    // software version without a profile for this target
+  CONTROL_NOT_CURVE_MODE, // the setpoint mode is not weather dependent
   CONTROL_READY
 };
 
@@ -84,22 +106,27 @@ static size_t x10aFrame(uint8_t cmd, const uint8_t *data, size_t n, uint8_t *out
   return 3 + n;
 }
 
-struct DhwControl
+struct CurveControl
 {
+  ControlKind kind = CONTROL_DHW;
   X10aExchangeFn exchange = nullptr;
   const ControlProfile *profile = nullptr;
+  const CurveSpec *spec = nullptr;
   ControlStatus status = CONTROL_OFF;
   char softwareId[9] = "";
-  int minTarget = 0, maxTarget = 0; // allowed targets (the unit's own limits, which follow its DHW maximum)
+  int minTarget = 0, maxTarget = 0; // allowed targets (the unit's own limits)
+  int minA = 0, minB = 0;           // minimum of each curve setting, the base of its memory encoding
   int target = -1;                  // curve setpoint at the high outdoor temperature, as read from the unit (-1: unknown)
   int targetLo = -1;                // curve setpoint at the low outdoor temperature (equal to target once set from here)
+  int effective = -1;               // what the thermostat really aims for (-1: unknown)
+  int ceiling = -1;                 // the unit's own maximum (-1: none or unknown)
   int saved = -1;                   // value in the unit's memory, when both points of the curve hold the same one
   volatile int wanted = -1;         // requested value, -1 when none (set from other tasks)
   int pending = -1;                 // the request being handled (clamped)
   unsigned long wantedAt = 0, savedAt = 0, checkedAt = 0, readAt = 0;
   volatile bool changed = false; // something to publish (state or availability)
-  int applied = -1;     // last value applied, for the caller's log (-1 when none since the last read)
-  unsigned writes = 0;  // frames written to the unit (statistics)
+  int applied = -1;              // last value applied, for the caller's log (-1 when none since the last read)
+  unsigned writes = 0;           // frames written to the unit (statistics)
 
   // --- protocol helpers: each returns false when the unit does not answer as expected
   bool command(uint8_t cmd, const uint8_t *data, size_t n, uint8_t *reply, size_t replyData, unsigned long firstByteMs = 300)
@@ -128,6 +155,17 @@ struct DhwControl
     return command(0x52, a, 2, out16, 16);
   }
 
+  // A word (value * 256) of the RAM, as a whole number of degrees; false when the unit does not answer
+  bool readWord(uint16_t addr, int &out)
+  {
+    uint8_t b[16];
+    if (!readRam(addr, b))
+      return false;
+    int w = b[0] | b[1] << 8;
+    out = (w >= 0x8000 ? w - 0x10000 : w) / 256;
+    return true;
+  }
+
   bool readMemory(uint16_t offset, uint8_t &out)
   {
     uint8_t a[2] = {(uint8_t)offset, (uint8_t)(offset >> 8)};
@@ -148,19 +186,31 @@ struct DhwControl
     return command(0x45, d, 3, nullptr, 0, 1500);
   }
 
+  // Allowed range of a curve setting from its limit record: [minimum, minimum + span - 1]
+  bool readSlot(uint16_t slot, int &min, int &max)
+  {
+    uint8_t b[16];
+    if (!readRam(slot, b))
+      return false;
+    min = b[3];
+    max = b[3] + b[2] - 1;
+    return b[2] >= 1 && b[2] <= 60 && min >= 0 && min <= 90;
+  }
+
   // --- identification
   void reset()
   {
     profile = nullptr;
+    spec = nullptr;
     status = CONTROL_OFF;
     softwareId[0] = 0;
-    target = targetLo = saved = -1;
+    target = targetLo = saved = effective = ceiling = -1;
     wanted = pending = -1;
     checkedAt = 0; // identified again as soon as enabled
     changed = true;
   }
 
-  // Reads the software version, checks the profile, the tank mode and the limits. True when ready.
+  // Reads the software version, checks the profile, the setpoint mode and the limits. True when ready.
   bool identify(unsigned long now)
   {
     checkedAt = now;
@@ -180,21 +230,22 @@ struct DhwControl
         if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
           profile = &CONTROL_PROFILES[i];
       }
-      uint8_t mode = 0, lim[16];
-      if (profile == nullptr)
+      spec = profile == nullptr ? nullptr : kind == CONTROL_LWT ? &profile->lwt : &profile->dhw;
+      uint8_t mode = 0;
+      int maxA = 0, maxB = 0;
+      if (spec == nullptr || spec->ramA == 0)
         status = CONTROL_UNSUPPORTED;
-      else if (!readMemory(profile->modeByte, mode) || !readRam(profile->limits, lim))
+      else if (!readMemory(spec->modeByte, mode))
         status = CONTROL_NO_ANSWER;
-      else if (!(mode & profile->modeMask))
+      else if (!(mode & spec->modeMask))
         status = CONTROL_NOT_CURVE_MODE;
+      else if (!readSlot(spec->slotA, minA, maxA) || !readSlot(spec->slotB, minB, maxB))
+        status = CONTROL_UNSUPPORTED; // no answer, or limits that make no sense: not ours to write
       else
       {
-        // Record: [?][?][span][minimum][step]; the values go from minimum to minimum + span - 1
-        int hiMin = lim[3], hiMax = lim[3] + lim[2] - 1, loMin = lim[8], loMax = lim[8] + lim[7] - 1;
-        minTarget = hiMin > loMin ? hiMin : loMin;
-        maxTarget = hiMax < loMax ? hiMax : loMax;
-        bool sane = lim[2] >= 1 && lim[2] <= 60 && lim[7] >= 1 && lim[7] <= 60 && minTarget >= 20 && maxTarget <= 90 && minTarget < maxTarget;
-        status = sane ? CONTROL_READY : CONTROL_UNSUPPORTED;
+        minTarget = minA > minB ? minA : minB;
+        maxTarget = maxA < maxB ? maxA : maxB;
+        status = minTarget >= 5 && maxTarget <= 90 && minTarget < maxTarget ? CONTROL_READY : CONTROL_UNSUPPORTED;
       }
     }
     if (status == CONTROL_READY)
@@ -203,7 +254,7 @@ struct DhwControl
       readSaved();
     }
     else
-      target = targetLo = saved = -1;
+      target = targetLo = saved = effective = ceiling = -1;
     if (status != before || minTarget != minBefore || maxTarget != maxBefore)
       changed = true;
     return status == CONTROL_READY;
@@ -212,27 +263,32 @@ struct DhwControl
   // Reads what the unit's memory holds: the value when both points of the curve agree, -1 otherwise.
   void readSaved()
   {
-    uint8_t lim[16], hi, lo;
+    uint8_t a, b;
     saved = -1;
-    if (profile == nullptr || !readRam(profile->limits, lim) || !readMemory(profile->memHi, hi) || !readMemory(profile->memLo, lo))
+    if (spec == nullptr || !readMemory(spec->memA, a) || !readMemory(spec->memB, b))
       return;
-    int vHi = (hi >> 2) + lim[3], vLo = (lo >> 2) + lim[8];
-    if (vHi == vLo)
-      saved = vHi;
+    int vA = (a >> 2) + minA, vB = (b >> 2) + minB;
+    if (vA == vB)
+      saved = vA;
   }
 
-  // Reads the two curve setpoints from the unit.
+  // Reads the two curve setpoints, the effective target and the ceiling from the unit.
   bool readTarget(unsigned long now)
   {
     readAt = now;
-    uint8_t hi[16], lo[16];
-    if (profile == nullptr || !readRam(profile->ramHi, hi) || !readRam(profile->ramLo, lo))
+    int a, b, e = -1, c = -1;
+    if (spec == nullptr || !readWord(spec->ramA, a) || !readWord(spec->ramB, b))
       return false;
-    int t = (hi[0] | hi[1] << 8) / 256, tl = (lo[0] | lo[1] << 8) / 256;
-    if (t != target || tl != targetLo)
+    if (spec->ramEffective)
+      readWord(spec->ramEffective, e);
+    if (spec->ramCeiling)
+      readWord(spec->ramCeiling, c);
+    if (a != target || b != targetLo || e != effective || c != ceiling)
       changed = true;
-    target = t;
-    targetLo = tl;
+    target = a;
+    targetLo = b;
+    effective = e;
+    ceiling = c;
     return true;
   }
 
@@ -242,12 +298,13 @@ struct DhwControl
   }
 
   // Writes the target in the RAM of the unit: applied within its next control cycle.
-  bool apply(int value)
+  bool apply(int value, unsigned long now)
   {
-    if (profile == nullptr || !writeRamWord(profile->ramHi, (uint16_t)(value << 8)) || !writeRamWord(profile->ramLo, (uint16_t)(value << 8)))
+    if (spec == nullptr || !writeRamWord(spec->ramA, (uint16_t)(value << 8)) || !writeRamWord(spec->ramB, (uint16_t)(value << 8)))
       return false;
     target = targetLo = value;
     applied = value;
+    readAt = now + CONTROL_READ_AFTER_WRITE_MS - CONTROL_READ_INTERVAL_MS; // read back once the board recomputed
     changed = true;
     return true;
   }
@@ -255,13 +312,13 @@ struct DhwControl
   // Writes the target in the memory of the unit, keeping the flag bits of each setting.
   bool persist(int value)
   {
-    uint8_t lim[16], hi, lo;
-    if (profile == nullptr || !readRam(profile->limits, lim) || !readMemory(profile->memHi, hi) || !readMemory(profile->memLo, lo))
+    uint8_t a, b;
+    if (spec == nullptr || !readMemory(spec->memA, a) || !readMemory(spec->memB, b))
       return false;
-    int rawHi = value - lim[3], rawLo = value - lim[8];
-    if (rawHi < 0 || rawHi > 63 || rawLo < 0 || rawLo > 63)
+    int rawA = value - minA, rawB = value - minB;
+    if (rawA < 0 || rawA > 63 || rawB < 0 || rawB > 63)
       return false;
-    return writeMemory(profile->memHi, (uint8_t)(rawHi << 2 | (hi & 3))) && writeMemory(profile->memLo, (uint8_t)(rawLo << 2 | (lo & 3)));
+    return writeMemory(spec->memA, (uint8_t)(rawA << 2 | (a & 3))) && writeMemory(spec->memB, (uint8_t)(rawB << 2 | (b & 3)));
   }
 
   // Asks for a target. Applied by tick() on the task that owns the X10A link.
@@ -291,7 +348,7 @@ struct DhwControl
       if (w != target || w != targetLo)
       {
         uint8_t mode = 0;
-        if (!readMemory(profile->modeByte, mode) || !(mode & profile->modeMask) || !apply(w))
+        if (!readMemory(spec->modeByte, mode) || !(mode & spec->modeMask) || !apply(w, now))
         {
           wanted = pending = -1;
           identify(now); // the unit stopped answering, or its interface left the weather-dependent mode
@@ -312,6 +369,8 @@ struct DhwControl
         }
         wanted = pending = -1; // saved, or given up for this request
       }
+      if (now - readAt >= CONTROL_READ_INTERVAL_MS)
+        readTarget(now);
       return;
     }
     if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS)

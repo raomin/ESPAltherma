@@ -52,7 +52,7 @@ LayoutCycle layoutCycle;             //replies of the last query cycle
 volatile bool surveyRequested = false;
 volatile bool surveyInProgress = false; //the survey is being written: readers must not use it
 volatile bool surveyReady = false;
-DhwControl dhwControl;                 //experimental hot water target (control.h), driven by the heat pump task
+CurveControl dhwControl, lwtControl;   //experimental hot water and leaving water targets (control.h), heat pump task
 
 // The heat pump task converts values while the main loop publishes them.
 SemaphoreHandle_t valuesMutex = xSemaphoreCreateMutex();
@@ -478,28 +478,33 @@ void hpDelay(unsigned long ms)
   delay(ms);
 }
 
-// Hot water target control: identification, requests, saves. Heat pump task only (it owns the X10A link).
-void controlLoop()
+// One target control: identification, requests, saves. Heat pump task only (it owns the X10A link).
+static void controlTick(CurveControl &c, bool enabled, const char *what)
 {
-  bool enabled = config.dhwTarget && config.protocol == 'I' && !busy;
-  if (!enabled)
+  if (!enabled || config.protocol != 'I' || busy)
   {
-    if (dhwControl.status != CONTROL_OFF)
-      dhwControl.reset();
+    if (c.status != CONTROL_OFF)
+      c.reset();
     return;
   }
-  if (dhwControl.exchange == nullptr)
-    dhwControl.exchange = x10aExchange;
-  ControlStatus before = dhwControl.status;
-  dhwControl.tick(millis());
-  if (dhwControl.status != before)
-    mqttSerial.printf("Hot water target control: %s (software %s)\n", controlStatusName(dhwControl.status), dhwControl.softwareId);
-  if (dhwControl.applied >= 0)
+  if (c.exchange == nullptr)
+    c.exchange = x10aExchange;
+  ControlStatus before = c.status;
+  c.tick(millis());
+  if (c.status != before)
+    mqttSerial.printf("%s target control: %s (software %s)\n", what, controlStatusName(c.status), c.softwareId);
+  if (c.applied >= 0)
   {
-    mqttSerial.printf("Hot water target set to %d\n", dhwControl.applied);
-    eventAddf("Hot water target set to %d", dhwControl.applied);
-    dhwControl.applied = -1;
+    mqttSerial.printf("%s target set to %d\n", what, c.applied);
+    eventAddf("%s target set to %d", what, c.applied);
+    c.applied = -1;
   }
+}
+
+void controlLoop()
+{
+  controlTick(dhwControl, config.dhwTarget, "Hot water");
+  controlTick(lwtControl, config.lwtTarget, "Leaving water");
 }
 
 // Owns the X10A link: runs the survey on request and queries the registries every config.frequency ms.
@@ -612,6 +617,7 @@ void setup()
   initLabels();
   initRegistries();
   requestSurvey();
+  lwtControl.kind = CONTROL_LWT;
   xTaskCreate(hpTask, "heatpump", 8192, nullptr, 1, nullptr);
   watchdogBegin();
   mqttSerial.print("ESPAltherma started!");
@@ -649,11 +655,19 @@ void loop()
     LOOP_STAGE("HA discovery");
     publishHomeAssistantDeviceDiscovery();
   }
-  if (dhwControl.changed && client.connected())
+  if ((dhwControl.changed || lwtControl.changed) && client.connected())
   {
-    dhwControl.changed = false;
-    LOOP_STAGE("hot water target state");
-    publishDhwTarget();
+    LOOP_STAGE("target controls state");
+    if (dhwControl.changed)
+    {
+      dhwControl.changed = false;
+      publishControl(dhwControl);
+    }
+    if (lwtControl.changed)
+    {
+      lwtControl.changed = false;
+      publishControl(lwtControl);
+    }
   }
   LOOP_STAGE("idle");
   delay(5);
