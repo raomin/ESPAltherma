@@ -4,7 +4,7 @@ char buff[64];
 class Converter
 {
 public:
-    int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22
+    int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22, 804=R134a
     bool quiet = false; // no conversion trace on Serial (one-off decodes for the web interface)
 
     // Active labels: the values selected for this installation
@@ -64,9 +64,17 @@ public:
     double press2tempR22(double d){
         return -5.0232146925414E-06*d*d*d*d*d*d + 0.000475561916201275*d*d*d*d*d - 0.0175087997648461*d*d*d*d + 0.318620413943417*d*d*d - 3.0844373741869*d*d + 19.0217687284902*d - 42.3282361912494;
     }
-    double convertPress2Temp(double data){// R32 default; R410A/R22 selected via RType (conv 800-803)
+    // R134a: saturation temperature from the gauge pressure in kgf/cm2, Antoine-type fit of the refrigerant's
+    // saturation curve (issue #95, the second stage of the Altherma HT hydrobox)
+    double press2tempR134a(double gauge){
+        double kPa = gauge * 98.0665 + 101.325;
+        if (kPa <= 0) return -99.0;
+        return 2184.4 / (14.570 - log(kPa)) - 245.7;
+    }
+    double convertPress2Temp(double data){// R32 default; R410A/R22/R134a selected via RType (conv 800-804)
         if (RType == 801) return press2tempR410A(data);
         if (RType == 803) return press2tempR22(data);
+        if (RType == 804) return press2tempR134a(data);
         	double num = -2.6989493795556E-07 * data * data * data * data * data * data;
 			double num2 = 4.26383417104661E-05 * data * data * data * data * data;
 			double num3 = -0.00262978346547749 * data * data * data * data;
@@ -426,6 +434,8 @@ public:
             RType = 802; strcat(def->asString, "R32");   return;
         case 803:
             RType = 803; strcat(def->asString, "R22");   return;
+        case 804:
+            RType = 804; strcat(def->asString, "R134a"); return;
 
         // enum-state convs not present; the def label
         // enumerates the integer states, so expose the raw value

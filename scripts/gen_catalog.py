@@ -64,6 +64,7 @@ FAMILIES = {
     "Altherma(ERGA D EHV-EHB-EHVZ DA series 04-08kW).h": "L",
     "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW).h": "L",
     "Altherma(HT EKHBRD-ERRQ series 11-16kW).h": "L",
+    "Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S).h": "S",
     "Altherma(Hybrid).h": "L",
     "Altherma(LT_CA_CB_04-08kW).h": "L",
     "Altherma(LT_CA_CB_11-16kW).h": "L",
@@ -83,6 +84,8 @@ FAMILY_ORDER = "GLSR"
 # Models that answer the registries of another model: only their AS number tells them, so the survey rules
 # never propose them (the Altherma 4 hydro board always reports AS1709968).
 AS_ONLY = {"Altherma 4(EPSK-EPSKS EPBX-EPSX-EPVX-EPVZ series 04-14kW).h"}
+# Never auto-detected, chosen from the list: the same board as another model, read with the other protocol
+MANUAL_ONLY = {"Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S).h"}
 
 # Values enabled by default on Protocol I models (exact label match). Protocol S models default to the
 # lines their definition file ships uncommented.
@@ -98,13 +101,17 @@ RECOMMENDED = {
     "I/U operation mode", "3way valve(On:DHW_Off:Space)", "Water pump operation",
     "Circulation pump operation", "Powerful DHW Operation. ON/OFF", "Silent Mode",
     "Freeze Protection for water piping", "Brine inlet temp.", "Brine outlet temp.", "Mixed water temp.",
-    # Altherma HT hydrobox (its own refrigerant stage)
-    "R3T (accumulator inlet temp.)", "R9T (plate hex inlet)", "R10T (plate hex outlet)", "R6T (RV outlet)", "R7T (hex liq)",
-    "Low Pressure (stage)", "EV (main)", "Water flow control(%)", "Operation control mode",
+    # Altherma HT hydrobox (its own refrigerant stage), both protocols
+    "Low Pressure (stage)", "Low Pressure(T)", "High Pressure (stage)", "High Pressure(T)", "Operation control mode",
+    "INV Comp. Frequency(Hz)", "EV (pls)", "4 Way Valve", "Switch box cooling fan",
+    "R134a liquid temp.", "Target Evap. Temp.",
 }
 # Only recommended on the models whose definition file name contains the given word: other definitions carry
 # these labels on slots that mean something else on the unit (eg. "Brine" temperatures on air units).
-RECOMMENDED_ONLY = {"Brine inlet temp.": "GEO", "Brine outlet temp.": "GEO", "Mixed water temp.": "Bizone"}
+RECOMMENDED_ONLY = {"Brine inlet temp.": "GEO", "Brine outlet temp.": "GEO", "Mixed water temp.": "Bizone",
+                    "INV Comp. Frequency(Hz)": "HT", "EV (pls)": "HT", "4 Way Valve": "HT", "Switch box cooling fan": "HT",
+                    "Low Pressure(T)": "HT", "High Pressure (stage)": "HT", "High Pressure(T)": "HT",
+                    "R134a liquid temp.": "HT", "Target Evap. Temp.": "HT"}
 
 # Capacity range in the definition name, eg. "04-08kW", "9-16kW", "3kW"
 CAPACITY = re.compile(r"(\d+)(?:-(\d+))?\s*kW")
@@ -215,7 +222,7 @@ def build():
             e[0] |= 1 << index
             if recommended:
                 e[1] |= FLAG_RECOMMENDED
-            if size == 0 and 800 <= conv <= 803:
+            if size == 0 and 800 <= conv <= 804:
                 e[1] |= FLAG_ALWAYS
 
     # Registry, then offset order; definition file order within a slot (keeps the ON/OFF bits order)
@@ -254,7 +261,8 @@ def build():
         protocol = "S" if family in "SR" else "I"
         m = CAPACITY.search(name)
         low, high = (int(m.group(1)), int(m.group(2) or m.group(1))) if m else (0, 0)
-        out.append("    {%s, '%s', '%s', %d, %d, %d}," % (c_string(name), family, protocol, low, high, 1 if name + ".h" in AS_ONLY else 0))
+        manual = name + ".h" in AS_ONLY or name + ".h" in MANUAL_ONLY
+        out.append("    {%s, '%s', '%s', %d, %d, %d}," % (c_string(name), family, protocol, low, high, 1 if manual else 0))
     out.append("};")
     out.append("")
     out.append("static const char CATALOG_LABELS[] =")

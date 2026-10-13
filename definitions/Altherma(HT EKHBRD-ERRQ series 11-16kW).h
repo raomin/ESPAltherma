@@ -1,13 +1,21 @@
 #include "labeldef.h"
 //  This file is a definition file for ESPAltherma: Daikin Altherma HT, the high temperature hydrobox EKHBRD011-016
-//  (R134a second stage) on an ERRQ outdoor unit. The hydrobox has no X10A: it is read on its inverter board, X41A on
+//  (R134a second stage) on an ERRQ/ERSQ outdoor unit. The hydrobox has no X10A: it is read on its inverter board, X41A on
 //  A5P (single phase) or A4P (three phase), with the same five pins (V+, TX, RX, NC, GND). It answers the registries
 //  of its own refrigerant stage, outdoor style, and none of the indoor unit ones. Written for issue #95.
 //  uncomment each value you want to query for your installation.
+//
+//  Layout checked by owners on live EKHBRD016ACV1 units (running, stopped and defrost), see issue #95.
+//  The hydrobox answers only 0x00 (10 bytes), 0x10 (16), 0x20 (17), 0x21 (5), 0x30 (7), 0x40 (2) and 0x50.
+//  Everything else is NAK (15 EA).
+//
+//  Refrigerant: this stage is R134a (code 804): the "(T)" lines then give the R134a saturation temperature of the
+//  pressure. Same board, protocol S: see "Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S)", which carries both
+//  pressures and the discharge and liquid temperatures that this protocol does not.
 
 
 LabelDef labelDefs[] = {
-//{0x00,0,801,0,-1,"*Refrigerant type"},
+//{0x00,0,804,0,-1,"*Refrigerant type"},
 //{0x00,0,152,1,-1,"Sensor Data Qty"},
 //{0x00,1,152,1,-1,"INV compressor Qty"},
 //{0x00,2,152,1,-1,"STD compressor Qty"},
@@ -27,25 +35,11 @@ LabelDef labelDefs[] = {
 //{0x10,1,302,1,-1,"Pressure equalizing operation"},
 //{0x10,1,301,1,-1,"Demand Signal"},
 //{0x10,1,300,1,-1,"Low noise control"},
-//{0x10,2,307,1,-1,"Not in use"},
-//{0x10,2,306,1,-1,"Not in use"},
-//{0x10,2,305,1,-1,"Not in use"},
-//{0x10,2,304,1,-1,"Not in use"},
-//{0x10,2,303,1,-1,"Not in use"},
-//{0x10,2,302,1,-1,"Not in use"},
-//{0x10,2,301,1,-1,"Not in use"},
-//{0x10,2,300,1,-1,"Not in use"},
-//{0x10,3,307,1,-1,"Not in use"},
-//{0x10,3,306,1,-1,"Not in use"},
-//{0x10,3,305,1,-1,"Not in use"},
-//{0x10,3,304,1,-1,"Not in use"},
-//{0x10,3,303,1,-1,"Not in use"},
-//{0x10,3,302,1,-1,"Not in use"},
-//{0x10,3,301,1,-1,"Not in use"},
-//{0x10,3,300,1,-1,"Not in use"},
 //{0x10,4,203,1,-1,"Error type"},
 //{0x10,5,204,1,-1,"Error Code"},
+// Verified: 5.1, matches the R134a saturation temp. of Low Pressure (stage)
 //{0x10,6,105,2,1,"Target Evap. Temp."},
+// Always 0x8000 (invalid) on the hydrobox
 //{0x10,8,105,2,1,"Target Cond. Temp."},
 //{0x10,10,307,1,-1,"Discharge Temp. Drop"},
 //{0x10,10,310,1,-1,"Discharge Temp. Protection Retry Qty"},
@@ -57,81 +51,28 @@ LabelDef labelDefs[] = {
 //{0x10,11,311,1,-1,"LP Protection Retry Qty"},
 //{0x10,12,307,1,-1,"Fin Temp. Drop Control"},
 //{0x10,12,310,1,-1,"Fin Temp. Protection Retry Qty"},
-//{0x10,12,303,1,-1,"Not in use"},
 //{0x10,13,218,1,-1,"Operation control mode"},
-//{0x10,14,100,1,-1,"Not in use"},
 //{0x00,0,995,1,-1,"NextDataGrid"},
-//{0x20,0,105,2,1,"R5T (subcool hex gas)"},
-//{0x20,2,105,2,1,"R12T (M1C discharge)"},
-//{0x20,4,105,2,1,"R3T (accumulator inlet temp.)"},
-//{0x20,6,105,2,1,"R9T (plate hex inlet)"},
-//{0x20,8,105,2,1,"R4T (hex gas)"},
-//{0x20,10,105,2,1,"R6T (RV outlet)"},
-//{0x20,12,105,2,1,"R10T (plate hex outlet)"},
-//{0x21,0,105,2,1,"R7T (hex liq)"},
-//{0x21,2,105,2,1,"R11T (before subcool hex temp.)"},
+// 0x20 answers 17 data bytes. off0/off2 read 0; off4, off6, off10 and off12 barely move (off6 always equals off10)
+// and off8 reads -47.3 on every unit (open input): kept unnamed until an owner matches them with something.
+//{0x20,4,105,2,1,"20-4 (unknown)"},
+//{0x20,6,105,2,1,"20-6 (unknown)"},
+//{0x20,10,105,2,1,"20-10 (unknown)"},
+//{0x20,12,105,2,1,"20-12 (unknown)"},
+// Verified: equals the protocol S low pressure (0x50 off2), kgf/cm2 gauge. Updates with some lag, freezes while stopped
 //{0x20,14,105,2,2,"Low Pressure (stage)"},
 //{0x20,14,405,2,-1,"Low Pressure(T)"},
-//{0x20,16,105,2,2,"High Pressure (stage)"},
-//{0x20,16,405,2,-1,"High Pressure(T)"},
-//{0x20,18,105,2,1,"R1T (air)"},
-//{0x21,4,105,2,1,"R13T (comp. surface temp.)"},
-//{0x21,6,105,2,1,"R8T (subcool hex liq)"},
-//{0x21,8,105,2,1,"R2T (after cooling hex temp.)"},
-//{0x21,10,105,2,1,"INV fin temp."},
-//{0x21,12,105,2,-1,"Not in use"},
-//{0x21,14,105,2,-1,"Not in use"},
-//{0x21,16,105,2,-1,"Not in use"},
-//{0x21,18,105,2,-1,"Not in use"},
-//{0x30,0,152,1,-1,"German only"},
-//{0x30,1,151,2,-1,"EV (receiver gas purge)"},
-//{0x30,3,151,2,-1,"EV (main)"},
-//{0x30,5,151,2,-1,"EV (subcool hex)"},
-//{0x30,7,307,1,-1,"Y6S (4way valve)(HP/LP gas)"},
-//{0x30,7,306,1,-1,"Y7S (4way valve)(hex)"},
-//{0x30,7,305,1,-1,"Not in use"},
-//{0x30,7,304,1,-1,"Not in use"},
-//{0x30,7,303,1,-1,"Not in use"},
-//{0x30,7,302,1,-1,"Not in use"},
-//{0x30,7,301,1,-1,"Not in use"},
-//{0x30,0,300,1,-1,"Not in use"},
-//{0x30,8,307,1,-1,"Crank case heater 1"},
-//{0x30,8,306,1,-1,"Not in use"},
-//{0x30,8,305,1,-1,"Not in use"},
-//{0x30,8,304,1,-1,"Not in use"},
-//{0x30,8,303,1,-1,"Not in use"},
-//{0x30,8,302,1,-1,"Not in use"},
-//{0x30,8,301,1,-1,"Not in use"},
-//{0x30,8,300,1,-1,"Not in use"},
-//{0x30,9,307,1,-1,"SVPU(operation output)"},
-//{0x30,9,306,1,-1,"Y4S (oil Return SVE)"},
-//{0x30,9,305,1,-1,"Y3S (liquid pipe SVSL)"},
-//{0x30,9,304,1,-1,"SVSG(cooling fan)"},
-//{0x30,9,303,1,-1,"Y1S (accumulator oil return SVO)"},
-//{0x30,9,302,1,-1,"Y8S (hot gas to liquid SVL)"},
-//{0x30,9,301,1,-1,"Y5S (hot gas to suction SVP)"},
-//{0x30,9,300,1,-1,"Y9S (Sveva)(heat cancellation hex)"},
-//{0x30,10,307,1,-1,"Y2S (SVS)(subcooling hex to suction)"},
-//{0x30,10,306,1,-1,"Not in use"},
-//{0x30,10,305,1,-1,"Not in use"},
-//{0x30,10,304,1,-1,"Not in use"},
-//{0x30,10,303,1,-1,"Not in use"},
-//{0x30,10,302,1,-1,"Not in use"},
-//{0x30,10,301,1,-1,"Not in use"},
-//{0x30,10,300,1,-1,"Not in use"},
-//{0x30,11,105,1,-1,"Water flow control(%)"},
-//{0x00,0,998,1,-1,"In-Out separator"},
-//{0x50,1,152,1,-1,"Indoor Unit Address"},
-//{0x50,2,313,1,-1,"Indoor Operation Mode"},
-//{0x50,2,301,1,-1,"Operation ON by R/C"},
-//{0x50,2,303,1,-1,"Thermostat ON/OFF"},
-//{0x50,2,302,1,-1,"Freeze Protection"},
-//{0x50,3,204,1,-1,"Error Code"},
-//{0x50,4,314,2,-1,"Indoor Unit Model Code"},
-//{0x50,6,219,1,-1,"Indoor Unit Capacity"},
-//{0x50,7,107,2,-1,"R/C Setpoint"},
-//{0x50,9,107,2,-1,"Indoor Suction Air Temp."},
-//{0x50,11,107,2,-1,"Indoor Liquid Pipe Temp."},
-//{0x50,13,107,2,-1,"Indoor Gas Pipe Temp."},
-//{0x50,15,151,2,-1,"Indoor EV (pls)"},
+// 0x21 answers 5 data bytes. off0/off2 follow the compressor: 0 when stopped, about 5-7 at 110-130 Hz
+// (named after other definitions using 0x21 off0/off2 for the INV currents, not checked with a clamp meter)
+//{0x21,0,105,2,-1,"INV primary current (A)"},
+//{0x21,2,105,2,-1,"INV secondary current (A)"},
+// 0x30 answers 7 data bytes
+// Verified: 0 when stopped, equals the protocol S compressor frequency (0x53 off4)
+//{0x30,0,151,2,-1,"INV Comp. Frequency(Hz)"},
+// Verified: parks at 500 when stopped, equals the protocol S EV pulses (0x53 off0-1)
+//{0x30,2,151,2,-1,"EV (pls)"},
+// Verified: ON in defrost, together with the protocol S 4-way output
+//{0x30,4,307,1,-1,"4 Way Valve"},
+// Verified: switch box cooling fan (M1F/M2F), ON about 9-10 min after compressor start, OFF at stop
+//{0x30,5,305,1,-1,"Switch box cooling fan"},
 };

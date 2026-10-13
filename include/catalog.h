@@ -158,7 +158,7 @@ static bool catalogKeySelected(uint32_t key, const uint32_t *keys, size_t keyCou
 }
 
 // Builds the labels to query for a model: the selected keys, or its recommended values when nothing is selected.
-// Returns the refrigerant conversion of the model (801 R410A, 802 R32, 803 R22), or 0 if it does not tell.
+// Returns the refrigerant conversion of the model (801 R410A, 802 R32, 803 R22, 804 R134a), or 0 if it does not tell.
 // Registries in fixes are read with the entries of their fix model. The display names are in language
 // (catalogLanguage()); the labels, used as MQTT keys and Home Assistant ids, stay English.
 int catalogBuildLabels(int model, const uint32_t *keys, size_t keyCount, std::vector<LabelDef> &out,

@@ -337,7 +337,7 @@ The X10A connector is on the A1P switch box of the indoor unit, and the unit ans
 
 ## Altherma HT (EKHBRD hydrobox)
 
-The high temperature Altherma (an EKHBRD011-016 hydrobox on an ERRQ outdoor unit) has no X10A. Its service port is X41A on the hydrobox's inverter board (A5P on single phase units, A4P on three phase ones), with the same five pins as X10A (V+, TX, RX, NC, GND). The hydrobox answers the values of its own refrigerant stage, not the indoor unit ones: if it is not recognised, choose "Altherma(HT EKHBRD-ERRQ series 11-16kW)" from the list.
+The high temperature Altherma (an EKHBRD011-016 hydrobox on an ERRQ or ERSQ outdoor unit) has no X10A. Its service port is X41A on the hydrobox's inverter board (A5P on single phase units, A4P on three phase ones), with the same five pins as X10A (V+, TX, RX, NC, GND). The hydrobox answers the values of its own refrigerant stage (R134a), not the indoor unit ones, and it is recognised by the shape of its replies. Two definitions read the same board: "Altherma(HT EKHBRD-ERRQ series 11-16kW)", chosen automatically, gives the low pressure, the compressor frequency, the expansion valve, the 4-way valve, the switch box fan and the inverter currents; "Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S)", chosen from the list, uses the older protocol on the same port and gives both pressures and the discharge and liquid temperatures instead. Pressures are converted to R134a saturation temperatures. Mapped by owners on issue #95.
 
 ## The board restarts or drops off the network
 

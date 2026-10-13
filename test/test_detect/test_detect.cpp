@@ -437,6 +437,41 @@ void test_detect_real_epga(void)
     printf("   safe values: %d, not in the EPGA definition: %d\n", safe, wrong);
 }
 
+// The Altherma HT hydrobox: no identification registries, told by the shape of its stage's replies (issue #95)
+static void hydroboxSurvey(Survey &s, uint8_t len20)
+{
+    memset(&s, 0, sizeof(s));
+    s.protocol = 'I';
+    const uint8_t header[10] = {0x0A, 0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x04, 0x01};
+    const uint8_t ids[] = {0x60, 0x00, 0x10, 0x11, 0x20, 0x21, 0x30, 0xA0, 0xA1};
+    const uint8_t lens[] = {0, 10, 16, 0, len20, 5, 7, 0, 0};
+    for (size_t i = 0; i < sizeof(ids); i++)
+    {
+        SurveyReg &r = s.regs[s.count++];
+        r.id = ids[i];
+        r.answered = lens[i] > 0;
+        r.len = lens[i];
+        if (ids[i] == 0x00)
+            memcpy(r.payload, header, 10);
+    }
+}
+
+void test_detect_hydrobox_by_its_shape(void)
+{
+    Survey s;
+    DetectResult r;
+    hydroboxSurvey(s, 17);
+    detectModel(s, r);
+    TEST_ASSERT_TRUE(r.model >= 0);
+    TEST_ASSERT_EQUAL_STRING("Altherma(HT EKHBRD-ERRQ series 11-16kW)", CATALOG_MODELS[r.model].name);
+    TEST_ASSERT_EQUAL(DETECT_HIGH, r.confidence);
+    TEST_ASSERT_TRUE(r.fingerprint);
+    // An outdoor board answers the same registries with a 21-byte 0x20: not the hydrobox, and never sure
+    hydroboxSurvey(s, 21);
+    detectModel(s, r);
+    TEST_ASSERT_NOT_EQUAL(DETECT_HIGH, r.confidence);
+}
+
 void test_detect_json(void)
 {
     Survey s;
@@ -463,6 +498,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_detect_as_number_unknown);
     RUN_TEST(test_detect_all_as_numbers);
     RUN_TEST(test_detect_real_epga);
+    RUN_TEST(test_detect_hydrobox_by_its_shape);
     RUN_TEST(test_detect_json);
     UNITY_END();
     return 0;

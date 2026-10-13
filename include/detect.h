@@ -315,6 +315,24 @@ void detectModel(const Survey &s, DetectResult &r)
     }
   }
 
+  // 1b. The Altherma HT hydrobox has no identification registries at all: it is told by the shape of what its
+  // refrigerant stage answers, the same on every unit seen (issue #95): the 0x00 header 0A 01, a 17-byte 0x20, no 0x60.
+  const SurveyReg *r20 = s.find(0x20);
+  if (s.protocol == 'I' && !s.has(0x60) && !s.has(0x63) && s.byteAt(0x00, 0) == 0x0A && s.byteAt(0x00, 1) == 0x01 &&
+      r20 != nullptr && r20->answered && r20->len == 17)
+  {
+    int m = catalogFindModel("Altherma(HT EKHBRD-ERRQ series 11-16kW)");
+    if (m >= 0)
+    {
+      r.model = m;
+      r.fingerprint = true;
+      r.confidence = DETECT_HIGH;
+      r.candidates[0] = m;
+      r.scores[0] = detectScore(s, m);
+      return;
+    }
+  }
+
   // 2. AS number: the candidates. The survey only ranks them.
   r.asCandidates = detectAsCandidates(s);
 
