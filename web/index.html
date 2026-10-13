@@ -653,7 +653,7 @@ function renderOneControl(u, c) {
         ? (capped ? t('What the thermostat really aims for: at this outdoor temperature the heat pump reaches {n} °C on its own, the rest would need the booster heater.', {n: c.ceiling})
                   : t('What the thermostat really aims for, after the limits of the unit.'))
         : t('What the heat pump follows right now: the target, plus the shift and the room modulation set on the unit.');
-      sub.append(' ', el('span', {class: 'tip', title: tip}, t('aims for {n} °C', {n: c.effective})), '.');
+      sub.append(' ', el('span', {class: 'tip', title: tip}, t('Aims for {n} °C', {n: c.effective})), '.');
     }
     if (flat) sub.append(' ' + (c.saved === c.target ? t('Saved in the unit.') : t('Applied, saved in the unit in a moment.')));
   }

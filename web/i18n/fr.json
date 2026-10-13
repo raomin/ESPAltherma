@@ -221,7 +221,7 @@
  "What the thermostat really aims for: at this outdoor temperature the heat pump reaches {n} °C on its own, the rest would need the booster heater.": "Ce que le thermostat vise réellement : à cette température extérieure, la pompe à chaleur atteint {n} °C par elle-même, le reste demanderait l'appoint électrique.",
  "What the thermostat really aims for, after the limits of the unit.": "Ce que le thermostat vise réellement, après les limites de l'unité.",
  "What the heat pump follows right now: the target, plus the shift and the room modulation set on the unit.": "Ce que la pompe à chaleur suit en ce moment : la consigne, plus le décalage et la modulation par l'ambiance réglés sur l'unité.",
- "aims for {n} °C": "vise {n} °C",
+ "Aims for {n} °C": "Vise {n} °C",
  "Saved in the unit.": "Enregistrée dans l'unité.",
  "Applied, saved in the unit in a moment.": "Appliquée, enregistrée dans l'unité dans un instant.",
  "Enter a whole number of degrees.": "Entrez un nombre entier de degrés.",
