@@ -4,14 +4,30 @@
 #include <HardwareSerial.h>
 #include <homeassistant.h>
 
-const char *discovery_json_start = "{\"dev\":{\"ids\":\"espaltherma-mqtt-discovery\",\"name\":\"Daikin Altherma via ESPAltherma\",\"mf\":\"Daikin\",\"mdl\":\"Altherma\"},\"o\":{\"name\":\"espaltherma-mqtt-discovery\",\"sw\":\"0.1\",\"url\":\"https://github.com/raomin/ESPAltherma/\"},\"cmps\":{";
-const char *discovery_json_end = "},\"stat_t\":\"espaltherma/ATTR\",\"qos\": 2}";
+// The device and the topics come from the configurable base topic (topics.h); set by setupMqttClient()
+const char *haIdPrefix = "espaltherma";
+const char *haDeviceId = "espaltherma-mqtt-discovery";
+const char *haDeviceName = "Daikin Altherma via ESPAltherma";
+const char *haAttrTopic = "espaltherma/ATTR";
+
+static std::string discoveryStart()
+{
+    return std::string("{\"dev\":{\"ids\":\"") + haDeviceId + "\",\"name\":\"" + haDeviceName +
+           "\",\"mf\":\"Daikin\",\"mdl\":\"Altherma\"},\"o\":{\"name\":\"" + haDeviceId +
+           "\",\"sw\":\"0.1\",\"url\":\"https://github.com/raomin/ESPAltherma/\"},\"cmps\":{";
+}
+
+static std::string discoveryEnd()
+{
+    return std::string("},\"stat_t\":\"") + haAttrTopic + "\",\"qos\": 2}";
+}
 
 #define ESP_SENSOR_M5BATV 999
 #define ESP_SENSOR_WIFI_RSSI 998
 #define ESP_SENSOR_FREE_MEM 997
 #define ESP_SENSOR_M5VIN 996
 #define ESP_SENSOR_UPTIME 995
+#define ESP_SENSOR_IP 994
 
 bool haBinaryAsNumber = false;
 
@@ -20,6 +36,7 @@ const LabelDef wifi_rssi = {-1, -1, -1, -1, ESP_SENSOR_WIFI_RSSI, "WifiRSSI"};
 const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 const LabelDef m5_vin = {-1, -1, -1, -1, ESP_SENSOR_M5VIN, "M5VIN"};
 const LabelDef uptime = {-1, -1, -1, -1, ESP_SENSOR_UPTIME, "Uptime"};
+const LabelDef ip_addr = {-1, -1, -1, -1, ESP_SENSOR_IP, "IP"};
 
 static bool isMeasurementSensor(const std::string &sensorProperties)
 {
@@ -40,16 +57,19 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
         }
     };
 
-    emit(discovery_json_start, strlen(discovery_json_start));
+    std::string s = discoveryStart();
+    emit(s.data(), s.size());
 
     // Hardcoded ESP diagnostic sensors.
-    std::string s = makeSensorJson(battery_voltage, true);
+    s = makeSensorJson(battery_voltage, true);
     emit(s.data(), s.size());
     s = "," + makeSensorJson(wifi_rssi, true);
     emit(s.data(), s.size());
     s = "," + makeSensorJson(free_mem, true);
     emit(s.data(), s.size());
     s = "," + makeSensorJson(uptime, true);
+    emit(s.data(), s.size());
+    s = "," + makeSensorJson(ip_addr, true);
     emit(s.data(), s.size());
 #if defined(ARDUINO_M5Stick_C) && !defined(ARDUINO_M5Stick_C_Plus2)
     // Supply voltage, published by the AXP192 boards: shows the drops of a weak 5V supply
@@ -65,7 +85,8 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
         emit(s.data(), s.size());
     }
 
-    emit(discovery_json_end, strlen(discovery_json_end));
+    s = discoveryEnd();
+    emit(s.data(), s.size());
 
     return total;
 }
@@ -86,7 +107,7 @@ static std::string jsonEscape(const char *s)
 std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
 {
     const std::string key = makeJsonKey(label.label);
-    const std::string uid = "espaltherma_" + key;
+    const std::string uid = std::string(haIdPrefix) + "_" + key;
 
     std::string json;
     json.reserve(512);
@@ -159,6 +180,9 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
         // "Uptime" (seconds since the last restart)
         case ESP_SENSOR_UPTIME:
             return "\"p\":\"sensor\",\"dev_cla\":\"duration\",\"unit_of_meas\":\"s\",";
+        // "IP" (the board's address on the network, a text)
+        case ESP_SENSOR_IP:
+            return "\"p\":\"sensor\",\"icon\":\"mdi:ip-network\",";
 
         /// Built-in ones:
         // TODO: move magic numbers to consts

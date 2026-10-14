@@ -84,6 +84,8 @@
  "For other home automation systems; Home Assistant needs nothing here.": "Pour les autres systèmes domotiques ; Home Assistant n'a besoin de rien ici.",
  "One topic per value": "Un topic par valeur",
  "Topic prefix (one topic per value)": "Préfixe des topics (un topic par valeur)",
+ "Base topic": "Topic de base",
+ "Two ESPAltherma on one broker, for instance one on the indoor unit and one on the outdoor unit, need different base topics, such as espaltherma-idu and espaltherma-odu: every topic and every Home Assistant entity then starts with it.": "Deux ESPAltherma sur un même broker, par exemple l'un sur l'unité intérieure et l'autre sur l'unité extérieure, ont besoin de topics de base différents, comme espaltherma-idu et espaltherma-odu : chaque topic et chaque entité Home Assistant commencent alors par celui-ci.",
  "JSON table format (ioBroker)": "Format tableau JSON (ioBroker)",
  "On/off values as 1/0 (EmonCMS…)": "Valeurs marche/arrêt en 1/0 (EmonCMS…)",
  "Do not publish logs on MQTT": "Ne pas publier le journal sur MQTT",

@@ -3,9 +3,11 @@
 #include "restart.h"
 #include "comm.h"
 
-#define MQTT_attr "espaltherma/ATTR"
-#define MQTT_lwt "espaltherma/LWT"
-#define MQTT_detect "espaltherma/detect"
+#include "topics.h"
+
+// Every topic and every Home Assistant id, from the configurable base topic (Settings > MQTT output)
+MqttTopics mqttTopics;
+IPAddress netIP(); // netmgr.h, included later
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
@@ -25,19 +27,13 @@ Client *mqttNet = &plainClient; // the network client under PubSubClient
 extern Converter converter;
 extern CurveControl dhwControl, lwtControl;
 
-// The two target controls on MQTT (experimental, control.h): topics, the Home Assistant entity
-struct ControlTopics
+// The two target controls on MQTT (experimental, control.h): the entity's name and icon; the topics and the ids
+// come from mqttTopics (ctlSet, ctlState, ctlAttrs, cfgCtl, ctlUniq, ctlEntity)
+struct ControlNames
 {
-  const char *set, *state, *attributes, *discovery, *name, *uniqueId, *entityId, *icon;
+  const char *name, *icon;
 };
-static const ControlTopics CONTROL_TOPICS[2] = {
-    {"espaltherma/dhw_target/set", "espaltherma/dhw_target/state", "espaltherma/dhw_target/attributes",
-     "homeassistant/number/espAltherma/dhw_target/config", "Hot water target", "espaltherma_dhw_target",
-     "number.espaltherma_hot_water_target", "mdi:water-boiler"},
-    {"espaltherma/lwt_target/set", "espaltherma/lwt_target/state", "espaltherma/lwt_target/attributes",
-     "homeassistant/number/espAltherma/lwt_target/config", "Leaving water target", "espaltherma_lwt_target",
-     "number.espaltherma_leaving_water_target", "mdi:heating-coil"},
-};
+static const ControlNames CONTROL_NAMES[2] = {{"Hot water target", "mdi:water-boiler"}, {"Leaving water target", "mdi:heating-coil"}};
 bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (with these limits)
 int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
 static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
@@ -66,9 +62,16 @@ void resetJson()
   strcpy(jsonbuff, config.jsonTable ? "[{" : "{");
 }
 
-// Selects the (plain or TLS) network client and the broker, from the configuration.
+// Selects the (plain or TLS) network client and the broker, from the configuration, and derives every topic and
+// Home Assistant id from the base topic.
 void setupMqttClient()
 {
+  mqttTopics.init(config.mqttBase, config.mqttClientId);
+  haIdPrefix = mqttTopics.id;
+  haDeviceId = mqttTopics.deviceId;
+  haDeviceName = mqttTopics.deviceName;
+  haAttrTopic = mqttTopics.attr;
+  mqttSerial.begin(&client, mqttTopics.log);
   if (config.mqttTls)
   {
     // Required to establish encrypted connections.
@@ -125,6 +128,7 @@ void sendValues()
 #endif
   if (WiFi.status() == WL_CONNECTED) // not over Ethernet
     snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
+  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
   jsonbuff[strlen(jsonbuff) - 1] = '}';
@@ -132,8 +136,25 @@ void sendValues()
   {
     strcat(jsonbuff,"]");
   }
-  mqttPublish(MQTT_attr, jsonbuff);
+  mqttPublish(mqttTopics.attr, jsonbuff);
   resetJson();
+}
+
+// Removes every entity this base topic published from Home Assistant, and marks it offline: called before the
+// base topic changes, so the old names do not linger as dead entities. Main loop only.
+void mqttRetireDiscovery()
+{
+  if (!client.connected())
+    return;
+  const char *cfgs[] = {mqttTopics.cfgSensor, mqttTopics.cfgSwitch, mqttTopics.cfgSg, mqttTopics.cfgSafety,
+                        mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgDevice};
+  for (const char *t : cfgs)
+    client.publish(t, "", true);
+  const char *states[] = {mqttTopics.ctlState[0], mqttTopics.ctlState[1], mqttTopics.ctlAttrs[0], mqttTopics.ctlAttrs[1],
+                          mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect};
+  for (const char *t : states)
+    client.publish(t, "", true);
+  client.publish(mqttTopics.lwt, "Offline", true);
 }
 
 void saveEEPROM(uint8_t state){
@@ -165,50 +186,77 @@ bool mqttConnectOnce()
 {
     mqttSerial.print("Attempting MQTT connection...");
 
-    if (client.connect(config.mqttClientId, config.mqttUser, config.mqttPwd, MQTT_lwt, 0, true, "Offline"))
+    if (client.connect(mqttTopics.clientId, config.mqttUser, config.mqttPwd, mqttTopics.lwt, 0, true, "Offline"))
     {
       mqttSerial.println("connected!");
-      client.publish("homeassistant/sensor/espAltherma/config", "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"uniq_id\":\"espaltherma\",\"device\":{\"identifiers\":[\"ESPAltherma\"]}, \"~\":\"espaltherma\",\"json_attr_t\":\"~/ATTR\"}", true);
-      client.publish(MQTT_lwt, "Online", true);
+      static char json[1100]; // the discovery payloads, built from the base topic
+      snprintf(json, sizeof(json),
+               "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
+               "\"uniq_id\":\"%s\",\"device\":{\"identifiers\":[\"%s\"]}, \"~\":\"%s\",\"json_attr_t\":\"~/ATTR\"}",
+               mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.base);
+      client.publish(mqttTopics.cfgSensor, json, true);
+      client.publish(mqttTopics.lwt, "Online", true);
       if (config.thermPin >= 0)
       {
-        client.publish("homeassistant/switch/espAltherma/config", "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"espaltherma\"}", true);
+        if (mqttTopics.legacy) // the legacy switch had no unique id: keep it so for the default base
+          snprintf(json, sizeof(json), "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"%s\"}",
+                   mqttTopics.base);
+        else // a second board needs its own entity
+          snprintf(json, sizeof(json), "{\"name\":\"Altherma\",\"cmd_t\":\"~/POWER\",\"stat_t\":\"~/STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"%s\","
+                   "\"uniq_id\":\"%s_thermostat\",\"device\":{\"identifiers\":[\"%s\"],\"name\":\"%s\"}}",
+                   mqttTopics.base, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName);
+        client.publish(mqttTopics.cfgSwitch, json, true);
       }
       else
       {
         // No thermostat relay: remove the switch from HA
-        client.publish("homeassistant/switch/espAltherma/config", "", true);
+        client.publish(mqttTopics.cfgSwitch, "", true);
       }
 
       publishHomeAssistantDeviceDiscovery();
 
       // Subscribe
-      client.subscribe("espaltherma/POWER");
-      client.subscribe("espaltherma/detect/run");
+      client.subscribe(mqttTopics.power);
+      client.subscribe(mqttTopics.detectRun);
       if (config.sg1Pin >= 0)
       {
       // Smart Grid
-      client.publish("homeassistant/select/espAltherma/sg/config", "{\"availability\":[{\"topic\":\"espaltherma/LWT\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\",\"unique_id\":\"espaltherma_sg\",\"device\":{\"identifiers\":[\"ESPAltherma\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"ESPAltherma\"},\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"espaltherma/sg/set\",\"command_template\":\"{% if value == 'Free Running' %} 0 {% elif value == 'Forced Off' %} 1 {% elif value == 'Recommended On' %} 2 {% elif value == 'Forced On' %} 3 {% else %} 0 {% endif %}\",\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"espaltherma/sg/state\",\"value_template\":\"{% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %} {% set word = mapper[value] %} {{ word }}\"}", true);
-      client.subscribe("espaltherma/sg/set");
-      client.publish("espaltherma/sg/state", "0");
+      snprintf(json, sizeof(json),
+               "{\"availability\":[{\"topic\":\"%s\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\","
+               "\"unique_id\":\"%s_sg\",\"device\":{\"identifiers\":[\"%s\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"%s\"},"
+               "\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"%s\","
+               "\"command_template\":\"{%% if value == 'Free Running' %%} 0 {%% elif value == 'Forced Off' %%} 1 {%% elif value == 'Recommended On' %%} 2 {%% elif value == 'Forced On' %%} 3 {%% else %%} 0 {%% endif %%}\","
+               "\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"%s\","
+               "\"value_template\":\"{%% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %%} {%% set word = mapper[value] %%} {{ word }}\"}",
+               mqttTopics.lwt, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName, mqttTopics.sgSet, mqttTopics.sgState);
+      client.publish(mqttTopics.cfgSg, json, true);
+      client.subscribe(mqttTopics.sgSet);
+      client.publish(mqttTopics.sgState, "0");
       }
       else
       {
       // Publish empty retained message so discovered entities are removed from HA
-      client.publish("homeassistant/select/espAltherma/sg/config", "", true);
+      client.publish(mqttTopics.cfgSg, "", true);
       }
 
       if (config.safetyPin >= 0)
       {
       // Safety relay
-      client.publish("homeassistant/switch/espAltherma/safety/config", "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SAFETY\",\"stat_t\":\"~/SAFETY_STATE\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"espaltherma\"}", true);
-      client.subscribe("espaltherma/SAFETY");
+      if (mqttTopics.legacy)
+        snprintf(json, sizeof(json), "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SAFETY\",\"stat_t\":\"~/SAFETY_STATE\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"%s\"}",
+                 mqttTopics.base);
+      else
+        snprintf(json, sizeof(json), "{\"name\":\"Altherma Safety\",\"cmd_t\":\"~/SAFETY\",\"stat_t\":\"~/SAFETY_STATE\",\"pl_off\":\"0\",\"pl_on\":\"1\",\"~\":\"%s\","
+                 "\"uniq_id\":\"%s_safety\",\"device\":{\"identifiers\":[\"%s\"],\"name\":\"%s\"}}",
+                 mqttTopics.base, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName);
+      client.publish(mqttTopics.cfgSafety, json, true);
+      client.subscribe(mqttTopics.safety);
       }
 
       if (config.debugSerial)
       {
       // DebugSerial - MQTT<>Serial gateway
-      client.subscribe("espaltherma/serialTX");
+      client.subscribe(mqttTopics.serialTx);
       }
 
       // Target controls (experimental): the number entities follow the controls' state, published by the main loop
@@ -217,9 +265,9 @@ bool mqttConnectOnce()
         controlDiscoveryOn[c->kind] = false;
         c->changed = true;
         if (controlEnabled(*c))
-          client.subscribe(CONTROL_TOPICS[c->kind].set);
+          client.subscribe(mqttTopics.ctlSet[c->kind]);
         else
-          client.publish(CONTROL_TOPICS[c->kind].discovery, "", true); // option off: remove the entity from HA
+          client.publish(mqttTopics.cfgCtl[c->kind], "", true); // option off: remove the entity from HA
       }
       return true;
     }
@@ -242,7 +290,7 @@ void callbackTherm(byte *payload, unsigned int length)
     digitalWrite(config.thermPin, !thermActiveState());
     saveEEPROM(!thermActiveState());
     thermostatOn = false;
-    client.publish("espaltherma/STATE", "OFF", true);
+    client.publish(mqttTopics.state, "OFF", true);
     mqttSerial.println("Turned OFF");
   }
   else if (payload[1] == 'N')
@@ -250,7 +298,7 @@ void callbackTherm(byte *payload, unsigned int length)
     digitalWrite(config.thermPin, thermActiveState());
     saveEEPROM(thermActiveState());
     thermostatOn = true;
-    client.publish("espaltherma/STATE", "ON", true);
+    client.publish(mqttTopics.state, "ON", true);
     mqttSerial.println("Turned ON");
   }
   else if (payload[0] == 'R')//R(eset/eboot)
@@ -276,7 +324,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgInactiveState());
     digitalWrite(config.sg2Pin, sgInactiveState());
     sgMode = 0;
-    client.publish("espaltherma/sg/state", "0");
+    client.publish(mqttTopics.sgState, "0");
     mqttSerial.println("Set SG mode to 0 - Normal operation");
   }
   else if (payload[0] == '1')
@@ -285,7 +333,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgInactiveState());
     digitalWrite(config.sg2Pin, sgActiveState());
     sgMode = 1;
-    client.publish("espaltherma/sg/state", "1");
+    client.publish(mqttTopics.sgState, "1");
     mqttSerial.println("Set SG mode to 1 - Forced OFF");
   }
   else if (payload[0] == '2')
@@ -294,7 +342,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgActiveState());
     digitalWrite(config.sg2Pin, sgInactiveState());
     sgMode = 2;
-    client.publish("espaltherma/sg/state", "2");
+    client.publish(mqttTopics.sgState, "2");
     mqttSerial.println("Set SG mode to 2 - Recommended ON");
   }
   else if (payload[0] == '3')
@@ -303,7 +351,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgActiveState());
     digitalWrite(config.sg2Pin, sgActiveState());
     sgMode = 3;
-    client.publish("espaltherma/sg/state", "3");
+    client.publish(mqttTopics.sgState, "3");
     mqttSerial.println("Set SG mode to 3 - Forced ON");
   }
   else
@@ -321,14 +369,14 @@ void callbackSafety(byte *payload, unsigned int length)
     // Set Safety relay to OFF
     digitalWrite(config.safetyPin, !safetyActiveState());
     safetyActive = false;
-    client.publish("espaltherma/SAFETY_STATE", "0", true);
+    client.publish(mqttTopics.safetyState, "0", true);
   }
   else if (payload[0] == '1')
   {
     // Set Safety relay to ON
     digitalWrite(config.safetyPin, safetyActiveState());
     safetyActive = true;
-    client.publish("espaltherma/SAFETY_STATE", "1", true);
+    client.publish(mqttTopics.safetyState, "1", true);
   }
   else
   {
@@ -380,7 +428,7 @@ void callbackDebugSerial(byte *payload, unsigned int length)
     }
     hexResponse.toUpperCase();
     
-    client.publish("espaltherma/serialRX", hexResponse.c_str());
+    client.publish(mqttTopics.serialRx, hexResponse.c_str());
   }
 }
 
@@ -388,18 +436,18 @@ void callbackDebugSerial(byte *payload, unsigned int length)
 // A target requested over MQTT: a whole number of degrees, applied by the heat pump task.
 void callbackControl(CurveControl &c, byte *payload, unsigned int length)
 {
-  const ControlTopics &t = CONTROL_TOPICS[c.kind];
+  const char *name = CONTROL_NAMES[c.kind].name;
   payload[length] = '\0';
   char *end = nullptr;
   long value = strtol((const char *)payload, &end, 10);
   if (end == (const char *)payload || value < 5 || value > 90)
   {
-    mqttSerial.printf("%s: ignored '%s'\n", t.name, payload);
+    mqttSerial.printf("%s: ignored '%s'\n", name, payload);
     return;
   }
   if (c.status != CONTROL_READY)
   {
-    mqttSerial.printf("%s: not available (%s)\n", t.name, controlStatusName(c.status));
+    mqttSerial.printf("%s: not available (%s)\n", name, controlStatusName(c.status));
     return;
   }
   c.request((int)value);
@@ -409,7 +457,7 @@ void callbackControl(CurveControl &c, byte *payload, unsigned int length)
 // Main loop only.
 void publishControl(CurveControl &c)
 {
-  const ControlTopics &t = CONTROL_TOPICS[c.kind];
+  int k = c.kind;
   bool ready = controlEnabled(c) && c.status == CONTROL_READY;
   bool &on = controlDiscoveryOn[c.kind];
   if (ready && (!on || controlDiscoveryMin[c.kind] != c.minTarget || controlDiscoveryMax[c.kind] != c.maxTarget))
@@ -419,29 +467,30 @@ void publishControl(CurveControl &c)
     char json[640];
     snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
-             "\"avty_t\":\"" MQTT_lwt "\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
+             "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
              "\"min\":%d,\"max\":%d,\"step\":1,\"unit_of_meas\":\"°C\",\"dev_cla\":\"temperature\",\"mode\":\"box\","
-             "\"icon\":\"%s\",\"dev\":{\"ids\":\"espaltherma-mqtt-discovery\",\"name\":\"Daikin Altherma via ESPAltherma\"}}",
-             t.name, t.uniqueId, t.entityId, t.set, t.state, t.attributes, c.minTarget, c.maxTarget, t.icon);
-    mqttPublish(t.discovery, json, true);
+             "\"icon\":\"%s\",\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
+             CONTROL_NAMES[k].name, mqttTopics.ctlUniq[k], mqttTopics.ctlEntity[k], mqttTopics.ctlSet[k], mqttTopics.ctlState[k], mqttTopics.ctlAttrs[k],
+             mqttTopics.lwt, c.minTarget, c.maxTarget, CONTROL_NAMES[k].icon, mqttTopics.deviceId, mqttTopics.deviceName);
+    mqttPublish(mqttTopics.cfgCtl[k], json, true);
     on = true;
     controlDiscoveryMin[c.kind] = c.minTarget;
     controlDiscoveryMax[c.kind] = c.maxTarget;
   }
   else if (!ready && on)
   {
-    mqttPublish(t.discovery, "", true); // removes the entity
+    mqttPublish(mqttTopics.cfgCtl[k], "", true); // removes the entity
     on = false;
   }
   if (ready && c.target >= 0)
   {
     char value[8], attrs[160];
     snprintf(value, sizeof(value), "%d", c.target);
-    mqttPublish(t.state, value, true);
+    mqttPublish(mqttTopics.ctlState[k], value, true);
     // What the thermostat really aims for, the unit's own maximum, and the second point of the curve
     snprintf(attrs, sizeof(attrs), "{\"effective\":%d,\"ceiling\":%d,\"curve_low\":%d,\"saved\":%d,\"min\":%d,\"max\":%d}",
              c.effective, c.ceiling, c.targetLo, c.saved, c.minTarget, c.maxTarget);
-    mqttPublish(t.attributes, attrs, true);
+    mqttPublish(mqttTopics.ctlAttrs[k], attrs, true);
   }
 }
 
@@ -449,32 +498,32 @@ void callback(char *topic, byte *payload, unsigned int length)
 {
   mqttSerial.printf("Message arrived [%s] : %s\n", topic, payload);
 
-  if (strcmp(topic, "espaltherma/POWER") == 0)
+  if (strcmp(topic, mqttTopics.power) == 0)
   {
     callbackTherm(payload, length);
   }
-  else if (strcmp(topic, "espaltherma/detect/run") == 0)
+  else if (strcmp(topic, mqttTopics.detectRun) == 0)
   {
     mqttSerial.println("Heat pump survey requested");
     requestSurvey();
   }
-  else if (config.sg1Pin >= 0 && strcmp(topic, "espaltherma/sg/set") == 0)
+  else if (config.sg1Pin >= 0 && strcmp(topic, mqttTopics.sgSet) == 0)
   {
     callbackSg(payload, length);
   }
-  else if (config.safetyPin >= 0 && strcmp(topic, "espaltherma/SAFETY") == 0)
+  else if (config.safetyPin >= 0 && strcmp(topic, mqttTopics.safety) == 0)
   {
     callbackSafety(payload, length);
   }
-  else if (config.debugSerial && strcmp(topic, "espaltherma/serialTX") == 0)
+  else if (config.debugSerial && strcmp(topic, mqttTopics.serialTx) == 0)
   {
     callbackDebugSerial(payload, length);
   }
-  else if (config.dhwTarget && strcmp(topic, CONTROL_TOPICS[CONTROL_DHW].set) == 0)
+  else if (config.dhwTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_DHW]) == 0)
   {
     callbackControl(dhwControl, payload, length);
   }
-  else if (config.lwtTarget && strcmp(topic, CONTROL_TOPICS[CONTROL_LWT].set) == 0)
+  else if (config.lwtTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_LWT]) == 0)
   {
     callbackControl(lwtControl, payload, length);
   }
@@ -498,14 +547,14 @@ void publishHomeAssistantDeviceDiscovery()
   valuesLock(); // the heat pump task may be changing the values
   const LabelDef *labels = converter.activeLabels;
   const size_t count = converter.activeCount;
-  const char *topic = "homeassistant/device/espaltherma-mqtt-discovery/config";
+  const char *topic = mqttTopics.cfgDevice;
   haBinaryAsNumber = config.binaryAsNumber; // binary sensors then read 1/0
 
   // First pass: compute the exact payload length, required up-front for the MQTT fixed header.
   size_t payloadLen = streamDeviceDiscoveryPayload(labels, count, nullptr, nullptr);
 
   mqttSerial.printf("Sending HA discovery: %u sensors, %u bytes\n",
-                    (unsigned)(count + 3), (unsigned)payloadLen);
+                    (unsigned)(count + 5), (unsigned)payloadLen);
 
   // Stream the payload directly to the socket. PubSubClient::write() writes straight to the
   // TCP/TLS client, so the MQTT buffer only needs to hold the topic+header. This avoids the large

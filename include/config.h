@@ -5,6 +5,7 @@
 
 #include <Arduino.h>
 #include "board.h"
+#include "topics.h"
 #include <Preferences.h>
 // Not <ArduinoJson.h>: its "using namespace ArduinoJson" clashes with our Converter class
 #include <ArduinoJson.hpp>
@@ -37,6 +38,7 @@ struct AppConfig
   char mqttPwd[65];
   bool mqttTls;
   char mqttClientId[33];
+  char mqttBase[33]; // base of every topic and of the Home Assistant ids ("espaltherma"): two boards on one broker need two
 
   // Heat pump
   char protocol;      // 'I' or 'S'
@@ -96,7 +98,8 @@ void configDefaults(AppConfig &c)
   strlcpy(c.hostname, "ESPAltherma", sizeof(c.hostname));
   c.layoutCheck = true;
   c.mqttPort = 1883;
-  strlcpy(c.mqttClientId, "ESPAltherma-dev", sizeof(c.mqttClientId));
+  strlcpy(c.mqttClientId, TOPICS_DEFAULT_CLIENT_ID, sizeof(c.mqttClientId));
+  strlcpy(c.mqttBase, TOPICS_DEFAULT_BASE, sizeof(c.mqttBase));
   c.protocol = 'I';
   c.frequency = 30000;
   c.rxPin = BOARD_DEFAULT_RX_PIN;
@@ -150,6 +153,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
     mqtt["pwd"] = c.mqttPwd;
   mqtt["tls"] = c.mqttTls;
   mqtt["client_id"] = c.mqttClientId;
+  mqtt["base_topic"] = c.mqttBase;
 
   JsonObject hp = doc["hp"].to<JsonObject>();
   hp["protocol"] = String(c.protocol);
@@ -253,6 +257,8 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readStr(mqtt["pwd"], c.mqttPwd, sizeof(c.mqttPwd));
   readNum(mqtt["tls"], c.mqttTls);
   readStr(mqtt["client_id"], c.mqttClientId, sizeof(c.mqttClientId));
+  readStr(mqtt["base_topic"], c.mqttBase, sizeof(c.mqttBase));
+  topicsSanitizeBase(c.mqttBase, sizeof(c.mqttBase));
 
   JsonVariantConst hp = src["hp"];
   if (hp["protocol"].is<const char *>())

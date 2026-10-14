@@ -420,7 +420,7 @@ void publishSurvey()
 {
   surveyReady = false;
   Serial.println(surveyJson);
-  mqttPublish(MQTT_detect, surveyJson, true);
+  mqttPublish(mqttTopics.detect, surveyJson, true);
 }
 
 void hpDelay(unsigned long ms);
@@ -606,9 +606,8 @@ void setup()
     restart_board("ArduinoOTA upload failed");
   });
 
-  setupMqttClient();
+  setupMqttClient(); // also points the log stream at <base>/log
   client.setCallback(callback);
-  mqttSerial.begin(&client, "espaltherma/log");
 
   //Nothing blocks: WiFi, the setup access point and MQTT are handled by netLoop()
   netBegin();

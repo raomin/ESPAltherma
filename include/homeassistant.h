@@ -4,6 +4,12 @@
 // ON/OFF values are published as 1/0 (setting "binary_num"): binary sensors then use 1/0 as their payloads
 extern bool haBinaryAsNumber;
 
+// The device and the ids of the entities, from the configurable base topic (topics.h); set by setupMqttClient()
+extern const char *haIdPrefix;   // entity ids and unique ids start with it ("espaltherma")
+extern const char *haDeviceId;   // identifier of the device in Home Assistant
+extern const char *haDeviceName; // its name
+extern const char *haAttrTopic;  // the topic of the readings
+
 /*
  * Sink callback used to stream the Device Discovery payload one chunk at a time.
  */

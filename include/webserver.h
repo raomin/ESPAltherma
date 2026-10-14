@@ -845,7 +845,8 @@ void webLoop()
     bool wifiChanged = strcmp(next->wifiSsid, config.wifiSsid) != 0 || strcmp(next->wifiPwd, config.wifiPwd) != 0 ||
                        next->staticIp != config.staticIp || next->ip != config.ip || next->gateway != config.gateway ||
                        next->subnet != config.subnet || next->dns1 != config.dns1 || next->dns2 != config.dns2;
-    bool mqttChanged = strcmp(next->mqttServer, config.mqttServer) != 0 || next->mqttPort != config.mqttPort ||
+    bool baseChanged = strcmp(next->mqttBase, config.mqttBase) != 0;
+    bool mqttChanged = baseChanged || strcmp(next->mqttServer, config.mqttServer) != 0 || next->mqttPort != config.mqttPort ||
                        strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
                        next->mqttTls != config.mqttTls || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
                        next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber ||
@@ -859,6 +860,8 @@ void webLoop()
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
+    if (baseChanged)
+      mqttRetireDiscovery(); // the entities of the old base topic leave Home Assistant
     config = *next;
     pendingConfig = nullptr;
     delete next;

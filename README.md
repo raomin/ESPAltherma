@@ -449,9 +449,11 @@ template:
 
 ## MQTT topics
 
+Every topic starts with the base topic, `espaltherma` unless you change it in Settings → MQTT output. Two ESPAltherma on one broker, for instance one on the indoor unit and one on the outdoor unit of an Altherma HT, need different base topics, such as `espaltherma-idu` and `espaltherma-odu`: the Home Assistant entities of a board then start with its base too (`sensor.espaltherma_odu_...`), on a device of their own. The card looks for the `espaltherma_` entities: keep the default base on the board you want in it. The one-topic-per-value prefix is a setting of its own: change it too if both boards use that option.
+
 | Topic | |
 | ----- | - |
-| `espaltherma/ATTR` | All the values, as a JSON message |
+| `espaltherma/ATTR` | All the values, as a JSON message, plus `WifiRSSI`, `FreeMem`, `Uptime` and `IP` (the board's address) |
 | `espaltherma/LWT` | `Online` / `Offline` |
 | `espaltherma/log` | Log messages |
 | `espaltherma/detect` | The detection report: identification codes of your heat pump, every registry read once, detected model. Send anything to `espaltherma/detect/run` to read it again |
