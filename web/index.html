@@ -694,12 +694,13 @@ const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|
   inv: /^INV frequency/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^error type/i, code: /^error code/i, thermo: /^thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
   freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i,
-  mixed: /^mixed water temp/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i,
+  mixed: /^mixed water temp/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i, r6t: /^liquid pipe temp\.\(R6T\)/i,
   // the backup heater (Altherma BUH step 1, Rotex external heater), and the codes of protocol S units
   buh: /^(BUH Step1|external heater)/i, solar: /^burner inhibit/i, warn: /^warning code/i, caution: /^caution code/i, thermoOff: /^thermo off error/i};
 function reading(list) {
   const r = {};
   for (const [k, re] of Object.entries(KEYS)) { const v = list.find(x => re.test(x.l)); if (v && String(v.v).trim() !== '') r[k] = String(v.v).trim(); }
+  if (r.r3t == null && r.r6t != null) r.r3t = r.r6t; // the Altherma 4 has its refrigerant liquid side in the outdoor unit
   return r;
 }
 // tag: label, key, x, y, width, what it measures

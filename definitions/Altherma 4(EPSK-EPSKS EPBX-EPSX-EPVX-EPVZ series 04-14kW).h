@@ -8,6 +8,8 @@
 //    (0xA1) and the water leaves it at "Leaving water temp. (water heat exchanger)". 0x61 R1T/R2T read the indoor unit.
 //  - Not available on the wire so far: the indoor unit's inlet (R4T), the DHW tank temperature (R5T) and the room
 //    temperature, which the user interface reads. Those lines are left out.
+//  - The refrigerant liquid side (R3T of 0x61) reads 0: the refrigerant side is in the outdoor unit too. Its liquid
+//    pipe is "Liquid pipe temp.(R6T)" (0x20), close to the return water while heating, as R3T is on the other units.
 //  uncomment each value you want to query for your installation.
 
 LabelDef labelDefs[] = {
@@ -157,7 +159,6 @@ LabelDef labelDefs[] = {
 //{0x61,1,152,1,-1,"Indoor Unit Address"},
 //{0x61,2,105,2,1,"Leaving water temp. before BUH (R1T)"},
 //{0x61,4,105,2,1,"Leaving water temp. after BUH (R2T)"},
-//{0x61,6,105,2,1,"Refrig. Temp. liquid side (R3T)"},
 //{0x61,14,105,2,1,"Ext. indoor ambient sensor (R6T)"},
 //{0x62,0,307,1,-1,"Data Enable/Disable"},
 //{0x62,1,152,1,-1,"Indoor Unit Address"},

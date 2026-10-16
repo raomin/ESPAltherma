@@ -105,13 +105,16 @@ RECOMMENDED = {
     "Low Pressure (stage)", "Low Pressure(T)", "High Pressure (stage)", "High Pressure(T)", "Operation control mode",
     "INV Comp. Frequency(Hz)", "EV (pls)", "4 Way Valve", "Switch box cooling fan",
     "R134a liquid temp.", "Target Evap. Temp.",
+    # Altherma 4: its refrigerant liquid side, in the outdoor unit
+    "Liquid pipe temp.(R6T)",
 }
 # Only recommended on the models whose definition file name contains the given word: other definitions carry
 # these labels on slots that mean something else on the unit (eg. "Brine" temperatures on air units).
 RECOMMENDED_ONLY = {"Brine inlet temp.": "GEO", "Brine outlet temp.": "GEO", "Mixed water temp.": "Bizone",
                     "INV Comp. Frequency(Hz)": "HT", "EV (pls)": "HT", "4 Way Valve": "HT", "Switch box cooling fan": "HT",
                     "Low Pressure(T)": "HT", "High Pressure (stage)": "HT", "High Pressure(T)": "HT",
-                    "R134a liquid temp.": "HT", "Target Evap. Temp.": "HT"}
+                    "R134a liquid temp.": "HT", "Target Evap. Temp.": "HT",
+                    "Liquid pipe temp.(R6T)": "Altherma 4"}
 
 # Capacity range in the definition name, eg. "04-08kW", "9-16kW", "3kW"
 CAPACITY = re.compile(r"(\d+)(?:-(\d+))?\s*kW")
