@@ -69,7 +69,7 @@ p.sub{margin:4px 0 0}
 .flags span{font-size:12.5px;padding:3px 10px;border-radius:999px;background:var(--soft);color:var(--ink2)}
 .flags span.on{background:var(--warm);color:#2e2410}
 .status{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;margin-top:4px}
-.good{color:var(--ok)}.bad{color:var(--bad)}
+.good{color:var(--ok)}.bad{color:var(--bad)}.attn{color:var(--note)}
 .dev{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:16px}
 .dev>div{padding:14px 16px;min-width:0}
 .dev .head{display:flex;align-items:center;gap:8px;color:var(--ink2)}
@@ -105,6 +105,7 @@ details.all[open] summary::before{content:"▾"}
 .valve path{fill:var(--card);stroke:var(--ink2);stroke-width:1.5}.valve path.shut{fill:var(--ink2)}
 /* compressor running: filled with the accent, the colour of everything that is on */
 .comp #comp{fill:var(--acc);stroke:var(--acc)}
+.buhon #buh{fill:var(--acc);stroke:var(--acc)}
 .sens{fill:var(--ink2)}
 @media (prefers-reduced-motion:reduce){.flowing .act .fl,#fan{animation:none!important}}
 /* forms */
@@ -221,7 +222,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
      <path class="pipe" id="pSup" d="M270 220H330V90H470"/>
      <path class="pipe" id="pRet" d="M580 525H300V340H270"/>
     </g>
-    <rect class="eq" x="318" y="108" width="24" height="54" rx="8"/>
+    <rect class="eq" id="buh" x="318" y="108" width="24" height="54" rx="8"/>
     <path class="ln" d="M330 114v4l-6 4 12 6-12 6 12 6-12 6 6 4v6" style="stroke:var(--hot)"/>
     <text class="tl" x="310" y="140" text-anchor="end">Backup heater</text>
     <rect class="eq" x="590" y="28" width="150" height="236" rx="34"/>
@@ -693,7 +694,9 @@ const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|
   inv: /^INV frequency/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^error type/i, code: /^error code/i, thermo: /^thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
   freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i,
-  mixed: /^mixed water temp/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i};
+  mixed: /^mixed water temp/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i,
+  // the backup heater (Altherma BUH step 1, Rotex external heater), and the codes of protocol S units
+  buh: /^(BUH Step1|external heater)/i, solar: /^burner inhibit/i, warn: /^warning code/i, caution: /^caution code/i, thermoOff: /^thermo off error/i};
 function reading(list) {
   const r = {};
   for (const [k, re] of Object.entries(KEYS)) { const v = list.find(x => re.test(x.l)); if (v && String(v.v).trim() !== '') r[k] = String(v.v).trim(); }
@@ -703,7 +706,8 @@ function reading(list) {
 const TAGS = [[N_('Outside'), 'out', 40, 118, 84, 'R1T'], [N_('Heat pump out'), 'lw1', 342, 172, 110, 'R1T'], [N_('Leaving'), 'lw2', 340, 38, 84, 'R2T'],
   [N_('Refrigerant'), 'r3t', 156, 342, 96, 'R3T'], [N_('Return'), 'inlet', 312, 418, 84, 'R4T'], [N_('Flow'), 'flow', 316, 468, 98, 'l/min']];
 $('#tags').innerHTML = TAGS.map(g => `<g class="tag" transform="translate(${g[2]},${g[3]})"><title>${g[5]}</title><rect width="${g[4]}" height="46" rx="14"/><text class="tl" x="12" y="18" style="font-size:11.5px" id="gl_${g[1]}"></text><text class="tv" x="12" y="38" id="g_${g[1]}"></text></g>`).join('');
-const FL = [['thermo', N_('Thermostat')], ['defrost', N_('Defrost')], ['silent', N_('Silent')], ['freeze', N_('Frost protection')], ['powerful', N_('Powerful hot water')], ['circ', N_('Circulation')]];
+const FL = [['thermo', N_('Thermostat')], ['defrost', N_('Defrost')], ['silent', N_('Silent')], ['freeze', N_('Frost protection')], ['powerful', N_('Powerful hot water')], ['circ', N_('Circulation')],
+  ['buh', N_('Backup heater')], ['solar', N_('Solar inhibit')]];
 const DK = matchMedia('(prefers-color-scheme: dark)');
 // water colour: blue (15°) to red (55°), between the stops of the legend (CSS colours #rrggbb)
 const TSTOPS = ['--cold', '--t1', '--t2', '--t3', '--hot'];
@@ -736,6 +740,7 @@ function paint() {
   $('#gDhw').classList.toggle('act', v3); $('#gSp').classList.toggle('act', !v3);
   $('#vR').classList.toggle('shut', !v3); $('#vB').classList.toggle('shut', v3);
   sch.classList.toggle('flowing', pump); sch.classList.toggle('comp', inv > 0); sch.classList.toggle('fanon', inv > 0);
+  sch.classList.toggle('buhon', isOn(r.buh));
   tx('sInv', inv == null ? '' : inv > 0 ? inv + ' rps' : t('Resting'));
   requestAnimationFrame(() => { fit($('#lComp'), 70); fit($('#sInv'), 70); }); // once displayed: hidden texts have no width
   tx('sV3', r.v3 == null ? '' : v3 ? t('to the hot water') : t('to the house'));
@@ -761,10 +766,15 @@ function paint() {
   $('#barGauge').style.visibility = bar == null ? 'hidden' : '';
   $('#pMark').setAttribute('cx', (Math.max(0, Math.min(3, bar || 0)) / 3 * 250).toFixed(1));
   tx('dBarS', bar == null ? '' : bar < 1 ? t('Low: top up the system') : bar > 2.5 ? t('High: check the expansion vessel') : t('In the good range'));
-  const code = n('code'), fault = (r.err && !/^normal$/i.test(r.err)) || code > 0;
-  $('#dErr').replaceChildren(icon(fault ? 'warn' : 'ok', fault ? 'bad' : 'good'),
-    r.err == null && code == null ? t('No error information') : fault ? t('Error: {type}, code {code}', {type: r.err ? t(r.err) : '?', code: r.code || '?'}) : t('All good, no error'));
-  $('#flags').replaceChildren(...FL.filter(([k]) => r[k] != null).map(([k, l]) => el('span', {class: isOn(r[k]) ? 'on' : ''}, t(l))));
+  // Protocol S units have no error type, only codes: letters and digits ("A1", "U4"), "0" when there is none
+  const set = s => s != null && !/^[\s0]*$/.test(s);
+  const code = n('code'), fault = r.err != null ? !/^normal$/i.test(r.err) || code > 0 : set(r.code);
+  const notes = [['warn', N_('Warning {code}')], ['caution', N_('Caution {code}')]].filter(([k]) => set(r[k])).map(([k, l]) => t(l, {code: r[k]}));
+  $('#dErr').replaceChildren(icon(fault || notes.length ? 'warn' : 'ok', fault ? 'bad' : notes.length ? 'attn' : 'good'),
+    r.err == null && r.code == null ? t('No error information') : fault ? (r.err ? t('Error: {type}, code {code}', {type: t(r.err), code: r.code || '?'}) : t('Error {code}', {code: r.code}))
+      : notes.length ? notes.join(' · ') : t('All good, no error'));
+  $('#flags').replaceChildren(...FL.filter(([k]) => r[k] != null).map(([k, l]) => el('span', {class: isOn(r[k]) ? 'on' : ''}, t(l))),
+    ...(set(r.thermoOff) ? [el('span', {}, t('Thermo off {code}', {code: r.thermoOff}))] : []));
 }
 function renderValues(list) { lastValues = list || []; paint(); renderReadings(); }
 let allToggled = false;
