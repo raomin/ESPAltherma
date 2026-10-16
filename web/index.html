@@ -411,9 +411,10 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <h1>System</h1>
  <div class="fw" id="sysTiles" translate="no"></div>
  <div class="cols">
-  <div class="card"><h2>Firmware update</h2><p class="sub">Select the OTA firmware file (.bin) of a release.</p>
+  <div class="card"><h2>Firmware update</h2><p class="sub">Check for a newer release: this browser downloads it from the ESPAltherma site and sends it to the board. Or select the OTA firmware file (.bin) of a release.</p>
+   <div class="acts"><button id="upCheck">Check for an update</button><button class="p" id="upBtn" hidden translate="no"></button><label class="chk" style="margin:0"><input type="checkbox" id="upDev">Development builds</label></div>
    <input type="file" id="fwFile" accept=".bin">
-   <div class="acts"><button class="p" id="fwBtn">Update</button><span class="msg" id="fwMsg" translate="no"></span></div>
+   <div class="acts"><button id="fwBtn">Update</button><span class="msg" id="fwMsg" translate="no"></span></div>
    <progress id="fwProg" max="100" value="0" hidden></progress></div>
   <div class="card"><h2>Configuration</h2>
    <label class="chk" id="sysTmBox"><input type="checkbox" id="sysTm">Help improve automatic detection by sharing my heat pump's identification codes</label>
@@ -1103,15 +1104,63 @@ $('#svCopy').onclick = () => copyText($('#svReport').textContent).then(copied('#
 $('#logClear').onclick = () => $('#log').textContent = '';
 
 // ---- system
-$('#fwBtn').onclick = () => {
-  const f = $('#fwFile').files[0];
-  if (!f) return msg('#fwMsg', t('Choose a firmware file.'), false);
-  const fd = new FormData(); fd.append('firmware', f);
+function uploadFirmware(file) {
+  const fd = new FormData(); fd.append('firmware', file);
   const x = new XMLHttpRequest(), p = $('#fwProg');
-  p.hidden = false; x.upload.onprogress = e => p.value = e.loaded / e.total * 100;
+  p.hidden = false; p.value = 0; x.upload.onprogress = e => p.value = e.loaded / e.total * 100;
   x.onload = () => msg('#fwMsg', x.status === 200 ? t('Updated. Restarting…') : t('Update failed.'), x.status === 200);
   x.onerror = () => msg('#fwMsg', t('Update failed.'), false);
   x.open('POST', '/update'); x.send(fd); msg('#fwMsg', t('Uploading…'));
+}
+$('#fwBtn').onclick = () => {
+  const f = $('#fwFile').files[0];
+  if (!f) return msg('#fwMsg', t('Choose a firmware file.'), false);
+  uploadFirmware(f);
+};
+// Updates from the installer's site: this browser downloads the board's OTA file there and uploads it like a chosen
+// file; the board itself never connects to the site. The development builds are those of the preview site. Cloudflare
+// Pages serves both with Access-Control-Allow-Origin: * by default, which lets this page read them.
+const updateSite = () => $('#upDev').checked ? 'https://preview.espaltherma.pages.dev/' : 'https://espaltherma.pages.dev/';
+// 2.0.0-beta.7 -> [2, 0, 0, 1, 7]: alpha < beta < rc < the release. A development build (2.0.0-dev, dev-1a2b3c4) has none.
+function versionRank(v) {
+  const m = /^(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.?(\d*))?$/.exec(v || '');
+  return m ? [+m[1], +m[2], +m[3], m[4] ? ['alpha', 'beta', 'rc'].indexOf(m[4]) : 3, +(m[5] || 0)] : null;
+}
+function newerVersion(latest, current) {
+  const a = versionRank(latest), b = versionRank(current);
+  if (!a || !b) return latest !== current; // a development build on either side: offered when different
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i];
+  return false;
+}
+let upLatest = null;
+$('#upDev').onchange = () => { $('#upBtn').hidden = true; upLatest = null; msg('#fwMsg', ''); };
+$('#upCheck').onclick = async () => {
+  $('#upBtn').hidden = true; upLatest = null;
+  msg('#fwMsg', t('Checking…'));
+  try {
+    const r = await fetch(updateSite() + 'manifest-' + status.board + '.json', {cache: 'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const v = String((await r.json()).version || '');
+    if (!v || !newerVersion(v, status.fw)) return msg('#fwMsg', t('Up to date ({v}).', {v: status.fw}), true);
+    upLatest = v;
+    $('#upBtn').textContent = t('Install {v}', {v});
+    $('#upBtn').hidden = false;
+    msg('#fwMsg', t('This board runs {fw}.', {fw: status.fw}));
+  } catch (e) { msg('#fwMsg', t('Could not reach the ESPAltherma site.'), false); }
+};
+$('#upBtn').onclick = async () => {
+  const v = upLatest;
+  if (!v) return;
+  $('#upBtn').disabled = true;
+  msg('#fwMsg', t('Downloading {v}…', {v}));
+  try {
+    const r = await fetch(updateSite() + 'firmware/' + status.board + '-ota.bin', {cache: 'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = await r.blob(), head = new Uint8Array(await b.slice(0, 1).arrayBuffer());
+    if (b.size < 100000 || head[0] !== 0xE9) throw new Error('not a firmware image'); // an ESP32 image starts with E9
+    uploadFirmware(new File([b], status.board + '-ota.bin'));
+  } catch (e) { msg('#fwMsg', t('Download failed.'), false); }
+  $('#upBtn').disabled = false;
 };
 $('#sysTm').onchange = e => post('/api/config', {telemetry: {enabled: e.target.checked}});
 $('#cfgExport').onclick = async () => {

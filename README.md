@@ -226,7 +226,7 @@ Things to know:
 
 # Updating
 
-- **From the web interface:** in **System → Firmware update**, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) (for example `m5stickcplus2-ota.bin`). If the new version cannot get back online, the board goes back to the previous one by itself.
+- **From the web interface:** in **System → Firmware update**, click **Check for an update**: your browser looks for a newer release on the installer's site, downloads the file of your board and sends it to the board (the board itself never goes to the Internet for it). Tick **Development builds** for the latest preview build (less tested). Without Internet access from the browser, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) instead (for example `m5stickcplus2-ota.bin`). Either way, if the new version cannot get back online, the board goes back to the previous one by itself.
 - **Or run the [web installer](https://espaltherma.pages.dev/) again** over USB. It keeps the settings.
 
 # Building it yourself
