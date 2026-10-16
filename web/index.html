@@ -688,9 +688,9 @@ async function refreshStatus() { try { status = await api('/api/status'); status
 setInterval(renderAge, 1000);
 
 // ---- dashboard: the drawing shows the readings it finds among the selected values (other models: "—")
-const KEYS = {out: /outdoor air temp/i, lw1: /^leaving water temp\. before BUH/i, lw2: /^leaving water temp\. after BUH/i, r3t: /^refrig\. temp\. liquid side/i,
+const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|outlet water temp)/i, lw2: /^leaving water temp\. after BUH/i, r3t: /^refrig\. temp\. liquid side/i,
   inlet: /^inlet water temp/i, tank: /^DHW tank temp/i, room: /^indoor ambient temp/i, dhwSp: /^DHW setpoint/i, lwSp: /^LW setpoint \(main\)/i, rtSp: /^RT setpoint/i,
-  inv: /^INV frequency/i, v3: /^3way valve/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
+  inv: /^INV frequency/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^error type/i, code: /^error code/i, thermo: /^thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
   freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i,
   mixed: /^mixed water temp/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i};

@@ -146,7 +146,7 @@ Open `http://espaltherma.local`, or the address shown by the installer (and on t
 
     ![Choosing the values](doc/images/values.png)
 
-No Wi-Fi entered, or the network changed? The board opens a setup network **ESPAltherma-XXXX** (password `espaltherma`): join it with your phone and follow the page that opens.
+No Wi-Fi entered, or the network changed? The board opens a setup network **ESPAltherma-XXXX** (password `espaltherma`): join it with your phone and follow the page that opens. If no page opens, go to http://192.168.4.1.
 
 Everything is configured at runtime and kept across updates. To protect the settings, set an admin password in Settings → This device.
 

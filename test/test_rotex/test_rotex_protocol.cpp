@@ -83,11 +83,20 @@ void test_rotex_converter_54(void)
     // std::cout << decode_data(buff4) << std::endl;
 }
 
+// During a defrost the refrigerant goes below 0: -2.5 (0xFD80), not 253.5
+void test_rotex_converter_54_negative(void)
+{
+    unsigned char buff[] = {0x54, 0x80, 0xfd, 0x70, 0x1f, 0x1c, 0x24, 0x1c, 0x24, 0xd8, 0x31, 0x01, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00};
+    TEST_ASSERT_EQUAL_STRING("Refrig. Temp. liquid side(C): -2.5; Inlet water temp.(C): 31.4375; Outlet Water Temp.(C): 36.1094; D(C): 36.1094; DHW tank temp.(C): 49.8438; F(C): 0.00390625; Delta-Tr(deg): 36; R/C Setpoint(C): 0; ",
+                             decode_data(buff).c_str());
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
     RUN_TEST(test_rotex_converter_53);
     RUN_TEST(test_rotex_converter_54);
+    RUN_TEST(test_rotex_converter_54_negative);
     UNITY_END();
 
     return 0;
