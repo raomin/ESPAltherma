@@ -102,7 +102,7 @@ RECOMMENDED = {
     "Circulation pump operation", "Powerful DHW Operation. ON/OFF", "Silent Mode",
     "Freeze Protection for water piping", "Brine inlet temp.", "Brine outlet temp.", "Mixed water temp.",
     # Altherma HT hydrobox (its own refrigerant stage), both protocols
-    "Low Pressure (stage)", "Low Pressure(T)", "High Pressure (stage)", "High Pressure(T)", "Operation control mode",
+    "Low Pressure (stage)", "Low Pressure(T)", "High Pressure (stage)", "High Pressure(T)",
     "INV Comp. Frequency(Hz)", "EV (pls)", "4 Way Valve", "Switch box cooling fan",
     "R134a liquid temp.", "Target Evap. Temp.",
     # Altherma 4: its refrigerant liquid side, in the outdoor unit
