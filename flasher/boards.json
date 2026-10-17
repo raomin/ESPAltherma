@@ -13,6 +13,8 @@
    "note": "With screen, fits next to the board"},
   {"id": "m5stack-tough", "name": "M5Stack Tough", "chip": "ESP32", "env": "web-m5stack-tough", "rx": 36, "tx": 26,
    "note": "Rugged, touch screen (Port B)"},
+  {"id": "m5stack-atom", "name": "M5Stack Atom Lite", "chip": "ESP32", "env": "web-m5stack-atom", "rx": 26, "tx": 32,
+   "note": "Tiny, no screen. X10A on the Grove port"},
   {"id": "wt32-eth01", "name": "WT32-ETH01 (Ethernet)", "chip": "ESP32", "env": "web-wt32-eth01", "rx": 5, "tx": 17,
    "note": "Wired Ethernet, experimental. Flash it through a USB-serial adapter (IO0 to GND while powering up)"},
   {"id": "esp32-poe", "name": "Olimex ESP32-PoE (Ethernet)", "chip": "ESP32", "env": "web-esp32-poe", "rx": 36, "tx": 4,

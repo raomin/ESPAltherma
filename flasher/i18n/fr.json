@@ -28,6 +28,7 @@
  "ESP32-S3 DevKit and modules": "ESP32-S3 DevKit et modules",
  "With screen, fits next to the board": "Avec écran, se loge à côté de la carte",
  "Rugged, touch screen (Port B)": "Robuste, écran tactile (Port B)",
+ "Tiny, no screen. X10A on the Grove port": "Minuscule, sans écran. X10A sur le connecteur Grove",
  "Wired Ethernet, experimental. Flash it through a USB-serial adapter (IO0 to GND while powering up)": "Ethernet filaire, expérimental. À flasher avec un adaptateur USB-série (IO0 à la masse à la mise sous tension)",
  "Wired Ethernet / PoE, experimental. X10A on the UEXT connector": "Ethernet filaire / PoE, expérimental. X10A sur le connecteur UEXT"
 }
