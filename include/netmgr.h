@@ -142,6 +142,12 @@ static void netEvent(arduino_event_t *e)
 {
   switch (e->event_id)
   {
+#ifdef BOARD_WIFI_TX_POWER
+  case ARDUINO_EVENT_WIFI_STA_START: // the radio starts at full power again
+  case ARDUINO_EVENT_WIFI_AP_START:
+    WiFi.setTxPower(BOARD_WIFI_TX_POWER);
+    break;
+#endif
   case ARDUINO_EVENT_WIFI_STA_CONNECTED:
   {
     const uint8_t *b = e->event_info.wifi_sta_connected.bssid;
