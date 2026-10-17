@@ -264,12 +264,20 @@ void stopWifi()
 
 // Arduino core (WiFiGeneric.cpp, also declared by its Ethernet library): starts the TCP/IP stack and the
 // network event task. Idempotent.
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+#include <NetworkManager.h> // core 3.x: Network.begin() does it
+#else
 extern bool tcpipInit();
+#endif
 
 void netBegin()
 {
   // The web server (webBegin, right after) needs the TCP/IP stack: AsyncTCP crashes at boot without it.
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+  Network.begin();
+#else
   tcpipInit();
+#endif
   WiFi.persistent(false);
   WiFi.onEvent(netEvent);
   WiFi.setHostname(config.hostname);
@@ -582,6 +590,13 @@ static void addDiscovered(const char *name, IPAddress ip, uint16_t port, bool ha
   h.mqtt = mqtt;
 }
 
+// Arduino core 3.x renamed MDNSResponder::IP() to address()
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+#define mdnsIP(i) MDNS.address(i)
+#else
+#define mdnsIP(i) MDNS.IP(i)
+#endif
+
 // Blocks a few seconds: main loop only, on request.
 void runDiscovery()
 {
@@ -594,7 +609,7 @@ void runDiscovery()
     int n = MDNS.queryService("home-assistant", "tcp");
     for (int i = 0; i < n; i++)
     {
-      IPAddress ip = MDNS.IP(i);
+      IPAddress ip = mdnsIP(i);
       // The Mosquitto add-on runs on the Home Assistant host
       bool mqtt = tcpPortOpen(ip, 1883);
       addDiscovered(MDNS.hostname(i).c_str(), ip, mqtt ? 1883 : MDNS.port(i), true, mqtt);
@@ -602,7 +617,7 @@ void runDiscovery()
     n = MDNS.queryService("mqtt", "tcp");
     for (int i = 0; i < n; i++)
     {
-      addDiscovered(MDNS.hostname(i).c_str(), MDNS.IP(i), MDNS.port(i), false, true);
+      addDiscovered(MDNS.hostname(i).c_str(), mdnsIP(i), MDNS.port(i), false, true);
     }
   }
   discoverRunning = false;

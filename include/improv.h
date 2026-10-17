@@ -32,6 +32,8 @@
 
 #if defined(CONFIG_IDF_TARGET_ESP32C3)
 #define IMPROV_CHIP "ESP32-C3"
+#elif defined(CONFIG_IDF_TARGET_ESP32C6)
+#define IMPROV_CHIP "ESP32-C6"
 #elif defined(CONFIG_IDF_TARGET_ESP32S3)
 #define IMPROV_CHIP "ESP32-S3"
 #else
