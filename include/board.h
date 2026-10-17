@@ -16,6 +16,8 @@
 #define BOARD_NAME "m5stickc"
 #elif defined(ARDUINO_M5Stack_Tough)
 #define BOARD_NAME "m5stack-tough"
+#elif defined(ARDUINO_M5Stack_ATOM)
+#define BOARD_NAME "m5stack-atom"
 #elif defined(ARDUINO_WT32_ETH01)
 #define BOARD_NAME "wt32-eth01"
 #elif defined(ARDUINO_ESP32_POE) || defined(ARDUINO_ESP32_POE_ISO)
@@ -40,6 +42,9 @@
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 #define BOARD_DEFAULT_RX_PIN 4 // GPIO16/17 do not exist on the C3
 #define BOARD_DEFAULT_TX_PIN 5
+#elif defined(ARDUINO_M5Stack_ATOM)
+#define BOARD_DEFAULT_RX_PIN 26 // Grove port (the Atom Lite has no GPIO16/17)
+#define BOARD_DEFAULT_TX_PIN 32
 #else
 #define BOARD_DEFAULT_RX_PIN 16 // Default GPIO PINs for Serial2
 #define BOARD_DEFAULT_TX_PIN 17

@@ -107,6 +107,7 @@ The RX and TX pins of each board:
 | ESP32-C3 | GPIO 4 | GPIO 5 |
 | M5StickC, M5StickC Plus, M5StickC Plus2 | G36 | G26 |
 | M5Stack Tough | G36 (Port B) | G26 (Port B) |
+| M5Stack Atom Lite | G26 (Grove) | G32 (Grove) |
 | WT32-ETH01 | GPIO 5 (RXD) | GPIO 17 (TXD) |
 | Olimex ESP32-PoE | GPIO 36 (UEXT) | GPIO 4 (UEXT) |
 
@@ -248,6 +249,7 @@ Use the environment of your board:
 | ESP32-S3 | `web-esp32s3` |
 | M5StickC / M5StickC Plus / M5StickC Plus2 | `web-m5stickc` / `web-m5stickcplus` / `web-m5stickcplus2` |
 | M5Stack Tough | `web-m5stack-tough` |
+| M5Stack Atom Lite | `web-m5stack-atom` |
 | WT32-ETH01 / Olimex ESP32-PoE | `web-wt32-eth01` / `web-esp32-poe` |
 
 There is nothing to edit before building: the board starts its setup network (see [Step 3](#step-3-finishing-in-the-web-interface)) and everything is configured in the web interface. In VS Code, select the environment in the PlatformIO status bar and click Upload.

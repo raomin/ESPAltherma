@@ -34,6 +34,7 @@ jobs:
           - web-m5stickcplus
           - web-m5stickcplus2
           - web-m5stack-tough
+          - web-m5stack-atom
           - web-wt32-eth01
           - web-esp32-poe
     steps:
