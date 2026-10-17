@@ -59,7 +59,7 @@ LabelDef labelDefs[] = {
 //{0x20,12,105,2,2,"Haute pression"},
 //{0x20,12,405,2,1,"Haute pression (T)"},
 //{0x20,14,105,2,2,"Basse pression"},
-//{0x20,14,405,2,-1,"Basse pression (T)"},
+//{0x20,14,405,2,1,"Basse pression (T)"},
 //{0x21,0,105,2,-1,"Courant primaire INV (A)"},
 //{0x21,2,105,2,-1,"Courant secondaire INV (A)"},
 //{0x21,4,105,2,1,"Temp. ailette INV"},

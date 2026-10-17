@@ -59,7 +59,7 @@ LabelDef labelDefs[] = {
 //{0x20,12,105,2,2,"Alta pressione"},
 //{0x20,12,405,2,1,"Alta pressione (T)"},
 //{0x20,14,105,2,2,"Bassa pressione"},
-//{0x20,14,405,2,-1,"Bassa pressione (T)"},
+//{0x20,14,405,2,1,"Bassa pressione (T)"},
 //{0x21,0,105,2,-1,"Corrente primaria INV (A)"},
 //{0x21,2,105,2,-1,"Corrente secondaria INV (A)"},
 //{0x21,4,105,2,1,"Temp. aletta INV"},

@@ -13,12 +13,13 @@ LabelDef labelDefs[] = {
 
 
     // Testing stuff....
-    // The temperatures are signed: the refrigerant goes below 0 during a defrost
-    {0x54, 0, 103, 2, -1, "Refrig. Temp. liquid side(C)"},
-    {0x54, 2, 103, 2, -1, "Inlet water temp.(C)"},
-    {0x54, 4, 103, 2, -1, "Outlet Water Temp.(C)"},
-    {0x54, 6, 103, 2, -1, "D(C)"},
-    {0x54, 8, 103, 2, -1, "DHW tank temp.(C)"},
+    // The temperatures are signed: the refrigerant goes below 0 during a defrost. Type 1: Home Assistant gets
+    // them as temperatures (°C, statistics).
+    {0x54, 0, 103, 2, 1, "Refrig. Temp. liquid side(C)"},
+    {0x54, 2, 103, 2, 1, "Inlet water temp.(C)"},
+    {0x54, 4, 103, 2, 1, "Outlet Water Temp.(C)"},
+    {0x54, 6, 103, 2, 1, "D(C)"},
+    {0x54, 8, 103, 2, 1, "DHW tank temp.(C)"},
     {0x54, 10, 103, 2, -1, "F(C)"},
     // Byte 12 seems to be a 1 byte value, evolving during day in continuous way
     // 0x1b mid-day, 0x24 mid night -> some delta temp??

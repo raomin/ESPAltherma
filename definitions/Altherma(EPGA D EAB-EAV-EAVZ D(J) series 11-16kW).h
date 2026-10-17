@@ -59,7 +59,7 @@ LabelDef labelDefs[] = {
 //{0x20,12,105,2,2,"High Pressure"},
 //{0x20,12,405,2,1,"High Pressure(T)"},
 //{0x20,14,105,2,2,"Low Pressure"},
-//{0x20,14,405,2,-1,"Low Pressure(T)"},
+//{0x20,14,405,2,1,"Low Pressure(T)"},
 //{0x21,0,105,2,-1,"INV primary current (A)"},
 //{0x21,2,105,2,-1,"INV secondary current (A)"},
 //{0x21,4,105,2,1,"INV fin temp."},

@@ -55,7 +55,7 @@ LabelDef labelDefs[] = {
 //{0x20,12,105,2,1,"20-12 (unknown)"},
 // Verified: equals the protocol S low pressure (0x50 off2), kgf/cm2 gauge. Updates with some lag, freezes while stopped
 //{0x20,14,105,2,2,"Low Pressure (stage)"},
-//{0x20,14,405,2,-1,"Low Pressure(T)"},
+//{0x20,14,405,2,1,"Low Pressure(T)"},
 // 0x21 answers 5 data bytes. off0/off2 follow the compressor: 0 when stopped, about 5-7 at 110-130 Hz
 // (named after other definitions using 0x21 off0/off2 for the INV currents, not checked with a clamp meter)
 //{0x21,0,105,2,-1,"INV primary current (A)"},

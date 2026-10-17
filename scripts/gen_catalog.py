@@ -139,6 +139,27 @@ def parse(path):
                        int(m.group(6)), m.group(7), m.group(1) is not None)
 
 
+# Home Assistant gets the unit, the device class and the statistics of a value from its type (1 temperature,
+# 2 pressure): a temperature or a pressure left at -1 shows as a bare number. Checked on every definition.
+TEMPERATURE = re.compile(r"temp\.?|\(T\)$|\(R\d+T\)$", re.I)
+PRESSURE = re.compile(r"pressure", re.I)
+NOT_MEASURED = re.compile(r"setpoint|target|drop|protection|retry|qty|control|valve|heater|\?\?", re.I)
+NUMERIC = {103, 104, 105, 106, 109, 119, 403, 405}
+UNTYPED_OK = {"F(C)"}  # unknown yet (PROTOCOL_S_ROTEX.h)
+
+
+def untyped(files):
+    """The temperatures and pressures of the definitions that have no type (-1)."""
+    found = []
+    for f in files:
+        for reg, offset, conv, size, dtype, label, commented in parse(os.path.join(DEF_DIR, f)):
+            if dtype != -1 or conv not in NUMERIC or label in UNTYPED_OK or NOT_MEASURED.search(label):
+                continue
+            if TEMPERATURE.search(label) or (PRESSURE.search(label) and conv < 400):
+                found.append("%s: 0x%02X/%d %s" % (f, reg, offset, label))
+    return found
+
+
 def c_string(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
@@ -204,6 +225,10 @@ def build():
         raise SystemExit("gen_catalog: no family for %s - add it to FAMILIES in scripts/gen_catalog.py" % unknown)
     if len(files) > 64:
         raise SystemExit("gen_catalog: more than 64 models, the model mask needs to grow")
+    missing = untyped(files)
+    if missing:
+        raise SystemExit("gen_catalog: temperatures or pressures without a type (1 temperature, 2 pressure):\n  "
+                         + "\n  ".join(missing))
 
     models = []  # (name, family)
     entries = {}  # (family, reg, offset, conv, size, type, label, recommended) -> [models mask, flags, first seen]

@@ -59,7 +59,7 @@ LabelDef labelDefs[] = {
 //{0x20,12,105,2,2,"Hochdruck"},
 //{0x20,12,405,2,1,"Hochdruck in °C"},
 //{0x20,14,105,2,2,"Niederdruck"},
-//{0x20,14,405,2,-1,"Niederdruck in °C"},
+//{0x20,14,405,2,1,"Niederdruck in °C"},
 //{0x21,0,105,2,-1,"INV Platine Eingangsstrom (A) (Primärkreis)"},
 //{0x21,2,105,2,-1,"Stromaufnahme INV-Verdichter (A) (Sekundärkreis)"},
 //{0x21,4,105,2,1,"Inverter Platinentemperatur"},
