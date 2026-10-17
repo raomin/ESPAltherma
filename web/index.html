@@ -174,6 +174,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
 #gZones,.bz{display:none}#sch.bizone #gZones,#sch.bizone .bz{display:block}
 #sch.bizone #pSpace,#sch.bizone #pSpace+.fl,#sch.bizone #bSpace{display:none}
 #gZones .zoff{opacity:.3}#gZones .zoff .fl{animation:none;opacity:0}
+/* no hot water tank or no room thermostat (none of their values selected): left out, the supply joins the house */
+#sch.nodhw .dhw,#sch.noroom .room,#pJoin,#pJoin+.fl{display:none}#sch.nodhw #pJoin,#sch.nodhw #pJoin+.fl{display:block}
 @media (max-width:1000px){.dash{grid-template-columns:1fr}.side{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 24px}.side>div{border-bottom:1px solid var(--line)}}
 @media (max-width:620px){nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;overflow:visible}nav a{flex-direction:column;gap:3px;justify-content:center;padding:8px 4px;font-size:12.5px;white-space:normal;text-align:center;line-height:1.2;border-radius:14px;background:var(--card);box-shadow:var(--shadow)}.c4{width:0}.c3{width:38%}.top,nav,main{padding-left:16px;padding-right:16px}.chips{margin-left:0}.dev{grid-template-columns:1fr 1fr}.big{font-size:30px}.model{font-size:23px}.chain{flex-direction:column;align-items:stretch}.chain>svg{transform:rotate(90deg);align-self:center}td.r{display:none}.rm{display:block}.hint{display:block}.pad{padding:18px}.vlist,.vbar{padding-left:14px;padding-right:14px}}
 </style>
@@ -225,17 +227,18 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <rect class="eq" id="buh" x="318" y="108" width="24" height="54" rx="8"/>
     <path class="ln" d="M330 114v4l-6 4 12 6-12 6 12 6-12 6 6 4v6" style="stroke:var(--hot)"/>
     <text class="tl" x="310" y="140" text-anchor="end">Backup heater</text>
-    <rect class="eq" x="590" y="28" width="150" height="236" rx="34"/>
-    <rect id="tankFill" x="594" y="32" width="142" height="228" rx="31" style="opacity:.2"/>
+    <rect class="eq dhw" x="590" y="28" width="150" height="236" rx="34"/>
+    <rect id="tankFill" class="dhw" x="594" y="32" width="142" height="228" rx="31" style="opacity:.2"/>
     <path class="eq" d="M580 360L685 292L790 360V540H580Z" style="stroke-linejoin:round"/>
-    <g id="gDhw" class="br">
+    <g id="gDhw" class="br dhw">
      <path class="pipe" id="pDhw" d="M494 90H598"/>
      <path class="pipe" id="pCoil" style="stroke-width:4.5" d="M598 90l40 10-36 14 36 14-36 14 36 14-36 14 36 14-36 14 36 14-36 14-12 4"/>
      <path class="pipe" id="pDhwR" d="M590 232H555V525"/>
     </g>
-    <path id="bSpace" d="M547 400H563" style="stroke:var(--card);stroke-width:14"/>
-    <path class="bz" d="M547 368H563M547 446H563" style="stroke:var(--card);stroke-width:14"/>
+    <path id="bSpace" class="dhw" d="M547 400H563" style="stroke:var(--card);stroke-width:14"/>
+    <path class="bz dhw" d="M547 368H563M547 446H563" style="stroke:var(--card);stroke-width:14"/>
     <g id="gSp" class="br act">
+     <path class="pipe" id="pJoin" d="M470 90H482V102"/>
      <path class="pipe" id="pSpace" d="M482 102V400H600V485"/>
      <path class="pipe" id="pLoop" style="stroke-width:4.5" d="M600 485H770V498H612V511H770V525H580"/>
      <g id="gZones">
@@ -252,8 +255,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
        <text class="tv" x="474" y="404" text-anchor="end" translate="no"><tspan id="sMixed"></tspan><tspan class="ts" dx="6" id="sLwSpMix"></tspan></text></g>
      </g>
     </g>
-    <g class="valve"><path id="vL" d="M470 81V99L482 90Z"/><path id="vR" class="shut" d="M494 81V99L482 90Z"/><path id="vB" d="M473 102H491L482 90Z"/></g>
-    <text class="tl" x="494" y="128">3-way valve</text><text class="ts" x="494" y="145" id="sV3" translate="no"></text>
+    <g class="valve dhw"><path id="vL" d="M470 81V99L482 90Z"/><path id="vR" class="shut" d="M494 81V99L482 90Z"/><path id="vB" d="M473 102H491L482 90Z"/></g>
+    <text class="tl dhw" x="494" y="128">3-way valve</text><text class="ts dhw" x="494" y="145" id="sV3" translate="no"></text>
     <circle class="eq" cx="440" cy="525" r="16"/><path d="M425 525l21-12v24z" style="fill:var(--ink2)"/>
     <text class="tl" x="440" y="556" text-anchor="middle" id="sPump" translate="no"></text>
     <path class="ln" d="M500 506V525"/><circle class="eq" cx="500" cy="492" r="14"/><path id="needle" class="ln" style="stroke:var(--hot);stroke-width:2.2" d="M500 492L491 499"/>
@@ -262,12 +265,12 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <circle class="sens" cx="330" cy="190" r="4.5"/><circle class="sens" cx="390" cy="90" r="4.5"/><circle class="sens" cx="300" cy="440" r="4.5"/>
     <g id="tags" translate="no"></g>
     <text class="ts" x="456" y="62" id="sLwSp" translate="no"></text>
-    <text class="tl" x="665" y="104" text-anchor="middle">Hot water</text>
-    <text class="tb" x="665" y="148" text-anchor="middle" id="sTank" translate="no"></text>
-    <text class="ts" x="665" y="172" text-anchor="middle" id="sDhwSp" translate="no"></text>
-    <text class="tl" x="685" y="390" text-anchor="middle">Living room</text>
-    <text class="tb" x="685" y="432" text-anchor="middle" id="sRoom" translate="no"></text>
-    <text class="ts" x="685" y="456" text-anchor="middle" id="sRtSp" translate="no"></text>
+    <text class="tl dhw" x="665" y="104" text-anchor="middle">Hot water</text>
+    <text class="tb dhw" x="665" y="148" text-anchor="middle" id="sTank" translate="no"></text>
+    <text class="ts dhw" x="665" y="172" text-anchor="middle" id="sDhwSp" translate="no"></text>
+    <text class="tl room" x="685" y="390" text-anchor="middle">Living room</text>
+    <text class="tb room" x="685" y="432" text-anchor="middle" id="sRoom" translate="no"></text>
+    <text class="ts room" x="685" y="456" text-anchor="middle" id="sRtSp" translate="no"></text>
     <rect x="24" y="488" width="136" height="7" rx="3.5" fill="url(#lg)"/>
     <g translate="no"><text class="ts" x="24" y="512">15°</text><text class="ts" x="92" y="512" text-anchor="middle">35°</text><text class="ts" x="160" y="512" text-anchor="end">55°</text></g>
     <text class="tl" x="24" y="478">Water temperature</text>
@@ -733,7 +736,10 @@ function paint() {
   // single-zone units answer 0 there
   const mixed = n('mixed'), two = mixed != null && mixed !== 0;
   sch.classList.toggle('bizone', two);
-  [['pSup', lw], ['pDhw', lw], ['pCoil', mid(lw, tank)], ['pDhwR', ret], ['pSpace', lw], ['pLoop', mid(two ? mixed : lw, ret)], ['pRet', ret],
+  // No hot water tank, no room thermostat: none of their values selected (once the values are there)
+  sch.classList.toggle('nodhw', lastValues.length > 0 && r.tank == null && r.dhwSp == null && r.v3 == null);
+  sch.classList.toggle('noroom', lastValues.length > 0 && r.room == null && r.rtSp == null);
+  [['pSup', lw], ['pJoin', lw], ['pDhw', lw], ['pCoil', mid(lw, tank)], ['pDhwR', ret], ['pSpace', lw], ['pLoop', mid(two ? mixed : lw, ret)], ['pRet', ret],
    ['pTrunk', lw], ['pDirect', lw], ['pDirectR', ret], ['pMixed', mixed], ['pBypass', ret]].forEach(([id, v]) => document.getElementById(id).style.stroke = tcol(v));
   $('#gDirect').classList.toggle('zoff', r.addPump != null && !isOn(r.addPump)); $('#gMixed').classList.toggle('zoff', r.mainPump != null && !isOn(r.mainPump));
   tx('sMixed', deg(mixed)); tx('sLwSpMix', r.lwSp ? t('target {n}°', {n: n('lwSp')}) : '');

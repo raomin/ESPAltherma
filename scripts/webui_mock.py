@@ -72,10 +72,11 @@ def key(reg, off, conv, size=2):
 
 
 class Device:
-    def __init__(self, fresh, ethernet=False, bizone=False):
+    def __init__(self, fresh, ethernet=False, bizone=False, leave_out=()):
         self.start = time.time()
         self.ethernet = ethernet
         self.bizone = bizone  # a two-zone unit: its mixed zone values are selected too
+        self.leave_out = set(leave_out)  # labels not selected: a unit without a hot water tank or room thermostat
         self.lock = threading.Lock()
         self.config = {
             "wifi": {"ssid": "" if fresh else "HomeWiFi", "has_pwd": not fresh, "static": False, "ip": "", "gateway": "", "subnet": "", "dns1": "", "dns2": ""},
@@ -168,7 +169,8 @@ class Device:
         labels = self.config["hp"]["labels"]
         if model == self.config["hp"]["model"] and labels:
             return set(labels)
-        return {key(r, o, c) for r, o, c, _, rec in CATALOG if rec is True or (rec and self.bizone)}
+        return {key(r, o, c) for r, o, c, l, rec in CATALOG
+                if (rec is True or (rec and self.bizone)) and l not in self.leave_out}
 
     def reading(self, r, o, c, l):
         base, drift = READINGS.get(l, (0, 0))
@@ -314,8 +316,12 @@ def main():
     ap.add_argument("--fresh", action="store_true", help="start like a freshly flashed device")
     ap.add_argument("--ethernet", action="store_true", help="a board connected by Ethernet")
     ap.add_argument("--bizone", action="store_true", help="a two-zone unit (mixed zone values)")
+    ap.add_argument("--nodhw", action="store_true", help="no hot water tank: its values are not selected")
+    ap.add_argument("--noroom", action="store_true", help="no room thermostat: its values are not selected")
     args = ap.parse_args()
-    Handler.device = Device(args.fresh, args.ethernet, args.bizone)
+    leave_out = ({"DHW tank temp. (R5T)", "DHW setpoint"} if args.nodhw else set()) | \
+        ({"Indoor ambient temp. (R1T)", "RT setpoint"} if args.noroom else set())
+    Handler.device = Device(args.fresh, args.ethernet, args.bizone, leave_out)
     print("Mock ESPAltherma on http://localhost:%d" % args.port)
     ThreadingHTTPServer(("", args.port), Handler).serve_forever()
 
