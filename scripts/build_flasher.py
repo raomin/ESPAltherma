@@ -31,6 +31,14 @@ def firmware_version():
     return m.group(1) if m else "dev"
 
 
+def commit_time():
+    """The time of the checked-out commit (Unix seconds), 0 outside a git checkout."""
+    try:
+        return int(subprocess.check_output(["git", "-C", ROOT, "log", "-1", "--format=%ct"], text=True).strip())
+    except (OSError, subprocess.CalledProcessError, ValueError):
+        return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--build", action="store_true", help="build the firmwares first")
@@ -39,6 +47,9 @@ def main():
     args = ap.parse_args()
 
     version = args.version or firmware_version()
+    # Stamped in the firmware and its manifest: the web update orders the builds by it (development builds have no
+    # version order). Only with --build, so that the manifests always describe the firmwares next to them.
+    build_time = commit_time() if args.build else 0
     with open(os.path.join(ROOT, "flasher", "boards.json"), encoding="utf-8") as f:
         boards = json.load(f)
 
@@ -47,8 +58,13 @@ def main():
         for b in boards:
             cmd += ["-e", b["env"]]
         env = dict(os.environ)
+        flags = []
         if args.version:
-            env["PLATFORMIO_BUILD_FLAGS"] = '-DESPALTHERMA_VERSION=\\"%s\\"' % args.version
+            flags.append('-DESPALTHERMA_VERSION=\\"%s\\"' % args.version)
+        if build_time:
+            flags.append("-DESPALTHERMA_BUILD_TIME=%dUL" % build_time)
+        if flags:
+            env["PLATFORMIO_BUILD_FLAGS"] = " ".join(flags)
         subprocess.check_call(cmd, env=env)
 
     firmware_dir = os.path.join(args.out, "firmware")
@@ -75,6 +91,7 @@ def main():
         manifest = {
             "name": "ESPAltherma for " + b["name"],
             "version": version,
+            **({"build_time": build_time} if build_time else {}),
             "new_install_prompt_erase": True,
             "new_install_improv_wait_time": 20,
             "builds": [{"chipFamily": b["chip"], "parts": parts}],

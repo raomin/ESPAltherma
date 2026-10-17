@@ -93,6 +93,18 @@ const char *mqttTestReason = "";  // English, translated by the web interface
 int mqttTestState = 0;             // PubSubClient state
 volatile bool telemetryPending = false;
 bool updateFailed = false;
+bool updateDone = false;      // the last upload was written and checked
+char updateError[64] = "";    // why it failed: answered to the web page and kept in the events
+
+static void updateFail(const char *why)
+{
+  updateFailed = true;
+  strlcpy(updateError, why && *why ? why : "unknown error", sizeof(updateError));
+  if (Update.isRunning())
+    Update.abort(); // frees its buffer; the reason is kept above
+  mqttSerial.printf("Firmware update failed: %s\n", updateError);
+  eventAddf("Firmware update failed: %s", updateError);
+}
 
 static bool authorized(AsyncWebServerRequest *r)
 {
@@ -188,6 +200,8 @@ static void controlJson(JsonObject c, const CurveControl &k)
 static void statusJson(JsonDocument &doc)
 {
   doc["fw"] = ESPALTHERMA_VERSION;
+  if (ESPALTHERMA_BUILD_TIME)
+    doc["build"] = (unsigned long)ESPALTHERMA_BUILD_TIME;
   doc["board"] = BOARD_NAME;
   doc["uptime"] = millis() / 1000;
   doc["heap"] = ESP.getFreeHeap();
@@ -698,28 +712,46 @@ void webBegin()
   webServer.on("/update", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
-    bool ok = !updateFailed && !Update.hasError();
-    r->send(ok ? 200 : 500, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false,\"error\":\"update failed\"}");
-    if (ok)
+    bool ok = updateDone && !updateFailed;
+    if (!ok)
     {
-      rebootCause = "Firmware update from the web interface";
-      rebootRequested = true;
+      JsonDocument doc;
+      doc["ok"] = false;
+      doc["error"] = updateError[0] ? updateError : "no firmware received";
+      sendJson(r, doc, 500);
+      return;
     }
+    r->send(200, "application/json", "{\"ok\":true}");
+    rebootCause = "Firmware update from the web interface";
+    rebootRequested = true;
   }, [](AsyncWebServerRequest *r, String filename, size_t index, uint8_t *data, size_t len, bool final) {
     if (config.adminPwd[0] && !r->authenticate("admin", config.adminPwd))
       return;
     if (index == 0)
     {
-      updateFailed = !Update.begin(UPDATE_SIZE_UNKNOWN);
+      // An upload cut off midway leaves the update running, and Update.begin() would refuse every new one until
+      // a restart ("already running"): drop it.
+      if (Update.isRunning())
+        Update.abort();
+      updateFailed = false;
+      updateDone = false;
+      updateError[0] = 0;
       mqttSerial.printf("Firmware update started (%s)\n", filename.c_str());
       eventAddf("Firmware update from the web interface: %s", filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+        updateFail(Update.errorString());
     }
     if (!updateFailed && Update.write(data, len) != len)
-      updateFailed = true;
+      updateFail(Update.errorString());
     if (final && !updateFailed)
     {
-      updateFailed = !Update.end(true);
-      mqttSerial.printf("Firmware update %s\n", updateFailed ? "failed" : "done, rebooting");
+      if (Update.end(true))
+      {
+        updateDone = true;
+        mqttSerial.println("Firmware update done, rebooting");
+      }
+      else
+        updateFail(Update.errorString());
     }
   });
 
@@ -775,14 +807,15 @@ static void runMqttTest()
   }
 }
 
-// What a report is about: the identification key of the heat pump and the model, hashed (FNV-1a). A board reports
-// each heat pump + model once; re-confirming the same model sends nothing, a new unit or another model does.
+// What a report is about: the identification key of the heat pump, the model and the firmware version, hashed
+// (FNV-1a). A board reports each heat pump + model once per firmware: re-confirming the same model sends nothing; a
+// new unit, another model or a firmware update does, so the versions in use are known.
 static uint32_t telemetrySubject()
 {
   char key[96];
   surveyKey(survey, key, sizeof(key));
   uint32_t h = 2166136261u;
-  for (const char *p : {(const char *)key, "|", (const char *)config.model})
+  for (const char *p : {(const char *)key, "|", (const char *)config.model, "|", ESPALTHERMA_VERSION})
     for (; *p; p++)
       h = (h ^ (uint8_t)*p) * 16777619u;
   return h ? h : 1;

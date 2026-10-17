@@ -135,7 +135,7 @@ Open `http://espaltherma.local`, or the address shown by the installer (and on t
 
 1. **Heat pump.** ESPAltherma reads the heat pump and detects its model. Check it and click **Confirm this model**. If several models match, pick yours; if yours is not proposed, choose it from the full list ("Not this one?"). Until you confirm, only the values every candidate model reads the same way are published.
 
-    The **Help others get their heat pump recognised** box, ticked by default, sends one report when you confirm: the identification codes of your unit, the readings taken during the detection and the model. It lets ESPAltherma recognise the next unit of the same model without asking its owner. No network, MQTT or personal data is sent (the site keeps the country and city the report comes from, not the IP address); **See exactly what is sent** shows the report, and [this page](https://espaltherma-telemetry.pages.dev/) explains how reports are used. Untick it to send nothing.
+    The **Help others get their heat pump recognised** box, ticked by default, sends one report when you confirm, and one after each firmware update so the versions in use are known: the identification codes of your unit, the readings taken during the detection, the model and the firmware version. It lets ESPAltherma recognise the next unit of the same model without asking its owner. No network, MQTT or personal data is sent (the site keeps the country and city the report comes from, not the IP address); **See exactly what is sent** shows the report, and [this page](https://espaltherma-telemetry.pages.dev/) explains how reports are used. Untick it to send nothing.
 
     ![Confirming the heat pump model](doc/images/setup-heatpump.png)
 

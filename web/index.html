@@ -323,7 +323,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <div class="panel card pad" data-step="hp">
   <div class="k">Step 3 · Your heat pump</div>
   <div id="hpDetect" translate="no"></div>
-  <label class="share" id="tmBox" hidden><input type="checkbox" id="tmOn" checked><div><b>Help others get their heat pump recognised</b><span>Share this unit's identification codes and the readings taken during the detection when you confirm, so the next owner of this model is recognised instantly. No network, MQTT or personal data is sent.</span> <a href="#" id="tmShow">See exactly what is sent</a> <span translate="no">·</span> <a href="https://espaltherma-telemetry.pages.dev/" target="_blank" rel="noopener">How reports are used</a></div></label>
+  <label class="share" id="tmBox" hidden><input type="checkbox" id="tmOn" checked><div><b>Help others get their heat pump recognised</b><span>Share this unit's identification codes and the readings taken during the detection when you confirm, and again after each firmware update, so the next owner of this model is recognised instantly. No network, MQTT or personal data is sent.</span> <a href="#" id="tmShow">See exactly what is sent</a> <span translate="no">·</span> <a href="https://espaltherma-telemetry.pages.dev/" target="_blank" rel="noopener">How reports are used</a></div></label>
   <pre id="tmPreview" hidden></pre>
   <div class="acts"><button class="p" id="hpConfirm" hidden>Confirm this model</button><button id="hpRedetect">Detect again</button><span class="msg" id="hpMsg" translate="no"></span></div>
   <details class="manual" id="hpManual"><summary>Not this one? Choose my model from the list</summary>
@@ -411,7 +411,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <h1>System</h1>
  <div class="fw" id="sysTiles" translate="no"></div>
  <div class="cols">
-  <div class="card"><h2>Firmware update</h2><p class="sub">Check for a newer release: this browser downloads it from the ESPAltherma site and sends it to the board. Or select the OTA firmware file (.bin) of a release.</p>
+  <div class="card"><h2>Firmware update</h2><p class="sub">Check for a newer release: this browser downloads it from the ESPAltherma site and sends it to the board. Or select the OTA firmware file (.bin) of your board, from the <a href="https://github.com/raomin/ESPAltherma/releases" target="_blank" rel="noopener">releases on GitHub</a></p>
    <div class="acts"><button id="upCheck">Check for an update</button><button class="p" id="upBtn" hidden translate="no"></button><label class="chk" style="margin:0"><input type="checkbox" id="upDev">Development builds</label></div>
    <input type="file" id="fwFile" accept=".bin">
    <div class="acts"><button id="fwBtn">Update</button><span class="msg" id="fwMsg" translate="no"></span></div>
@@ -1108,8 +1108,14 @@ function uploadFirmware(file) {
   const fd = new FormData(); fd.append('firmware', file);
   const x = new XMLHttpRequest(), p = $('#fwProg');
   p.hidden = false; p.value = 0; x.upload.onprogress = e => p.value = e.loaded / e.total * 100;
-  x.onload = () => msg('#fwMsg', x.status === 200 ? t('Updated. Restarting…') : t('Update failed.'), x.status === 200);
-  x.onerror = () => msg('#fwMsg', t('Update failed.'), false);
+  x.onload = () => {
+    if (x.status === 200) return msg('#fwMsg', t('Updated. Restarting…'), true);
+    // the board's own reason when it gives one, else what the HTTP status tells (a proxy's size limit: 413)
+    let why = x.status === 401 ? t('the admin password was refused') : 'HTTP ' + x.status;
+    try { const e = JSON.parse(x.responseText).error; if (e) why = e; } catch (e) {}
+    msg('#fwMsg', t('Update failed: {reason}', {reason: why}), false);
+  };
+  x.onerror = () => msg('#fwMsg', t('Update failed: {reason}', {reason: t('the upload was cut off')}), false);
   x.open('POST', '/update'); x.send(fd); msg('#fwMsg', t('Uploading…'));
 }
 $('#fwBtn').onclick = () => {
@@ -1126,6 +1132,12 @@ function versionRank(v) {
   const m = /^(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.?(\d*))?$/.exec(v || '');
   return m ? [+m[1], +m[2], +m[3], m[4] ? ['alpha', 'beta', 'rc'].indexOf(m[4]) : 3, +(m[5] || 0)] : null;
 }
+// Newer: by the time of the commits when both builds carry it (CI builds from 2.0.0-beta.8 on), else by the version.
+// A development build is never offered over a newer one, nor a release over a newer development build.
+function newerBuild(m, s) {
+  if (m.build_time && s.build) return m.build_time > s.build;
+  return newerVersion(String(m.version || ''), s.fw);
+}
 function newerVersion(latest, current) {
   const a = versionRank(latest), b = versionRank(current);
   if (!a || !b) return latest !== current; // a development build on either side: offered when different
@@ -1140,8 +1152,8 @@ $('#upCheck').onclick = async () => {
   try {
     const r = await fetch(updateSite() + 'manifest-' + status.board + '.json', {cache: 'no-store'});
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    const v = String((await r.json()).version || '');
-    if (!v || !newerVersion(v, status.fw)) return msg('#fwMsg', t('Up to date ({v}).', {v: status.fw}), true);
+    const m = await r.json(), v = String(m.version || '');
+    if (!v || !newerBuild(m, status)) return msg('#fwMsg', t('Up to date ({v}).', {v: status.fw}), true);
     upLatest = v;
     $('#upBtn').textContent = t('Install {v}', {v});
     $('#upBtn').hidden = false;

@@ -7,7 +7,8 @@ name: Release
 # The firmwares must be served by the installer's own site: ESP Web Tools downloads them with fetch(), and
 # release assets are not served with CORS headers.
 # Repository secrets: CLOUDFLARE_API_TOKEN (permission Cloudflare Pages: Edit) and CLOUDFLARE_ACCOUNT_ID.
-# Run by hand (workflow_dispatch), it publishes a preview at https://preview.espaltherma.pages.dev instead.
+# Run by hand (workflow_dispatch), it publishes a preview at https://preview.espaltherma.pages.dev instead. A tag
+# publishes the preview too, so the development builds of the web update are never older than the latest release.
 
 on:
   push:
@@ -55,3 +56,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy flasher --project-name espaltherma --branch ${{ startsWith(github.ref, 'refs/tags/') && 'main' || 'preview' }} --commit-dirty=true
+      - name: Publish the same installer as the preview (on a tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy flasher --project-name espaltherma --branch preview --commit-dirty=true
