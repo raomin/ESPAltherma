@@ -18,7 +18,8 @@ LabelDef labelDefs[] = {
     {0x54, 0, 103, 2, 1, "Refrig. Temp. liquid side(C)"},
     {0x54, 2, 103, 2, 1, "Inlet water temp.(C)"},
     {0x54, 4, 103, 2, 1, "Outlet Water Temp.(C)"},
-    {0x54, 6, 103, 2, 1, "D(C)"},
+    // Was "D(C)": the leaving water temperature the remote controller shows (RKHBH008BA with ARC448A3, by TungstenE2)
+    {0x54, 6, 103, 2, 1, "Leaving water temp. after BUH (R2T)"},
     {0x54, 8, 103, 2, 1, "DHW tank temp.(C)"},
     {0x54, 10, 103, 2, -1, "F(C)"},
     // Byte 12 seems to be a 1 byte value, evolving during day in continuous way

@@ -694,8 +694,11 @@ async function refreshStatus() { try { status = await api('/api/status'); status
 setInterval(renderAge, 1000);
 
 // ---- dashboard: the drawing shows the readings it finds among the selected values (other models: "—")
-const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|outlet water temp)/i, lw2: /^leaving water temp\. after BUH/i, r3t: /^refrig\. temp\. liquid side/i,
-  inlet: /^inlet water temp/i, tank: /^DHW tank temp/i, room: /^indoor ambient temp/i, dhwSp: /^DHW setpoint/i, lwSp: /^LW setpoint \(main\)/i, rtSp: /^RT setpoint/i,
+// Some definitions name them their own way: the Rotex on protocol S "Outlet Water Temp." for R1T and "Priority to
+// domestic water" (on while the tank is heated) for the 3-way valve; the Hybrid, the EBLQ 5-7kW monobloc and the
+// EWAQ mini chiller "Outlet Water Heat Exch. Temp. (R1T)" and "Outlet Water BUH Temp. (R2T)", the Hybrid "RT Temp."
+const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|outlet water temp|outlet water heat exch\. temp)/i, lw2: /^(leaving water temp\. after BUH|outlet water BUH temp)/i, r3t: /^refrig\. temp\. liquid side/i,
+  inlet: /^inlet water temp/i, tank: /^DHW tank temp/i, room: /^(indoor ambient temp|RT temp\.)/i, dhwSp: /^DHW setpoint/i, lwSp: /^LW setpoint \(main\)/i, rtSp: /^RT setpoint/i,
   inv: /^INV frequency/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^error type/i, code: /^error code/i, thermo: /^thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
   freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i,
@@ -754,7 +757,8 @@ function paint() {
   requestAnimationFrame(() => { fit($('#lComp'), 70); fit($('#sInv'), 70); }); // once displayed: hidden texts have no width
   tx('sV3', r.v3 == null ? '' : v3 ? t('to the hot water') : t('to the house'));
   tx('sPump', r.pump == null && flow == null ? '' : pump ? t('Pump on') : t('Pump off'));
-  const bar = n('bar');
+  // Exactly 0: no pressure sensor on the unit (an empty circuit would stop the heat pump in error)
+  const bar = n('bar') || null;
   tx('sBar', bar == null ? '' : f1(bar) + ' bar');
   const a = (-135 + (bar || 0) / 4 * 270) * Math.PI / 180;
   $('#needle').setAttribute('d', `M500 492L${(500 + 11 * Math.sin(a)).toFixed(1)} ${(492 - 11 * Math.cos(a)).toFixed(1)}`);
