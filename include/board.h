@@ -45,6 +45,7 @@
 #elif defined(ARDUINO_M5Stack_ATOM)
 #define BOARD_DEFAULT_RX_PIN 26 // Grove port (the Atom Lite has no GPIO16/17)
 #define BOARD_DEFAULT_TX_PIN 32
+#define BOARD_WIFI_TX_POWER WIFI_POWER_15dBm // at full power it kept losing a Fritz!Box 2m away
 #else
 #define BOARD_DEFAULT_RX_PIN 16 // Default GPIO PINs for Serial2
 #define BOARD_DEFAULT_TX_PIN 17
