@@ -177,7 +177,7 @@ A third relay, the *safety relay*, can stop the heat pump (for instance wired to
 
 ESPAltherma can also integrate with SG-Ready options of your heat pump. To do so, set the pins of the SG1 and SG2 relays in **Settings → Relays**, then send one of the allowed values (0..3) to MQTT channel `espaltherma/sg/set`, or use the `EspAltherma Smart Grid` selector in Home Assistant. Current SG mode will be available in `espaltherma/sg/state`.
 
-Of course, you will need to use 2 more relays to open/close SG1 and SG2 contacts of your heat pump. On the M5StickC Plus, G32 and G33 of the header next to the USB C port (not the pins you used for the X10A) work well.
+Of course, you will need 2 more relays to open/close the SG1 and SG2 contacts of your heat pump. On the M5StickC, M5StickC Plus and Plus2, use the Grove port next to the USB-C connector: **Smart Grid pin 1 = 32**, **pin 2 = 33**. The M5Stack relay units switch on a high signal: keep *Smart Grid relays active high* ticked. On other boards, any two free GPIOs, not the X10A ones. Coming from v1: these replace `PIN_SG1`/`PIN_SG2` of `setup.h`. Until they are set (-1), the Smart Grid selector is not in Home Assistant.
 
 I found that using 5V supply pin of X10A provides enough power for my ESP32 and both relays, but your mileage may vary.
 
