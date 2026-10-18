@@ -630,7 +630,8 @@ function renderSystem() {
     [t('Firmware'), s.fw, s.board],
     [t('Running for'), duration(s.uptime), t('Last reset: {why}', {why: lastReset})],
     [t('Free memory'), Math.round(s.heap / 1024) + ' kB', s.heap_min != null ? t('lowest {n} kB', {n: Math.round(s.heap_min / 1024)}) : ''],
-    [t('Heat pump'), t('{n} readings', {n: s.hp.values}), t('last one {when}', {when: ago(s.hp.last_poll)})],
+    // how many values each pass reads (the selection), and when the last pass was
+    [t('Heat pump'), t('{n} values', {n: s.hp.values}), s.hp.last_poll < 0 ? t('not read yet') : t('read {when}', {when: ago(s.hp.last_poll)})],
   ];
   $('#sysTiles').replaceChildren(...tiles.map(([k, v, sub]) => el('div', {class: 'card'}, el('div', {class: 'k'}, k), el('div', {class: 'big'}, v), el('div', {class: 'sub'}, sub))));
   $('#sysTmBox').hidden = !s.telemetry_available;
