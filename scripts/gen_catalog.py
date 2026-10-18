@@ -95,6 +95,9 @@ RECOMMENDED = {
     "INV primary current (A)", "INV frequency (rps)", "Voltage (N-phase) (V)",
     "Leaving water temp. before BUH (R1T)", "Leaving water temp. after BUH (R2T)",
     "Inlet water temp.(R4T)", "Inlet water temp. (water heat exchanger)", "DHW tank temp. (R5T)", "Indoor ambient temp. (R1T)",
+    # the same sensors under the names of the Hybrid, the EBLQ 5-7kW monobloc and the EWAQ mini chiller
+    "Outlet Water Heat Exch. Temp. (R1T)", "Outlet Water BUH Temp. (R2T)", "RT Temp.",
+    "BUH Step1",  # the backup heater on the drawing
     "Refrig. Temp. liquid side (R3T)", "Discharge pipe temp.",
     "Flow sensor (l/min)", "Water pressure",
     "LW setpoint (main)", "DHW setpoint", "RT setpoint",

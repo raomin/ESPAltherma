@@ -124,7 +124,17 @@ void test_catalog_build_recommended(void)
     TEST_ASSERT_TRUE(model >= 0);
     std::vector<LabelDef> labels;
     catalogBuildLabels(model, nullptr, 0, labels);
-    TEST_ASSERT_EQUAL_size_t(30, labels.size());
+    TEST_ASSERT_EQUAL_size_t(31, labels.size());
+    // Two zones found by the survey: the mixed water, both pumps and the second zone's target join them
+    catalogTwoZones() = true;
+    std::vector<LabelDef> twoZones;
+    catalogBuildLabels(model, nullptr, 0, twoZones);
+    catalogTwoZones() = false;
+    TEST_ASSERT_EQUAL_size_t(35, twoZones.size());
+    int zoneValues = 0;
+    for (auto &l : twoZones)
+        zoneValues += catalogTwoZoneLabel(l.label);
+    TEST_ASSERT_EQUAL_INT(4, zoneValues);
     bool hasMode = false;
     for (auto &l : labels)
     {

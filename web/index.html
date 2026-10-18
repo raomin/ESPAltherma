@@ -735,13 +735,16 @@ function paint() {
   const r = reading(lastValues), n = k => num(r[k]);
   const deg = v => v == null ? '—' : f1(v) + '°';
   for (const [label, k] of TAGS) { tx('gl_' + k, t(label)); const v = n(k); tx('g_' + k, k === 'flow' ? (v == null ? '—' : f1(Math.max(0, v)) + ' l/min') : deg(v)); }
-  const lw = n('lw2') != null ? n('lw2') : n('lw1'), ret = n('inlet'), tank = n('tank'), mid = (a, b) => a != null && b != null ? (a + b) / 2 : a;
+  // A tank below 0 °C is no tank sensor (an open input reads about -37): the unit has no hot water tank
+  const noTank = n('tank') != null && n('tank') < 0;
+  const lw = n('lw2') != null ? n('lw2') : n('lw1'), ret = n('inlet'), tank = noTank ? null : n('tank'), mid = (a, b) => a != null && b != null ? (a + b) / 2 : a;
   // Two zones (a direct one and a mixed one with its valve, pump and R7T) once the mixed water temperature reads something:
   // single-zone units answer 0 there
   const mixed = n('mixed'), two = mixed != null && mixed !== 0;
   sch.classList.toggle('bizone', two);
-  // No hot water tank, no room thermostat: none of their values selected (once the values are there)
-  sch.classList.toggle('nodhw', lastValues.length > 0 && r.tank == null && r.dhwSp == null && r.v3 == null);
+  // No hot water tank, no room thermostat: none of their values selected (once the values are there), or no tank
+  // sensor while the 3-way valve never turns to the hot water
+  sch.classList.toggle('nodhw', lastValues.length > 0 && (r.tank == null && r.dhwSp == null && r.v3 == null || noTank && !isOn(r.v3)));
   sch.classList.toggle('noroom', lastValues.length > 0 && r.room == null && r.rtSp == null);
   [['pSup', lw], ['pJoin', lw], ['pDhw', lw], ['pCoil', mid(lw, tank)], ['pDhwR', ret], ['pSpace', lw], ['pLoop', mid(two ? mixed : lw, ret)], ['pRet', ret],
    ['pTrunk', lw], ['pDirect', lw], ['pDirectR', ret], ['pMixed', mixed], ['pBypass', ret]].forEach(([id, v]) => document.getElementById(id).style.stroke = tcol(v));

@@ -185,6 +185,30 @@ void extraLoop()
   eventLoop();
 }
 
+// Two zones: the model's mixed water temperature (R7T) reads something in the survey; a single-zone unit answers 0
+static bool surveyTwoZones(int model)
+{
+  if (model < 0 || surveyInProgress)
+    return false;
+  static ::Converter decoder; // one-off decodes, not the polled values
+  decoder.quiet = true;
+  for (int i = 0; i < CATALOG_ENTRY_COUNT; i++)
+  {
+    const CatalogEntry &e = CATALOG_ENTRIES[i];
+    if (!catalogInModel(e, model) || strncmp(catalogLabel(e), "Mixed water temp.", 17) != 0)
+      continue;
+    const SurveyReg *r = survey.find(e.reg);
+    if (r == nullptr || !r->answered || e.offset + e.size > r->len)
+      continue;
+    LabelDef value(e.reg, e.offset, e.conv, e.size, e.type, catalogLabel(e));
+    memset(value.asString, 0, sizeof(value.asString));
+    decoder.convert(&value, const_cast<uint8_t *>(r->payload + e.offset));
+    if (atof(value.asString) != 0)
+      return true;
+  }
+  return false;
+}
+
 void initLabels(){
   //The values of the configured model, from the catalog
   int model = catalogFindModel(config.model);
@@ -216,6 +240,7 @@ void initLabels(){
   }
   lastFixCount = config.fixCount;
   lastLayoutCheck = config.layoutCheck;
+  catalogTwoZones() = surveyTwoZones(model);
   int refrigerant = catalogBuildLabels(model, config.labels, config.labelCount, catalogLabels, fixes, fixCount, catalogLanguage(config.lang));
   converter.RType = refrigerant ? refrigerant : 802;
   converter.setLabels(catalogLabels.data(), catalogLabels.size());
@@ -413,6 +438,8 @@ void runSurvey()
   applyDetection();
   if (config.model[0] && survey.protocol == 'I')
     layoutFeedSurvey();
+  if (config.model[0] && surveyTwoZones(catalogFindModel(config.model)) != catalogTwoZones())
+    reloadLabels(); // two zones found (or gone): their values join the recommended ones
   surveyReady = true;
 }
 

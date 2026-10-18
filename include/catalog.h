@@ -157,6 +157,25 @@ static bool catalogKeySelected(uint32_t key, const uint32_t *keys, size_t keyCou
   return false;
 }
 
+// Two zones: their values (the mixed water, both pumps, the second zone's target) are recommended too when the unit
+// has two zones, which the survey tells: a single-zone unit reads 0 as mixed water temperature. Set by the firmware.
+inline bool &catalogTwoZones()
+{
+  static bool twoZones = false;
+  return twoZones;
+}
+
+inline bool catalogTwoZoneLabel(const char *label)
+{
+  return strncmp(label, "Mixed water temp.", 17) == 0 || strcmp(label, "Main pump") == 0 || strcmp(label, "Add pump") == 0 ||
+         strcmp(label, "LW setpoint (add)") == 0;
+}
+
+inline bool catalogRecommended(const CatalogEntry &e)
+{
+  return (e.flags & CATALOG_FLAG_RECOMMENDED) || (catalogTwoZones() && catalogTwoZoneLabel(catalogLabel(e)));
+}
+
 // Builds the labels to query for a model: the selected keys, or its recommended values when nothing is selected.
 // Returns the refrigerant conversion of the model (801 R410A, 802 R32, 803 R22, 804 R134a), or 0 if it does not tell.
 // Registries in fixes are read with the entries of their fix model. The display names are in language
@@ -177,7 +196,7 @@ int catalogBuildLabels(int model, const uint32_t *keys, size_t keyCount, std::ve
     }
     if (!catalogInModel(e, catalogModelFor(e.reg, model, fixes, fixCount)))
       continue;
-    bool selected = keyCount == 0 ? (e.flags & CATALOG_FLAG_RECOMMENDED) != 0 : catalogKeySelected(catalogKey(e), keys, keyCount);
+    bool selected = keyCount == 0 ? catalogRecommended(e) : catalogKeySelected(catalogKey(e), keys, keyCount);
     if (!selected || out.size() >= CATALOG_MAX_SELECTED)
       continue;
     out.push_back(LabelDef(e.reg, e.offset, e.conv, e.size, e.type, catalogLabel(e)));

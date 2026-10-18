@@ -358,7 +358,7 @@ struct CatalogStream
         continue;
       next++;
       uint32_t key = catalogKey(e);
-      bool recommended = e.flags & CATALOG_FLAG_RECOMMENDED;
+      bool recommended = catalogRecommended(e);
       bool selected = recommended;
       if (current && config.labelCount > 0)
       {
