@@ -30,5 +30,7 @@
  "Rugged, touch screen (Port B)": "Robuste, écran tactile (Port B)",
  "Tiny, no screen. X10A on the Grove port": "Minuscule, sans écran. X10A sur le connecteur Grove",
  "Wired Ethernet, experimental. Flash it through a USB-serial adapter (IO0 to GND while powering up)": "Ethernet filaire, expérimental. À flasher avec un adaptateur USB-série (IO0 à la masse à la mise sous tension)",
- "Wired Ethernet / PoE, experimental. X10A on the UEXT connector": "Ethernet filaire / PoE, expérimental. X10A sur le connecteur UEXT"
+ "Wired Ethernet / PoE, experimental. X10A on the UEXT connector": "Ethernet filaire / PoE, expérimental. X10A sur le connecteur UEXT",
+ "Already installed? You normally don't need a file: update it from its own page, System → Firmware update → Check for an update.": "Déjà installé ? Normalement, pas besoin de fichier : mettez-le à jour depuis sa propre page, Système → Mise à jour du firmware → Chercher une mise à jour.",
+ "Download {file}": "Télécharger {file}"
 }
