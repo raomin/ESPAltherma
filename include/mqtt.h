@@ -182,6 +182,14 @@ void readEEPROM(){
 }
 
 // One connection attempt; on success publishes the discovery messages and subscribes.
+// The Smart Grid relays keep their state through a broker reconnect or a Home Assistant restart, so the
+// reported mode is the real one, retained: Home Assistant shows it again after its own restart.
+void publishSgState()
+{
+  char s[2] = {(char)('0' + sgMode), 0};
+  client.publish(mqttTopics.sgState, s, true);
+}
+
 bool mqttConnectOnce()
 {
     mqttSerial.print("Attempting MQTT connection...");
@@ -231,7 +239,7 @@ bool mqttConnectOnce()
                mqttTopics.lwt, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName, mqttTopics.sgSet, mqttTopics.sgState);
       client.publish(mqttTopics.cfgSg, json, true);
       client.subscribe(mqttTopics.sgSet);
-      client.publish(mqttTopics.sgState, "0");
+      publishSgState();
       }
       else
       {
@@ -324,7 +332,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgInactiveState());
     digitalWrite(config.sg2Pin, sgInactiveState());
     sgMode = 0;
-    client.publish(mqttTopics.sgState, "0");
+    publishSgState();
     mqttSerial.println("Set SG mode to 0 - Normal operation");
   }
   else if (payload[0] == '1')
@@ -333,7 +341,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgInactiveState());
     digitalWrite(config.sg2Pin, sgActiveState());
     sgMode = 1;
-    client.publish(mqttTopics.sgState, "1");
+    publishSgState();
     mqttSerial.println("Set SG mode to 1 - Forced OFF");
   }
   else if (payload[0] == '2')
@@ -342,7 +350,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgActiveState());
     digitalWrite(config.sg2Pin, sgInactiveState());
     sgMode = 2;
-    client.publish(mqttTopics.sgState, "2");
+    publishSgState();
     mqttSerial.println("Set SG mode to 2 - Recommended ON");
   }
   else if (payload[0] == '3')
@@ -351,7 +359,7 @@ void callbackSg(byte *payload, unsigned int length)
     digitalWrite(config.sg1Pin, sgActiveState());
     digitalWrite(config.sg2Pin, sgActiveState());
     sgMode = 3;
-    client.publish(mqttTopics.sgState, "3");
+    publishSgState();
     mqttSerial.println("Set SG mode to 3 - Forced ON");
   }
   else
