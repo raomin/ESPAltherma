@@ -61,10 +61,14 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     emit(s.data(), s.size());
 
     // Hardcoded ESP diagnostic sensors.
-    s = makeSensorJson(battery_voltage, true);
+    s = makeSensorJson(wifi_rssi, true);
     emit(s.data(), s.size());
-    s = "," + makeSensorJson(wifi_rssi, true);
+#if defined(ARDUINO_M5Stick_C)
+    // Battery voltage: only the M5StickC boards (all three build with ARDUINO_M5Stick_C) publish it. Announced on
+    // other boards, Home Assistant logs a template warning at every reading.
+    s = "," + makeSensorJson(battery_voltage, true);
     emit(s.data(), s.size());
+#endif
     s = "," + makeSensorJson(free_mem, true);
     emit(s.data(), s.size());
     s = "," + makeSensorJson(uptime, true);

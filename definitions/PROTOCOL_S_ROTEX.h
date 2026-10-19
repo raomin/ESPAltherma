@@ -24,7 +24,8 @@ LabelDef labelDefs[] = {
     {0x54, 10, 103, 2, -1, "F(C)"},
     // Byte 12 seems to be a 1 byte value, evolving during day in continuous way
     // 0x1b mid-day, 0x24 mid night -> some delta temp??
-    {0x54, 12, 101, 1, -1, "Delta-Tr(deg)"},
+    // Whole degrees (28-36 on TungstenE2's unit): type 1 so Home Assistant gets it as a temperature
+    {0x54, 12, 101, 1, 1, "Delta-Tr(deg)"},
     {0x54, 13, 151, 1, -1, "R/C Setpoint(C)"},
 
     {0x55, 0, 201, 1, -1, "Operation Mode"},
