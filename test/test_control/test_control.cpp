@@ -3,12 +3,17 @@
 
 #include "control.h"
 
+// Limit records of the four curve settings, 5 bytes each: hot water A 35+21 / B 45+11 -> 45..55,
+// leaving water B 29+27 / A 29+17 -> 29..45 (the same block on both boards, at different addresses)
+static const uint8_t LIMITS[32] = {0xFF, 0x00, 0x15, 0x23, 0x08, 0xFF, 0x00, 0x0B, 0x2D, 0x08, 0xFF, 0x00, 0x1B, 0x1D, 0x08, 0xFF,
+                                   0x00, 0x11, 0x1D, 0x08, 0xFF, 0x00, 0x10, 0x0A, 0x08, 0xFF, 0x00, 0x0F, 0x08, 0x08, 0xFF, 0x00};
+
 // Fake hydro board: answers the identification, memory and RAM commands of the X10A port on a small memory image.
 struct FakeUnit
 {
     uint8_t softwareId[4];
     uint8_t memory[1024]; // the board's memory, by offset
-    uint8_t ram[0x4000];  // RAM, by address
+    uint8_t ram[0x6000];  // RAM, by address
     bool answer = true;
     int ramWrites = 0, memoryWrites = 0, badWrites = 0;
 
@@ -37,9 +42,29 @@ struct FakeUnit
         setWord(0x18BA, 40 << 8);
         setWord(0x187C, 36 << 8);
         setWord(0x136A, 37 << 8 | 0x4D);
-        const uint8_t limits[32] = {0xFF, 0x00, 0x15, 0x23, 0x08, 0xFF, 0x00, 0x0B, 0x2D, 0x08, 0xFF, 0x00, 0x1B, 0x1D, 0x08, 0xFF,
-                                    0x00, 0x11, 0x1D, 0x08, 0xFF, 0x00, 0x10, 0x0A, 0x08, 0xFF, 0x00, 0x0F, 0x08, 0x08, 0xFF, 0x00};
-        memcpy(ram + 0x30C0, limits, 32);
+        memcpy(ram + 0x30C0, LIMITS, 32);
+    }
+
+    // The same unit on the hydro board software 20017705: the memory bytes are the same, every RAM address differs
+    void board20017705()
+    {
+        const uint8_t id[4] = {0x05, 0x77, 0x01, 0x20};
+        memcpy(softwareId, id, 4);
+        memset(ram, 0, sizeof(ram));
+        setWord(0x37A8, 48 << 8);
+        setWord(0x37E6, 52 << 8);
+        setWord(0x3166, 48 << 8);
+        setWord(0x34C2, 51 << 8);
+        setWord(0x37E8, 40 << 8);
+        setWord(0x37AA, 36 << 8);
+        setWord(0x31BA, 37 << 8 | 0x4D);
+        memcpy(ram + 0x5409, LIMITS, 32);
+    }
+
+    static bool isCurveWord(uint16_t addr)
+    {
+        return addr == 0x187A || addr == 0x18B8 || addr == 0x18BA || addr == 0x187C ||
+               addr == 0x37A8 || addr == 0x37E6 || addr == 0x37E8 || addr == 0x37AA;
     }
 
     void setWord(uint16_t addr, uint16_t v)
@@ -83,7 +108,7 @@ struct FakeUnit
         {
             uint16_t addr = data[0] | data[1] << 8;
             ramWrites++;
-            if (addr != 0x187A && addr != 0x18B8 && addr != 0x18BA && addr != 0x187C)
+            if (!isCurveWord(addr))
                 badWrites++;
             memcpy(ram + addr, data + 2, n - 2);
         }
@@ -349,6 +374,44 @@ void test_leaving_water_writes_its_own_words_and_bytes()
     TEST_ASSERT_EQUAL(45, c.target);
 }
 
+void test_second_software_writes_its_own_addresses()
+{
+    unit.board20017705();
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL_STRING("20017705", c.softwareId);
+    TEST_ASSERT_EQUAL(45, c.minTarget);
+    TEST_ASSERT_EQUAL(55, c.maxTarget);
+    TEST_ASSERT_EQUAL(48, c.target);
+    TEST_ASSERT_EQUAL(52, c.targetLo);
+    TEST_ASSERT_EQUAL(48, c.effective);
+    TEST_ASSERT_EQUAL(51, c.ceiling);
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x37A8));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x37E6));
+    TEST_ASSERT_EQUAL(0, unit.word(0x187A)); // nothing at the first board's addresses
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL((50 - 35) << 2 | 0x01, unit.memory[366]); // the same memory bytes as the first board
+    TEST_ASSERT_EQUAL((50 - 45) << 2 | 0x03, unit.memory[367]);
+    TEST_ASSERT_EQUAL(50, c.saved);
+
+    CurveControl l = fresh(CONTROL_LWT);
+    TEST_ASSERT_TRUE(l.identify(1000));
+    TEST_ASSERT_EQUAL(29, l.minTarget);
+    TEST_ASSERT_EQUAL(45, l.maxTarget);
+    TEST_ASSERT_EQUAL(36, l.target);
+    TEST_ASSERT_EQUAL(40, l.targetLo);
+    TEST_ASSERT_EQUAL(37, l.effective);
+    TEST_ASSERT_EQUAL(-1, l.ceiling);
+    l.request(38);
+    l.tick(2000);
+    TEST_ASSERT_EQUAL(38 << 8, unit.word(0x37E8));
+    TEST_ASSERT_EQUAL(38 << 8, unit.word(0x37AA));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x37A8)); // the hot water curve untouched
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -366,5 +429,6 @@ int main(int, char **)
     RUN_TEST(test_reads_back_a_change_made_on_the_interface);
     RUN_TEST(test_leaving_water_identifies_with_its_own_curve);
     RUN_TEST(test_leaving_water_writes_its_own_words_and_bytes);
+    RUN_TEST(test_second_software_writes_its_own_addresses);
     return UNITY_END();
 }

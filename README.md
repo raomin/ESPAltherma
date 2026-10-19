@@ -216,7 +216,7 @@ To try it:
 
 Next to the target, the card shows what the thermostat really aims for, with an explanation on hover. The hot water target is capped by the maximum the heat pump reaches on its own at the current outdoor temperature (about 50 °C on a mild day; above that the booster heater would have to finish), so asking for 55 heats the tank to that maximum. The leaving water target carries the shift and the room modulation set on the unit. Home Assistant gets these as the `effective` and `ceiling` attributes of the entities.
 
-The card tells you when it cannot work: the unit did not answer, the setpoint mode is not weather dependent, or the hydro board software is not supported. The addresses written are specific to the software of the hydro board, read from the unit at start; only the versions known to work are accepted (18002904 so far, found on the EAVH16S18DA6V), nothing is written on any other. If your unit shows "not available", please open an issue with the software version shown.
+The card tells you when it cannot work: the unit did not answer, the setpoint mode is not weather dependent, or the hydro board software is not supported. The addresses written are specific to the software of the hydro board, read from the unit at start; only the versions whose addresses are known are accepted (18002904, found on the EAVH16S18DA6V and tested there; 20017705, the ETV/ETB/ETVZ 16 and ETSH/ETSX 16 series, from the software and awaiting a first report), nothing is written on any other. If your unit shows "not available", please open an issue with the software version shown.
 
 Things to know:
 

@@ -55,9 +55,16 @@ struct ControlProfile
 };
 
 static const ControlProfile CONTROL_PROFILES[] = {
+    // A = mild weather point, B = cold weather point. The memory bytes and mode bits are the same on both boards.
+    // 16 kW EAVH/EAVX/EAVZ/EABH/EABX DA, DF and DJ series: measured on an EAVH16S18DA6V.
     {"18002904",
      {0x187A, 0x18B8, 366, 367, 0x30C0, 0x30C5, 278, 0x01, 0x1306, 0x1552},
-     {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0}}, // A = mild weather point, B = cold weather point
+     {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0}},
+    // 14-18 kW ETVH/ETVX/ETVZ/ETBH/ETBX 16 E/EJ and ETSH/ETSX 16 series (Altherma 3 H HT): from the software, not
+    // yet confirmed on a unit. identify() only accepts it when the modes and limits read back make sense.
+    {"20017705",
+     {0x37A8, 0x37E6, 366, 367, 0x5409, 0x540E, 278, 0x01, 0x3166, 0x34C2},
+     {0x37AA, 0x37E8, 373, 372, 0x5418, 0x5413, 374, 0x0C, 0x31BA, 0}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
