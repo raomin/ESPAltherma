@@ -348,6 +348,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   <h2>All set!</h2>
   <p id="doneText" translate="no"></p>
   <p class="sub">The sensors appear in Home Assistant under “Daikin Altherma via ESPAltherma”. You can add or remove readings any time in the Values tab.</p>
+  <p class="sub" id="doneSponsor" translate="no"></p>
   <div class="acts"><button class="p" id="doneBtn">Open the home page</button><button id="doneValues">Choose the readings</button></div>
  </div>
 </section>
@@ -960,6 +961,9 @@ $('#tmShow').onclick = async e => { e.preventDefault(); const p = $('#tmPreview'
 // ---- setup: done
 function setupDone() {
   tx('doneText', t('{n} readings go to Home Assistant every {s} seconds.', {n: status.hp.values, s: cfg.hp ? Math.round(cfg.hp.frequency / 1000) : 30}));
+  const link = (href, s) => '<a href="' + href + '" target="_blank" rel="noopener">' + t(s) + '</a>';
+  $('#doneSponsor').innerHTML = t('ESPAltherma is free and made in the evenings. If it is useful to you, {sponsor} or {beer} helps keep it going.',
+    {sponsor: link('https://github.com/sponsors/raomin', N_('sponsoring it')), beer: link('https://www.buymeacoffee.com/raomin', N_('buying a beer'))});
 }
 $('#doneBtn').onclick = () => location.hash = '#dashboard';
 $('#doneValues').onclick = () => location.hash = '#values';
