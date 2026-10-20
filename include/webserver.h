@@ -462,9 +462,10 @@ void webBegin()
     sendJson(r, doc);
   });
 
+  // Readable without the admin password: no secret is in it (only whether passwords are set), and the page loads
+  // it at start, which otherwise put the browser's login challenge on every page load of a protected board.
+  // Changing the settings, the firmware and the targets still ask for it.
   webServer.on("/api/config", HTTP_GET, [](AsyncWebServerRequest *r) {
-    if (!authorized(r))
-      return;
     JsonDocument doc;
     configToJson(config, doc, false);
     sendJson(r, doc);
