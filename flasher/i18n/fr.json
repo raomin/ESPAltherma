@@ -9,6 +9,7 @@
  "The installer needs a secure page (https or localhost).": "L'installeur a besoin d'une page sécurisée (https ou localhost).",
  "The board does not show up? Install the USB driver of your board (CP210x or CH340), and try another cable: some only charge.": "La carte n'apparaît pas ? Installez le pilote USB de votre carte (CP210x ou CH340) et essayez un autre câble : certains ne font que charger.",
  "Reinstalling on a board that already runs ESPAltherma keeps its settings (WiFi, MQTT, model, relays). Tick \"Erase device\" only to start from scratch.": "Réinstaller sur une carte qui fait déjà tourner ESPAltherma conserve ses réglages (Wi-Fi, MQTT, modèle, relais). Cochez « Erase device » uniquement pour repartir de zéro.",
+ "Already installed? You normally don't need a file: update it from its own page, System → Firmware update → Check for an update.": "Déjà installé ? Normalement, pas besoin de fichier : mettez-le à jour depuis sa propre page, Système → Mise à jour du firmware → Chercher une mise à jour.",
  "Connect it to the heat pump": "Branchez-la sur la pompe à chaleur",
  "Power the heat pump <b>off</b> first. Find the <code>X10A</code> connector on the main board of the indoor unit (with a Bi-zone kit, use <code>X12A</code> on the Bi-zone board: same pins).": "Mettez d'abord la pompe à chaleur <b>hors tension</b>. Repérez le connecteur <code>X10A</code> sur la carte principale de l'unité intérieure (avec un kit Bi-zone, utilisez <code>X12A</code> sur la carte Bi-zone : mêmes broches).",
  "Board": "Carte",
@@ -19,8 +20,10 @@
  "Open <a href=\"http://espaltherma.local\">http://espaltherma.local</a> (or the address shown by the installer).": "Ouvrez <a href=\"http://espaltherma.local\">http://espaltherma.local</a> (ou l'adresse indiquée par l'installeur).",
  "ESPAltherma reads your heat pump and detects its model. Confirm it.": "ESPAltherma lit votre pompe à chaleur et détecte son modèle. Confirmez-le.",
  "Click <b>Find my Home Assistant</b> to connect it to your MQTT broker. The sensors appear in Home Assistant automatically.": "Cliquez sur <b>Trouver mon Home Assistant</b> pour le connecter à votre broker MQTT. Les capteurs apparaissent automatiquement dans Home Assistant.",
+ "With an ESP32-S3 or ESP32-C3, the installer may not reach the WiFi step: the board comes back as a new USB device after the installation. Enter your WiFi through the setup network described below.": "Avec un ESP32-S3 ou ESP32-C3, l'installateur peut ne pas atteindre l'étape Wi-Fi : la carte réapparaît comme un nouveau périphérique USB après l'installation. Saisissez votre Wi-Fi par le réseau de configuration décrit ci-dessous.",
  "No WiFi entered, or the network changed? The board opens a setup network <b>ESPAltherma-XXXX</b> (password <code>espaltherma</code>): join it and follow the page that opens. If no page opens, go to <code>http://192.168.4.1</code>.": "Pas de Wi-Fi saisi, ou le réseau a changé ? La carte ouvre un réseau de configuration <b>ESPAltherma-XXXX</b> (mot de passe <code>espaltherma</code>) : connectez-vous-y et suivez la page qui s'ouvre. Si aucune page ne s'ouvre, allez sur <code>http://192.168.4.1</code>.",
  "<a href=\"https://github.com/raomin/ESPAltherma\">ESPAltherma on GitHub</a> · Prefer PlatformIO? <a href=\"https://github.com/raomin/ESPAltherma#getting-started\">Build it yourself</a>": "<a href=\"https://github.com/raomin/ESPAltherma\">ESPAltherma sur GitHub</a> · Vous préférez PlatformIO ? <a href=\"https://github.com/raomin/ESPAltherma#getting-started\">Compilez-le vous-même</a>",
+ "Download {file}": "Télécharger {file}",
  "Version {version} for {board}": "Version {version} pour {board}",
  "This firmware is not available yet.": "Ce firmware n'est pas encore disponible.",
  "Most ESP32 development boards (DevKit, WROOM-32, DOIT…)": "La plupart des cartes de développement ESP32 (DevKit, WROOM-32, DOIT…)",
@@ -30,7 +33,5 @@
  "Rugged, touch screen (Port B)": "Robuste, écran tactile (Port B)",
  "Tiny, no screen. X10A on the Grove port": "Minuscule, sans écran. X10A sur le connecteur Grove",
  "Wired Ethernet, experimental. Flash it through a USB-serial adapter (IO0 to GND while powering up)": "Ethernet filaire, expérimental. À flasher avec un adaptateur USB-série (IO0 à la masse à la mise sous tension)",
- "Wired Ethernet / PoE, experimental. X10A on the UEXT connector": "Ethernet filaire / PoE, expérimental. X10A sur le connecteur UEXT",
- "Already installed? You normally don't need a file: update it from its own page, System → Firmware update → Check for an update.": "Déjà installé ? Normalement, pas besoin de fichier : mettez-le à jour depuis sa propre page, Système → Mise à jour du firmware → Chercher une mise à jour.",
- "Download {file}": "Télécharger {file}"
+ "Wired Ethernet / PoE, experimental. X10A on the UEXT connector": "Ethernet filaire / PoE, expérimental. X10A sur le connecteur UEXT"
 }

@@ -107,6 +107,7 @@ footer a{color:inherit}
       <li>ESPAltherma reads your heat pump and detects its model. Confirm it.</li>
       <li data-th>Click <b>Find my Home Assistant</b> to connect it to your MQTT broker. The sensors appear in Home Assistant automatically.</li>
     </ol>
+    <p class="muted hidden" id="usbNote" data-th>With an ESP32-S3 or ESP32-C3, the installer may not reach the WiFi step: the board comes back as a new USB device after the installation. Enter your WiFi through the setup network described below.</p>
     <p class="muted" data-th>No WiFi entered, or the network changed? The board opens a setup network <b>ESPAltherma-XXXX</b> (password <code>espaltherma</code>): join it and follow the page that opens. If no page opens, go to <code>http://192.168.4.1</code>.</p>
   </div>
 
@@ -158,6 +159,8 @@ async function select(i) {
   button.manifest = 'manifest-' + board.id + '.json';
   document.getElementById('pinRx').textContent = board.rx;
   document.getElementById('pinTx').textContent = board.tx;
+  // Native-USB chips re-enumerate after the flash, and the installer loses the port before the WiFi step
+  document.getElementById('usbNote').classList.toggle('hidden', !/S3|C3/.test(board.chip));
   // The update file of this board, on this same site (the release, or the preview of the beta branch)
   const ota = document.getElementById('otaLink');
   ota.href = 'firmware/' + board.id + '-ota.bin';
