@@ -416,6 +416,21 @@ void layoutFeedSurvey()
   layoutCheck();
 }
 
+// The hydro board's software, with the 'L' command of the X10A port: 4 bytes, the version's digits reversed
+// (04 29 00 18 is 18002904). Boards without the command answer NAK or nothing: the report then has no "iu_sw_id".
+static void surveyReadSoftwareId(Survey &s)
+{
+  uint8_t frame[4], reply[8];
+  size_t len = x10aFrame(0x4C, nullptr, 0, frame);
+  size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
+  uint8_t sum = 0;
+  for (size_t i = 0; i < 5 && i < got; i++)
+    sum += reply[i];
+  s.hasSwId = got == 6 && reply[0] == 0x4C && (uint8_t)~sum == reply[5];
+  if (s.hasSwId)
+    memcpy(s.swId, reply + 1, 4);
+}
+
 // Reads every known registry once and builds the detection report. Runs where the registries are polled.
 void runSurvey()
 {
@@ -424,6 +439,8 @@ void runSurvey()
   mqttSerial.println("Starting heat pump survey...");
   surveyInProgress = true;
   surveyRun(survey, surveyQuery);
+  if (survey.protocol == 'I')
+    surveyReadSoftwareId(survey);
   surveyInProgress = false;
   static char detectJson[1024];
   detectModel(survey, detection);

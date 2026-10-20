@@ -143,15 +143,21 @@ void test_survey_json(void)
     useFake('I', L_UNIT, sizeof(L_UNIT) / sizeof(FakeReg));
     Survey s;
     surveyRun(s, fakeQuery);
+    TEST_ASSERT_FALSE(s.hasSwId); // surveyRun clears it; the board's software is read afterwards
     char json[2048];
     size_t len = surveyToJson(s, json, sizeof(json), "1.2.3", "esp32", "{\"family\":\"L\"}");
+    TEST_ASSERT_TRUE(strstr(json, "iu_sw_id") == nullptr);
+    s.hasSwId = true;
+    const uint8_t swId[4] = {0x04, 0x29, 0x00, 0x18};
+    memcpy(s.swId, swId, 4);
+    len = surveyToJson(s, json, sizeof(json), "1.2.3", "esp32", "{\"family\":\"L\"}");
     std::string j(json);
 
     TEST_ASSERT_EQUAL_size_t(strlen(json), len);
     TEST_ASSERT_EQUAL_STRING("{\"v\":1,\"fw\":\"1.2.3\",\"board\":\"esp32\",\"protocol\":\"I\",", j.substr(0, 51).c_str());
     TEST_ASSERT_TRUE(j.find("\"iu_eeprom\":\"017081710306\"") != std::string::npos);
     TEST_ASSERT_TRUE(j.find("\"iu_as\":\"AS1708171-3 F\"") != std::string::npos);
-    TEST_ASSERT_TRUE(j.find("\"iu_sw\":\"9182\"") != std::string::npos);
+    TEST_ASSERT_TRUE(j.find("\"iu_sw\":\"9182\",\"iu_sw_id\":\"18002904\"") != std::string::npos);
     TEST_ASSERT_TRUE(j.find("\"iu_cap\":90") != std::string::npos);
     TEST_ASSERT_TRUE(j.find("\"iu_eeprom_ver\":7") != std::string::npos);
     TEST_ASSERT_TRUE(j.find("\"iu_code\":\"ABCD\"") != std::string::npos);
