@@ -67,15 +67,15 @@ void test_rotex_converter_54(void)
     unsigned char buff2[] = {0x54, 0x3c, 0x13, 0x98, 0x1c, 0x3c, 0x1c, 0x54, 0x1c, 0x40, 0x2e, 0x01, 0x00, 0x1e, 0x00, 0x00, 0x00, 0x53};
     unsigned char buff3[] = {0x54, 0xb4, 0x12, 0x84, 0x1c, 0x24, 0x1c, 0x3c, 0x1c, 0x40, 0x2e, 0x01, 0x00, 0x1e, 0x00, 0x00, 0x00, 0x20};
     unsigned char buff4[] = {0x54, 0xcc, 0x1a, 0x6c, 0x1c, 0xb0, 0x1c, 0x3c, 0x1c, 0x40, 0x2e, 0x01, 0x00, 0x1e, 0x00, 0x00, 0x00, 0x8c};
-    TEST_ASSERT_EQUAL_STRING("Refrig. Temp. liquid side(C): 30.5938; Inlet water temp.(C): 31.4375; Outlet Water Temp.(C): 36.1094; Leaving water temp. after BUH (R2T): 36.1094; DHW tank temp.(C): 49.8438; F(C): 0.00390625; LW setpoint (main): 36; R/C Setpoint(C): 0; ",
+    TEST_ASSERT_EQUAL_STRING("Refrig. temp. liquid side: 30.5938; Inlet water temp.: 31.4375; Outlet water temp.: 36.1094; Leaving water temp. after BUH (R2T): 36.1094; DHW tank temp.: 49.8438; F (unknown): 0.00390625; LW setpoint (main): 36; R/C setpoint: 0; ",
                              decode_data(buff).c_str());
-    TEST_ASSERT_EQUAL_STRING("Refrig. Temp. liquid side(C): 19.3281; Inlet water temp.(C): 28.6875; Outlet Water Temp.(C): 28.3281; Leaving water temp. after BUH (R2T): 28.3281; DHW tank temp.(C): 46.25; F(C): 0.00390625; LW setpoint (main): 30; R/C Setpoint(C): 0; ",
+    TEST_ASSERT_EQUAL_STRING("Refrig. temp. liquid side: 19.3281; Inlet water temp.: 28.6875; Outlet water temp.: 28.3281; Leaving water temp. after BUH (R2T): 28.3281; DHW tank temp.: 46.25; F (unknown): 0.00390625; LW setpoint (main): 30; R/C setpoint: 0; ",
                              decode_data(buff1).c_str());
-    TEST_ASSERT_EQUAL_STRING("Refrig. Temp. liquid side(C): 19.2344; Inlet water temp.(C): 28.5938; Outlet Water Temp.(C): 28.2344; Leaving water temp. after BUH (R2T): 28.3281; DHW tank temp.(C): 46.25; F(C): 0.00390625; LW setpoint (main): 30; R/C Setpoint(C): 0; ",
+    TEST_ASSERT_EQUAL_STRING("Refrig. temp. liquid side: 19.2344; Inlet water temp.: 28.5938; Outlet water temp.: 28.2344; Leaving water temp. after BUH (R2T): 28.3281; DHW tank temp.: 46.25; F (unknown): 0.00390625; LW setpoint (main): 30; R/C setpoint: 0; ",
                              decode_data(buff2).c_str());
-    TEST_ASSERT_EQUAL_STRING("Refrig. Temp. liquid side(C): 18.7031; Inlet water temp.(C): 28.5156; Outlet Water Temp.(C): 28.1406; Leaving water temp. after BUH (R2T): 28.2344; DHW tank temp.(C): 46.25; F(C): 0.00390625; LW setpoint (main): 30; R/C Setpoint(C): 0; ",
+    TEST_ASSERT_EQUAL_STRING("Refrig. temp. liquid side: 18.7031; Inlet water temp.: 28.5156; Outlet water temp.: 28.1406; Leaving water temp. after BUH (R2T): 28.2344; DHW tank temp.: 46.25; F (unknown): 0.00390625; LW setpoint (main): 30; R/C setpoint: 0; ",
                              decode_data(buff3).c_str());
-    TEST_ASSERT_EQUAL_STRING("Refrig. Temp. liquid side(C): 26.7969; Inlet water temp.(C): 28.4219; Outlet Water Temp.(C): 28.6875; Leaving water temp. after BUH (R2T): 28.2344; DHW tank temp.(C): 46.25; F(C): 0.00390625; LW setpoint (main): 30; R/C Setpoint(C): 0; ",
+    TEST_ASSERT_EQUAL_STRING("Refrig. temp. liquid side: 26.7969; Inlet water temp.: 28.4219; Outlet water temp.: 28.6875; Leaving water temp. after BUH (R2T): 28.2344; DHW tank temp.: 46.25; F (unknown): 0.00390625; LW setpoint (main): 30; R/C setpoint: 0; ",
                              decode_data(buff4).c_str());
     // std::cout << decode_data(buff1) << std::endl;
     // std::cout << decode_data(buff2) << std::endl;
@@ -87,7 +87,7 @@ void test_rotex_converter_54(void)
 void test_rotex_converter_54_negative(void)
 {
     unsigned char buff[] = {0x54, 0x80, 0xfd, 0x70, 0x1f, 0x1c, 0x24, 0x1c, 0x24, 0xd8, 0x31, 0x01, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00};
-    TEST_ASSERT_EQUAL_STRING("Refrig. Temp. liquid side(C): -2.5; Inlet water temp.(C): 31.4375; Outlet Water Temp.(C): 36.1094; Leaving water temp. after BUH (R2T): 36.1094; DHW tank temp.(C): 49.8438; F(C): 0.00390625; LW setpoint (main): 36; R/C Setpoint(C): 0; ",
+    TEST_ASSERT_EQUAL_STRING("Refrig. temp. liquid side: -2.5; Inlet water temp.: 31.4375; Outlet water temp.: 36.1094; Leaving water temp. after BUH (R2T): 36.1094; DHW tank temp.: 49.8438; F (unknown): 0.00390625; LW setpoint (main): 36; R/C setpoint: 0; ",
                              decode_data(buff).c_str());
 }
 

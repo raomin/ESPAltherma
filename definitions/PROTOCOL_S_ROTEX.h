@@ -12,21 +12,22 @@ LabelDef labelDefs[] = {
     {0x53, 6, 200, 1, -1, "Burner inhibit from solaris"},
 
 
-    // Testing stuff....
+    // The names carry no "(C)": the unit is the type (Home Assistant shows °C). Capitalised like the
+    // Altherma files, "temp." in lower case.
     // The temperatures are signed: the refrigerant goes below 0 during a defrost. Type 1: Home Assistant gets
     // them as temperatures (°C, statistics).
-    {0x54, 0, 103, 2, 1, "Refrig. Temp. liquid side(C)"},
-    {0x54, 2, 103, 2, 1, "Inlet water temp.(C)"},
-    {0x54, 4, 103, 2, 1, "Outlet Water Temp.(C)"},
+    {0x54, 0, 103, 2, 1, "Refrig. temp. liquid side"},
+    {0x54, 2, 103, 2, 1, "Inlet water temp."},
+    {0x54, 4, 103, 2, 1, "Outlet water temp."},
     // Was "D(C)": the leaving water temperature the remote controller shows (RKHBH008BA with ARC448A3, by TungstenE2)
     {0x54, 6, 103, 2, 1, "Leaving water temp. after BUH (R2T)"},
-    {0x54, 8, 103, 2, 1, "DHW tank temp.(C)"},
-    {0x54, 10, 103, 2, -1, "F(C)"},
+    {0x54, 8, 103, 2, 1, "DHW tank temp."},
+    {0x54, 10, 103, 2, -1, "F (unknown)"},
     // Was "Delta-Tr(deg)": the weather-dependent leaving water target, whole degrees, falls when the outdoor
     // temperature rises (RKHBH008BA with ARC448A3, by TungstenE2). Named as on the Altherma files, so the
     // drawing shows it as the leaving water target.
     {0x54, 12, 101, 1, 1, "LW setpoint (main)"},
-    {0x54, 13, 151, 1, -1, "R/C Setpoint(C)"},
+    {0x54, 13, 151, 1, -1, "R/C setpoint"},
 
     {0x55, 0, 201, 1, -1, "Operation Mode"},
     {0x55, 1, 204, 1, -1, "Error Code"},
