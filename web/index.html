@@ -760,7 +760,7 @@ function paint() {
   [['pSup', lw], ['pJoin', lw], ['pDhw', lw], ['pCoil', mid(lw, tank)], ['pDhwR', ret], ['pSpace', lw], ['pLoop', mid(two ? mixed : lw, ret)], ['pRet', ret],
    ['pTrunk', lw], ['pDirect', lw], ['pDirectR', ret], ['pMixed', mixed], ['pLoopM', mid(mixed, ret)], ['pMixedR', ret], ['pBypass', ret]].forEach(([id, v]) => document.getElementById(id).style.stroke = tcol(v));
   $('#gDirect').classList.toggle('zoff', r.addPump != null && !isOn(r.addPump)); $('#gMixed').classList.toggle('zoff', r.mainPump != null && !isOn(r.mainPump));
-  tx('sMixed', deg(mixed)); tx('sLwSpMix', r.lwSp ? t('target {n}°', {n: n('lwSp')}) : '');
+  tx('sMixed', deg(mixed)); tx('sLwSpMix', r.lwSp ? t('Target {n}°', {n: n('lwSp')}) : '');
   $('#tankFill').style.fill = tcol(tank);
   const v3 = isOn(r.v3), flow = n('flow'), pump = isOn(r.pump) || (flow || 0) > 0.5, inv = n('inv');
   $('#gDhw').classList.toggle('act', v3); $('#gSp').classList.toggle('act', !v3);
@@ -777,13 +777,13 @@ function paint() {
   const a = (-135 + (bar || 0) / 4 * 270) * Math.PI / 180;
   $('#needle').setAttribute('d', `M500 492L${(500 + 11 * Math.sin(a)).toFixed(1)} ${(492 - 11 * Math.cos(a)).toFixed(1)}`);
   tx('sTank', deg(tank)); tx('sRoom', deg(n('room')));
-  tx('sDhwSp', r.dhwSp ? t('target {n}°', {n: n('dhwSp')}) : ''); tx('sRtSp', r.rtSp ? t('target {n}°', {n: n('rtSp')}) : '');
+  tx('sDhwSp', r.dhwSp ? t('Target {n}°', {n: n('dhwSp')}) : ''); tx('sRtSp', r.rtSp ? t('Target {n}°', {n: n('rtSp')}) : '');
   // two zones: the direct one upstairs with its water target, the mixed one downstairs with the room
-  tx('sRoomB', deg(n('room'))); tx('sRtSpB', r.rtSp ? t('target {n}°', {n: n('rtSp')}) : '');
-  tx('sZoneDir', r.lwSpAdd ? t('target {n}°', {n: n('lwSpAdd')}) : '');
+  tx('sRoomB', deg(n('room'))); tx('sRtSpB', r.rtSp ? t('Target {n}°', {n: n('rtSp')}) : '');
+  tx('sZoneDir', r.lwSpAdd ? t('Target {n}°', {n: n('lwSpAdd')}) : '');
   // The leaving water target: with two zones, the direct one's (the mixed zone has its own, shown at the valve)
   const lwSpK = two && r.lwSpAdd ? 'lwSpAdd' : 'lwSp';
-  tx('sLwSp', r[lwSpK] ? t('target {n}°', {n: n(lwSpK)}) : '');
+  tx('sLwSp', r[lwSpK] ? t('Target {n}°', {n: n(lwSpK)}) : '');
   // side panel
   tx('dMode', r.mode ? t(r.mode) : '—');
   tx('dIu', v3 ? t('Heating the hot water') : r.iu ? t('Indoor unit: {mode}', {mode: t(r.iu)}) : '');
