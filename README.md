@@ -3,9 +3,9 @@
 <hr/>
 
 <p align="center">
-<a href="https://github.com/raomin/ESPAltherma/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/raomin/ESPAltherma/build.yml?branch=beta&style=for-the-badge" /></a>
+<a href="https://github.com/raomin/ESPAltherma/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/raomin/ESPAltherma/build.yml?branch=main&style=for-the-badge" /></a>
 &nbsp;
-<img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma/beta?style=for-the-badge" />
+<img src="https://img.shields.io/github/last-commit/raomin/ESPAltherma/main?style=for-the-badge" />
 &nbsp;
 <img src="https://img.shields.io/github/license/raomin/ESPAltherma?style=for-the-badge" />
 &nbsp;
@@ -16,27 +16,9 @@
 
 <hr/>
 
-> **This is the beta of ESPAltherma 2.** It installs from your browser, detects your heat pump and is set up from a web page: no file to edit, nothing to compile. The stable version (1.x, built with your settings in `setup.h`) stays on the [main branch](https://github.com/raomin/ESPAltherma/tree/main). Please tell me what works and what doesn't in the [issues](https://github.com/raomin/ESPAltherma/issues).
+**ESPAltherma turns an ESP32 board into a monitor for your Daikin Altherma heat pump.** It plugs on the diagnostic port of the unit and reads what the technician's tool reads: temperatures, flow, pressures, compressor, errors. Flash it from your browser, confirm your model, and your heat pump shows up in Home Assistant, with a live drawing of your installation. It works on the ROTEX and HOVAL Belaria units built on the Altherma too.
 
-<p><b>ESPAltherma</b> is a solution to monitor Daikin Altherma / ROTEX / HOVAL Belaria heat pump activity using just an <b>ESP32</b> microcontroller.</p>
-
-_If this project has any value for you, please consider [buying me a 🍺](https://www.buymeacoffee.com/raomin) or even better [sponsoring ESPAltherma](https://github.com/sponsors/raomin/)!. I don't do this for money but it feels good to get some support! Thanks :)_
-
-## Features
-
-  <ul style="list-style-position: inside;">
-    <li>Installs from the browser: no software to install, no file to edit.</li>
-    <li>Detects your heat pump model, reads its recommended values out of the box, and corrects the definitions that do not match your unit (<a href="#how-it-works">how it works</a>).</li>
-    <li>Web interface: a live drawing of your installation, a setup wizard, the choice of values, diagnostics and updates. In English, French, German, Italian and Spanish.</li>
-    <li>Connects with the serial port of Altherma on port X10A. Needs just an ESP32, no extra hardware.</li>
-    <li>Integrates with Home Assistant's MQTT auto-discovery, with the sensor names in your language.</li>
-    <li>Wi-Fi, or wired Ethernet on the WT32-ETH01 and Olimex ESP32-PoE (experimental).</li>
-    <li>Recovers by itself: moves to the strongest access point, opens a setup network when the Wi-Fi is gone, goes back to the previous firmware if an update fails.</li>
-    <li>Log messages in the web interface, on MQTT, on the USB serial port and on the screen of the M5.</li>
-    <li>Optional: can control (on/off) your heat pump, and its Smart Grid inputs.</li>
-</ul>
-
-## Preview
+<p align="center"><b><a href="https://espaltherma.pages.dev/">➜ Install ESPAltherma from your browser</a></b></p>
 
 ![The home page of ESPAltherma](doc/images/dashboard.png)
 
@@ -46,26 +28,40 @@ And in Home Assistant, with the [ESPAltherma card](https://github.com/raomin/esp
 
 ![The ESPAltherma dashboard in Home Assistant](doc/images/ha-dashboard.jpg)
 
-# Prerequisites
+## Features
 
-## Hardware
+- **Installs from the browser**: no software to install, no file to edit, nothing to compile.
+- **Detects your heat pump** and reads its recommended values out of the box ([how it works](doc/how-it-works.md)).
+- **A web interface**: the live drawing, a setup wizard, the choice of values, diagnostics and updates. In English, French, German, Italian and Spanish.
+- **Home Assistant** finds it by itself (MQTT discovery), with the sensor names in your language. Any other MQTT consumer works too.
+- **Controls** the heat pump as well: on/off through a relay, the Smart Grid inputs (relays too), and, on supported units, the hot water and leaving water targets.
 
-- A Daikin Altherma or Daikin Altherma based heat pump (ROTEX, HOVAL Belaria...)
-- An ESP32. *I recommend an M5StickC (Plus, Plus2): it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 of the list below works.*
-- 5 pins JST EH 2.5mm connector (or 4 Dupont wires M-F)
-- A USB data cable (some cables only charge)
+Just an ESP32, no extra hardware. Wi-Fi, or wired Ethernet on the WT32-ETH01 and Olimex ESP32-PoE.
 
-Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5StickC, M5StickC Plus, M5StickC Plus2, M5Stack Tough, WT32-ETH01 and Olimex ESP32-PoE.
+## Supported heat pumps
 
-*The ESP8266 is not supported by ESPAltherma v2. Keep using [ESPAltherma 1.x](https://github.com/raomin/ESPAltherma/tree/main) on it.*
+Every Daikin Altherma with the serial diagnostic port, which is about all of them:
 
-## Software
+- **Altherma 3** (R32): the split units (EHV/EHB/EHVZ, ETV/ETB/ETVZ, EBV/EBB/EBVZ, EAV/EAB/EAVZ), the EBLA/EDLA monoblocs, the ECH2O tanks (EHSH/EHSX, ETSH/ETSX, EBSH/EBSX), the GEO ground source units, the 3 kW EHFH/EHFZ.
+- **Altherma LT** (R410A): EHVH/EHBH/EHVX/EHBX with an ERLQ outdoor unit, the EBLQ/EDLQ monoblocs, the Hybrid, the multi DHW tanks.
+- **Altherma HT** (EKHBRD hydrobox) and **Altherma 4** (EPSK), with some values missing on their port, see [Troubleshooting](doc/troubleshooting.md).
+- **Mini chillers** EWAA/EWYA and EWAQ/EWYQ.
+- **Older units** (around 2010 or before) speaking the older S protocol, including the ROTEX HPSU.
 
-- Chrome or Edge on a computer
+The complete list is the [definitions](definitions) folder: one file per series. If yours is not there, ESPAltherma still reads it with the closest definition, and your report helps adding it (see [Step 3](#step-3-finishing-in-the-web-interface)). Daikin air conditioners also have a serial port, but with other protocols: ESPAltherma supports the Altherma one only.
+
+# Getting started
+
+## What you need
+
+- A Daikin Altherma or Altherma-based heat pump (ROTEX, HOVAL Belaria...)
+- An ESP32. *I recommend an M5StickC (Plus, Plus2): it has an integrated display, a magnet, fits well next to the board and is properly isolated. But any ESP32 of the list below works.* The ESP8266 is not supported anymore: keep [ESPAltherma 1.x](https://github.com/raomin/ESPAltherma/tree/v1) on it.
+- A 5 pin JST EH 2.5 mm connector (or 4 Dupont wires M-F)
+- A USB data cable (some cables only charge), and Chrome or Edge on a computer. 
 
 *That's all!*
 
-# Getting started
+Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5StickC, M5StickC Plus, M5StickC Plus2, M5Stack Tough, M5Stack Atom Lite, WT32-ETH01 and Olimex ESP32-PoE.
 
 ## Step 1: Installing the firmware
 
@@ -78,6 +74,7 @@ Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5St
 
 - *The board does not show up in the list?* Install the USB driver of your board (CP210x or CH340), and try another cable.
 - *Reinstalling on a board that already runs ESPAltherma 2* keeps its settings (Wi-Fi, MQTT, model, relays). Tick "Erase device" only to start from scratch.
+- *No Wi-Fi step* (the ESP32-S3 and C3 boards come back as a new USB device after the flash), *or the network changed later?* The board opens a WiFi setup network **ESPAltherma-XXXX** (password `espaltherma`): join it with your phone and follow the page that opens. If no page opens, go to http://192.168.4.1.
 - *WT32-ETH01:* it has no USB port. Flash it through a USB-serial adapter, with IO0 connected to GND while powering it up.
 
 ## Step 2: Connecting to the heat pump
@@ -86,8 +83,6 @@ Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5St
 2. Unscrew your panel to access the main PCB of your unit.
 3. Locate the X10A connector on the PCB. This is the serial port on the main PCB. If your installation includes a bi-zone module, the X10A port is occupied with a connector to the Bi-Zone module. You should then connect to the X12A port on the bi-zone module. Pins are identical to the X10A.
 4. Using the 5 pin connector or 4 Dupont wires, connect the ESP as follows. Pay attention to the orientation of the socket.
-
-### Daikin Altherma 4 pin X10A Connection
 
 ![The X10A connector](doc/images/schematics.png)
 
@@ -117,13 +112,9 @@ Once connected, it looks like this:
 
 ![Wires on the X10A connector](doc/images/x10a.png)
 
-### 8 pin X10A Connection
-
-Some heat pumps (ROTEX) have an X10A port which connects differently:
+**ROTEX units** have an 8 pin X10A which connects differently: pin 1 (on the left in the picture) is +5V. Some users reported that the 5V from their ROTEX was not strong enough to power their ESP32. In this case, use a USB charger to power the ESP32; the 5V from the X10A is then not needed.
 
 ![](doc/images/rotexX10A.png)
-
-Pin 1 (on the left in the picture) is +5v. Some users reported that the 5V from their ROTEX was not strong enough to power their ESP32. In this case, use an USB charger to power the ESP32. The 5V from the X10A is then not needed.
 
 Whatever you do, **make sure you keep a wire connecting the GND of the ESP32 to the GND pin of the X10A (even if you power your ESP32 with a USB charger)!!**
 
@@ -141,234 +132,69 @@ Open `http://espaltherma.local`, or the address shown by the installer (and on t
 
 2. **Home Assistant.** Click **Find my Home Assistant**: ESPAltherma looks for the MQTT broker on your network (usually the Mosquitto add-on of Home Assistant). Or enter its address, and a user and password if your broker needs one. **Test the connection**, then save. The sensors appear in Home Assistant automatically.
 
-    ![Connecting to Home Assistant](doc/images/setup-homeassistant.png)
-
 3. **Values.** The recommended values of your model are selected. Pick more (or less) in the **Values** tab, which also shows their current readings. *Try not to get everything: it would make a very big MQTT message.*
-
-    ![Choosing the values](doc/images/values.png)
-
-No Wi-Fi entered, or the network changed? The board opens a setup network **ESPAltherma-XXXX** (password `espaltherma`): join it with your phone and follow the page that opens. If no page opens, go to http://192.168.4.1.
 
 Everything is configured at runtime and kept across updates. To protect the settings, set an admin password in Settings → This device.
 
-## Step 4 (optional) - Controlling your Daikin Altherma heat pump
+# Controlling the heat pump
 
-ESPAltherma cannot change the configuration values of the heat pump (see [FAQ](#faq)). However, ESPAltherma can control a relay on MQTT that can simulate an *external On Off thermostat*. Doing so allows to remotely turn on/off the heating function of your heat pump.
+Monitoring is the main job, but ESPAltherma can also act on the heat pump:
 
-Connect the relay to a free GPIO of the ESP32 and set it in **Settings → Relays** (with the level that activates your relay). The switch `switch.altherma` then appears in Home Assistant; the MQTT topic is `espaltherma/POWER` (`ON` / `OFF`).
+| What | How | In Home Assistant |
+| ---- | --- | ----------------- |
+| Turn the heating on and off | a relay on the *external thermostat* contact of the unit | `switch.altherma`, or a climate entity built on it |
+| Smart Grid modes | two relays on the SG1 and SG2 contacts | the `Smart Grid` select |
+| Stop the heat pump | the safety relay | `Altherma Safety` |
+| Hot water and leaving water targets (experimental) | written through the diagnostic port, on supported units | two number entities |
 
-Refer to the schematic map of your heat pump to see where to connect *external On Off thermostat*.
+Why not more? The settings you see on the user interface of the heat pump (the setpoints, the schedules, the curves) belong to that interface: it re-sends them to the hydro board every second, so anything written through the diagnostic port is overwritten at once. The relays act on the unit's own contacts instead, and the targets use the one case where the hydro board decides by itself (a weather-dependent setpoint). Everything else stays out of reach, see the [FAQ](#faq).
 
-Adding this will take priority on your thermostat. ESPAltherma will turn the heating on/off ; the thermostat will be in standby.
+## On/off: the thermostat relay
 
-Note: I resoldered the J1 jumper that was cut when installing my digital thermostat (not sure if it is needed) and configured my *type of thermostat* as *External thermostat*
+A relay driven by ESPAltherma, wired as an *external On/Off thermostat*, lets you turn the heating of your heat pump on and off remotely. Connect the relay to a free GPIO of the ESP32 and set it in **Settings → Relays** (with the level that activates your relay). The switch `switch.altherma` then appears in Home Assistant; the MQTT topic is `espaltherma/POWER` (`ON` / `OFF`).
 
-Once installed the setup looks like this:
+Refer to the schematic map of your heat pump to see where to connect the *external On Off thermostat*, and set the *type of thermostat* to *External thermostat* on the unit. The relay then takes priority over your thermostat, which goes to standby. On a ROTEX this connects to J16 pins 1 and 2, with RT switched ON in the Connection menu: heating is ON while the pins are connected, so use the NC (normally closed) contact of the relay.
+
+Once installed, the setup looks like this (other users' installations are shown [in this issue](/../../issues/17)):
 
 ![](doc/images/installation.png)
 
-Other users installations are described [in this issue](/../../issues/17).
+To drive it from a room temperature, declare a climate entity on the switch: see [Home Assistant](doc/home-assistant.md#a-climate-entity). More notes in [the details](doc/control.md#the-thermostat-relay).
 
-On a Rotex this would connect to J16 Pin 1 and 2. Note: RT needs to be switched ON in the heatpump Connection menu. Heating will be ON if pins are connected, else no heating, so connect to the NC (normally closed) of the relay.
+## Smart Grid
 
-A third relay, the *safety relay*, can stop the heat pump (for instance wired to a safety contact of your installation). Set its pin in Settings → Relays; it appears as `Altherma Safety` in Home Assistant (topic `espaltherma/SAFETY`, `1` stops the heat pump, `0` releases it).
+ESPAltherma can drive the SG-Ready inputs of your heat pump. Set the pins of the SG1 and SG2 relays in **Settings → Relays**, then send one of the values 0 to 3 to the MQTT topic `espaltherma/sg/set`, or use the `Smart Grid` select in Home Assistant. The current mode is published on `espaltherma/sg/state`.
 
-## Step 5 (optional) - Smart grid features
+You need two relays to open and close the SG1 and SG2 contacts of your heat pump. On the M5StickC, M5StickC Plus and Plus2, use the Grove port next to the USB-C connector: **Smart Grid pin 1 = 32**, **pin 2 = 33**. The M5Stack relay units switch on a high signal: keep *Smart Grid relays active high* ticked. On other boards, any two free GPIOs, not the X10A ones. I found that the 5V supply pin of X10A provides enough power for my ESP32 and both relays, but your mileage may vary.
 
-ESPAltherma can also integrate with SG-Ready options of your heat pump. To do so, set the pins of the SG1 and SG2 relays in **Settings → Relays**, then send one of the allowed values (0..3) to MQTT channel `espaltherma/sg/set`, or use the `EspAltherma Smart Grid` selector in Home Assistant. Current SG mode will be available in `espaltherma/sg/state`.
+| sg/set | SG1 | SG2 | SG mode | What the heat pump does |
+| ------ | --- | --- | ------- | ----------------------- |
+| 0 | open | open | Normal operation | Works as if Smart Grid was not used |
+| 1 | open | closed | Forced OFF | Heating and hot water are turned off. *Beware that your comfort may be negatively affected by this mode* |
+| 2 | closed | open | Recommended ON | Raises the hot water and leaving water setpoints (the documentation says +5 °C, my tests show +6 °C) |
+| 3 | closed | closed | Forced ON | Raises the hot water setpoint and uses full power to heat the tank (to 70 °C) |
 
-Of course, you will need 2 more relays to open/close the SG1 and SG2 contacts of your heat pump. On the M5StickC, M5StickC Plus and Plus2, use the Grove port next to the USB-C connector: **Smart Grid pin 1 = 32**, **pin 2 = 33**. The M5Stack relay units switch on a high signal: keep *Smart Grid relays active high* ticked. On other boards, any two free GPIOs, not the X10A ones. Coming from v1: these replace `PIN_SG1`/`PIN_SG2` of `setup.h`. Until they are set (-1), the Smart Grid selector is not in Home Assistant.
+*In mode 3 your heat pump will really be power hungry, so enable it only when electricity is cheap (ideally free), or be prepared for a high bill!* Smart Grid must be switched ON in the configuration menu of the heat pump, otherwise the contacts are not evaluated; the behaviour of mode 3 (ECO, Normal or Comfort) is set there too, and the ROTEX pins are in [the details](doc/control.md#smart-grid).
 
-I found that using 5V supply pin of X10A provides enough power for my ESP32 and both relays, but your mileage may vary.
+## The safety relay
 
-On a Rotex SG1 and SG2 contacts are located in J8 connector, pin 5-6 (Smart Grid) and 11-12 (EVU) respectively.
+A third relay can stop the heat pump, for instance wired to a safety contact of your installation. Set its pin in **Settings → Relays**; it appears as `Altherma Safety` in Home Assistant (topic `espaltherma/SAFETY`, `1` stops the heat pump, `0` releases it).
 
-Once configured and connected, your heat pump will work like this:
+## Hot water and leaving water targets (experimental)
 
-| sg/set value| SG1   | SG2   | SG-Mode              | Working mode | Typical result |
-| ----------- | ----- | ----- | -------------------- | ------------ | -------------- |
-| 0           | open  | open  | 0 - normal operation | normal working mode        | HP works like if SG features are disabled/not used |
-| 1           | open  | close | 1 - Forced OFF       | Hp is forced OFF           | Heating and DHW will be turned OFF - *Beware that your comfort may be negatively affected by this working mode* |
-| 2           | close | open  | 2 - Recommended ON   | Hp is recommended to be ON | HP will increase DHW setpoint as well as LW setpoint (documentation says +5 °C, but my tests actually show +6 °C) |
-| 3           | close | close | 3 - Force ON         | Hp is forced ON            | HP will increase DHW setpoint and will use its full power to heat DHW (to 70 °C) |
-
-*Note that In SG3 mode your HP will really be power hungry so make sure to enable it only when electricity cost is low (ideally free) or be prepared to get a high bill!*
-
-Depending on your HP model, SG3 might be configurable in "ECO mode", "Normal mode" or "Comfort mode". The mode can be set using the specialist code Main Menu > Settings > Input/Output.
-
-| SG-Mode | Description |
-| ------- | ----------- |
-| Comfort mode | Increase of the hot water set temperature by 5 K. |
-| Normal mode | Increase of flow set temperature by 2 K and hot water set temperature by 5 K. |
-| ECO mode | Increase the flow set temperature by 5 K and hot water set temperature by 7 K. |
-
-Note: Smart Grid needs to be switched ON in the heatpump configuration menu, otherwise SG1 and SG2 contacts are not evaluated.
-
-## Step 6 (experimental) - Setting the hot water and leaving water targets
-
-The user interface of the heat pump owns the setpoints it shows and re-sends them to the hydro board every second, so they cannot be changed through the X10A port. But when a setpoint mode is *weather dependent*, the hydro board computes that target itself from its own curve. ESPAltherma can then write the wanted target into both points of that curve: the target holds whatever the weather, it applies within a second, and it is saved in the unit so it survives a restart. This works for the hot water tank and for the leaving water of the main zone (the water sent to the floor or the radiators).
-
-To try it:
+When a setpoint is *weather dependent*, the hydro board of the heat pump computes the target itself from its own curve, and ESPAltherma can write the wanted target into that curve: it holds whatever the weather, applies within a second, and is saved in the unit. This works for the hot water tank and for the leaving water of the main zone (the water sent to the floor or the radiators).
 
 1. On the user interface of the heat pump, set the tank setpoint mode, or the leaving water setpoint mode of the main zone, to *weather dependent* ("loi d'eau" on a French interface).
 2. In ESPAltherma, tick the corresponding box under **Settings → Experimental**.
-3. The home page shows a *Hot water target* or *Leaving water target* card with the current target and the allowed range (the unit's own limits). Home Assistant gets a `Hot water target` and a `Leaving water target` number entity; the MQTT topics are `espaltherma/dhw_target/set` and `espaltherma/lwt_target/set` (a whole number of degrees), with the state on `.../state`.
+3. The home page shows a *Hot water target* or *Leaving water target* card with the current target and the allowed range (the unit's own limits). Home Assistant gets a `Hot water target` and a `Leaving water target` number entity, with the MQTT topics `espaltherma/dhw_target/set` and `espaltherma/lwt_target/set`.
 
-Next to the target, the card shows what the thermostat really aims for, with an explanation on hover. The hot water target is capped by the maximum the heat pump reaches on its own at the current outdoor temperature (about 50 °C on a mild day; above that the booster heater would have to finish), so asking for 55 heats the tank to that maximum. The leaving water target carries the shift and the room modulation set on the unit. Home Assistant gets these as the `effective` and `ceiling` attributes of the entities.
+The addresses written depend on the software of the hydro board, read from the unit at start: only the versions whose addresses are known are accepted, nothing is written on any other. Known so far: 18002904 (tested on a unit), and 17014006, 17019A04, 20002203, 20007904, 20017704, 20017705 and 22009C02 (from the boards' software, awaiting a first report each). If the card says "not available", please open an issue with the software version it shows. What the thermostat really aims for, the hysteresis, and the other things to know are in [the details](doc/control.md#hot-water-and-leaving-water-targets).
 
-The card tells you when it cannot work: the unit did not answer, the setpoint mode is not weather dependent, or the hydro board software is not supported. The addresses written are specific to the software of the hydro board, read from the unit at start; only the versions whose addresses are known are accepted (18002904, found on the EAVH16S18DA6V and tested there; 20017705, the ETV/ETB/ETVZ 16 and ETSH/ETSX 16 series, from the software and awaiting a first report), nothing is written on any other. If your unit shows "not available", please open an issue with the software version shown.
+# Home Assistant
 
-Things to know:
-
-- The target is written in the unit's RAM at once, and in its memory 30 seconds later (at most every 5 minutes) so that a bouncing automation does not wear the memory.
-- The hot water thermostat starts heating when the tank falls a few degrees under the target it aims for (the hysteresis set on the unit, 5 °C by default) and stops at that target. Raising the target by one degree moves both thresholds by one degree, nothing more.
-- The user interface keeps showing its old curve until it restarts; saving that screen again on the interface writes the old curve back.
-- Switching a setpoint mode back to *absolute* on the interface stops ESPAltherma writing that target; the interface's own setpoint applies again.
-
-# Updating
-
-- **From the web interface:** in **System → Firmware update**, click **Check for an update**: your browser looks for a newer release on the installer's site, downloads the file of your board and sends it to the board (the board itself never goes to the Internet for it). Tick **Development builds** for the latest preview build (less tested). Without Internet access from the browser, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) instead (for example `m5stickcplus2-ota.bin`). Either way, if the new version cannot get back online, the board goes back to the previous one by itself.
-- **Or run the [web installer](https://espaltherma.pages.dev/) again** over USB. It keeps the settings.
-
-# Building it yourself
-
-The web installer is the easiest way, but you can build and upload the same firmware with [PlatformIO](https://platformio.org/):
-
-```bash
-git clone -b beta https://github.com/raomin/ESPAltherma.git
-cd ESPAltherma
-pio run -e web-m5stickcplus2 -t upload
-```
-
-Use the environment of your board:
-
-| Board | Environment |
-| ----- | ----------- |
-| ESP32 DevKit | `web-esp32` |
-| ESP32-C3 | `web-esp32c3` |
-| ESP32-S3 | `web-esp32s3` |
-| M5StickC / M5StickC Plus / M5StickC Plus2 | `web-m5stickc` / `web-m5stickcplus` / `web-m5stickcplus2` |
-| M5Stack Tough | `web-m5stack-tough` |
-| M5Stack Atom Lite | `web-m5stack-atom` |
-| WT32-ETH01 / Olimex ESP32-PoE | `web-wt32-eth01` / `web-esp32-poe` |
-
-There is nothing to edit before building: the board starts its setup network (see [Step 3](#step-3-finishing-in-the-web-interface)) and everything is configured in the web interface. In VS Code, select the environment in the PlatformIO status bar and click Upload.
-
-To update a board that is already installed, upload `.pio/build/<environment>/firmware.bin` in System → Firmware update, or upload over the network with `pio run -e <environment> -t upload --upload-port espaltherma.local` (with an admin password set, add `upload_flags = --auth=<your admin password>` to the environment in `platformio.ini`).
-
-# Coming from ESPAltherma 1.x
-
-- Install ESPAltherma 2 with the web installer, over USB. Your `setup.h` is not read anymore: enter the Wi-Fi when the installer asks, then the MQTT broker, the pins (if you did not use the default ones) and the relays in the web interface.
-- ESPAltherma 2 selects the recommended values of your model. Add the other values you had in your definition file in the Values tab.
-- **If you used an English definition file**, Home Assistant keeps the same device and the same entity IDs (`sensor.espaltherma_...`), so your history, dashboards and automations keep working for the values you select again.
-- **If you used a translated definition file** (`def/French/`, `def/German/`...), your entity IDs and the attribute names of `sensor.althermasensors` came from the translated labels. ESPAltherma 2 always builds them from the English labels: only the displayed names follow the language (Settings → This device). So:
-    - Home Assistant creates new entities, e.g. `sensor.espaltherma_leaving_water_temp_before_buh_r1t` instead of `sensor.espaltherma_auslass_phe_r1t`. Update your dashboards and automations.
-    - To get rid of the old entities, [clear the discovery](#device-discovery) once, then restart ESPAltherma: it publishes only the new ones. To keep the history of a sensor, you can then give the new entity the old entity ID (entity settings in Home Assistant).
-    - Templates reading `state_attr('sensor.althermasensors', ...)` need the English attribute names, which the Values tab shows when the language is English.
-- To go back, build and upload ESPAltherma 1.x from the [main branch](https://github.com/raomin/ESPAltherma/tree/main) as before.
-
-# How it works
-
-All the definition files of [definitions](definitions) (36 models) are merged at build time into one catalog of 656 distinct values (`scripts/gen_catalog.py`). One firmware therefore knows every model: it only has to find out which one it is connected to, and check that the definition really matches the unit.
-
-## Detecting the heat pump
-
-1. **Protocol.** ESPAltherma asks registry `0x60` in protocol I. If nothing answers, it tries registry `0x53` in protocol S (older units).
-2. **Survey.** It reads once every registry the definition files use (on protocol I, `0x61`, `0x62`... are walked until the first missing one, like D-Checker does). The result is the detection report, published on `espaltherma/detect` and shown in Diagnostics → Heat pump survey.
-3. **Identification.** Registry `0x63` holds the AS number of the indoor board, as printed on its label: `AS1708171-30 F` reads `01 70 81 71 03 06`. ESPAltherma looks it up in a table of 731 known AS numbers and the models they are fitted in ([data/as_numbers.json](data/as_numbers.json)), which gives the candidate definitions. The AS number, the software ID (`0x60`), the outdoor capacity (`0x00`, offset 12, in kW x10) and the outdoor board part number (`0x11`) together form an identification key.
-4. **Known units.** A key listed in [data/fingerprints.json](data/fingerprints.json) names the model directly. The table grows from the reports users share (the box ticked when confirming the model, see [Step 3](#step-3-finishing-in-the-web-interface)).
-5. **Scoring.** The candidates (every model when the AS number is unknown) are scored against the survey:
-    - the registries the model reads must answer, and the family-specific ones it does not know (`0xA0`, `0xA1`, `0x65`) should not;
-    - replies must be at least as long as what the model reads, ideally exactly as long;
-    - the values at the model's temperature, voltage, current and flow slots must be physically plausible;
-    - the outdoor capacity must be in the range of the definition.
-6. **Confidence.** Models that read the recommended values the same way count as one. On protocol I, the confidence is **high** only with a known key or a single AS number candidate: the model is then used right away. (Protocol S has two definitions, told apart by the registries that answer.) Otherwise (the DA and DJ series, for instance, share their AS numbers) you confirm the model in Setup → Heat pump. Until then, ESPAltherma only publishes the *safe values*: the recommended values that every close candidate reads identically (same registry, offset, conversion and size).
-
-The survey runs at every start. If another heat pump answers (the key changed), the model is detected again. While no model is known, the survey is retried every minute, in case the cable was plugged in after the board.
-
-## Correcting wrong definitions
-
-Some definitions do not match every unit of their series. In several registries (`0x00`, `0x21`, `0x30`, `0x61`...) the definitions place 2-byte values at different offsets. With the wrong layout, each value is read across two neighbours: absurd numbers that jump by 25.6 each time the neighbouring byte changes by one. On a real EPGA16, registry `0x21` matches the Gen-1 layout, not its own definition.
-
-For those registries, ESPAltherma scores every candidate layout, taken from the other definitions, on each poll:
-
-- **plausible:** the values are in a physical range;
-- **steady:** they change little between two polls;
-- **mirrored:** they equal a sensor of another registry (the heat pump often serves the same sensor twice).
-
-A registry switches to another layout only on clear evidence:
-
-- after at least 4 polls, the definition's own layout reads fewer than 90% plausible values;
-- the other layout is always plausible, never jumps and reads real (non-zero) values;
-- this is backed by jumps of the current layout or by mirrored values.
-
-Registries without evidence, for instance all zero while the unit is idle, are never touched.
-
-The corrected registry is then read with the layout (and the labels) of that other definition. Corrections are logged and listed in Diagnostics → Definition corrections, where you can undo them or turn off *Correct automatically*. They are cleared when the model changes.
-
-Sharing your report when you confirm the model (or posting your detection report and your exact model in an issue) helps: it adds your unit to the known keys, and a correction found on your unit shows which definition needs fixing.
-
-# Troubleshooting
-
-## Where to look first
-
-The **Diagnostics** tab of the web interface shows the event history (restarts and their cause, network drops, dated), the heat pump survey and the log. The log is also published on the MQTT topic `espaltherma/log`, and printed on the USB serial port (115200 bauds). You can see the MQTT messages in Home Assistant through Settings → Devices & services → MQTT → Configure → Listen to a topic `espaltherma/#`, or with:
-
-```bash
-$ mosquitto_sub -v -t "espaltherma/#"
-```
-
-## No heat pump answered, 'Time out! Check connection', 'Wrong CRC on registry...'
-
-This means that the communication is wrong. Usual suspects:
-
-1. Un-connected GND: whatever you do, the GND of the ESP should always be connected to the GND of the Altherma. So, if you power your ESP with a USB charger (or your computer), make sure you also connect the GND from the ESP to your GND of the Altherma.
-2. If not GND, then it's always the Dupont cable. A faulty dupont cable is a VERY COMMON cause of issue. You can have a perfectly looking cable, they are not the best to do connection on the X10A connector (although much more common than an EH JST 5pin). So, change your cable. You can also use a common 2.54 female long header, plug it to the X10A connector and then your dupont cable to the long pins of the header.
-![pic of header](doc/images/header.png)
-3. RX and TX swapped, or other pins than the ones set in Settings → Heat pump connection.
-
-Once fixed, click **Detect again** in Setup → Heat pump.
-
-## Older heat pumps (S protocol)
-
-Older Altherma heat pumps (around 2010 or before) use the older S protocol. ESPAltherma detects it by itself. If it does not, choose the `PROTOCOL_S` (or `PROTOCOL_S_ROTEX`) model from the full list in Setup → Heat pump.
-
-## Altherma 4 (EPSK outdoor units)
-
-The X10A connector is on the A1P switch box of the indoor unit, and the unit answers like the R32 generation, so ESPAltherma 2 recognises it (its hydro board is the same for every model) and reads the outdoor unit, the leaving water, the flow and the pressure. Some values are not on this port: the return water is measured in the outdoor unit ("Inlet water temp. (water heat exchanger)"), and the room and hot water tank temperatures are read by the user interface. The Altherma 4 also has an official local interface, Modbus TCP on the indoor unit's RJ45 port (through the HomeHub, or directly with recent firmware), which gives those values. Reports from Altherma 4 owners are welcome: the definition was built from what owners read, not from a Daikin definition.
-
-## Altherma HT (EKHBRD hydrobox)
-
-The high temperature Altherma (an EKHBRD011-016 hydrobox on an ERRQ or ERSQ outdoor unit) has no X10A. Its service port is X41A on the hydrobox's inverter board (A5P on single phase units, A4P on three phase ones), with the same five pins as X10A (V+, TX, RX, NC, GND). The hydrobox answers the values of its own refrigerant stage (R134a), not the indoor unit ones, and it is recognised by the shape of its replies. Two definitions read the same board: "Altherma(HT EKHBRD-ERRQ series 11-16kW)", chosen automatically, gives the low pressure, the compressor frequency, the expansion valve, the 4-way valve, the switch box fan and the inverter currents; "Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S)", chosen from the list, uses the older protocol on the same port and gives both pressures and the discharge and liquid temperatures instead. Pressures are converted to R134a saturation temperatures. Mapped by owners on issue #95.
-
-## The board restarts or drops off the network
-
-Open Diagnostics → Event history: it tells why the board restarted (power, crash, watchdog, Wi-Fi lost for too long...). A weak 5V from the X10A is a common cause: on M5 boards, the supply voltage is shown in the Values tab. Power the board from a USB charger in that case (and keep the GND wire).
-
-## Note on voltage
-
-The serial port of X10A is TTL 5V, where the ESP32 is 3.3V. Your ESP32 might not be 5V tolerant. If you want to play it safe, you should use a level shifter to convert Daikin TX - RX ESP line from 5V to 3.3V.
-
-In practice, I had no problem connecting an ESP32 without level shifters. I also had no issue powering the ESP32 from the 5V line of the X10A. On my Daikin Altherma, 5V is provided by a 7805 with a massive heat sink, plus, there are not many clients for it on the board and the ESPAltherma running on my ESP32 consumes 70ma.
-
-Some users reported that a ROTEX did not have a stable 5v that could be used to power the ESP32. If so, you would need to rely on an external 5V power supply (eg a regular USB charger) to power the ESP32.
-
-# Integrating with Home Assistant
-
-ESPAltherma integrates easily with Home Assistant using [MQTT Discovery](https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery).
-
-On successful startup, ESPAltherma will generate one distinct device "Daikin Altherma via ESPAltherma" and two entities under the device "ESPAltherma" under the MQTT integration in Home Assistant:
+Once the MQTT broker is set ([Step 3](#step-3-finishing-in-the-web-interface)), Home Assistant creates a device "Daikin Altherma via ESPAltherma" with the values you selected, and an "ESPAltherma" device with the relays and the raw `sensor.althermasensors`. The entity IDs are built from the English labels (`sensor.espaltherma_discharge_pipe_tempr2t`), whatever the language of the names.
 
 ![](doc/images/mqtt-devices.png)
-
-The "Daikin Altherma via ESPAltherma" device will contain all the values you selected, while the "ESPAltherma" device will contain two more low-level entities:
-
-![](doc/images/haentities.png)
-
-- `sensor.althermasensors` holds the sensor values as attributes.
-- `switch.altherma` activates the thermostat relay (Step 4), when one is set.
-
-## A dashboard
 
 The [ESPAltherma card](https://github.com/raomin/espaltherma-card) brings the live drawing of the web page to Home Assistant, and builds a whole dashboard with the drawing, your thermostat, the key values and their history. Install it with HACS (custom repository `https://github.com/raomin/espaltherma-card`, type *Dashboard*), then create a dashboard whose configuration is just:
 
@@ -377,109 +203,35 @@ strategy:
   type: custom:espaltherma
 ```
 
-## Device Discovery
+The rest is in [doc/home-assistant.md](doc/home-assistant.md): the discovery details and how to clear it, a climate entity on the thermostat relay, calculating the COP, the MQTT topics, one topic per value for OpenHAB and the like, and two boards on one broker.
 
-ESPAltherma will generate a device discovery JSON and publish that to MQTT topic `homeassistant/device/espaltherma-mqtt-discovery/config` for Home Assistant to pick up. The software will attempt to make the devices as specific to their unit as possible. Other characteristics:
+# Updating
 
-- Their name will be the label name, in the language chosen in Settings → This device, e.g. "Discharge pipe temp.(R2T)"
-- Their entity ID will be `sensor.espaltherma_` followed by a lowercase, alphanumeric only conversion of their English labels with spaces replaced by underscores. For example: "Discharge pipe temp.(R2T)" becomes `discharge_pipe_tempr2t`. The IDs stay the same whatever the language.
+In **System → Firmware update**, click **Check for an update**: your browser looks for a newer release on the installer's site, downloads the file of your board and sends it to the board (the board itself never goes to the Internet for it). Without Internet access from the browser, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) instead. Either way, if the new version cannot get back online, the board goes back to the previous one by itself. Running the [web installer](https://espaltherma.pages.dev/) again over USB works too, and keeps the settings.
 
-To clear the configuration, for example after adding or removing some sensor, publish an empty, retained message to `homeassistant/device/espaltherma-mqtt-discovery/config`.
+You can also [build it yourself](doc/building.md) with PlatformIO.
 
-## A Climate entity
+# Troubleshooting
 
-To control heating through the On/Off switch, declare a Climate (aka thermostat) entity monitoring a temperature sensor.
+The **Diagnostics** tab of the web interface shows the event history (restarts and their cause, network drops, dated), the heat pump survey and the log. The log is also published on the MQTT topic `espaltherma/log`, and printed on the USB serial port (115200 bauds).
 
-```yaml
-climate:
-  - platform: generic_thermostat
-    name: Altherma
-    heater: switch.altherma
-    target_sensor: sensor.temproom1
-    min_temp: 15
-    max_temp: 25
-    cold_tolerance: 0.5
-    hot_tolerance: 0.5
-    min_cycle_duration:
-      minutes: 30
-    away_temp: 15
-    precision: 0.1
-```
+**No heat pump answered, 'Time out! Check connection', 'Wrong CRC on registry...'**: the communication is wrong. Usual suspects, in order: an un-connected GND (whatever you do, the GND of the ESP should always be connected to the GND of the Altherma, even when the ESP is powered by USB); a faulty Dupont cable, a VERY COMMON cause, so change it; RX and TX swapped, or other pins than the ones set in Settings → Heat pump connection. Once fixed, click **Detect again** in Setup → Heat pump.
 
-Then, add a Thermostat card somewhere:
+More in [doc/troubleshooting.md](doc/troubleshooting.md): the board restarting or dropping off the network, the note on the 5V and 3.3V levels, and what to expect on the older S protocol units, the Altherma 4 and the Altherma HT.
 
-![ha thermostat](doc/images/thermostat.png)
+# Coming from ESPAltherma 1.x
 
-## Calculating COP
-
-The COP (coefficient of performance) is the heat delivered by the heat pump divided by the electricity it uses. ESPAltherma gives the heat side: the water flow and the temperatures of the water leaving and coming back. For the electricity side, the most accurate is an external power meter on the supply of the heat pump (a Shelly, a DIN rail meter...) that reports to Home Assistant. Many older heat pumps don't report their own consumption at all.
-
-**Heat delivered**, in kW: flow (l/min) × 0.06 (to m³/h) × 1.16 (kWh per m³ and °C) × (leaving − return temperature). This needs the flow: if your model doesn't report "Flow sensor (l/min)", you need a heat meter.
-
-In `configuration.yaml`:
-
-```yaml
-template:
-  - sensor:
-      - name: "Heat pump heat output"
-        unique_id: espaltherma_heat_output
-        unit_of_measurement: "kW"
-        device_class: power
-        state_class: measurement
-        state: >
-          {% set flow = states('sensor.espaltherma_flow_sensor_lmin') | float(0) %}
-          {% set dt = states('sensor.espaltherma_leaving_water_temp_before_buh_r1t') | float(0)
-                    - states('sensor.espaltherma_inlet_water_tempr4t') | float(0) %}
-          {{ [flow * 0.06 * 1.16 * dt, 0] | max | round(2) }}
-      - name: "Heat pump COP"
-        unique_id: espaltherma_cop
-        state_class: measurement
-        state: >
-          {% set heat = states('sensor.heat_pump_heat_output') | float(0) %}
-          {% set power = states('sensor.my_heat_pump_power') | float(0) / 1000 %}
-          {{ (heat / power) | round(2) if power > 0.05 else 0 }}
-```
-
-- Replace `sensor.my_heat_pump_power` with your power meter, in W (drop the `/ 1000` if it reports kW).
-- Check the entity ids in Settings → Devices & services → Entities: they come from the English labels and can differ a bit between models.
-- If the meter also powers the backup heater, use the water after it: `sensor.espaltherma_leaving_water_temp_after_buh_r2t`.
-- During a defrost the heat output is negative: it shows 0.
-
-**COP of a day.** The instant COP jumps around (start, defrost, hot water). Over a day, divide energies instead: create an *Integral* helper (Settings → Devices & services → Helpers → *Create helper* → *Integral sensor*, method *Left*) on "Heat pump heat output", and one on your power meter, unless it already gives kWh. Put a daily *Utility meter* helper on each, and divide the two in a template like the one above.
-
-**Without a power meter**, you can estimate the power from the inverter current: `sensor.espaltherma_inv_primary_current_a` × `sensor.espaltherma_voltage_nphase_v` (or × 230 if your model doesn't report the voltage), on single-phase units. It leaves out the water pump and the electronics, so the COP comes out a bit high.
-
-## MQTT topics
-
-Every topic starts with the base topic, `espaltherma` unless you change it in Settings → MQTT output. Two ESPAltherma on one broker, for instance one on the indoor unit and one on the outdoor unit of an Altherma HT, need different base topics, such as `espaltherma-idu` and `espaltherma-odu`: the Home Assistant entities of a board then start with its base too (`sensor.espaltherma_odu_...`), on a device of their own. The card looks for the `espaltherma_` entities: keep the default base on the board you want in it. The one-topic-per-value prefix is a setting of its own: change it too if both boards use that option.
-
-| Topic | |
-| ----- | - |
-| `espaltherma/ATTR` | All the values, as a JSON message, plus `WifiRSSI`, `FreeMem`, `Uptime` and `IP` (the board's address) |
-| `espaltherma/LWT` | `Online` / `Offline` |
-| `espaltherma/log` | Log messages |
-| `espaltherma/detect` | The detection report: identification codes of your heat pump, every registry read once, detected model. Send anything to `espaltherma/detect/run` to read it again |
-| `espaltherma/POWER`, `espaltherma/STATE` | Thermostat relay: `ON` / `OFF` |
-| `espaltherma/sg/set`, `espaltherma/sg/state` | Smart Grid mode, `0` to `3` |
-| `espaltherma/SAFETY`, `espaltherma/SAFETY_STATE` | Safety relay: `1` stops the heat pump, `0` releases it |
-| `espaltherma/dhw_target/set`, `espaltherma/dhw_target/state` | Hot water target in °C (experimental, see [Setting the hot water and leaving water targets](#step-6-experimental---setting-the-hot-water-and-leaving-water-targets)); `.../attributes` carries the effective target and the ceiling |
-| `espaltherma/lwt_target/set`, `espaltherma/lwt_target/state` | Leaving water target of the main zone in °C (experimental, same section) |
-
-Settings → MQTT output can also publish one topic per value, use the JSON table format of ioBroker, and send the on/off values as `1`/`0` (for EmonCMS and the like; Home Assistant follows it).
+Install ESPAltherma 2 with the web installer, over USB: your `setup.h` is not read anymore, everything is entered in the web interface. If you used an English definition file, Home Assistant keeps the same device and entity IDs, so your history, dashboards and automations keep working for the values you select again. If you used a translated one, the entity IDs change: [doc/upgrading-from-1.x.md](doc/upgrading-from-1.x.md) explains what to do. ESPAltherma 1.x stays on the [v1 branch](https://github.com/raomin/ESPAltherma/tree/v1).
 
 # FAQ
 
 ## Great! I can now monitor my heat pump! Can I change the configuration values too?
 
-Mostly not: the user interface of the heat pump owns the setpoints it shows and re-sends them every second, so the X10A port cannot change them. One exception is the hot water target, which ESPAltherma can set on supported units when the tank follows a weather-dependent curve: see [**Setting the hot water target**](#step-6-experimental---setting-the-hot-water-target). The dedicated issue is [#1](https://github.com/raomin/ESPAltherma/issues/1).
-
-ESPAltherma also supports an extra GPIO to control a relay that you can plug as *external On/Off thermostat*. See [**Controlling your Daikin Altherma heat pump**](#step-4-optional---controlling-your-daikin-altherma-heat-pump).
-
-If you want to configure your heat pump using an arduino, you can interact with the P1P2 serial protocol (the one of the digital thermostats) using the [nice work on P1P2Serial](https://github.com/Arnold-n/P1P2Serial) of Arnold Niessen.
+Mostly not: the user interface of the heat pump owns the setpoints it shows and re-sends them every second, so the diagnostic port cannot change them. ESPAltherma goes around it where it can: the [thermostat relay, the Smart Grid inputs and the targets](#controlling-the-heat-pump). The dedicated issue is [#1](https://github.com/raomin/ESPAltherma/issues/1). If you want to configure your heat pump from a microcontroller, you can interact with the P1P2 serial protocol (the one of the digital thermostats) using the [nice work on P1P2Serial](https://github.com/Arnold-n/P1P2Serial) of Arnold Niessen.
 
 ## Where can I get more info on the protocol used?
 
-It took quite some time to reverse engineer the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20protocol.md).
+It took quite some time to reverse engineer the protocol. If you're interested, I documented my findings [here](doc/Daikin%20I%20protocol.md), and [how ESPAltherma tells the models apart](doc/how-it-works.md).
 
 ## Is it safe? Can I break my machine?
 
@@ -491,31 +243,13 @@ Of course you can probably achieve the same with the BRP069A62 adapter. However,
 
 ## I selected a value but it is always returning 0 (or OFF)
 
-The definitions contain values for a range of products. It is possible that some of the values are not implemented in your specific heat pump. The Values tab shows the current reading of each value: use it to see which ones your unit really reports.
-
-If it says 'conv XXX not avail.' it is that I did not implement this specific conversion of value. If you need this value, create an issue and I'll implement it.
+The definitions contain values for a range of products. It is possible that some of the values are not implemented in your specific heat pump. The Values tab shows the current reading of each value: use it to see which ones your unit really reports. If it says 'conv XXX not avail.' it is that I did not implement this specific conversion of value. If you need this value, create an issue and I'll implement it.
 
 ## What is the meaning of this value?
 
-Some times the names of the values can be cryptic. Sometimes, the names are more informative on other models: You can look for the registry in other model this can give you a hint. Eg.: One one file `0x62,15` is `"Pressure sensor"` => on the other `0x62,15` is `"Refrigerant pressure sensor"`.
+Some times the names of the values can be cryptic. Sometimes, the names are more informative on other models: you can look for the registry in another model's definition, this can give you a hint. Eg.: in one file `0x62,15` is `"Pressure sensor"`, in another `0x62,15` is `"Refrigerant pressure sensor"`. I'm not an expert in heat pumps, so I don't understand all possible values. Collectively however, I'm sure that we can understand a lot: [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values) collects comments on the values, add yours!
 
-I'm not an expert in heat pump, so I don't understand all possible values. Collectively however, I'm sure that we can understand a lot.
-
-I created [a page in the WIKI](https://github.com/raomin/ESPAltherma/wiki/Information-about-Values). You can add your comments on the register values and suggest possible better names!
-
-## My Daikin heat pump is not an Daikin Altherma. Can I still control it?
-
-No, ESPAltherma supports only Altherma protocol. Other (AC only) units also have a serial port but using other protocols that would require extra reverse engineering to be implemented.
-
-## How can I update ESPAltherma remotely?
-
-From the web interface, without unplugging it from the heat pump: see [Updating](#updating).
-
-## I'm using OpenHAB (or others) can I get the values in separated MQTT topics?
-
-Yes. In Settings → MQTT output, tick **One topic per value**. Each value is then also published in `espaltherma/OneATTR/[valuename]` eg `espaltherma/OneATTR/Boiler Heating Target Temp.` (the prefix can be changed there).
-
-## How can I contribute?
+# Contributing
 
 Every contribution to this project is highly appreciated! Don't fear to create issues to report possible bugs or feature request. Pull requests which enhance or fix ESPAltherma are also greatly appreciated for everybody!
 
@@ -525,13 +259,14 @@ If this project is useful to you, and if you want, <b>[you can buy me a beer](ht
 
 You can also [sponsor this project](https://github.com/sponsors/raomin/) (ie regular beers :)) and become an official supporter of ESPAltherma and get your badge on this page!
 
-## ❤ Regular Sponsors ❤
+## ❤ Sponsors ❤
 
-<a href="https://github.com/gerione">@gerione</a><br/>
-<a href="https://github.com/kloni">@retrack (Antoine Coetsier)</a><br/>
-<a href="https://github.com/EvertJob">@EvertJob (toppe)</a><br/>
-<a href="https://github.com/FusisCaesar">@FusisCaesar</a><br/>
-<a href="https://github.com/Mychel60">Michael</a><br/>
+<a href="https://github.com/DasUrmel">@DasUrmel (Thorsten Seidel)</a><br/>
+<a href="https://github.com/lotterbach1">@lotterbach1</a><br/>
+<a href="https://github.com/vtxray">@vtxray</a><br/>
+<a href="https://github.com/sponsors/raomin/"><b>You..?</b></a><br/>
+
+With thanks to the former sponsors: <a href="https://github.com/gerione">@gerione</a>, <a href="https://github.com/kloni">@retrack (Antoine Coetsier)</a>, <a href="https://github.com/EvertJob">@EvertJob (toppe)</a>, <a href="https://github.com/FusisCaesar">@FusisCaesar</a>, <a href="https://github.com/Mychel60">Michael</a>.
 
 # License
 ESPAltherma is licensed under ![MIT Licence](https://img.shields.io/github/license/raomin/ESPAltherma.svg?style=for-the-badge)
