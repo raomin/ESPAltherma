@@ -65,6 +65,34 @@ static const ControlProfile CONTROL_PROFILES[] = {
     {"20017705",
      {0x37A8, 0x37E6, 366, 367, 0x5409, 0x540E, 278, 0x01, 0x3166, 0x34C2},
      {0x37AA, 0x37E8, 373, 372, 0x5418, 0x5413, 374, 0x0C, 0x31BA, 0}},
+    // The profiles below come from the board's software too (same memory layout at every byte the control
+    // uses, same 15 cross-checks as 20017705), none confirmed on a unit yet.
+    // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX DA and DJ series (Altherma 3 R)
+    {"17014006",
+     {0x1766, 0x17A4, 366, 367, 0x2EB5, 0x2EBA, 278, 0x01, 0x11F2, 0x143E},
+     {0x1768, 0x17A6, 373, 372, 0x2EC4, 0x2EBF, 374, 0x0C, 0x1256, 0}},
+    // 4-8 kW EHSH/EHSX P30/P50 D series (Altherma 3 R ECH2O)
+    {"17019A04",
+     {0x162A, 0x1668, 366, 367, 0x2EBE, 0x2EC3, 278, 0x01, 0x10B6, 0x1302},
+     {0x162C, 0x166A, 373, 372, 0x2ECD, 0x2EC8, 374, 0x0C, 0x111A, 0}},
+    // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E, EA and EJ series, 9-16 kW EBLA/EDLA monoblocs and EWAA/EWYA chillers
+    {"20002203",
+     {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160},
+     {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0}},
+    // 12 kW ETVH/ETVX/ETVZ/ETBH/ETBX EA, EJ and EF series and ETSH/ETSX 12 P30/P50 (Altherma 3 H HT 8-12 kW)
+    {"20007904",
+     {0x3794, 0x37D2, 366, 367, 0x53C2, 0x53C7, 278, 0x01, 0x3152, 0x34AE},
+     {0x3796, 0x37D4, 373, 372, 0x53D1, 0x53CC, 374, 0x0C, 0x31A6, 0}},
+    // 4-8 kW EHSH/EHSX P30/P50 EF and EG series (Altherma 3 R ECH2O), 4-8 kW EBLA/EDLA E monoblocs and EWAA/EWYA
+    {"20017704",
+     {0x37A0, 0x37DE, 366, 367, 0x53E3, 0x53E8, 278, 0x01, 0x315E, 0x34BA},
+     {0x37A2, 0x37E0, 373, 372, 0x53F2, 0x53ED, 374, 0x0C, 0x31B2, 0}},
+    // 12 kW ELVH/ELVX/ELVZ/ELBH/ELBX EJ/EF and ELSH/ELSX 12 P30/P50 (the 2026 series). One of the three memory-read
+    // handler candidates of this software could not be resolved; the two others and the converter agree on the
+    // same layout as every other board, and identify() reads everything back before a write.
+    {"22009C02",
+     {0x37B0, 0x37EE, 366, 367, 0x5428, 0x542D, 278, 0x01, 0x316E, 0x34CA},
+     {0x37B2, 0x37F0, 373, 372, 0x5437, 0x5432, 374, 0x0C, 0x31C2, 0}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
