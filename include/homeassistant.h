@@ -1,5 +1,7 @@
 #include <string>
+#include <vector>
 #include "labeldef.h"
+#include "haremoval.h"
 
 // ON/OFF values are published as 1/0 (setting "binary_num"): binary sensors then use 1/0 as their payloads
 extern bool haBinaryAsNumber;
@@ -22,7 +24,13 @@ typedef void (*DiscoverySink)(void *ctx, const char *data, size_t len);
  * Pass sink == nullptr to only compute the length (needed up-front for MQTT's beginPublish()).
  * The payload is never materialized as one large buffer, keeping heap usage low on the ESP.
  */
-size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx);
+size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx,
+                                    const std::vector<HaComponent> *removed = nullptr);
+
+/*
+ * The components the values announce (key and platform), to tell which ones a later discovery removes (haremoval.h).
+ */
+std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count);
 
 /*
  * Turns a LabelDef into a "component" JSON element for inclusion in the "cmp" array of the Device Discovery payload.
