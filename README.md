@@ -222,7 +222,7 @@ More in [doc/troubleshooting.md](doc/troubleshooting.md): the board restarting o
 
 # Coming from ESPAltherma 1.x
 
-Install ESPAltherma 2 with the web installer, over USB: your `setup.h` is not read anymore, everything is entered in the web interface. If you used an English definition file, Home Assistant keeps the same device and entity IDs, so your history, dashboards and automations keep working for the values you select again. If you used a translated one, the entity IDs change: [doc/upgrading-from-1.x.md](doc/upgrading-from-1.x.md) explains what to do. ESPAltherma 1.x stays on the [v1 branch](https://github.com/raomin/ESPAltherma/tree/v1).
+Install ESPAltherma 2 with the web installer, over USB: your `setup.h` is not read anymore, everything is entered in the web interface. If you used an English definition file, Home Assistant keeps the same device and entity IDs, so your history, dashboards and automations keep working for the values you select again (except the error and thermostat values, now told apart between the outdoor and the indoor unit). If you used a translated one, the entity IDs change: [doc/upgrading-from-1.x.md](doc/upgrading-from-1.x.md) explains what to do. ESPAltherma 1.x stays on the [v1 branch](https://github.com/raomin/ESPAltherma/tree/v1).
 
 # FAQ
 
