@@ -281,6 +281,29 @@ void test_survey_json_never_overflows(void)
     TEST_ASSERT_EQUAL_CHAR('x', json[40]);
 }
 
+void test_survey_key_same_unit(void)
+{
+    const char *saved = "I|63:017087623300|60:A379|CAP:50|11:015029630102|00:C4E7";
+    TEST_ASSERT_TRUE(surveyKeySameUnit(saved, saved));
+    // the outdoor unit sleeps: its registries read all zero or do not answer
+    TEST_ASSERT_TRUE(surveyKeySameUnit("I|63:017087623300|60:A379|CAP:50|11:000000000000|00:0000", saved));
+    TEST_ASSERT_TRUE(surveyKeySameUnit(saved, "I|63:017087623300|60:A379|CAP:50|11:------------|00:----"));
+    // another indoor or outdoor unit
+    TEST_ASSERT_FALSE(surveyKeySameUnit("I|63:017081710306|60:A379|CAP:50|11:015029630102|00:C4E7", saved));
+    TEST_ASSERT_FALSE(surveyKeySameUnit("I|63:017087623300|60:A379|CAP:50|11:017053480100|00:C4E7", saved));
+    TEST_ASSERT_FALSE(surveyKeySameUnit("I|63:017087623300|60:A379|CAP:5A|11:015029630102|00:C4E7", saved));
+    // nothing saved yet, or another protocol
+    TEST_ASSERT_FALSE(surveyKeySameUnit(saved, ""));
+    TEST_ASSERT_FALSE(surveyKeySameUnit("S|50:0|56:1", "S|50:1|56:1"));
+    TEST_ASSERT_FALSE(surveyKeySameUnit("S|50:0|56:1", saved));
+
+    TEST_ASSERT_TRUE(surveyKeyComplete(saved));
+    TEST_ASSERT_FALSE(surveyKeyComplete("I|63:017087623300|60:A379|CAP:50|11:000000000000|00:0000"));
+    TEST_ASSERT_FALSE(surveyKeyComplete("I|63:017087623300|60:A379|CAP:50|11:015029630102|00:----"));
+    TEST_ASSERT_TRUE(surveyKeyComplete("S|50:0|56:1"));
+    TEST_ASSERT_FALSE(surveyKeyComplete(""));
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
@@ -293,6 +316,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_survey_keeps_s_when_i_stays_silent);
     RUN_TEST(test_survey_hydrobox_without_indoor_registries);
     RUN_TEST(test_survey_json_never_overflows);
+    RUN_TEST(test_survey_key_same_unit);
     UNITY_END();
     return 0;
 }
