@@ -11,6 +11,9 @@
 // it survives a restart). Both are written: the RAM at once, the memory 30 s later and at most every 5
 // minutes, to spare it.
 //
+// The curve found before the first write is remembered (the caller keeps it across restarts): a restore request
+// writes it back, both points at once, in the RAM and in the memory.
+//
 // What the thermostat really aims for can differ from the curve: the hot water target is capped by the
 // maximum the heat pump reaches on its own at the current outdoor temperature, and the leaving water target
 // carries the interface's shift and any modulation. Both are read back and reported as the effective target.
@@ -156,11 +159,16 @@ struct CurveControl
   int effective = -1;               // what the thermostat really aims for (-1: unknown)
   int ceiling = -1;                 // the unit's own maximum (-1: none or unknown)
   int saved = -1;                   // value in the unit's memory, when both points of the curve hold the same one
+  int savedA = -1, savedB = -1;     // each point as the unit's memory holds it
+  int origA = -1, origB = -1;       // the curve found before the first write from here (-1: none), restorable
   volatile int wanted = -1;         // requested value, -1 when none (set from other tasks)
-  int pending = -1;                 // the request being handled (clamped)
+  volatile bool restoreWanted = false; // restore the original curve (set from other tasks)
+  int pendingA = -1, pendingB = -1; // the request being handled (clamped), both points
+  bool restoring = false;           // the pending pair is the original curve
+  bool origChanged = false;         // origA/origB changed: the caller persists them
   unsigned long wantedAt = 0, savedAt = 0, checkedAt = 0, readAt = 0;
   volatile bool changed = false; // something to publish (state or availability)
-  int applied = -1;              // last value applied, for the caller's log (-1 when none since the last read)
+  int applied = -1, appliedLo = -1; // last pair applied, for the caller's log (-1 when none since the last read)
   unsigned writes = 0;           // frames written to the unit (statistics)
 
   // --- protocol helpers: each returns false when the unit does not answer as expected
@@ -239,8 +247,9 @@ struct CurveControl
     spec = nullptr;
     status = CONTROL_OFF;
     softwareId[0] = 0;
-    target = targetLo = saved = effective = ceiling = -1;
-    wanted = pending = -1;
+    target = targetLo = saved = savedA = savedB = effective = ceiling = -1;
+    wanted = pendingA = pendingB = -1;
+    restoring = restoreWanted = false; // origA/origB stay: the curve can still be restored once enabled again
     checkedAt = 0; // identified again as soon as enabled
     changed = true;
   }
@@ -299,12 +308,13 @@ struct CurveControl
   void readSaved()
   {
     uint8_t a, b;
-    saved = -1;
+    saved = savedA = savedB = -1;
     if (spec == nullptr || !readMemory(spec->memA, a) || !readMemory(spec->memB, b))
       return;
-    int vA = (a >> 2) + minA, vB = (b >> 2) + minB;
-    if (vA == vB)
-      saved = vA;
+    savedA = (a >> 2) + minA;
+    savedB = (b >> 2) + minB;
+    if (savedA == savedB)
+      saved = savedA;
   }
 
   // Reads the two curve setpoints, the effective target and the ceiling from the unit.
@@ -332,25 +342,27 @@ struct CurveControl
     return value < minTarget ? minTarget : value > maxTarget ? maxTarget : value;
   }
 
-  // Writes the target in the RAM of the unit: applied within its next control cycle.
-  bool apply(int value, unsigned long now)
+  // Writes the two points of the curve in the RAM of the unit: applied within its next control cycle.
+  bool apply(int a, int b, unsigned long now)
   {
-    if (spec == nullptr || !writeRamWord(spec->ramA, (uint16_t)(value << 8)) || !writeRamWord(spec->ramB, (uint16_t)(value << 8)))
+    if (spec == nullptr || !writeRamWord(spec->ramA, (uint16_t)(a << 8)) || !writeRamWord(spec->ramB, (uint16_t)(b << 8)))
       return false;
-    target = targetLo = value;
-    applied = value;
+    target = a;
+    targetLo = b;
+    applied = a;
+    appliedLo = b;
     readAt = now + CONTROL_READ_AFTER_WRITE_MS - CONTROL_READ_INTERVAL_MS; // read back once the board recomputed
     changed = true;
     return true;
   }
 
-  // Writes the target in the memory of the unit, keeping the flag bits of each setting.
-  bool persist(int value)
+  // Writes the two points of the curve in the memory of the unit, keeping the flag bits of each setting.
+  bool persist(int vA, int vB)
   {
     uint8_t a, b;
     if (spec == nullptr || !readMemory(spec->memA, a) || !readMemory(spec->memB, b))
       return false;
-    int rawA = value - minA, rawB = value - minB;
+    int rawA = vA - minA, rawB = vB - minB;
     if (rawA < 0 || rawA > 63 || rawB < 0 || rawB > 63)
       return false;
     return writeMemory(spec->memA, (uint8_t)(rawA << 2 | (a & 3))) && writeMemory(spec->memB, (uint8_t)(rawB << 2 | (b & 3)));
@@ -362,6 +374,19 @@ struct CurveControl
     wanted = value;
   }
 
+  // Asks for the curve found before the first write to be put back. Nothing happens when none is known.
+  void requestRestore()
+  {
+    restoreWanted = true;
+  }
+
+  // The curve known from before the first write, kept by the caller across restarts (-1: none)
+  void setOriginal(int a, int b)
+  {
+    origA = a;
+    origB = b;
+  }
+
   // Runs the pending work: identification, requests, delayed saves, periodic reads. Owner task only.
   void tick(unsigned long now)
   {
@@ -371,38 +396,78 @@ struct CurveControl
         identify(now);
       return;
     }
+    // A restore takes over any request; a request cancels a restore
+    if (restoreWanted)
+    {
+      restoreWanted = false;
+      wanted = -1;
+      if (origA >= 0 && origB >= 0 && !restoring)
+      {
+        pendingA = origA;
+        pendingB = origB;
+        restoring = true;
+        wantedAt = now;
+        changed = true;
+      }
+    }
     int w = wanted;
     if (w >= 0)
     {
       w = clamp(w);
-      if (w != pending)
+      if (w != pendingA || w != pendingB || restoring)
       {
-        pending = w;
+        pendingA = pendingB = w;
+        restoring = false;
         wantedAt = now;
       }
-      if (w != target || w != targetLo)
+    }
+    if (pendingA >= 0)
+    {
+      if (pendingA != target || pendingB != targetLo)
       {
         uint8_t mode = 0;
-        if (!readMemory(spec->modeByte, mode) || !(mode & spec->modeMask) || !apply(w, now))
+        int beforeA = target, beforeB = targetLo;
+        if (!readMemory(spec->modeByte, mode) || !(mode & spec->modeMask) || !apply(pendingA, pendingB, now))
         {
-          wanted = pending = -1;
+          wanted = pendingA = pendingB = -1;
+          restoring = false;
           identify(now); // the unit stopped answering, or its interface left the weather-dependent mode
           return;
         }
-      }
-      if (saved == w)
-      {
-        wanted = pending = -1; // already in the unit's memory
-      }
-      else if (now - wantedAt >= CONTROL_SAVE_DELAY_MS && (savedAt == 0 || now - savedAt >= CONTROL_SAVE_INTERVAL_MS))
-      {
-        if (persist(w))
+        if (!restoring && origA < 0 && beforeA >= 0 && beforeB >= 0)
         {
-          saved = w;
+          origA = beforeA; // the unit's own curve, from before the first write
+          origB = beforeB;
+          origChanged = true;
+        }
+      }
+      bool done = false;
+      if (savedA == pendingA && savedB == pendingB)
+      {
+        done = true; // already in the unit's memory
+      }
+      else if ((restoring || now - wantedAt >= CONTROL_SAVE_DELAY_MS) && (savedAt == 0 || now - savedAt >= CONTROL_SAVE_INTERVAL_MS))
+      {
+        if (persist(pendingA, pendingB))
+        {
+          savedA = pendingA;
+          savedB = pendingB;
+          saved = savedA == savedB ? savedA : -1;
           savedAt = now;
           changed = true;
         }
-        wanted = pending = -1; // saved, or given up for this request
+        done = true; // saved, or given up for this request
+      }
+      if (done)
+      {
+        if (restoring)
+        {
+          origA = origB = -1; // the unit has its curve back
+          origChanged = true;
+          restoring = false;
+          changed = true;
+        }
+        wanted = pendingA = pendingB = -1;
       }
       if (now - readAt >= CONTROL_READ_INTERVAL_MS)
         readTarget(now);

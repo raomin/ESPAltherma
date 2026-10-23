@@ -34,6 +34,7 @@ struct ControlNames
   const char *name, *icon;
 };
 static const ControlNames CONTROL_NAMES[2] = {{"Hot water target", "mdi:water-boiler"}, {"Leaving water target", "mdi:heating-coil"}};
+static const char *RESTORE_NAMES[2] = {"Restore hot water curve", "Restore leaving water curve"};
 bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (with these limits)
 int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
 static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
@@ -147,7 +148,7 @@ void mqttRetireDiscovery()
   if (!client.connected())
     return;
   const char *cfgs[] = {mqttTopics.cfgSensor, mqttTopics.cfgSwitch, mqttTopics.cfgSg, mqttTopics.cfgSafety,
-                        mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgDevice};
+                        mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgRestore[0], mqttTopics.cfgRestore[1], mqttTopics.cfgDevice};
   for (const char *t : cfgs)
     client.publish(t, "", true);
   const char *states[] = {mqttTopics.ctlState[0], mqttTopics.ctlState[1], mqttTopics.ctlAttrs[0], mqttTopics.ctlAttrs[1],
@@ -275,7 +276,10 @@ bool mqttConnectOnce()
         if (controlEnabled(*c))
           client.subscribe(mqttTopics.ctlSet[c->kind]);
         else
-          client.publish(mqttTopics.cfgCtl[c->kind], "", true); // option off: remove the entity from HA
+        {
+          client.publish(mqttTopics.cfgCtl[c->kind], "", true); // option off: remove the entities from HA
+          client.publish(mqttTopics.cfgRestore[c->kind], "", true);
+        }
       }
       return true;
     }
@@ -446,6 +450,16 @@ void callbackControl(CurveControl &c, byte *payload, unsigned int length)
 {
   const char *name = CONTROL_NAMES[c.kind].name;
   payload[length] = '\0';
+  if (strcasecmp((const char *)payload, "restore") == 0)
+  {
+    if (c.status != CONTROL_READY)
+      mqttSerial.printf("%s: not available (%s)\n", name, controlStatusName(c.status));
+    else if (c.origA < 0)
+      mqttSerial.printf("%s: no curve to restore\n", name);
+    else
+      c.requestRestore();
+    return;
+  }
   char *end = nullptr;
   long value = strtol((const char *)payload, &end, 10);
   if (end == (const char *)payload || value < 5 || value > 90)
@@ -496,9 +510,29 @@ void publishControl(CurveControl &c)
     snprintf(value, sizeof(value), "%d", c.target);
     mqttPublish(mqttTopics.ctlState[k], value, true);
     // What the thermostat really aims for, the unit's own maximum, and the second point of the curve
-    snprintf(attrs, sizeof(attrs), "{\"effective\":%d,\"ceiling\":%d,\"curve_low\":%d,\"saved\":%d,\"min\":%d,\"max\":%d}",
-             c.effective, c.ceiling, c.targetLo, c.saved, c.minTarget, c.maxTarget);
+    snprintf(attrs, sizeof(attrs), "{\"effective\":%d,\"ceiling\":%d,\"curve_low\":%d,\"saved\":%d,\"min\":%d,\"max\":%d,\"curve_orig_hi\":%d,\"curve_orig_lo\":%d,\"restoring\":%s}",
+             c.effective, c.ceiling, c.targetLo, c.saved, c.minTarget, c.maxTarget, c.origA, c.origB, c.restoring ? "true" : "false");
     mqttPublish(mqttTopics.ctlAttrs[k], attrs, true);
+  }
+  // The "restore the unit's curve" button: present while a curve from before the first write is known
+  static bool restoreOn[2] = {false, false};
+  bool restorable = ready && c.origA >= 0;
+  if (restorable && !restoreOn[k])
+  {
+    char json[480];
+    snprintf(json, sizeof(json),
+             "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"pl_prs\":\"restore\","
+             "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"icon\":\"mdi:backup-restore\","
+             "\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
+             RESTORE_NAMES[k], mqttTopics.restoreUniq[k], mqttTopics.restoreEntity[k], mqttTopics.ctlSet[k],
+             mqttTopics.lwt, mqttTopics.deviceId, mqttTopics.deviceName);
+    mqttPublish(mqttTopics.cfgRestore[k], json, true);
+    restoreOn[k] = true;
+  }
+  else if (!restorable && restoreOn[k])
+  {
+    mqttPublish(mqttTopics.cfgRestore[k], "", true);
+    restoreOn[k] = false;
   }
 }
 

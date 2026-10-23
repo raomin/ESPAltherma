@@ -51,10 +51,11 @@ struct MqttTopics
   char sgSet[48], sgState[48], safety[48], safetyState[48], serialTx[48], serialRx[48];
   char ctlSet[2][48], ctlState[2][48], ctlAttrs[2][48];
   // Home Assistant discovery topics and identifiers
-  char cfgSensor[80], cfgSwitch[80], cfgSg[80], cfgSafety[80], cfgCtl[2][80], cfgDevice[80];
+  char cfgSensor[80], cfgSwitch[80], cfgSg[80], cfgSafety[80], cfgCtl[2][80], cfgRestore[2][80], cfgDevice[80];
   char deviceId[48], deviceName[64];   // the device of the readings (device-based discovery)
   char relayDeviceId[48], relayDeviceName[48]; // the device of the relays (the legacy entities)
   char ctlUniq[2][48], ctlEntity[2][64];
+  char restoreUniq[2][48], restoreEntity[2][64]; // the "restore the unit's curve" buttons
   char clientId[48];       // the MQTT client id: the broker drops a connection when another one takes its id
 
   void init(const char *baseTopic, const char *configuredClientId = TOPICS_DEFAULT_CLIENT_ID)
@@ -100,6 +101,8 @@ struct MqttTopics
       snprintf(ctlAttrs[k], sizeof(ctlAttrs[k]), "%s/%s/attributes", base, ctl[k]);
       snprintf(ctlUniq[k], sizeof(ctlUniq[k]), "%s_%s", id, ctl[k]);
       snprintf(ctlEntity[k], sizeof(ctlEntity[k]), "number.%s_%s", id, entity[k]);
+      snprintf(restoreUniq[k], sizeof(restoreUniq[k]), "%s_%s_restore", id, ctl[k]);
+      snprintf(restoreEntity[k], sizeof(restoreEntity[k]), "button.%s_%s_curve_restore", id, k == 0 ? "hot_water" : "leaving_water");
     }
     // discovery: the legacy strings had their own spellings, kept for the default base
     const char *seg = legacy ? "espAltherma" : id;
@@ -109,7 +112,10 @@ struct MqttTopics
     snprintf(cfgSg, sizeof(cfgSg), "homeassistant/select/%s/sg/config", seg);
     snprintf(cfgSafety, sizeof(cfgSafety), "homeassistant/switch/%s/safety/config", seg);
     for (int k = 0; k < 2; k++)
+    {
       snprintf(cfgCtl[k], sizeof(cfgCtl[k]), "homeassistant/number/%s/%s/config", seg, ctl[k]);
+      snprintf(cfgRestore[k], sizeof(cfgRestore[k]), "homeassistant/button/%s/%s_restore/config", seg, ctl[k]);
+    }
     snprintf(cfgDevice, sizeof(cfgDevice), "homeassistant/device/%s-mqtt-discovery/config", dev);
     snprintf(deviceId, sizeof(deviceId), "%s-mqtt-discovery", dev);
     // the default client id would be shared by both boards: it follows the base, a chosen one is kept

@@ -79,6 +79,8 @@ struct AppConfig
   // interface (control.h)
   bool dhwTarget;
   bool lwtTarget;
+  int ctlOrig[2][2];  // the curve each control found before its first write (high, low point; -1: none), restorable
+  char ctlOrigSw[9];  // the hydro board software those curves belong to
 
   // Web interface
   char adminPwd[33]; // protects the configuration, updates and OTA when set (user "admin")
@@ -112,6 +114,9 @@ void configDefaults(AppConfig &c)
   c.safetyPin = -1;
   c.safetyActiveHigh = true;
   strlcpy(c.oneTopicPrefix, "espaltherma/OneATTR/", sizeof(c.oneTopicPrefix));
+  for (int k = 0; k < 2; k++)
+    c.ctlOrig[k][0] = c.ctlOrig[k][1] = -1;
+  c.ctlOrigSw[0] = 0;
 }
 
 #define CONFIG_NVS_NAMESPACE "espaltherma"
@@ -197,6 +202,11 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   JsonObject control = doc["control"].to<JsonObject>();
   control["dhw_target"] = c.dhwTarget;
   control["lwt_target"] = c.lwtTarget;
+  control["orig_dhw_hi"] = c.ctlOrig[0][0];
+  control["orig_dhw_lo"] = c.ctlOrig[0][1];
+  control["orig_lwt_hi"] = c.ctlOrig[1][0];
+  control["orig_lwt_lo"] = c.ctlOrig[1][1];
+  control["orig_sw"] = c.ctlOrigSw;
 
   JsonObject admin = doc["admin"].to<JsonObject>();
   admin["has_pwd"] = c.adminPwd[0] != 0;
@@ -315,6 +325,11 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(out["debug_serial"], c.debugSerial);
   readNum(src["control"]["dhw_target"], c.dhwTarget);
   readNum(src["control"]["lwt_target"], c.lwtTarget);
+  readNum(src["control"]["orig_dhw_hi"], c.ctlOrig[0][0]);
+  readNum(src["control"]["orig_dhw_lo"], c.ctlOrig[0][1]);
+  readNum(src["control"]["orig_lwt_hi"], c.ctlOrig[1][0]);
+  readNum(src["control"]["orig_lwt_lo"], c.ctlOrig[1][1]);
+  readStr(src["control"]["orig_sw"], c.ctlOrigSw, sizeof(c.ctlOrigSw));
 
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));
   readNum(src["telemetry"]["enabled"], c.telemetry);

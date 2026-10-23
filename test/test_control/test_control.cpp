@@ -438,6 +438,74 @@ void test_every_other_software_writes_its_own_addresses()
     }
 }
 
+// The curve found before the first write is remembered, and a restore puts it back at once, both points, in the RAM
+// and in the memory (no 30 s wait), then forgets it.
+void test_restores_the_original_curve()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(-1, c.origA);
+    c.requestRestore(); // nothing known yet: nothing happens
+    c.tick(1500);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites);
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(48, c.origA); // the curve as it was: 48 at high, 52 at low outdoor temperature
+    TEST_ASSERT_EQUAL(52, c.origB);
+    TEST_ASSERT_TRUE(c.origChanged);
+    c.origChanged = false;
+    c.request(51); // a second request keeps the original
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_FALSE(c.origChanged);
+    c.tick(3000 + CONTROL_SAVE_DELAY_MS); // saved flat at 51
+    TEST_ASSERT_EQUAL(51, c.saved);
+    unsigned long t = 3000 + CONTROL_SAVE_DELAY_MS + CONTROL_SAVE_INTERVAL_MS;
+    int writes = unit.memoryWrites;
+    c.requestRestore();
+    c.tick(t);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(writes + 2, unit.memoryWrites); // the memory right away
+    TEST_ASSERT_EQUAL((48 - 35) << 2 | 0x01, unit.memory[366]);
+    TEST_ASSERT_EQUAL((52 - 45) << 2 | 0x03, unit.memory[367]);
+    TEST_ASSERT_EQUAL(48, c.target);
+    TEST_ASSERT_EQUAL(52, c.targetLo);
+    TEST_ASSERT_EQUAL(-1, c.saved); // the points differ again
+    TEST_ASSERT_EQUAL(-1, c.origA); // forgotten: the unit has its curve
+    TEST_ASSERT_TRUE(c.origChanged);
+    TEST_ASSERT_FALSE(c.restoring);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A restore waits for the memory's 5 minute interval, but the RAM is written at once; the original given by
+// the caller (from the saved configuration) is used like one captured here.
+void test_restore_from_the_saved_original_keeps_the_memory_interval()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS); // memory written now
+    TEST_ASSERT_EQUAL(50, c.saved);
+    c.setOriginal(46, 54); // as the caller would after a restart
+    int writes = unit.memoryWrites;
+    c.requestRestore();
+    c.tick(3000 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL(46 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(54 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(writes, unit.memoryWrites); // too soon for the memory
+    TEST_ASSERT_TRUE(c.restoring);
+    TEST_ASSERT_EQUAL(46, c.origA);
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(writes + 2, unit.memoryWrites);
+    TEST_ASSERT_EQUAL((46 - 35) << 2 | 0x01, unit.memory[366]);
+    TEST_ASSERT_EQUAL((54 - 45) << 2 | 0x03, unit.memory[367]);
+    TEST_ASSERT_FALSE(c.restoring);
+    TEST_ASSERT_EQUAL(-1, c.origA);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -456,5 +524,7 @@ int main(int, char **)
     RUN_TEST(test_leaving_water_identifies_with_its_own_curve);
     RUN_TEST(test_leaving_water_writes_its_own_words_and_bytes);
     RUN_TEST(test_every_other_software_writes_its_own_addresses);
+    RUN_TEST(test_restores_the_original_curve);
+    RUN_TEST(test_restore_from_the_saved_original_keeps_the_memory_interval);
     return UNITY_END();
 }

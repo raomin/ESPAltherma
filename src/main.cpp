@@ -545,11 +545,32 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   c.tick(millis());
   if (c.status != before)
     mqttSerial.printf("%s target control: %s (software %s)\n", what, controlStatusName(c.status), c.softwareId);
+  int k = c.kind;
+  if (before != CONTROL_READY && c.status == CONTROL_READY && c.origA < 0 && config.ctlOrig[k][0] >= 0 &&
+      strcmp(config.ctlOrigSw, c.softwareId) == 0)
+    c.setOriginal(config.ctlOrig[k][0], config.ctlOrig[k][1]); // the unit's curve, saved before the first write
   if (c.applied >= 0)
   {
-    mqttSerial.printf("%s target set to %d\n", what, c.applied);
-    eventAddf("%s target set to %d", what, c.applied);
-    c.applied = -1;
+    if (c.appliedLo != c.applied)
+    {
+      mqttSerial.printf("%s curve restored to %d/%d\n", what, c.applied, c.appliedLo);
+      eventAddf("%s curve restored to %d/%d", what, c.applied, c.appliedLo);
+    }
+    else
+    {
+      mqttSerial.printf("%s target set to %d\n", what, c.applied);
+      eventAddf("%s target set to %d", what, c.applied);
+    }
+    c.applied = c.appliedLo = -1;
+  }
+  if (c.origChanged)
+  {
+    c.origChanged = false;
+    config.ctlOrig[k][0] = c.origA;
+    config.ctlOrig[k][1] = c.origB;
+    if (c.origA >= 0)
+      strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
+    configSave();
   }
 }
 

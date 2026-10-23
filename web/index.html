@@ -298,9 +298,9 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  </div>
  <div class="dev" id="tiles" translate="no"></div>
  <div class="card pad" id="dhwCard" hidden><h2>Hot water target</h2><p class="sub" id="dhwSub"></p>
-  <div class="acts" style="margin-top:12px"><input type="number" id="dhwVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="dhwSet">Apply</button><span class="msg" id="dhwMsg" translate="no"></span></div></div>
+  <div class="acts" style="margin-top:12px"><input type="number" id="dhwVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="dhwSet">Apply</button><button id="dhwRestore" hidden>Restore the unit's curve</button><span class="msg" id="dhwMsg" translate="no"></span></div></div>
  <div class="card pad" id="lwtCard" hidden><h2>Leaving water target</h2><p class="sub" id="lwtSub"></p>
-  <div class="acts" style="margin-top:12px"><input type="number" id="lwtVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="lwtSet">Apply</button><span class="msg" id="lwtMsg" translate="no"></span></div></div>
+  <div class="acts" style="margin-top:12px"><input type="number" id="lwtVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="lwtSet">Apply</button><button id="lwtRestore" hidden>Restore the unit's curve</button><span class="msg" id="lwtMsg" translate="no"></span></div></div>
  <details class="all card" id="allBox"><summary><span>All readings</span> <span class="sub" id="valAge" translate="no"></span></summary><table><tbody id="dValues" translate="no"></tbody></table></details>
 </section>
 
@@ -661,6 +661,7 @@ function renderOneControl(u, c) {
   const sub = $('#' + u.id + 'Sub'); sub.replaceChildren();
   if (!ready) sub.textContent = reasons[c.status] || c.status;
   else if (c.target < 0) sub.textContent = t('Reading the current target…');
+  else if (c.restoring) sub.textContent = t('Restoring the curve of the unit…');
   else if (c.pending >= 0 && c.pending !== c.target) sub.textContent = t('Applying {n} °C…', {n: c.pending});
   else {
     const flat = c.target_lo === c.target;
@@ -675,9 +676,13 @@ function renderOneControl(u, c) {
       sub.append(' ', el('span', {class: 'tip', title: tip}, t('Aims for {n} °C', {n: c.effective})), '.');
     }
     if (flat) sub.append(' ' + (c.saved === c.target ? t('Saved in the unit.') : t('Applied, saved in the unit in a moment.')));
+    if (c.orig_hi >= 0) sub.append(' ' + t('Before ESPAltherma, the curve of the unit was {lo} °C to {hi} °C.', {lo: c.orig_lo, hi: c.orig_hi}));
   }
   const v = $('#' + u.id + 'Val');
   v.disabled = $('#' + u.id + 'Set').disabled = !ready;
+  const rb = $('#' + u.id + 'Restore');
+  rb.hidden = !(ready && c.orig_hi >= 0);
+  rb.disabled = !!c.restoring;
   if (ready) { v.min = c.min; v.max = c.max; if (document.activeElement !== v && !v.dataset.touched) v.value = c.target >= 0 ? c.target : ''; }
 }
 function renderControl() {
@@ -691,6 +696,10 @@ for (const u of Object.values(CONTROLS)) {
     const n = parseInt(val.value, 10);
     if (isNaN(n)) return msg(m, t('Enter a whole number of degrees.'), false);
     try { await post('/api/control', {[u.key]: n}); delete val.dataset.touched; msg(m, t('Sent. Applied within a few seconds.'), true); setTimeout(refreshStatus, 3000); setTimeout(refreshStatus, 8000); }
+    catch (e) { msg(m, e.message, false); }
+  };
+  $('#' + u.id + 'Restore').onclick = async () => {
+    try { await post('/api/control', {[u.id + '_restore']: true}); delete val.dataset.touched; msg(m, t('Sent. The curve of the unit comes back within a few seconds.'), true); setTimeout(refreshStatus, 3000); setTimeout(refreshStatus, 8000); }
     catch (e) { msg(m, e.message, false); }
   };
 }

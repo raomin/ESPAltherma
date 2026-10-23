@@ -194,6 +194,12 @@ static void controlJson(JsonObject c, const CurveControl &k)
     c["ceiling"] = k.ceiling;
     c["saved"] = k.saved;
     c["pending"] = (int)k.wanted;
+    c["restoring"] = k.restoring;
+    if (k.origA >= 0)
+    {
+      c["orig_hi"] = k.origA; // the unit's own curve, from before the first write: restorable
+      c["orig_lo"] = k.origB;
+    }
   }
 }
 
@@ -665,14 +671,16 @@ void webBegin()
     r->send(200, "application/json", telemetryPayload());
   });
 
-  // Target controls (experimental): {"dhw_target": 50} or {"lwt_target": 35}, applied by the heat pump task
+  // Target controls (experimental): {"dhw_target": 50} or {"lwt_target": 35}, applied by the heat pump task;
+  // {"dhw_restore": true} or {"lwt_restore": true} puts the unit's own curve back
   webServer.on("/api/control", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
     JsonDocument doc;
     if (!parseBody(r, doc))
       return;
-    bool dhw = doc["dhw_target"].is<int>(), lwt = doc["lwt_target"].is<int>();
+    bool dhw = doc["dhw_target"].is<int>() || doc["dhw_restore"].is<bool>();
+    bool lwt = doc["lwt_target"].is<int>() || doc["lwt_restore"].is<bool>();
     if (!dhw && !lwt)
     {
       r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target or lwt_target missing\"}");
@@ -682,6 +690,17 @@ void webBegin()
     if (!(lwt ? config.lwtTarget : config.dhwTarget) || c.status != CONTROL_READY)
     {
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"not ready\"}");
+      return;
+    }
+    if (doc[lwt ? "lwt_restore" : "dhw_restore"].is<bool>())
+    {
+      if (c.origA < 0)
+      {
+        r->send(409, "application/json", "{\"ok\":false,\"error\":\"no curve to restore\"}");
+        return;
+      }
+      c.requestRestore();
+      sendOk(r);
       return;
     }
     int value = doc[lwt ? "lwt_target" : "dhw_target"].as<int>();
