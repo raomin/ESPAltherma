@@ -345,11 +345,19 @@ void applyDetection()
   }
   char key[sizeof(config.detectedKey)];
   surveyKey(survey, key, sizeof(key));
-  bool sameHeatPump = strcmp(key, config.detectedKey) == 0;
+  bool sameHeatPump = surveyKeySameUnit(key, config.detectedKey);
   bool forced = forceDetection;
   forceDetection = false;
   if (config.model[0] && sameHeatPump && !forced)
+  {
+    // Completes a key saved while the outdoor unit slept, the selection stays
+    if (strcmp(key, config.detectedKey) != 0 && surveyKeyComplete(key))
+    {
+      strlcpy(config.detectedKey, key, sizeof(config.detectedKey));
+      configSave();
+    }
     return;
+  }
   if (config.model[0])
     mqttSerial.println("A different heat pump answered: detecting its model again.");
 

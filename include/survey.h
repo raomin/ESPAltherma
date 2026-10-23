@@ -310,6 +310,70 @@ void surveyKey(const Survey &s, char *out, size_t size)
   }
 }
 
+// A field of a protocol I key carries no identification when its bytes are missing ("--") or all zero: the outdoor
+// unit registries (0x11, 0x00) read all zero while it sleeps, for instance just after the heat pump is powered on.
+static bool surveyKeyFieldUnknown(const char *v, size_t len)
+{
+  for (size_t i = 0; i < len; i++)
+    if (v[i] != '0' && v[i] != '-')
+      return false;
+  return true;
+}
+
+// Whether two keys name the same heat pump. Protocol I keys compare field by field, a field unknown in either key
+// matches anything: a sleeping outdoor unit must not pass for another heat pump. Other keys must be equal.
+bool surveyKeySameUnit(const char *a, const char *b)
+{
+  if (strcmp(a, b) == 0)
+    return true;
+  if (strncmp(a, "I|", 2) != 0 || strncmp(b, "I|", 2) != 0)
+    return false;
+  a += 2;
+  b += 2;
+  while (*a && *b)
+  {
+    const char *aColon = strchr(a, ':'), *bColon = strchr(b, ':');
+    if (!aColon || !bColon || aColon - a != bColon - b || strncmp(a, b, aColon - a) != 0)
+      return false; // not the same fields
+    a = aColon + 1;
+    b = bColon + 1;
+    size_t aLen = strcspn(a, "|"), bLen = strcspn(b, "|");
+    bool unknown = surveyKeyFieldUnknown(a, aLen) || surveyKeyFieldUnknown(b, bLen);
+    if (!unknown && (aLen != bLen || strncmp(a, b, aLen) != 0))
+      return false;
+    a += aLen;
+    b += bLen;
+    if (*a != *b)
+      return false;
+    if (*a)
+    {
+      a++;
+      b++;
+    }
+  }
+  return *a == *b;
+}
+
+// Whether every field of a key identifies something (none missing or all zero).
+bool surveyKeyComplete(const char *key)
+{
+  if (strncmp(key, "I|", 2) != 0)
+    return key[0] != 0;
+  for (const char *p = key + 2; *p;)
+  {
+    const char *colon = strchr(p, ':');
+    if (!colon)
+      return false;
+    size_t len = strcspn(colon + 1, "|");
+    if (surveyKeyFieldUnknown(colon + 1, len))
+      return false;
+    p = colon + 1 + len;
+    if (*p)
+      p++;
+  }
+  return true;
+}
+
 // Writes the survey report. detectJson (may be null) is inserted as the "detect" member.
 // Returns the length written.
 size_t surveyToJson(const Survey &s, char *out, size_t size, const char *fw, const char *board, const char *detectJson)
