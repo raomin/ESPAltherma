@@ -165,6 +165,46 @@ def untyped(files):
     return found
 
 
+# Protocol I: the same name in the outdoor unit's registries (below 0x60) and in the indoor unit's ones (eg.
+# "Error Code" in 0x10 and 0x60) would share one MQTT key and one Home Assistant id, and hide each other. Such
+# names get the side, the way the definitions already name most values ("O/U capacity (kW)", "I/U operation
+# mode"), in every protocol I model, so a value keeps one name across models. A name repeated in several
+# registries of the same side also gets its registry. Placeholders stay as they are.
+SIDES = {None: ("O/U %s", "I/U %s"), "de": ("AG %s", "IG %s"), "fr": ("%s U Ext", "%s U Int"),
+         "it": ("%s U Ext", "%s U Int"), "es": ("%s U Ext", "%s U Int")}
+NOT_RENAMED = {"Not in use"}
+INDOOR_FROM = 0x60
+
+
+def doubled_names(files):
+    """(names on both sides, names in several registries of one side) over the protocol I definitions."""
+    both, one_side = set(), set()
+    for f in files:
+        if FAMILIES[f] in "SR":
+            continue
+        regs = collections.defaultdict(set)
+        for reg, offset, conv, size, dtype, label, commented in parse(os.path.join(DEF_DIR, f)):
+            if label not in NOT_RENAMED:
+                regs[label].add(reg)
+        for label, found in regs.items():
+            outdoor = {r for r in found if r < INDOOR_FROM}
+            indoor = found - outdoor
+            if outdoor and indoor:
+                both.add(label)
+            if len(outdoor) > 1 or len(indoor) > 1:
+                one_side.add(label)
+    return both, one_side
+
+
+def unique_name(reg, label, english, doubled, language=None):
+    """The name of a protocol I value, made unique (doubled_names()); english: its English name."""
+    both, one_side = doubled
+    if english not in both and english not in one_side:
+        return label
+    name = SIDES[language][reg >= INDOOR_FROM] % label
+    return name + " (0x%02X)" % reg if english in one_side else name
+
+
 def c_string(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
@@ -175,7 +215,7 @@ def c_string(s):
 LANGUAGES = [("fr", "French"), ("de", "German"), ("it", "Italian"), ("es", "Spanish")]
 
 
-def translations(files, labels):
+def translations(files, labels, doubled):
     out = ["// Sensor names by language: {English name offset in CATALOG_LABELS, name offset in the language pool},",
            "// sorted by the first. Names without a translation stay English."]
     table = []
@@ -191,8 +231,13 @@ def translations(files, labels):
                 print("gen_catalog: %s/%s does not follow the English file, skipped" % (folder, f))
                 continue
             for e, t in zip(english, translated):
-                if t[5] != e[5] and e[5] in labels:
-                    votes[e[5]][t[5]] += 1
+                if FAMILIES[f] not in "SR":
+                    name = unique_name(e[0], e[5], e[5], doubled)
+                    text = unique_name(t[0], t[5], e[5], doubled, code)
+                else:
+                    name, text = e[5], t[5]
+                if text != name and name in labels:
+                    votes[name][text] += 1
         items = sorted((labels[en], c.most_common(1)[0][0]) for en, c in votes.items())
         pool, pos, pairs = [], 0, []
         offsets = {}
@@ -235,6 +280,7 @@ def build():
         raise SystemExit("gen_catalog: temperatures or pressures without a type (1 temperature, 2 pressure):\n  "
                          + "\n  ".join(missing))
 
+    doubled = doubled_names(files)
     models = []  # (name, family)
     entries = {}  # (family, reg, offset, conv, size, type, label, recommended) -> [models mask, flags, first seen]
     seen = 0
@@ -246,6 +292,7 @@ def build():
                 recommended = not commented
             else:
                 recommended = label in RECOMMENDED and RECOMMENDED_ONLY.get(label, "") in f
+                label = unique_name(reg, label, label, doubled)
             # An entry is split when it is recommended on some models only
             key = (family, reg, offset, conv, size, dtype, label, recommended)
             if key not in entries:
@@ -263,10 +310,18 @@ def build():
 
     # Round trip: the entries of each model must be exactly the lines of its definition file.
     for index, f in enumerate(files):
-        expected = {e[:6] for e in parse(os.path.join(DEF_DIR, f))}
+        expected = {e[:5] + (e[5] if FAMILIES[f] in "SR" else unique_name(e[0], e[5], e[5], doubled),)
+                    for e in parse(os.path.join(DEF_DIR, f))}
         rebuilt = {k[1:7] for k, (mask, _, _) in ordered if mask >> index & 1}
         if expected != rebuilt:
             raise SystemExit("gen_catalog: round trip failed for %s" % f)
+        # One name, one value: the name is the MQTT key and the Home Assistant id
+        regs = collections.defaultdict(set)
+        for reg, offset, conv, size, dtype, label in rebuilt:
+            regs[label].add(reg)
+        clash = sorted(label for label, found in regs.items() if len(found) > 1 and label not in NOT_RENAMED)
+        if FAMILIES[f] not in "SR" and clash:
+            raise SystemExit("gen_catalog: %s has %s in several registries" % (f, clash))
 
     labels = {}
     pool = []
@@ -309,7 +364,7 @@ def build():
         out.append("    {0x%02x, %d, %d, %d, %d, %d, %d, 0x%016xULL}," % (reg, offset, conv, size, dtype, labels[label], flags, mask))
     out.append("};")
     out.append("")
-    out += translations(files, labels)
+    out += translations(files, labels, doubled)
 
     fingerprints = []
     if os.path.exists(FINGERPRINTS):
