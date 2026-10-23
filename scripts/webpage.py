@@ -5,7 +5,7 @@ web/i18n/<lang>.json ({"English text": "translation"}). Used by build_web.py (fi
 import json
 import os
 
-LANGUAGES = ["fr", "de", "it", "es"]  # English is the source text
+LANGUAGES = ["fr", "de", "it", "es", "nl"]  # English is the source text
 PLACEHOLDER = "/*I18N*/{}"
 
 

@@ -454,7 +454,7 @@ const el = (tag, attrs = {}, ...kids) => {
 // ---- translations: web/i18n/<lang>.json, embedded by scripts/build_web.py. English is the source text: the page's
 // static text is translated where it stands, script strings go through t(). scripts/check_i18n.py lists the strings.
 const I18N = /*I18N*/{};
-const LANGS = {en: 'English', fr: 'Français', de: 'Deutsch', it: 'Italiano', es: 'Español'};
+const LANGS = {en: 'English', fr: 'Français', de: 'Deutsch', it: 'Italiano', es: 'Español', nl: 'Nederlands'};
 const norm = s => s.replace(/\s+/g, ' ').trim();
 let lang = 'en';
 function t(s, p) {
