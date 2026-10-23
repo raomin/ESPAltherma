@@ -1,5 +1,6 @@
 #ifndef COMM_H
 #define COMM_H
+#include <string.h>
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
@@ -71,12 +72,18 @@ size_t x10aExchange(const uint8_t *frame, size_t len, uint8_t *reply, size_t max
   MySerial.write(frame, len);
   unsigned long start = millis(), last = start;
   size_t n = 0;
+  bool echoSkipped = false;
   while (n < maxLen)
   {
     if (MySerial.available())
     {
       reply[n++] = MySerial.read();
       last = millis();
+      if (!echoSkipped && n == len && memcmp(reply, frame, len) == 0)
+      {
+        echoSkipped = true; // our own frame, echoed by a bidirectional level shifter (#585)
+        n = 0;
+      }
       continue;
     }
     if (n == 0 ? millis() - start >= firstByteMs : millis() - last >= 100)
@@ -122,6 +129,7 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
 
   int len = 0;
   int replyLen = get_reply_len(regID, protocol);
+  bool echoSkipped = false;
 
   while ((len < replyLen) && (millis() < (start + SER_TIMEOUT)))
   {
@@ -137,6 +145,14 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
       return false;
     }
     buffer[len++] = MySerial.read();
+    if (!echoSkipped && len == queryLength && memcmp(buffer, prep, queryLength) == 0)
+    {
+      // A bidirectional level shifter hands our own query back before the reply (#585): drop it
+      echoSkipped = true;
+      len = 0;
+      replyLen = get_reply_len(regID, protocol);
+      continue;
+    }
     if (protocol == 'I' && len == 3)
     {
       // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
