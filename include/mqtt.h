@@ -584,6 +584,8 @@ static void mqttDiscoverySink(void *ctx, const char *data, size_t len)
     mqttWriteFailed = true; // the rest would wait 10s per write, with the values locked
 }
 
+HaAnnounced haAnnounced; // the components of the last device discovery sent (haremoval.h)
+
 void publishHomeAssistantDeviceDiscovery()
 {
   valuesLock(); // the heat pump task may be changing the values
@@ -591,12 +593,14 @@ void publishHomeAssistantDeviceDiscovery()
   const size_t count = converter.activeCount;
   const char *topic = mqttTopics.cfgDevice;
   haBinaryAsNumber = config.binaryAsNumber; // binary sensors then read 1/0
+  const std::vector<HaComponent> components = haComponents(labels, count);
+  const std::vector<HaComponent> removed = haAnnounced.removed(components);
 
   // First pass: compute the exact payload length, required up-front for the MQTT fixed header.
-  size_t payloadLen = streamDeviceDiscoveryPayload(labels, count, nullptr, nullptr);
+  size_t payloadLen = streamDeviceDiscoveryPayload(labels, count, nullptr, nullptr, &removed);
 
-  mqttSerial.printf("Sending HA discovery: %u sensors, %u bytes\n",
-                    (unsigned)(count + 5), (unsigned)payloadLen);
+  mqttSerial.printf("Sending HA discovery: %u sensors, %u removed, %u bytes\n",
+                    (unsigned)(count + 5), (unsigned)removed.size(), (unsigned)payloadLen);
 
   // Stream the payload directly to the socket. PubSubClient::write() writes straight to the
   // TCP/TLS client, so the MQTT buffer only needs to hold the topic+header. This avoids the large
@@ -608,8 +612,9 @@ void publishHomeAssistantDeviceDiscovery()
     return;
   }
 
-  streamDeviceDiscoveryPayload(labels, count, mqttDiscoverySink, &client);
+  streamDeviceDiscoveryPayload(labels, count, mqttDiscoverySink, &client, &removed);
 
-  client.endPublish();
+  if (client.endPublish() && !mqttWriteFailed)
+    haAnnounced.sent(components); // the next discovery leaves the removed ones out
   valuesUnlock();
 }

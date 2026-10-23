@@ -46,7 +46,8 @@ static bool isMeasurementSensor(const std::string &sensorProperties)
            sensorProperties.find("\"unit_of_meas\"") != std::string::npos;
 }
 
-size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx)
+size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx,
+                                    const std::vector<HaComponent> *removed)
 {
     size_t total = 0;
     auto emit = [&](const char *data, size_t len) {
@@ -88,11 +89,28 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
         s = "," + makeSensorJson(labels[i], false);
         emit(s.data(), s.size());
     }
+    // Values no longer selected: only their platform, so Home Assistant removes their entities
+    for (size_t i = 0; removed != nullptr && i < removed->size(); i++)
+    {
+        s = haRemovalJson((*removed)[i]);
+        emit(s.data(), s.size());
+    }
 
     s = discoveryEnd();
     emit(s.data(), s.size());
 
     return total;
+}
+
+std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count)
+{
+    std::vector<HaComponent> out;
+    for (size_t i = 0; i < count; i++)
+    {
+        bool binary = getSensorDeviceAndUnit(labels[i]).find("\"p\":\"binary_sensor\"") != std::string::npos;
+        out.push_back({makeJsonKey(labels[i].label), binary ? "binary_sensor" : "sensor"});
+    }
+    return out;
 }
 
 // Translated names may hold quotes
