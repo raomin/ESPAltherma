@@ -97,6 +97,8 @@ RECOMMENDED = {
     "Inlet water temp.(R4T)", "Inlet water temp. (water heat exchanger)", "DHW tank temp. (R5T)", "Indoor ambient temp. (R1T)",
     # the same sensors under the names of the Hybrid, the EBLQ 5-7kW monobloc and the EWAQ mini chiller
     "Outlet Water Heat Exch. Temp. (R1T)", "Outlet Water BUH Temp. (R2T)", "RT Temp.",
+    # and under the names of the ECH2O D series (issue #613)
+    "[HPSU] Tv inflow Temp  (R1T)", "[HPSU] Tvbh inflow Temp after Buffer/BUH (R2T)", "[HPSU] Tr return Temp (R4T)",
     "BUH Step1",  # the backup heater on the drawing
     "Refrig. Temp. liquid side (R3T)", "Discharge pipe temp.",
     "Flow sensor (l/min)", "Water pressure",
