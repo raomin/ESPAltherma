@@ -120,6 +120,9 @@ RECOMMENDED_ONLY = {"Brine inlet temp.": "GEO", "Brine outlet temp.": "GEO", "Mi
                     "Low Pressure(T)": "HT", "High Pressure (stage)": "HT", "High Pressure(T)": "HT",
                     "R134a liquid temp.": "HT", "Target Evap. Temp.": "HT",
                     "Liquid pipe temp.(R6T)": "Altherma 4"}
+# Not recommended on the models whose definition file name contains the given word: the ECH2O units have no water
+# pressure on the X10A port (it lives on the RoCon controller's bus), registry 0x62 reads 0 there (issue #615).
+RECOMMENDED_NOT = {"Water pressure": "ECH2O"}
 
 # Capacity range in the definition name, eg. "04-08kW", "9-16kW", "3kW"
 CAPACITY = re.compile(r"(\d+)(?:-(\d+))?\s*kW")
@@ -291,7 +294,8 @@ def build():
             if family in "SR":
                 recommended = not commented
             else:
-                recommended = label in RECOMMENDED and RECOMMENDED_ONLY.get(label, "") in f
+                recommended = (label in RECOMMENDED and RECOMMENDED_ONLY.get(label, "") in f
+                               and not (label in RECOMMENDED_NOT and RECOMMENDED_NOT[label] in f))
                 label = unique_name(reg, label, label, doubled)
             # An entry is split when it is recommended on some models only
             key = (family, reg, offset, conv, size, dtype, label, recommended)
