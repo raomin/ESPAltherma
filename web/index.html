@@ -770,6 +770,8 @@ function reading(list) {
   const r = {};
   for (const [k, re] of Object.entries(KEYS)) { const v = list.find(x => re.test(x.l)); if (v && String(v.v).trim() !== '') r[k] = String(v.v).trim(); }
   if (r.r3t == null && r.r6t != null) r.r3t = r.r6t; // the Altherma 4 has its refrigerant liquid side in the outdoor unit
+  // No backup heater (EDLA...W1/V3 monoblocs): its outlet sensor (R2T) reads exactly 0, the leaving water is the heat exchanger's (R1T)
+  if (r.lw2 != null && +r.lw2 === 0 && r.lw1 != null) r.lw2 = r.lw1;
   // One error shown: the outdoor unit's, or the indoor unit's when only that one has an error (or is selected)
   const bad = (e, c) => (e != null && !/^normal$/i.test(e)) || +c > 0;
   if ((r.iuErr != null || r.iuCode != null) && ((r.err == null && r.code == null) || (!bad(r.err, r.code) && bad(r.iuErr, r.iuCode))))
