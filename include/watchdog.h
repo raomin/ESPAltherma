@@ -21,12 +21,16 @@ static void watchdogCheck(void *)
 {
   if (watchdogPaused)
     return;
+  // Read the beats before millis(): the loop task beats on the other CPU meanwhile, and a beat newer than now
+  // underflows now - beat to ~49 days and restarts a healthy board
+  unsigned long loopBeat = watchdogLoopBeat;
+  unsigned long hpBeat = watchdogHpBeat;
   unsigned long now = millis();
   static char cause[96];
   cause[0] = 0;
-  if (now - watchdogLoopBeat > WATCHDOG_LOOP_MS)
+  if (now - loopBeat > WATCHDOG_LOOP_MS)
     snprintf(cause, sizeof(cause), "Watchdog: the main loop stopped (in %s)", (const char *)loopStage);
-  else if (watchdogHpBeat != 0 && now - watchdogHpBeat > WATCHDOG_HP_MS)
+  else if (hpBeat != 0 && now - hpBeat > WATCHDOG_HP_MS)
     snprintf(cause, sizeof(cause), "Watchdog: the heat pump task stopped (in %s)", (const char *)hpStage);
   if (cause[0])
   { // not restart_board(): no NVS here, the stuck task may hold it. The RTC memory survives the restart.
