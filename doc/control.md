@@ -59,3 +59,9 @@ Things to know:
 - The hot water thermostat starts heating when the tank falls a few degrees under the target it aims for (the hysteresis set on the unit, 5 °C by default) and stops at that target. Raising the target by one degree moves both thresholds by one degree, nothing more.
 - The user interface keeps showing its old curve until it restarts; saving that screen again on the interface writes the old curve back.
 - Switching a setpoint mode back to *absolute* on the interface stops ESPAltherma writing that target; the interface's own setpoint applies again.
+
+## Power limit
+
+The installer's "power limitation" field settings live in the hydro board: an enable byte (none, continuous, digital inputs), a kind (current in A or power in kW) and four limits per kind. In continuous mode the board applies limit 1; what it applies is readable as the active limit. ESPAltherma writes limit 1 and the enable byte in RAM (the `F` command), reads the active limit back, and remembers the enable byte found first to put it back when the limit is switched off. The board's memory (`E`) is not written: a restart of the heat pump brings the installer's settings back, and ESPAltherma, which keeps the wanted limit in its configuration, writes it again within two minutes, at most once a minute.
+
+Observed on an EAVH16S18DA6V (software 18002904): a 2 kW limit stalled the ramp at 41 rps, a 1 kW limit, under the compressor's minimum, stopped the compressor within 30 seconds, and the unit restarted four minutes after the limit was released. Hence the floors, 1 kW and 4 A. The MQTT attributes give `active` (what the unit applies), `unit_limit` (limit 1 as the unit holds it), `enable`, `kind`, `min` and `max`.

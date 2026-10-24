@@ -146,6 +146,7 @@ Monitoring is the main job, but ESPAltherma can also act on the heat pump:
 | Smart Grid modes | two relays on the SG1 and SG2 contacts | the `Smart Grid` select |
 | Stop the heat pump | the safety relay | `Altherma Safety` |
 | Hot water and leaving water targets (experimental) | written through the diagnostic port, on supported units | two number entities |
+| Power limit (experimental) | the installer's power limitation settings, written through the diagnostic port | a number entity in kW or A, and a switch |
 
 Why not more? The settings you see on the user interface of the heat pump (the setpoints, the schedules, the curves) belong to that interface: it re-sends them to the hydro board every second, so anything written through the diagnostic port is overwritten at once. The relays act on the unit's own contacts instead, and the targets use the one case where the hydro board decides by itself (a weather-dependent setpoint). Everything else stays out of reach, see the [FAQ](#faq).
 
@@ -179,6 +180,10 @@ You need two relays to open and close the SG1 and SG2 contacts of your heat pump
 ## The safety relay
 
 A third relay can stop the heat pump, for instance wired to a safety contact of your installation. Set its pin in **Settings → Relays**; it appears as `Altherma Safety` in Home Assistant (topic `espaltherma/SAFETY`, `1` stops the heat pump, `0` releases it).
+
+## Power limit (experimental)
+
+The heat pump can be capped at a power (kW) or a current (A), the kind the installer set in the unit: ESPAltherma writes the installer's "power limitation" settings in the hydro board's working memory, continuous mode and limit 1, and the unit applies them within a cycle. For solar surplus or dynamic tariffs. Tick **Power limit** under **Settings → Experimental**: the home page gets a *Power limit* card, Home Assistant a `Power limit` number entity in the unit's kind and a `Power limit on` switch; on MQTT, a value on `espaltherma/power_limit/set` and `ON`/`OFF` on `espaltherma/power_limit/on/set`. Nothing is written in the unit's memory: a restart of the heat pump brings its own settings back, and ESPAltherma applies the limit again within two minutes. Under the compressor's minimum the unit stops it instead of running below, so the value has a floor (1 kW or 4 A). Mapped on the hydro board software 18002904 so far, tested on an EAVH16; the other boards show "not available" until mapped.
 
 ## Hot water and leaving water targets (experimental)
 

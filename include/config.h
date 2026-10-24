@@ -81,6 +81,11 @@ struct AppConfig
   bool lwtTarget;
   int ctlOrig[2][2];  // the curve each control found before its first write (high, low point; -1: none), restorable
   char ctlOrigSw[9];  // the hydro board software those curves belong to
+  bool powerLimit;    // the power limit can be set from Home Assistant and the web interface (control.h)
+  bool ctlLimitOn;    // a limit is applied from here, re-applied after a restart of the heat pump or of ESPAltherma
+  float ctlLimitValue;
+  int ctlLimitOrig;   // the unit's own enable byte, put back when the limit is switched off
+  char ctlLimitSw[9];
 
   // Web interface
   char adminPwd[33]; // protects the configuration, updates and OTA when set (user "admin")
@@ -117,6 +122,11 @@ void configDefaults(AppConfig &c)
   for (int k = 0; k < 2; k++)
     c.ctlOrig[k][0] = c.ctlOrig[k][1] = -1;
   c.ctlOrigSw[0] = 0;
+  c.powerLimit = false;
+  c.ctlLimitOn = false;
+  c.ctlLimitValue = -1;
+  c.ctlLimitOrig = -1;
+  c.ctlLimitSw[0] = 0;
 }
 
 #define CONFIG_NVS_NAMESPACE "espaltherma"
@@ -207,6 +217,11 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   control["orig_lwt_hi"] = c.ctlOrig[1][0];
   control["orig_lwt_lo"] = c.ctlOrig[1][1];
   control["orig_sw"] = c.ctlOrigSw;
+  control["power_limit"] = c.powerLimit;
+  control["limit_on"] = c.ctlLimitOn;
+  control["limit_value"] = c.ctlLimitValue;
+  control["limit_orig"] = c.ctlLimitOrig;
+  control["limit_sw"] = c.ctlLimitSw;
 
   JsonObject admin = doc["admin"].to<JsonObject>();
   admin["has_pwd"] = c.adminPwd[0] != 0;
@@ -330,6 +345,11 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(src["control"]["orig_lwt_hi"], c.ctlOrig[1][0]);
   readNum(src["control"]["orig_lwt_lo"], c.ctlOrig[1][1]);
   readStr(src["control"]["orig_sw"], c.ctlOrigSw, sizeof(c.ctlOrigSw));
+  readNum(src["control"]["power_limit"], c.powerLimit);
+  readNum(src["control"]["limit_on"], c.ctlLimitOn);
+  readNum(src["control"]["limit_value"], c.ctlLimitValue);
+  readNum(src["control"]["limit_orig"], c.ctlLimitOrig);
+  readStr(src["control"]["limit_sw"], c.ctlLimitSw, sizeof(c.ctlLimitSw));
 
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));
   readNum(src["telemetry"]["enabled"], c.telemetry);

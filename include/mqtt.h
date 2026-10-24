@@ -26,6 +26,9 @@ Client *mqttNet = &plainClient; // the network client under PubSubClient
 
 extern Converter converter;
 extern CurveControl dhwControl, lwtControl;
+extern LimitControl limitControl;
+static bool limitDiscoveryOn = false;   // the power limit entities are in Home Assistant
+static LimitKind limitDiscoveryKind = LIMIT_POWER;
 
 // The two target controls on MQTT (experimental, control.h): the entity's name and icon; the topics and the ids
 // come from mqttTopics (ctlSet, ctlState, ctlAttrs, cfgCtl, ctlUniq, ctlEntity)
@@ -148,7 +151,8 @@ void mqttRetireDiscovery()
   if (!client.connected())
     return;
   const char *cfgs[] = {mqttTopics.cfgSensor, mqttTopics.cfgSwitch, mqttTopics.cfgSg, mqttTopics.cfgSafety,
-                        mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgRestore[0], mqttTopics.cfgRestore[1], mqttTopics.cfgDevice};
+                        mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgRestore[0], mqttTopics.cfgRestore[1],
+                        mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgDevice};
   for (const char *t : cfgs)
     client.publish(t, "", true);
   const char *states[] = {mqttTopics.ctlState[0], mqttTopics.ctlState[1], mqttTopics.ctlAttrs[0], mqttTopics.ctlAttrs[1],
@@ -280,6 +284,18 @@ bool mqttConnectOnce()
           client.publish(mqttTopics.cfgCtl[c->kind], "", true); // option off: remove the entities from HA
           client.publish(mqttTopics.cfgRestore[c->kind], "", true);
         }
+      }
+      limitDiscoveryOn = false;
+      limitControl.changed = true;
+      if (config.powerLimit)
+      {
+        client.subscribe(mqttTopics.limitSet);
+        client.subscribe(mqttTopics.limitOnSet);
+      }
+      else
+      {
+        client.publish(mqttTopics.cfgLimit, "", true);
+        client.publish(mqttTopics.cfgLimitOn, "", true);
       }
       return true;
     }
@@ -445,6 +461,35 @@ void callbackDebugSerial(byte *payload, unsigned int length)
 }
 
 
+// The power limit requested over MQTT: a value in kW or A (the unit's kind), or ON/OFF on the switch topic.
+void callbackLimit(byte *payload, unsigned int length, bool onOff)
+{
+  payload[length] = '\0';
+  if (limitControl.status != CONTROL_READY)
+  {
+    mqttSerial.printf("Power limit: not available (%s)\n", controlStatusName(limitControl.status));
+    return;
+  }
+  if (onOff)
+  {
+    if (strcasecmp((const char *)payload, "ON") == 0)
+      limitControl.requestOn(true);
+    else if (strcasecmp((const char *)payload, "OFF") == 0)
+      limitControl.requestOn(false);
+    else
+      mqttSerial.printf("Power limit: ignored '%s'\n", payload);
+    return;
+  }
+  char *end = nullptr;
+  float value = strtof((const char *)payload, &end);
+  if (end == (const char *)payload || value < limitControl.minLimit || value > limitControl.maxLimit)
+  {
+    mqttSerial.printf("Power limit: ignored '%s'\n", payload);
+    return;
+  }
+  limitControl.request(value);
+}
+
 // A target requested over MQTT: a whole number of degrees, applied by the heat pump task.
 void callbackControl(CurveControl &c, byte *payload, unsigned int length)
 {
@@ -536,6 +581,53 @@ void publishControl(CurveControl &c)
   }
 }
 
+// The power limit: a number entity (kW or A, the unit's kind) and a switch, created when the control is ready,
+// removed when it is not. Main loop only.
+void publishLimit()
+{
+  LimitControl &c = limitControl;
+  bool ready = config.powerLimit && c.status == CONTROL_READY;
+  const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
+  if (ready && (!limitDiscoveryOn || limitDiscoveryKind != c.kind))
+  {
+    char json[640];
+    snprintf(json, sizeof(json),
+             "{\"name\":\"Power limit\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
+             "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
+             "\"min\":%.1f,\"max\":%.1f,\"step\":%s,\"unit_of_meas\":\"%s\",\"mode\":\"box\",\"icon\":\"mdi:speedometer-slow\","
+             "\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
+             mqttTopics.limitUniq, mqttTopics.limitEntity, mqttTopics.limitSet, mqttTopics.limitState, mqttTopics.limitAttrs,
+             mqttTopics.lwt, c.minLimit, c.maxLimit, c.kind == LIMIT_POWER ? "0.5" : "1", unit, mqttTopics.deviceId, mqttTopics.deviceName);
+    mqttPublish(mqttTopics.cfgLimit, json, true);
+    snprintf(json, sizeof(json),
+             "{\"name\":\"Power limit on\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\","
+             "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"icon\":\"mdi:speedometer-slow\","
+             "\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
+             mqttTopics.limitOnUniq, mqttTopics.limitOnEntity, mqttTopics.limitOnSet, mqttTopics.limitOnState,
+             mqttTopics.lwt, mqttTopics.deviceId, mqttTopics.deviceName);
+    mqttPublish(mqttTopics.cfgLimitOn, json, true);
+    limitDiscoveryOn = true;
+    limitDiscoveryKind = c.kind;
+  }
+  else if (!ready && limitDiscoveryOn)
+  {
+    mqttPublish(mqttTopics.cfgLimit, "", true);
+    mqttPublish(mqttTopics.cfgLimitOn, "", true);
+    limitDiscoveryOn = false;
+  }
+  if (ready)
+  {
+    char value[16], attrs[160];
+    float shown = c.on && c.value >= 0 ? c.value : c.limit;
+    snprintf(value, sizeof(value), "%.1f", shown);
+    mqttPublish(mqttTopics.limitState, value, true);
+    mqttPublish(mqttTopics.limitOnState, c.on ? "ON" : "OFF", true);
+    snprintf(attrs, sizeof(attrs), "{\"active\":%.1f,\"unit_limit\":%.1f,\"enable\":%d,\"kind\":\"%s\",\"min\":%.1f,\"max\":%.1f}",
+             c.active, c.limit, c.enable, unit, c.minLimit, c.maxLimit);
+    mqttPublish(mqttTopics.limitAttrs, attrs, true);
+  }
+}
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
   mqttSerial.printf("Message arrived [%s] : %s\n", topic, payload);
@@ -568,6 +660,14 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (config.lwtTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_LWT]) == 0)
   {
     callbackControl(lwtControl, payload, length);
+  }
+  else if (config.powerLimit && strcmp(topic, mqttTopics.limitSet) == 0)
+  {
+    callbackLimit(payload, length, false);
+  }
+  else if (config.powerLimit && strcmp(topic, mqttTopics.limitOnSet) == 0)
+  {
+    callbackLimit(payload, length, true);
   }
 
   else

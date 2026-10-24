@@ -16,6 +16,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
+LIMIT_ON = False  # --limit: the power limit option on
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import webpage  # noqa: E402  (the page with its translations)
@@ -85,12 +87,13 @@ class Device:
             "hp": {"protocol": "I", "frequency": 30000, "rx": 16, "tx": 17, "model": "" if fresh else MODELS[0][0], "confirmed": False, "detected_key": "", "labels": []},
             "relays": {"therm_pin": -1, "therm_high": True, "sg1_pin": -1, "sg2_pin": -1, "sg_high": True, "safety_pin": -1, "safety_high": True},
             "output": {"one_topic": False, "one_topic_prefix": "espaltherma/OneATTR/", "json_table": False, "binary_num": False, "no_log": False, "debug_serial": False},
-            "control": {"dhw_target": False, "lwt_target": False},
+            "control": {"dhw_target": False, "lwt_target": False, "power_limit": LIMIT_ON},
             "admin": {"has_pwd": False},
             "telemetry": {"enabled": False, "install_id": "3f2a9c1be07d4411"},
         }
         self.survey_until = time.time() + 6
         # target controls: the hot water curve (capped by the heat pump's own maximum) and the leaving water curve
+        self.limit = {"limit": 20.0, "active": 0.0, "enable": 0, "on": False, "value": -1, "pending": None, "applied_at": 0}
         self.ctl = {"dhw": {"target": 48, "target_lo": 52, "saved": -1, "pending": -1, "applied_at": 0, "min": 45, "max": 55, "ceiling": 51},
                     "lwt": {"target": 36, "target_lo": 40, "saved": -1, "pending": -1, "applied_at": 0, "min": 29, "max": 45, "ceiling": -1}}
         self.discover_until = 0
@@ -133,6 +136,17 @@ class Device:
             effective = min(curve, d["ceiling"]) if d["ceiling"] >= 0 else curve
             ctl[k] = {"status": "ready", "id": "18002904", "min": d["min"], "max": d["max"], "target": d["target"], "target_lo": d["target_lo"],
                       "effective": effective, "ceiling": d["ceiling"], "saved": d["saved"], "pending": d["pending"]}
+        if c["control"].get("power_limit"):
+            l = self.limit
+            if l["pending"] is not None and time.time() - l["applied_at"] > 2:
+                if l["pending"] == "off":
+                    l["on"], l["value"], l["enable"] = False, -1, 0
+                else:
+                    l["on"], l["value"], l["enable"], l["limit"] = True, l["pending"], 1, l["pending"]
+                l["active"] = l["limit"] if l["on"] else 0
+                l["pending"] = None
+            ctl["limit"] = {"status": "ready", "id": "18002904", "unit": "kW", "min": 1, "max": 20, "limit": l["limit"], "active": l["active"],
+                            "enable": l["enable"], "on": l["on"], "value": l["value"]}
         if ctl:
             st["control"] = ctl
         return st
@@ -290,6 +304,18 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, {"ok": True})
         if p == "/api/control":
             data = self.body()
+            if "power_limit" in data or "power_limit_on" in data:
+                if not d.config["control"].get("power_limit"):
+                    return self.send(409, {"ok": False, "error": "not ready"})
+                if "power_limit_on" in data:
+                    d.limit["pending"] = (d.limit["value"] if d.limit["value"] > 0 else d.limit["limit"]) if data["power_limit_on"] else "off"
+                else:
+                    v = data["power_limit"]
+                    if not isinstance(v, (int, float)) or not 1 <= v <= 20:
+                        return self.send(400, {"ok": False, "error": "out of range"})
+                    d.limit["pending"] = float(v)
+                d.limit["applied_at"] = time.time()
+                return self.send(200, {"ok": True})
             k = "lwt" if "lwt_target" in data else "dhw"
             if not d.config["control"].get(k + "_target"):
                 return self.send(409, {"ok": False, "error": "not ready"})
@@ -318,7 +344,10 @@ def main():
     ap.add_argument("--bizone", action="store_true", help="a two-zone unit (mixed zone values)")
     ap.add_argument("--nodhw", action="store_true", help="no hot water tank: its values are not selected")
     ap.add_argument("--noroom", action="store_true", help="no room thermostat: its values are not selected")
+    ap.add_argument("--limit", action="store_true", help="the power limit option on")
     args = ap.parse_args()
+    global LIMIT_ON
+    LIMIT_ON = args.limit
     leave_out = ({"DHW tank temp. (R5T)", "DHW setpoint"} if args.nodhw else set()) | \
         ({"Indoor ambient temp. (R1T)", "RT setpoint"} if args.noroom else set())
     Handler.device = Device(args.fresh, args.ethernet, args.bizone, leave_out)

@@ -50,11 +50,20 @@ struct CurveSpec
   uint16_t ramCeiling;     // the unit's own maximum, which caps the target (0: none)
 };
 
+// The power limitation (the installer's demand control), as the hydro board holds it in RAM: the enable byte
+// (0 none, 1 continuous, 2 digital inputs), the kind byte (1 = power in kW, else current in A), limit 1 (a float
+// in kW, a byte in A), the one continuous mode applies, and the active limit the board applies right now.
+struct LimitSpec
+{
+  uint16_t ramEnable, ramKind, ramKw, ramAmp, ramActive; // all 0: not mapped on this board
+};
+
 struct ControlProfile
 {
   const char *softwareId; // software version of the hydro board, 8 digits as reported by the 'L' command
   CurveSpec dhw;          // hot water target
   CurveSpec lwt;          // leaving water target of the main zone
+  LimitSpec limit;        // power limitation (missing on the boards not mapped for it)
 };
 
 static const ControlProfile CONTROL_PROFILES[] = {
@@ -62,7 +71,8 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // 16 kW EAVH/EAVX/EAVZ/EABH/EABX DA, DF and DJ series: measured on an EAVH16S18DA6V.
     {"18002904",
      {0x187A, 0x18B8, 366, 367, 0x30C0, 0x30C5, 278, 0x01, 0x1306, 0x1552},
-     {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0}},
+     {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0},
+     {0x2FE8, 0x2FE9, 0x1880, 0x2FC8, 0x19F4}}, // power limitation tested live on the same unit
     // 14-18 kW ETVH/ETVX/ETVZ/ETBH/ETBX 16 E/EJ and ETSH/ETSX 16 series (Altherma 3 H HT): from the software, not
     // yet confirmed on a unit. identify() only accepts it when the modes and limits read back make sense.
     {"20017705",
@@ -144,32 +154,11 @@ static size_t x10aFrame(uint8_t cmd, const uint8_t *data, size_t n, uint8_t *out
   return 3 + n;
 }
 
-struct CurveControl
+// The X10A link shared by the controls: frames, RAM and memory reads and writes
+struct X10aClient
 {
-  ControlKind kind = CONTROL_DHW;
   X10aExchangeFn exchange = nullptr;
-  const ControlProfile *profile = nullptr;
-  const CurveSpec *spec = nullptr;
-  ControlStatus status = CONTROL_OFF;
-  char softwareId[9] = "";
-  int minTarget = 0, maxTarget = 0; // allowed targets (the unit's own limits)
-  int minA = 0, minB = 0;           // minimum of each curve setting, the base of its memory encoding
-  int target = -1;                  // curve setpoint at the high outdoor temperature, as read from the unit (-1: unknown)
-  int targetLo = -1;                // curve setpoint at the low outdoor temperature (equal to target once set from here)
-  int effective = -1;               // what the thermostat really aims for (-1: unknown)
-  int ceiling = -1;                 // the unit's own maximum (-1: none or unknown)
-  int saved = -1;                   // value in the unit's memory, when both points of the curve hold the same one
-  int savedA = -1, savedB = -1;     // each point as the unit's memory holds it
-  int origA = -1, origB = -1;       // the curve found before the first write from here (-1: none), restorable
-  volatile int wanted = -1;         // requested value, -1 when none (set from other tasks)
-  volatile bool restoreWanted = false; // restore the original curve (set from other tasks)
-  int pendingA = -1, pendingB = -1; // the request being handled (clamped), both points
-  bool restoring = false;           // the pending pair is the original curve
-  bool origChanged = false;         // origA/origB changed: the caller persists them
-  unsigned long wantedAt = 0, savedAt = 0, checkedAt = 0, readAt = 0;
-  volatile bool changed = false; // something to publish (state or availability)
-  int applied = -1, appliedLo = -1; // last pair applied, for the caller's log (-1 when none since the last read)
-  unsigned writes = 0;           // frames written to the unit (statistics)
+  unsigned writes = 0; // frames written to the unit (statistics)
 
   // --- protocol helpers: each returns false when the unit does not answer as expected
   bool command(uint8_t cmd, const uint8_t *data, size_t n, uint8_t *reply, size_t replyData, unsigned long firstByteMs = 300)
@@ -228,6 +217,70 @@ struct CurveControl
     writes++;
     return command(0x45, d, 3, nullptr, 0, 1500);
   }
+
+  bool writeRamBytes(uint16_t addr, const uint8_t *bytes, size_t n)
+  {
+    uint8_t d[6] = {(uint8_t)addr, (uint8_t)(addr >> 8)};
+    if (n < 1 || n > 4)
+      return false;
+    memcpy(d + 2, bytes, n);
+    writes++;
+    return command(0x46, d, 2 + n, nullptr, 0);
+  }
+
+  bool readFloat(uint16_t addr, float &out)
+  {
+    uint8_t b[16];
+    if (!readRam(addr, b))
+      return false;
+    memcpy(&out, b, 4); // little-endian IEEE 754, like the ESP32
+    return true;
+  }
+
+  bool readByte(uint16_t addr, uint8_t &out)
+  {
+    uint8_t b[16];
+    if (!readRam(addr, b))
+      return false;
+    out = b[0];
+    return true;
+  }
+
+  // The software version of the hydro board, 8 hex digits, as the 'L' command reports it
+  bool readSoftwareId(char *out9)
+  {
+    uint8_t id[4];
+    if (!command(0x4C, nullptr, 0, id, 4))
+      return false;
+    snprintf(out9, 9, "%02X%02X%02X%02X", id[3], id[2], id[1], id[0]);
+    return true;
+  }
+};
+
+struct CurveControl : X10aClient
+{
+  ControlKind kind = CONTROL_DHW;
+  const ControlProfile *profile = nullptr;
+  const CurveSpec *spec = nullptr;
+  ControlStatus status = CONTROL_OFF;
+  char softwareId[9] = "";
+  int minTarget = 0, maxTarget = 0; // allowed targets (the unit's own limits)
+  int minA = 0, minB = 0;           // minimum of each curve setting, the base of its memory encoding
+  int target = -1;                  // curve setpoint at the high outdoor temperature, as read from the unit (-1: unknown)
+  int targetLo = -1;                // curve setpoint at the low outdoor temperature (equal to target once set from here)
+  int effective = -1;               // what the thermostat really aims for (-1: unknown)
+  int ceiling = -1;                 // the unit's own maximum (-1: none or unknown)
+  int saved = -1;                   // value in the unit's memory, when both points of the curve hold the same one
+  int savedA = -1, savedB = -1;     // each point as the unit's memory holds it
+  int origA = -1, origB = -1;       // the curve found before the first write from here (-1: none), restorable
+  volatile int wanted = -1;         // requested value, -1 when none (set from other tasks)
+  volatile bool restoreWanted = false; // restore the original curve (set from other tasks)
+  int pendingA = -1, pendingB = -1; // the request being handled (clamped), both points
+  bool restoring = false;           // the pending pair is the original curve
+  bool origChanged = false;         // origA/origB changed: the caller persists them
+  unsigned long wantedAt = 0, savedAt = 0, checkedAt = 0, readAt = 0;
+  volatile bool changed = false; // something to publish (state or availability)
+  int applied = -1, appliedLo = -1; // last pair applied, for the caller's log (-1 when none since the last read)
 
   // Allowed range of a curve setting from its limit record: [minimum, minimum + span - 1]
   bool readSlot(uint16_t slot, int &min, int &max)
@@ -477,6 +530,252 @@ struct CurveControl
       identify(now);
     else if (now - readAt >= CONTROL_READ_INTERVAL_MS)
       readTarget(now);
+  }
+};
+
+// Caps the heat pump's electrical power (or current): the installer's "power limitation" field settings, written
+// in the hydro board's RAM: limit 1 and the enable byte set to "continuous". The unit applies it within a cycle
+// and reports what it applies in the active limit. Below the compressor's minimum the unit stops it, hence a
+// floor on the value. Nothing is written in the board's memory: a restart of the heat pump brings its own
+// settings back, and this control re-applies the wanted limit as soon as it sees it gone (the caller keeps the
+// wanted limit in its configuration). Switching off restores the enable byte found before the first write.
+#define LIMIT_REAPPLY_MS 60000UL  // a lost limit is written again at most this often
+#define LIMIT_READ_INTERVAL_MS 120000UL
+#define LIMIT_MIN_KW 1.0f
+#define LIMIT_MAX_KW 20.0f
+#define LIMIT_MIN_AMP 4.0f
+#define LIMIT_MAX_AMP 50.0f
+
+enum LimitKind
+{
+  LIMIT_POWER,  // the unit limits power, kW
+  LIMIT_CURRENT // the unit limits current, A
+};
+
+struct LimitControl : X10aClient
+{
+  const ControlProfile *profile = nullptr;
+  const LimitSpec *spec = nullptr;
+  ControlStatus status = CONTROL_OFF;
+  char softwareId[9] = "";
+  LimitKind kind = LIMIT_POWER;
+  float minLimit = LIMIT_MIN_KW, maxLimit = LIMIT_MAX_KW;
+  int enable = -1;            // the unit's enable byte as read (-1: unknown)
+  int origEnable = -1;        // the enable byte found before the first write from here (-1: none)
+  float limit = -1;           // limit 1 as the unit holds it (-1: unknown)
+  float active = -1;          // the limit the unit applies right now (-1: unknown)
+  bool on = false;            // a limit from here is applied
+  float value = -1;           // the limit applied from here (-1: none)
+  volatile float wanted = -1; // requested limit, -1 when none (set from other tasks)
+  volatile int wantedOn = -1; // 1 to apply the current value, 0 to switch off, -1 none (set from other tasks)
+  volatile bool changed = false;
+  bool stateChanged = false;  // on/value/origEnable changed: the caller persists them
+  float applied = -1;         // last limit written, for the caller's log (-1 when none since the last read)
+  bool released = false;      // switched off since the last read, for the caller's log
+  unsigned long checkedAt = 0, readAt = 0, wroteAt = 0;
+
+  void reset()
+  {
+    profile = nullptr;
+    spec = nullptr;
+    status = CONTROL_OFF;
+    softwareId[0] = 0;
+    enable = -1;
+    limit = active = -1;
+    wanted = -1;
+    wantedOn = -1;
+    checkedAt = 0;
+    changed = true;
+  }
+
+  // Reads the software version, checks the profile and reads the limitation state. True when ready.
+  bool identify(unsigned long now)
+  {
+    checkedAt = now;
+    ControlStatus before = status;
+    if (!readSoftwareId(softwareId))
+    {
+      status = CONTROL_NO_ANSWER;
+    }
+    else
+    {
+      profile = nullptr;
+      for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+        if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
+          profile = &CONTROL_PROFILES[i];
+      spec = profile == nullptr || profile->limit.ramEnable == 0 ? nullptr : &profile->limit;
+      uint8_t k = 0;
+      if (spec == nullptr)
+        status = CONTROL_UNSUPPORTED;
+      else if (!readByte(spec->ramKind, k))
+        status = CONTROL_NO_ANSWER;
+      else
+      {
+        kind = k == 1 ? LIMIT_POWER : LIMIT_CURRENT;
+        minLimit = kind == LIMIT_POWER ? LIMIT_MIN_KW : LIMIT_MIN_AMP;
+        maxLimit = kind == LIMIT_POWER ? LIMIT_MAX_KW : LIMIT_MAX_AMP;
+        status = readBack(now) ? CONTROL_READY : CONTROL_NO_ANSWER;
+      }
+    }
+    if (status != CONTROL_READY)
+    {
+      enable = -1;
+      limit = active = -1;
+    }
+    if (status != before)
+      changed = true;
+    return status == CONTROL_READY;
+  }
+
+  // Reads the enable byte, limit 1 and the active limit from the unit.
+  bool readBack(unsigned long now)
+  {
+    readAt = now;
+    uint8_t e = 0;
+    float l = -1, a = -1;
+    if (spec == nullptr || !readByte(spec->ramEnable, e))
+      return false;
+    if (kind == LIMIT_POWER)
+    {
+      if (!readFloat(spec->ramKw, l))
+        return false;
+    }
+    else
+    {
+      uint8_t b = 0;
+      if (!readByte(spec->ramAmp, b))
+        return false;
+      l = b;
+    }
+    readFloat(spec->ramActive, a);
+    if (e != enable || l != limit || a != active)
+      changed = true;
+    enable = e;
+    limit = l;
+    active = a;
+    return true;
+  }
+
+  float clamp(float v) const
+  {
+    return v < minLimit ? minLimit : v > maxLimit ? maxLimit : v;
+  }
+
+  // Writes limit 1 and, when needed, the enable byte. The enable byte found first is remembered.
+  bool apply(float v, unsigned long now)
+  {
+    if (spec == nullptr || enable < 0)
+      return false;
+    bool ok;
+    if (kind == LIMIT_POWER)
+    {
+      uint8_t f[4];
+      memcpy(f, &v, 4);
+      ok = writeRamBytes(spec->ramKw, f, 4);
+    }
+    else
+    {
+      uint8_t b = (uint8_t)(v + 0.5f);
+      ok = writeRamBytes(spec->ramAmp, &b, 1);
+    }
+    if (!ok)
+      return false;
+    if (enable != 1)
+    {
+      if (!on && origEnable < 0)
+        origEnable = enable; // the installer's own setting, put back when switched off
+      uint8_t one = 1;
+      if (!writeRamBytes(spec->ramEnable, &one, 1))
+        return false;
+      enable = 1;
+    }
+    limit = v;
+    value = v;
+    on = true;
+    applied = v;
+    wroteAt = now;
+    readAt = now + 5000 - LIMIT_READ_INTERVAL_MS; // read back once the board has recomputed
+    stateChanged = changed = true;
+    return true;
+  }
+
+  // Puts the enable byte back as found (or to "none") and forgets the limit.
+  bool release(unsigned long now)
+  {
+    if (spec == nullptr)
+      return false;
+    uint8_t e = (uint8_t)(origEnable >= 0 && origEnable != 1 ? origEnable : 0);
+    if (!writeRamBytes(spec->ramEnable, &e, 1))
+      return false;
+    enable = e;
+    on = false;
+    value = -1;
+    origEnable = -1;
+    released = true;
+    wroteAt = now;
+    readAt = now + 5000 - LIMIT_READ_INTERVAL_MS;
+    stateChanged = changed = true;
+    return true;
+  }
+
+  void request(float v) { wanted = v; }
+  void requestOn(bool wantOn) { wantedOn = wantOn ? 1 : 0; }
+
+  // The limit the caller saved (from before a restart of ESPAltherma): applied once the unit is ready
+  void restore(bool savedOn, float savedValue, int savedOrigEnable)
+  {
+    if (!savedOn || savedValue < 0)
+      return;
+    value = savedValue;
+    origEnable = savedOrigEnable;
+    wantedOn = 1;
+  }
+
+  // Runs the pending work: identification, requests, re-application, periodic reads. Owner task only.
+  void tick(unsigned long now)
+  {
+    if (status != CONTROL_READY)
+    {
+      if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS || checkedAt == 0)
+        identify(now);
+      return;
+    }
+    int wOn = wantedOn;
+    float w = wanted;
+    if (wOn == 0)
+    {
+      wantedOn = -1;
+      wanted = -1;
+      if (on && !release(now))
+        identify(now);
+      return;
+    }
+    if (w >= 0 || wOn == 1)
+    {
+      wanted = -1;
+      wantedOn = -1;
+      float v = clamp(w >= 0 ? w : value);
+      if (v >= minLimit && !apply(v, now))
+        identify(now);
+      return;
+    }
+    if (now - readAt >= LIMIT_READ_INTERVAL_MS)
+    {
+      if (!readBack(now))
+      {
+        identify(now);
+        return;
+      }
+      // The heat pump restarted (its settings came back) or someone changed them: apply ours again
+      if (on && value >= 0 && (enable != 1 || limit < value - 0.05f || limit > value + 0.05f) && now - wroteAt >= LIMIT_REAPPLY_MS)
+      {
+        int keep = origEnable;
+        apply(value, now);
+        origEnable = keep;
+      }
+    }
+    else if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS)
+      identify(now);
   }
 };
 

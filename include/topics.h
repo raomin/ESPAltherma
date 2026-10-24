@@ -50,12 +50,15 @@ struct MqttTopics
   char attr[48], lwt[48], log[48], detect[48], detectRun[48], power[48], state[48];
   char sgSet[48], sgState[48], safety[48], safetyState[48], serialTx[48], serialRx[48];
   char ctlSet[2][48], ctlState[2][48], ctlAttrs[2][48];
+  char limitSet[48], limitState[48], limitAttrs[48], limitOnSet[48], limitOnState[48]; // the power limit
   // Home Assistant discovery topics and identifiers
   char cfgSensor[80], cfgSwitch[80], cfgSg[80], cfgSafety[80], cfgCtl[2][80], cfgRestore[2][80], cfgDevice[80];
+  char cfgLimit[80], cfgLimitOn[80];
   char deviceId[48], deviceName[64];   // the device of the readings (device-based discovery)
   char relayDeviceId[48], relayDeviceName[48]; // the device of the relays (the legacy entities)
   char ctlUniq[2][48], ctlEntity[2][64];
   char restoreUniq[2][48], restoreEntity[2][64]; // the "restore the unit's curve" buttons
+  char limitUniq[48], limitEntity[64], limitOnUniq[48], limitOnEntity[64];
   char clientId[48];       // the MQTT client id: the broker drops a connection when another one takes its id
 
   void init(const char *baseTopic, const char *configuredClientId = TOPICS_DEFAULT_CLIENT_ID)
@@ -104,6 +107,15 @@ struct MqttTopics
       snprintf(restoreUniq[k], sizeof(restoreUniq[k]), "%s_%s_restore", id, ctl[k]);
       snprintf(restoreEntity[k], sizeof(restoreEntity[k]), "button.%s_%s_curve_restore", id, k == 0 ? "hot_water" : "leaving_water");
     }
+    snprintf(limitSet, sizeof(limitSet), "%s/power_limit/set", base);
+    snprintf(limitState, sizeof(limitState), "%s/power_limit/state", base);
+    snprintf(limitAttrs, sizeof(limitAttrs), "%s/power_limit/attributes", base);
+    snprintf(limitOnSet, sizeof(limitOnSet), "%s/power_limit/on/set", base);
+    snprintf(limitOnState, sizeof(limitOnState), "%s/power_limit/on/state", base);
+    snprintf(limitUniq, sizeof(limitUniq), "%s_power_limit", id);
+    snprintf(limitEntity, sizeof(limitEntity), "number.%s_power_limit", id);
+    snprintf(limitOnUniq, sizeof(limitOnUniq), "%s_power_limit_on", id);
+    snprintf(limitOnEntity, sizeof(limitOnEntity), "switch.%s_power_limit", id);
     // discovery: the legacy strings had their own spellings, kept for the default base
     const char *seg = legacy ? "espAltherma" : id;
     const char *dev = legacy ? "espaltherma" : id;
@@ -116,6 +128,8 @@ struct MqttTopics
       snprintf(cfgCtl[k], sizeof(cfgCtl[k]), "homeassistant/number/%s/%s/config", seg, ctl[k]);
       snprintf(cfgRestore[k], sizeof(cfgRestore[k]), "homeassistant/button/%s/%s_restore/config", seg, ctl[k]);
     }
+    snprintf(cfgLimit, sizeof(cfgLimit), "homeassistant/number/%s/power_limit/config", seg);
+    snprintf(cfgLimitOn, sizeof(cfgLimitOn), "homeassistant/switch/%s/power_limit/config", seg);
     snprintf(cfgDevice, sizeof(cfgDevice), "homeassistant/device/%s-mqtt-discovery/config", dev);
     snprintf(deviceId, sizeof(deviceId), "%s-mqtt-discovery", dev);
     // the default client id would be shared by both boards: it follows the base, a chosen one is kept

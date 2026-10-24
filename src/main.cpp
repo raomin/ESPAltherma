@@ -53,6 +53,7 @@ volatile bool surveyRequested = false;
 volatile bool surveyInProgress = false; //the survey is being written: readers must not use it
 volatile bool surveyReady = false;
 CurveControl dhwControl, lwtControl;   //experimental hot water and leaving water targets (control.h), heat pump task
+LimitControl limitControl;             //experimental power limit (control.h), heat pump task
 
 // The heat pump task converts values while the main loop publishes them.
 SemaphoreHandle_t valuesMutex = xSemaphoreCreateMutex();
@@ -574,10 +575,53 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   }
 }
 
+// The power limit: identification, requests, re-application. Heat pump task only.
+static void limitTick()
+{
+  LimitControl &c = limitControl;
+  if (!config.powerLimit || config.protocol != 'I' || busy)
+  {
+    if (c.status != CONTROL_OFF)
+      c.reset();
+    return;
+  }
+  if (c.exchange == nullptr)
+    c.exchange = x10aExchange;
+  ControlStatus before = c.status;
+  c.tick(millis());
+  if (c.status != before)
+    mqttSerial.printf("Power limit control: %s (software %s)\n", controlStatusName(c.status), c.softwareId);
+  if (before != CONTROL_READY && c.status == CONTROL_READY && !c.on && config.ctlLimitOn && strcmp(config.ctlLimitSw, c.softwareId) == 0)
+    c.restore(true, config.ctlLimitValue, config.ctlLimitOrig); // the limit wanted before a restart
+  const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
+  if (c.applied >= 0)
+  {
+    mqttSerial.printf("Power limit set to %.1f %s\n", c.applied, unit);
+    eventAddf("Power limit set to %.1f %s", c.applied, unit);
+    c.applied = -1;
+  }
+  if (c.released)
+  {
+    mqttSerial.println("Power limit switched off");
+    eventAddf("Power limit switched off");
+    c.released = false;
+  }
+  if (c.stateChanged)
+  {
+    c.stateChanged = false;
+    config.ctlLimitOn = c.on;
+    config.ctlLimitValue = c.value;
+    config.ctlLimitOrig = c.origEnable;
+    strlcpy(config.ctlLimitSw, c.softwareId, sizeof(config.ctlLimitSw));
+    configSave();
+  }
+}
+
 void controlLoop()
 {
   controlTick(dhwControl, config.dhwTarget, "Hot water");
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
+  limitTick();
 }
 
 // Owns the X10A link: runs the survey on request and queries the registries every config.frequency ms.
@@ -727,7 +771,7 @@ void loop()
     LOOP_STAGE("HA discovery");
     publishHomeAssistantDeviceDiscovery();
   }
-  if ((dhwControl.changed || lwtControl.changed) && client.connected())
+  if ((dhwControl.changed || lwtControl.changed || limitControl.changed) && client.connected())
   {
     LOOP_STAGE("target controls state");
     if (dhwControl.changed)
@@ -739,6 +783,11 @@ void loop()
     {
       lwtControl.changed = false;
       publishControl(lwtControl);
+    }
+    if (limitControl.changed)
+    {
+      limitControl.changed = false;
+      publishLimit();
     }
   }
   LOOP_STAGE("idle");

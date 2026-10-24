@@ -28,6 +28,7 @@ extern volatile bool surveyInProgress;
 extern unsigned long lastPollMs;
 extern DetectResult detection;
 extern CurveControl dhwControl, lwtControl;
+extern LimitControl limitControl;
 void requestSurvey();
 void valuesLock();
 void valuesUnlock();
@@ -203,6 +204,24 @@ static void controlJson(JsonObject c, const CurveControl &k)
   }
 }
 
+// The power limit, for the web interface
+static void limitJson(JsonObject c, const LimitControl &k)
+{
+  c["status"] = controlStatusName(k.status);
+  c["id"] = k.softwareId;
+  if (k.status == CONTROL_READY)
+  {
+    c["unit"] = k.kind == LIMIT_POWER ? "kW" : "A";
+    c["min"] = k.minLimit;
+    c["max"] = k.maxLimit;
+    c["limit"] = k.limit;
+    c["active"] = k.active;
+    c["enable"] = k.enable;
+    c["on"] = k.on;
+    c["value"] = k.value;
+  }
+}
+
 static void statusJson(JsonDocument &doc)
 {
   doc["fw"] = ESPALTHERMA_VERSION;
@@ -276,7 +295,7 @@ static void statusJson(JsonDocument &doc)
     relays["safety"] = safetyActive;
   if (config.sg1Pin >= 0)
     relays["smart_grid"] = sgMode;
-  if (config.dhwTarget || config.lwtTarget)
+  if (config.dhwTarget || config.lwtTarget || config.powerLimit)
   {
     // Target controls (experimental, control.h)
     JsonObject ctl = doc["control"].to<JsonObject>();
@@ -284,6 +303,8 @@ static void statusJson(JsonDocument &doc)
       controlJson(ctl["dhw"].to<JsonObject>(), dhwControl);
     if (config.lwtTarget)
       controlJson(ctl["lwt"].to<JsonObject>(), lwtControl);
+    if (config.powerLimit)
+      limitJson(ctl["limit"].to<JsonObject>(), limitControl);
   }
 #ifdef HAS_POWER_MONITOR
   JsonObject pw = doc["power"].to<JsonObject>();
@@ -679,6 +700,29 @@ void webBegin()
     JsonDocument doc;
     if (!parseBody(r, doc))
       return;
+    // The power limit: {"power_limit": 3.5} or {"power_limit_on": false}
+    if (doc["power_limit"].is<float>() || doc["power_limit_on"].is<bool>())
+    {
+      if (!config.powerLimit || limitControl.status != CONTROL_READY)
+      {
+        r->send(409, "application/json", "{\"ok\":false,\"error\":\"not ready\"}");
+        return;
+      }
+      if (doc["power_limit_on"].is<bool>())
+        limitControl.requestOn(doc["power_limit_on"].as<bool>());
+      else
+      {
+        float v = doc["power_limit"].as<float>();
+        if (v < limitControl.minLimit || v > limitControl.maxLimit)
+        {
+          r->send(400, "application/json", "{\"ok\":false,\"error\":\"out of range\"}");
+          return;
+        }
+        limitControl.request(v);
+      }
+      sendOk(r);
+      return;
+    }
     bool dhw = doc["dhw_target"].is<int>() || doc["dhw_restore"].is<bool>();
     bool lwt = doc["lwt_target"].is<int>() || doc["lwt_restore"].is<bool>();
     if (!dhw && !lwt)
@@ -903,7 +947,8 @@ void webLoop()
                        strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
                        next->mqttTls != config.mqttTls || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
                        next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber ||
-                       next->dhwTarget != config.dhwTarget || next->lwtTarget != config.lwtTarget; // subscriptions and entities follow
+                       next->dhwTarget != config.dhwTarget || next->lwtTarget != config.lwtTarget ||
+                       next->powerLimit != config.powerLimit; // subscriptions and entities follow
     bool labelsChanged = strcmp(next->model, config.model) != 0 || next->labelCount != config.labelCount ||
                          memcmp(next->labels, config.labels, sizeof(uint32_t) * next->labelCount) != 0 ||
                          next->fixCount != config.fixCount || next->layoutCheck != config.layoutCheck;

@@ -44,7 +44,16 @@ struct FakeUnit
         setWord(0x187C, 36 << 8);
         setWord(0x136A, 37 << 8 | 0x4D);
         memcpy(ram + 0x30C0, LIMITS, 32);
+        // power limitation: none, power kind, limit 1 = 20 kW (float), amps 50, nothing active
+        ram[0x2FE8] = 0;
+        ram[0x2FE9] = 1;
+        setFloat(0x1880, 20.0f);
+        ram[0x2FC8] = 50;
+        setFloat(0x19F4, 0.0f);
     }
+
+    void setFloat(uint16_t addr, float v) { memcpy(ram + addr, &v, 4); }
+    float getFloat(uint16_t addr) const { float v; memcpy(&v, ram + addr, 4); return v; }
 
     // The same unit on another hydro board software: the memory bytes are the same, every RAM address comes
     // from the profile (the limit records sit 5 bytes apart, in the order hot water A, B, leaving water B, A)
@@ -80,6 +89,8 @@ struct FakeUnit
         {
             const ControlProfile &p = CONTROL_PROFILES[i];
             if (addr == p.dhw.ramA || addr == p.dhw.ramB || addr == p.lwt.ramA || addr == p.lwt.ramB)
+                return true;
+            if (p.limit.ramEnable && (addr == p.limit.ramEnable || addr == p.limit.ramKw || addr == p.limit.ramAmp))
                 return true;
         }
         return false;
@@ -506,6 +517,91 @@ void test_restore_from_the_saved_original_keeps_the_memory_interval()
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
+static LimitControl freshLimit()
+{
+    LimitControl c;
+    c.exchange = fakeExchange;
+    return c;
+}
+
+// The power limit: identified from the unit's own state, applied as limit 1 + "continuous", read back, released
+void test_power_limit_applies_and_releases()
+{
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL_STRING("18002904", c.softwareId);
+    TEST_ASSERT_EQUAL(LIMIT_POWER, c.kind);
+    TEST_ASSERT_EQUAL(0, c.enable);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, c.limit);
+    TEST_ASSERT_FALSE(c.on);
+    c.request(3.0f);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(3.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_TRUE(c.on);
+    TEST_ASSERT_EQUAL(0, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(3.0f, c.applied);
+    unit.setFloat(0x19F4, 3.0f); // the unit applies it
+    c.tick(8000);                // read back 5 s after the write
+    TEST_ASSERT_EQUAL_FLOAT(3.0f, c.active);
+    c.request(0.2f); // under the floor: clamped, the compressor would stop below its minimum
+    c.tick(9000);
+    TEST_ASSERT_EQUAL_FLOAT(LIMIT_MIN_KW, unit.getFloat(0x1880));
+    c.requestOn(false);
+    c.tick(10000);
+    TEST_ASSERT_EQUAL(0, unit.ram[0x2FE8]); // the installer's "none" is back
+    TEST_ASSERT_FALSE(c.on);
+    TEST_ASSERT_TRUE(c.released);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites); // never the board's memory
+}
+
+// After a restart of the heat pump its own settings are back: the limit is written again, once per minute at most
+void test_power_limit_is_applied_again_after_the_unit_restarts()
+{
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(4.0f);
+    c.tick(2000);
+    unit.ram[0x2FE8] = 0; // the unit restarted
+    unit.setFloat(0x1880, 20.0f);
+    c.tick(2000 + LIMIT_READ_INTERVAL_MS); // read back: gone, but written only 2 minutes ago... re-apply allowed after 1 min
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(4.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(0, c.origEnable); // still the installer's setting, not our own 1
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The limit saved by the caller (ESPAltherma restarted) is applied once the unit is ready; a unit set to
+// current limits takes amps as a byte; an unmapped board is unsupported
+void test_power_limit_restored_and_current_kind()
+{
+    LimitControl c = freshLimit();
+    c.restore(true, 5.0f, 0);
+    c.tick(1000); // identifies
+    c.tick(1500); // applies the restored limit
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(5.0f, unit.getFloat(0x1880));
+
+    unit.reset();
+    unit.ram[0x2FE9] = 0; // current kind
+    LimitControl a = freshLimit();
+    TEST_ASSERT_TRUE(a.identify(1000));
+    TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
+    TEST_ASSERT_EQUAL_FLOAT(50.0f, a.limit);
+    a.request(12.0f);
+    a.tick(2000);
+    TEST_ASSERT_EQUAL(12, unit.ram[0x2FC8]);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+
+    unit.reset();
+    unit.board(CONTROL_PROFILES[1]); // a board without the limitation addresses
+    LimitControl u = freshLimit();
+    TEST_ASSERT_FALSE(u.identify(1000));
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, u.status);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -526,5 +622,8 @@ int main(int, char **)
     RUN_TEST(test_every_other_software_writes_its_own_addresses);
     RUN_TEST(test_restores_the_original_curve);
     RUN_TEST(test_restore_from_the_saved_original_keeps_the_memory_interval);
+    RUN_TEST(test_power_limit_applies_and_releases);
+    RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
+    RUN_TEST(test_power_limit_restored_and_current_kind);
     return UNITY_END();
 }
