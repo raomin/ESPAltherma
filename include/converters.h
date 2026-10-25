@@ -437,12 +437,17 @@ public:
         case 804:
             RType = 804; strcat(def->asString, "R134a"); return;
 
-        // enum-state convs not present; the def label
-        // enumerates the integer states, so expose the raw value
-        case 317:
-        case 323:
-        case 336:
-            dblData = (double)data[0];
+        // Enumerated states packed with single-bit flags in the same byte (the flags are bits 0..4 of
+        // 0x62/8 and bits 2..5 of 0x63/12). The pump feedback layout was measured on an EPRA08EAW1 (#621);
+        // the two others follow the order of the definition files, bit 7 down, and await a confirmation.
+        case 317: // RT control state, bits 1..0
+            dblData = (double)(data[0] & 0x03);
+            break;
+        case 323: // tank state, bits 7..6
+            dblData = (double)((data[0] >> 6) & 0x03);
+            break;
+        case 336: // pump PWM feedback, bits 7..5
+            dblData = (double)((data[0] >> 5) & 0x07);
             break;
 
         default:

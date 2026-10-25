@@ -43,6 +43,17 @@ void test_conv119_matches_103(void)
 
 // R134a (refrigerant code 804, the Altherma HT hydrobox): a low pressure of 2.55 kgf/cm2 gauge is about 5.1 C
 // of saturation, where the R410A curve would give -23 C (issue #95)
+// #621: the enumerated states share their byte with single-bit flags
+void test_packed_enum_states(void)
+{
+    TEST_ASSERT_EQUAL_STRING("0", convert(336, 0x01, 0).c_str()); // pump standby, space heating output on
+    TEST_ASSERT_EQUAL_STRING("1", convert(336, 0x21, 0).c_str()); // pump on
+    TEST_ASSERT_EQUAL_STRING("2", convert(336, 0x41, 0).c_str()); // warning while stopping
+    TEST_ASSERT_EQUAL_STRING("4", convert(336, 0x9F, 0).c_str()); // blocked, every flag set
+    TEST_ASSERT_EQUAL_STRING("2", convert(317, 0x3E, 0).c_str()); // buffering, flags set
+    TEST_ASSERT_EQUAL_STRING("3", convert(323, 0xFD, 0).c_str()); // excess, flags set
+}
+
 void test_refrigerant_r134a(void)
 {
     Converter c;
@@ -67,6 +78,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_conv119_no_sensor);
     RUN_TEST(test_conv119_matches_103);
     RUN_TEST(test_refrigerant_r134a);
+    RUN_TEST(test_packed_enum_states);
     UNITY_END();
 
     return 0;
