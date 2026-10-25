@@ -761,7 +761,7 @@ const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|
   inv: /^INV frequency/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^(O\/U )?error type/i, code: /^(O\/U )?error code/i, thermo: /^([OI]\/U )?thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
   freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i,
-  mixed: /^mixed water temp/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i, r6t: /^liquid pipe temp\.\(R6T\)/i,
+  mixed: /^mixed water temp/i, mixedKit: /^\[EKMIK\] bizone kit mixed leaving water/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i, r6t: /^liquid pipe temp\.\(R6T\)/i,
   // the backup heater (Altherma BUH step 1, Rotex external heater), and the codes of protocol S units
   buh: /^(BUH Step1|external heater)/i, solar: /^burner inhibit/i, warn: /^warning code/i, caution: /^caution code/i, thermoOff: /^thermo off error/i,
   // the indoor unit's error, when the outdoor unit has one too ("O/U Error Code", "I/U Error Code")
@@ -772,6 +772,10 @@ function reading(list) {
   if (r.r3t == null && r.r6t != null) r.r3t = r.r6t; // the Altherma 4 has its refrigerant liquid side in the outdoor unit
   // No backup heater (EDLA...W1/V3 monoblocs): its outlet sensor (R2T) reads exactly 0, the leaving water is the heat exchanger's (R1T)
   if (r.lw2 != null && +r.lw2 === 0 && r.lw1 != null) r.lw2 = r.lw1;
+  // The mixed zone's water is the bizone kit's sensor where the kit is fitted (the ECH2O units have no other)
+  if (r.mixedKit != null && +r.mixedKit !== 0) r.mixed = r.mixedKit;
+  // A setpoint of exactly 0 is none: the Altherma 4 keeps its targets in the user interface
+  for (const k of ['dhwSp', 'lwSp', 'rtSp', 'lwSpAdd']) if (r[k] != null && +r[k] === 0) delete r[k];
   // One error shown: the outdoor unit's, or the indoor unit's when only that one has an error (or is selected)
   const bad = (e, c) => (e != null && !/^normal$/i.test(e)) || +c > 0;
   if ((r.iuErr != null || r.iuCode != null) && ((r.err == null && r.code == null) || (!bad(r.err, r.code) && bad(r.iuErr, r.iuCode))))
