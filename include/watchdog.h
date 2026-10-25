@@ -17,6 +17,13 @@ volatile unsigned long watchdogLoopBeat = 0;
 volatile unsigned long watchdogHpBeat = 0;
 volatile bool watchdogPaused = false; // ArduinoOTA upload: the loop is inside ArduinoOTA.handle()
 
+// A stall of the main loop shorter than the watchdog's limit is still worth a line in the event history: the MQTT
+// keepalive is missed from a few seconds on (the broker then drops the connection). The timer notes the stage the
+// loop is stuck in; the loop reports it once it runs again.
+#define WATCHDOG_STALL_MS 5000UL
+volatile unsigned long watchdogStallSince = 0; // the beat a stall was noticed after (0: none)
+static char watchdogStallStage[32];
+
 static void watchdogCheck(void *)
 {
   if (watchdogPaused)
@@ -26,6 +33,11 @@ static void watchdogCheck(void *)
   unsigned long loopBeat = watchdogLoopBeat;
   unsigned long hpBeat = watchdogHpBeat;
   unsigned long now = millis();
+  if (now - loopBeat > WATCHDOG_STALL_MS && watchdogStallSince == 0)
+  {
+    strlcpy(watchdogStallStage, (const char *)loopStage, sizeof(watchdogStallStage));
+    watchdogStallSince = loopBeat;
+  }
   static char cause[96];
   cause[0] = 0;
   if (now - loopBeat > WATCHDOG_LOOP_MS)
@@ -52,7 +64,16 @@ void watchdogBegin()
     esp_timer_start_periodic(timer, 5 * 1000 * 1000);
 }
 
-inline void watchdogLoop() { watchdogLoopBeat = millis(); }
+inline void watchdogLoop()
+{
+  unsigned long now = millis();
+  if (watchdogStallSince != 0)
+  {
+    eventAddf("Main loop stalled %lu s (in %s)", (now - watchdogStallSince) / 1000, watchdogStallStage);
+    watchdogStallSince = 0;
+  }
+  watchdogLoopBeat = now;
+}
 inline void watchdogHp() { watchdogHpBeat = millis(); }
 
 #endif

@@ -95,6 +95,9 @@ void setupMqttClient()
   resetJson();
   client.setBufferSize(MAX_MSG_SIZE); //to support large json message
   client.setServer(config.mqttServer, config.mqttPort);
+  // 60 s instead of the library's 15: a main loop busy for a few seconds (a long publish on a slow link, a web
+  // request) no longer costs the connection
+  client.setKeepAlive(60);
 }
 
 // Relay states, for the web interface
