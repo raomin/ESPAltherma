@@ -1202,7 +1202,7 @@ $('#memRead').onclick = async () => {
   const addr = parseInt($('#memAddr').value, 16), len = Math.min(64, Math.max(1, parseInt($('#memLen').value) || 16));
   if (isNaN(addr) || addr < 0 || addr > 0xFFFF) { msg('#memMsg', t('Address: hexadecimal, 0000 to FFFF.')); return; }
   msg('#memMsg', t('Reading…'));
-  try { await post('/api/memory', {addr: '0x' + addr.toString(16), len}); } catch (e) { msg('#memMsg', t('The board is busy, try again.')); return; }
+  try { await post('/api/memory', {addr: '0x' + addr.toString(16), len}); } catch (e) { msg('#memMsg', /busy/.test(e.message) ? t('The board is busy, try again.') : e.message); return; }
   let r = null;
   for (let i = 0; i < 20; i++) { await sleep(500); r = await api('/api/memory'); if (r.done) break; }
   if (!r || !r.done || !r.ok) { $('#memOut').textContent = ''; msg('#memMsg', t('No answer from the heat pump.')); return; }

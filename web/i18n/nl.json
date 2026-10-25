@@ -375,5 +375,6 @@
  "Address: hexadecimal, 0000 to FFFF.": "Adres: hexadecimaal, 0000 tot FFFF.",
  "Reading…": "Lezen…",
  "The board is busy, try again.": "Het bord is bezig, probeer opnieuw.",
- "No answer from the heat pump.": "Geen antwoord van de warmtepomp."
+ "No answer from the heat pump.": "Geen antwoord van de warmtepomp.",
+ "Not available on this unit.": "Niet beschikbaar op dit toestel."
 }

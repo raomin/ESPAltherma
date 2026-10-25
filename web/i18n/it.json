@@ -375,5 +375,6 @@
  "Address: hexadecimal, 0000 to FFFF.": "Indirizzo: esadecimale, da 0000 a FFFF.",
  "Reading…": "Lettura…",
  "The board is busy, try again.": "La scheda è occupata, riprova.",
- "No answer from the heat pump.": "Nessuna risposta dalla pompa di calore."
+ "No answer from the heat pump.": "Nessuna risposta dalla pompa di calore.",
+ "Not available on this unit.": "Non disponibile su questa unità."
 }

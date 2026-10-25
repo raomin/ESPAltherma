@@ -768,9 +768,9 @@ void webBegin()
     if (!parseBody(r, doc))
       return;
     long addr = strtol(doc["addr"] | "", nullptr, 0), len = doc["len"] | 16;
-    if (addr < 0 || addr > 0xFFFF || len < 1 || len > 64 || survey.protocol != 'I')
+    if (addr < 0 || addr > 0xFFFF || len < 1 || len > 64 || config.protocol != 'I')
     {
-      r->send(400, "application/json", "{\"ok\":false,\"error\":\"bad request\"}");
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"Not available on this unit.\"}");
       return;
     }
     if (!memoryRequest((uint16_t)addr, (uint8_t)len))
@@ -779,7 +779,7 @@ void webBegin()
       return;
     }
     sendOk(r);
-  });
+  }, nullptr, collectBody);
 
   webServer.on("/api/memory", HTTP_GET, [](AsyncWebServerRequest *r) {
     JsonDocument doc;
