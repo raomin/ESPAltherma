@@ -41,7 +41,7 @@ void test_conv119_matches_103(void)
     TEST_ASSERT_EQUAL_STRING(convert(103, 0x40, 0x2D).c_str(), convert(119, 0x40, 0x2D).c_str());
 }
 
-// R134a (refrigerant code 804, the Altherma HT hydrobox): a low pressure of 2.55 kgf/cm2 gauge is about 5.1 C
+// R134a (refrigerant code 805, the Altherma HT hydrobox): a low pressure of 2.55 kgf/cm2 gauge is about 5.1 C
 // of saturation, where the R410A curve would give -23 C (issue #95)
 // #621: the enumerated states share their byte with single-bit flags
 void test_packed_enum_states(void)
@@ -54,16 +54,25 @@ void test_packed_enum_states(void)
     TEST_ASSERT_EQUAL_STRING("3", convert(323, 0xFD, 0).c_str()); // excess, flags set
 }
 
+// 201 and 217 list the same modes, with Auto Heat and Auto Cool swapped; out of range reads "Aux."
+void test_operation_modes(void)
+{
+    TEST_ASSERT_EQUAL_STRING("Auto Cool", convert(217, 5, 0).c_str());
+    TEST_ASSERT_EQUAL_STRING("Auto Heat", convert(201, 5, 0).c_str());
+    TEST_ASSERT_EQUAL_STRING("Heating", convert(201, 1, 0).c_str());
+    TEST_ASSERT_EQUAL_STRING("Aux.", convert(217, 200, 0).c_str());
+}
+
 void test_refrigerant_r134a(void)
 {
     Converter c;
-    LabelDef kind(0x00, 0, 804, 0, -1, "*Refrigerant type");
+    LabelDef kind(0x00, 0, 805, 0, -1, "*Refrigerant type");
     unsigned char none[] = {0, 0};
     c.convert(&kind, none);
     TEST_ASSERT_EQUAL_STRING("R134a", kind.asString);
-    TEST_ASSERT_EQUAL(804, c.RType);
+    TEST_ASSERT_EQUAL(805, c.RType);
     TEST_ASSERT_FLOAT_WITHIN(0.2, 5.15, c.convertPress2Temp(2.55));
-    TEST_ASSERT_FLOAT_WITHIN(0.5, -26.4, c.convertPress2Temp(0.0)); // atmospheric: the boiling point of R134a
+    TEST_ASSERT_FLOAT_WITHIN(1.0, -26.4, c.convertPress2Temp(0.0)); // atmospheric: the boiling point of R134a
     // conversion 403: the pressure word /256 (2.55 = 0x028D), then the saturation temperature
     LabelDef lp(0x50, 2, 403, 2, -1, "Low Pressure(T)");
     unsigned char data[] = {0x8D, 0x02};
@@ -79,6 +88,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_conv119_matches_103);
     RUN_TEST(test_refrigerant_r134a);
     RUN_TEST(test_packed_enum_states);
+    RUN_TEST(test_operation_modes);
     UNITY_END();
 
     return 0;

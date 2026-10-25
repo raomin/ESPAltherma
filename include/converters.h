@@ -4,7 +4,7 @@ char buff[64];
 class Converter
 {
 public:
-    int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22, 804=R134a
+    int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22, 804=R744, 805=R134a
     bool quiet = false; // no conversion trace on Serial (one-off decodes for the web interface)
 
     // Active labels: the values selected for this installation
@@ -64,17 +64,18 @@ public:
     double press2tempR22(double d){
         return -5.0232146925414E-06*d*d*d*d*d*d + 0.000475561916201275*d*d*d*d*d - 0.0175087997648461*d*d*d*d + 0.318620413943417*d*d*d - 3.0844373741869*d*d + 19.0217687284902*d - 42.3282361912494;
     }
-    // R134a: saturation temperature from the gauge pressure in kgf/cm2, Antoine-type fit of the refrigerant's
-    // saturation curve (issue #95, the second stage of the Altherma HT hydrobox)
-    double press2tempR134a(double gauge){
-        double kPa = gauge * 98.0665 + 101.325;
-        if (kPa <= 0) return -99.0;
-        return 2184.4 / (14.570 - log(kPa)) - 245.7;
+    double press2tempR744(double d){
+        return -1.0602828001772E-10*d*d*d*d*d*d + 4.48029033022151E-08*d*d*d*d*d - 8.87954524680462E-06*d*d*d*d + 0.00106272045700814*d*d*d - 0.0783403045879055*d*d + 3.82721150267446*d - 69.9353653715338;
     }
-    double convertPress2Temp(double data){// R32 default; R410A/R22/R134a selected via RType (conv 800-804)
+    // R134a (code 805, the second stage of the Altherma HT hydrobox, issue #95)
+    double press2tempR134a(double d){
+        return -1.04905819974313E-06*d*d*d*d*d*d + 0.000127541586259339*d*d*d*d*d - 0.00608728787767479*d*d*d*d + 0.145722092658689*d*d*d - 1.89890628883685*d*d + 16.0983790129582*d - 25.7334135825739;
+    }
+    double convertPress2Temp(double data){// R32 default; R410A/R22/R744/R134a selected via RType (conv 800-805)
         if (RType == 801) return press2tempR410A(data);
         if (RType == 803) return press2tempR22(data);
-        if (RType == 804) return press2tempR134a(data);
+        if (RType == 804) return press2tempR744(data);
+        if (RType == 805) return press2tempR134a(data);
         	double num = -2.6989493795556E-07 * data * data * data * data * data * data;
 			double num2 = 4.26383417104661E-05 * data * data * data * data * data;
 			double num3 = -0.00262978346547749 * data * data * data * data;
@@ -296,6 +297,8 @@ public:
 		}
 
         case 201:
+            convertTable201(data, def->asString);
+            return;
         case 217:
             convertTable217(data, def->asString);
             return;
@@ -435,11 +438,13 @@ public:
         case 803:
             RType = 803; strcat(def->asString, "R22");   return;
         case 804:
-            RType = 804; strcat(def->asString, "R134a"); return;
+            RType = 804; strcat(def->asString, "R744");  return;
+        case 805:
+            RType = 805; strcat(def->asString, "R134a"); return;
 
         // Enumerated states packed with single-bit flags in the same byte (the flags are bits 0..4 of
-        // 0x62/8 and bits 2..5 of 0x63/12). The pump feedback layout was measured on an EPRA08EAW1 (#621);
-        // the two others follow the order of the definition files, bit 7 down, and await a confirmation.
+        // 0x62/8 and bits 2..5 of 0x63/12). The pump feedback layout was measured on an EPRA08EAW1 (#621).
+        // 317-323 are the 2-bit fields at bits 0..7, 331-336 the 3-bit fields at bits 0..7.
         case 317: // RT control state, bits 1..0
             dblData = (double)(data[0] & 0x03);
             break;
@@ -589,29 +594,18 @@ private:
         }
     }
     // 201
-    void convertTable217(unsigned char *data, char *ret)
+    // Operation modes: 201 and 217 share the list, with "Auto Heat" and "Auto Cool" the other way round
+    void convertTable217(unsigned char *data, char *ret, bool table201 = false)
     {
-        char r217[][30] = {"Fan Only",
-                           "Heating",
-                           "Cooling",
-                           "Auto",
-                           "Ventilation",
-                           "Auto Cool",
-                           "Auto Heat",
-                           "Dry",
-                           "Aux.",
-                           "Cooling Storage",
-                           "Heating Storage",
-                           "UseStrdThrm(cl)1",
-                           "UseStrdThrm(cl)2",
-                           "UseStrdThrm(cl)3",
-                           "UseStrdThrm(cl)4",
-                           "UseStrdThrm(ht)1",
-                           "UseStrdThrm(ht)2",
-                           "UseStrdThrm(ht)3",
-                           "UseStrdThrm(ht)4"};
-        sprintf(ret, r217[(int)data[0]]);
+        static const char *modes[] = {"Fan Only", "Heating", "Cooling", "Auto", "Ventilation", "Auto Cool", "Auto Heat", "Dry", "Aux.",
+                                      "Cooling Storage", "Heating Storage", "UseStrdThrm(cl)1", "UseStrdThrm(cl)2", "UseStrdThrm(cl)3",
+                                      "UseStrdThrm(cl)4", "UseStrdThrm(ht)1", "UseStrdThrm(ht)2", "UseStrdThrm(ht)3", "UseStrdThrm(ht)4"};
+        int v = data[0];
+        if (table201 && (v == 5 || v == 6))
+            v = 11 - v;
+        strcat(ret, v >= 0 && v < 19 ? modes[v] : "Aux.");
     }
+    void convertTable201(unsigned char *data, char *ret) { convertTable217(data, ret, true); }
 
     // Operation control mode of a refrigerant stage (Altherma HT hydrobox); HR = heat recovery
     void convertTable218(unsigned v, char *ret)

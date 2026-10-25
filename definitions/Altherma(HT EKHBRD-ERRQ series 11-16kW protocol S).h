@@ -10,7 +10,7 @@
 
 
 LabelDef labelDefs[] = {
-//{0x00,0,804,0,-1,"*Refrigerant type"},
+//{0x00,0,805,0,-1,"*Refrigerant type"},
 // 0x50: the two pressures of the stage, kgf/cm2 gauge. The high pressure collapses to 2-3 during defrost.
 //{0x50,0,103,2,2,"High Pressure (stage)"},
 //{0x50,0,403,2,1,"High Pressure(T)"},

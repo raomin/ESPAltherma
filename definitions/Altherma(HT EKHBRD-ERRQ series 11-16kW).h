@@ -9,13 +9,13 @@
 //  The hydrobox answers only 0x00 (10 bytes), 0x10 (16), 0x20 (17), 0x21 (5), 0x30 (7), 0x40 (2) and 0x50.
 //  Everything else is NAK (15 EA).
 //
-//  Refrigerant: this stage is R134a (code 804): the "(T)" lines then give the R134a saturation temperature of the
+//  Refrigerant: this stage is R134a (code 805): the "(T)" lines then give the R134a saturation temperature of the
 //  pressure. Same board, protocol S: see "Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S)", which carries both
 //  pressures and the discharge and liquid temperatures that this protocol does not.
 
 
 LabelDef labelDefs[] = {
-//{0x00,0,804,0,-1,"*Refrigerant type"},
+//{0x00,0,805,0,-1,"*Refrigerant type"},
 //{0x00,0,152,1,-1,"Sensor Data Qty"},
 //{0x00,1,152,1,-1,"INV compressor Qty"},
 //{0x00,2,152,1,-1,"STD compressor Qty"},
