@@ -165,9 +165,34 @@ inline bool &catalogTwoZones()
   return twoZones;
 }
 
+// The ECH2O (HPSU) units: their definitions carry "[HPSU]" values, and "Mixed water temp." reads noise on them (the
+// mixed zone's water is the bizone kit's "[EKMIK]" sensor). Set by the firmware with the model.
+inline bool &catalogHpsu()
+{
+  static bool hpsu = false;
+  return hpsu;
+}
+
+inline bool catalogModelHpsu(int model)
+{
+  for (int i = 0; i < CATALOG_ENTRY_COUNT; i++)
+  {
+    if (catalogInModel(CATALOG_ENTRIES[i], model) && strncmp(catalogLabel(CATALOG_ENTRIES[i]), "[HPSU]", 6) == 0)
+      return true;
+  }
+  return false;
+}
+
+// The mixed zone's water temperature: the bizone kit's sensor, or the unit's own one (not on the ECH2O units)
+inline bool catalogMixedLabel(const char *label)
+{
+  return strcmp(label, "[EKMIK] Bizone kit mixed leaving water temperature R1T") == 0 ||
+         (!catalogHpsu() && strncmp(label, "Mixed water temp.", 17) == 0);
+}
+
 inline bool catalogTwoZoneLabel(const char *label)
 {
-  return strncmp(label, "Mixed water temp.", 17) == 0 || strcmp(label, "Main pump") == 0 || strcmp(label, "Add pump") == 0 ||
+  return catalogMixedLabel(label) || strcmp(label, "Main pump") == 0 || strcmp(label, "Add pump") == 0 ||
          strcmp(label, "LW setpoint (add)") == 0;
 }
 

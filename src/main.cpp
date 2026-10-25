@@ -186,17 +186,19 @@ void extraLoop()
   eventLoop();
 }
 
-// Two zones: the model's mixed water temperature (R7T) reads something in the survey; a single-zone unit answers 0
+// Two zones: the model's mixed water temperature (the bizone kit's, or the unit's own R7T) reads something in the
+// survey; a single-zone unit answers 0
 static bool surveyTwoZones(int model)
 {
   if (model < 0 || surveyInProgress)
     return false;
+  catalogHpsu() = catalogModelHpsu(model);
   static ::Converter decoder; // one-off decodes, not the polled values
   decoder.quiet = true;
   for (int i = 0; i < CATALOG_ENTRY_COUNT; i++)
   {
     const CatalogEntry &e = CATALOG_ENTRIES[i];
-    if (!catalogInModel(e, model) || strncmp(catalogLabel(e), "Mixed water temp.", 17) != 0)
+    if (!catalogInModel(e, model) || !catalogMixedLabel(catalogLabel(e)))
       continue;
     const SurveyReg *r = survey.find(e.reg);
     if (r == nullptr || !r->answered || e.offset + e.size > r->len)

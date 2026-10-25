@@ -121,8 +121,9 @@ RECOMMENDED_ONLY = {"Brine inlet temp.": "GEO", "Brine outlet temp.": "GEO", "Mi
                     "R134a liquid temp.": "HT", "Target Evap. Temp.": "HT",
                     "Liquid pipe temp.(R6T)": "Altherma 4"}
 # Not recommended on the models whose definition file name contains the given word: the ECH2O units have no water
-# pressure on the X10A port (it lives on the RoCon controller's bus), registry 0x62 reads 0 there (issue #615).
-RECOMMENDED_NOT = {"Water pressure": "ECH2O"}
+# pressure on the X10A port (it lives on the RoCon controller's bus), registry 0x62 reads 0 there (issue #615), and
+# their room temperature and target are the RoCon's too, the Daikin board's read a constant 20.0 (#599).
+RECOMMENDED_NOT = {"Water pressure": "ECH2O", "Indoor ambient temp. (R1T)": "ECH2O", "RT setpoint": "ECH2O"}
 
 # Capacity range in the definition name, eg. "04-08kW", "9-16kW", "3kW"
 CAPACITY = re.compile(r"(\d+)(?:-(\d+))?\s*kW")
