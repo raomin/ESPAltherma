@@ -367,5 +367,13 @@
  "Restored.": "Teruggezet.",
  "Restarting…": "Herstarten…",
  "Erase all settings (WiFi, MQTT, model) and restart?": "Alle instellingen (wifi, MQTT, model) wissen en herstarten?",
- "Settings erased. Restarting…": "Instellingen gewist. Herstarten…"
+ "Settings erased. Restarting…": "Instellingen gewist. Herstarten…",
+ "Memory read": "Geheugen lezen",
+ "Reads bytes of the hydro board's memory, for the people mapping a unit: nothing is written. Paste the result in the issue that asked for it.": "Leest bytes uit het geheugen van de hydroprint, voor wie een toestel in kaart brengt: er wordt niets geschreven. Plak het resultaat in de issue die erom vroeg.",
+ "Bytes": "Bytes",
+ "Read": "Lezen",
+ "Address: hexadecimal, 0000 to FFFF.": "Adres: hexadecimaal, 0000 tot FFFF.",
+ "Reading…": "Lezen…",
+ "The board is busy, try again.": "Het bord is bezig, probeer opnieuw.",
+ "No answer from the heat pump.": "Geen antwoord van de warmtepomp."
 }

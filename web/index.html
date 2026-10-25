@@ -420,6 +420,10 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   <p class="sub">Every registry of the heat pump, read once, with its identification codes and the detection result.</p>
   <div class="acts" style="margin-top:12px"><button id="svRun">Run the survey again</button><button id="svCopy">Copy</button><span class="msg" id="svMsg" translate="no"></span></div>
   <pre id="svReport"></pre></div>
+ <div class="card pad"><h2>Memory read</h2>
+  <p class="sub">Reads bytes of the hydro board's memory, for the people mapping a unit: nothing is written. Paste the result in the issue that asked for it.</p>
+  <div class="acts" style="margin-top:12px"><label style="display:inline-flex;align-items:center;gap:6px;margin:0">Address <input type="text" id="memAddr" value="0x45AC" size="7" translate="no"></label><label style="display:inline-flex;align-items:center;gap:6px;margin:0">Bytes <input type="number" id="memLen" value="48" min="1" max="64" style="width:5em" translate="no"></label><button id="memRead">Read</button><button id="memCopy">Copy</button><span class="msg" id="memMsg" translate="no"></span></div>
+  <pre id="memOut" translate="no"></pre></div>
  <div class="card pad"><h2>Log</h2>
   <div class="acts" style="margin-top:8px"><button id="logClear">Clear</button><label class="chk" style="margin:0"><input type="checkbox" id="logFollow" checked>Follow</label></div>
   <pre id="log"></pre></div>
@@ -1193,6 +1197,21 @@ function copyText(text) {
   return ok ? Promise.resolve() : Promise.reject(new Error('copy failed'));
 }
 $('#svCopy').onclick = () => copyText($('#svReport').textContent).then(copied('#svMsg'), copyFailed('#svMsg'));
+// Memory read: asked to the heat pump task, then polled; shown 16 bytes a row with the address
+$('#memRead').onclick = async () => {
+  const addr = parseInt($('#memAddr').value, 16), len = Math.min(64, Math.max(1, parseInt($('#memLen').value) || 16));
+  if (isNaN(addr) || addr < 0 || addr > 0xFFFF) { msg('#memMsg', t('Address: hexadecimal, 0000 to FFFF.')); return; }
+  msg('#memMsg', t('Reading…'));
+  try { await post('/api/memory', {addr: '0x' + addr.toString(16), len}); } catch (e) { msg('#memMsg', t('The board is busy, try again.')); return; }
+  let r = null;
+  for (let i = 0; i < 20; i++) { await sleep(500); r = await api('/api/memory'); if (r.done) break; }
+  if (!r || !r.done || !r.ok) { $('#memOut').textContent = ''; msg('#memMsg', t('No answer from the heat pump.')); return; }
+  const rows = [];
+  for (let i = 0; i < r.hex.length; i += 32) rows.push((addr + i / 2).toString(16).toUpperCase().padStart(4, '0') + ': ' + (r.hex.slice(i, i + 32).match(/../g) || []).join(' '));
+  $('#memOut').textContent = rows.join('\n');
+  msg('#memMsg', t('Done.'), true);
+};
+$('#memCopy').onclick = () => copyText($('#memOut').textContent).then(copied('#memMsg'), copyFailed('#memMsg'));
 $('#logClear').onclick = () => $('#log').textContent = '';
 
 // ---- system

@@ -367,5 +367,13 @@
  "Restored.": "Wiederhergestellt.",
  "Restarting…": "Neustart…",
  "Erase all settings (WiFi, MQTT, model) and restart?": "Alle Einstellungen (WLAN, MQTT, Modell) löschen und neu starten?",
- "Settings erased. Restarting…": "Einstellungen gelöscht. Neustart…"
+ "Settings erased. Restarting…": "Einstellungen gelöscht. Neustart…",
+ "Memory read": "Speicher lesen",
+ "Reads bytes of the hydro board's memory, for the people mapping a unit: nothing is written. Paste the result in the issue that asked for it.": "Liest Bytes aus dem Speicher der Hydroplatine, für diejenigen, die ein Gerät kartieren: es wird nichts geschrieben. Fügen Sie das Ergebnis in das Issue ein, das danach gefragt hat.",
+ "Bytes": "Bytes",
+ "Read": "Lesen",
+ "Address: hexadecimal, 0000 to FFFF.": "Adresse: hexadezimal, 0000 bis FFFF.",
+ "Reading…": "Lese…",
+ "The board is busy, try again.": "Das Board ist beschäftigt, bitte erneut versuchen.",
+ "No answer from the heat pump.": "Keine Antwort von der Wärmepumpe."
 }

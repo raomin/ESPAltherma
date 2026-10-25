@@ -619,11 +619,68 @@ static void limitTick()
   }
 }
 
+// Diagnostics: a read of the hydro board's memory asked from the web page (R command, 16 bytes a time, nothing
+// written). The page asks with memoryRequest() and polls memoryResult(); the heat pump task does the reads.
+#define MEMORY_READ_MAX 64
+static volatile bool memReqPending = false, memReqDone = false, memReqOk = false;
+static volatile uint16_t memReqAddr = 0;
+static volatile uint8_t memReqLen = 0;
+static char memHex[MEMORY_READ_MAX * 2 + 1];
+
+bool memoryRequest(uint16_t addr, uint8_t len)
+{
+  if (memReqPending || len == 0 || len > MEMORY_READ_MAX)
+    return false;
+  memReqAddr = addr;
+  memReqLen = len;
+  memReqDone = false;
+  memReqPending = true;
+  return true;
+}
+
+void memoryResult(JsonDocument &doc)
+{
+  doc["busy"] = memReqPending;
+  doc["done"] = memReqDone;
+  doc["ok"] = memReqOk;
+  char a[8];
+  snprintf(a, sizeof(a), "0x%04X", memReqAddr);
+  doc["addr"] = a;
+  doc["len"] = memReqLen;
+  doc["hex"] = memReqDone && memReqOk ? memHex : "";
+}
+
+static void memoryTick()
+{
+  if (!memReqPending)
+    return;
+  bool ok = true;
+  size_t pos = 0;
+  for (uint16_t off = 0; off < memReqLen && ok; off += 16)
+  {
+    uint16_t at = memReqAddr + off;
+    uint8_t a[2] = {(uint8_t)at, (uint8_t)(at >> 8)}, frame[8], reply[24];
+    size_t len = x10aFrame(0x52, a, 2, frame);
+    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
+    uint8_t sum = 0;
+    for (size_t i = 0; i < 17 && i < got; i++)
+      sum += reply[i];
+    ok = got >= 18 && reply[0] == 0x52 && (uint8_t)~sum == reply[17];
+    for (size_t i = 0; ok && i < 16 && off + i < memReqLen; i++)
+      pos += snprintf(memHex + pos, sizeof(memHex) - pos, "%02X", reply[1 + i]);
+  }
+  memHex[ok ? pos : 0] = 0;
+  memReqOk = ok;
+  memReqDone = true;
+  memReqPending = false;
+}
+
 void controlLoop()
 {
   controlTick(dhwControl, config.dhwTarget, "Hot water");
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
   limitTick();
+  memoryTick();
 }
 
 // Owns the X10A link: runs the survey on request and queries the registries every config.frequency ms.

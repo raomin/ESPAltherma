@@ -237,6 +237,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, d.survey())
         if p == "/api/events":
             return self.send(200, d.events())
+        if p == "/api/memory":
+            m = getattr(d, "memory", None) or {"busy": False, "done": False, "ok": False, "addr": "0x0000", "len": 0, "hex": ""}
+            return self.send(200, m)
         if p == "/api/models":
             return self.send(200, [{"name": n, "family": f, "protocol": pr} for n, f, pr in MODELS])
         if p == "/api/catalog":
@@ -285,6 +288,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         d = self.device
         p = urlparse(self.path).path
+        if p == "/api/memory":
+            data = self.body()
+            addr, n = int(str(data.get("addr", "0")), 0), int(data.get("len", 16))
+            d.memory = {"busy": False, "done": True, "ok": True, "addr": "0x%04X" % addr, "len": n,
+                        "hex": "".join("%02X" % ((addr + i) & 0xFF) for i in range(n))}
+            return self.send(200, {"ok": True})
         if p == "/api/config":
             data = self.body()
             with d.lock:

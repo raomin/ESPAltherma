@@ -25,6 +25,8 @@ extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
+bool memoryRequest(uint16_t addr, uint8_t len); // main.cpp: the heat pump task reads the hydro board's memory
+void memoryResult(JsonDocument &doc);
 extern unsigned long lastPollMs;
 extern DetectResult detection;
 extern CurveControl dhwControl, lwtControl;
@@ -756,6 +758,34 @@ void webBegin()
     c.request(value);
     sendOk(r);
   }, nullptr, collectBody);
+
+  // Diagnostics: {"addr": "0x45AC", "len": 48} asks the heat pump task for a read of the hydro board's memory
+  // (nothing is written); GET returns {busy, done, ok, addr, len, hex}
+  webServer.on("/api/memory", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
+    JsonDocument doc;
+    if (!parseBody(r, doc))
+      return;
+    long addr = strtol(doc["addr"] | "", nullptr, 0), len = doc["len"] | 16;
+    if (addr < 0 || addr > 0xFFFF || len < 1 || len > 64 || survey.protocol != 'I')
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"bad request\"}");
+      return;
+    }
+    if (!memoryRequest((uint16_t)addr, (uint8_t)len))
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
+      return;
+    }
+    sendOk(r);
+  });
+
+  webServer.on("/api/memory", HTTP_GET, [](AsyncWebServerRequest *r) {
+    JsonDocument doc;
+    memoryResult(doc);
+    sendJson(r, doc);
+  });
 
   webServer.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
