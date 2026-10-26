@@ -288,7 +288,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   </div>
   <div class="side card">
    <div><div class="k">Right now</div><div class="big" id="dMode" translate="no"></div><div class="sub" id="dIu" translate="no"></div></div>
-   <div><div class="k">Compressor</div><div class="big" translate="no"><span id="dInv"></span><small>rps</small></div><div class="sub" id="dInvS" translate="no"></div></div>
+   <div><div class="k">Compressor</div><div class="big" translate="no"><span id="dInv"></span><small id="dInvU">rps</small></div><div class="sub" id="dInvS" translate="no"></div></div>
    <div><div class="k">Water circuit</div><div class="big" translate="no"><span id="dFlow"></span><small>l/min</small></div><div class="sub" id="dPump" translate="no"></div></div>
    <div><div class="k">Water pressure</div><div class="big" translate="no"><span id="dBar"></span><small>bar</small></div>
     <svg id="barGauge" viewBox="-9 0 268 34" style="width:100%;margin-top:6px" aria-hidden="true" translate="no"><rect x="0" y="12" width="250" height="8" rx="4" style="fill:var(--soft)"/><rect x="83" y="12" width="125" height="8" rx="4" style="fill:var(--acc);opacity:.55"/><circle id="pMark" cx="142" cy="16" r="7" style="fill:var(--card);stroke:var(--ink);stroke-width:2"/><text class="ts" x="0" y="33" style="font-size:10px">0</text><text class="ts" x="83" y="33" style="font-size:10px" text-anchor="middle">1.0</text><text class="ts" x="208" y="33" style="font-size:10px" text-anchor="middle">2.5</text><text class="ts" x="250" y="33" style="font-size:10px" text-anchor="end">3 bar</text></svg>
@@ -760,9 +760,9 @@ setInterval(renderAge, 1000);
 // EWAQ mini chiller "Outlet Water Heat Exch. Temp. (R1T)" and "Outlet Water BUH Temp. (R2T)", the Hybrid "RT Temp.",
 // the ECH2O (HPSU) units "[HPSU] Tv inflow Temp (R1T)", "[HPSU] Tvbh inflow Temp after Buffer/BUH (R2T)" and
 // "[HPSU] Tr return Temp (R4T)"
-const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|outlet water temp|outlet water heat exch\. temp|\[HPSU\] Tv inflow temp)/i, lw2: /^(leaving water temp\. after BUH|outlet water BUH temp|\[HPSU\] Tvbh inflow temp)/i, r3t: /^refrig\. temp\. liquid side/i,
+const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|outlet water temp|outlet water heat exch\. temp|\[HPSU\] Tv inflow temp)/i, lw2: /^(leaving water temp\. after BUH|outlet water BUH temp|\[HPSU\] Tvbh inflow temp|leaving water temp\. \(hydrobox\))/i, r3t: /^refrig\. temp\. liquid side/i,
   inlet: /^(inlet water temp|\[HPSU\] Tr return temp)/i, tank: /^DHW tank temp/i, room: /^(indoor ambient temp|RT temp\.)/i, dhwSp: /^DHW setpoint/i, lwSp: /^LW setpoint \(main\)/i, rtSp: /^RT setpoint/i,
-  inv: /^INV frequency/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
+  inv: /^INV frequency/i, invHz: /^INV comp\. frequency\(Hz\)/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^(O\/U )?error type/i, code: /^(O\/U )?error code/i, thermo: /^([OI]\/U )?thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
   freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \(N-phase\)/i,
   mixed: /^mixed water temp/i, mixedKit: /^\[EKMIK\] bizone kit mixed leaving water/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i, r6t: /^liquid pipe temp\.\(R6T\)/i,
@@ -826,12 +826,12 @@ function paint() {
   $('#gDirect').classList.toggle('zoff', r.addPump != null && !isOn(r.addPump)); $('#gMixed').classList.toggle('zoff', r.mainPump != null && !isOn(r.mainPump));
   tx('sMixed', deg(mixed)); tx('sLwSpMix', r.lwSp ? t('Target {n}°', {n: n('lwSp')}) : '');
   $('#tankFill').style.fill = tcol(tank);
-  const v3 = isOn(r.v3), flow = n('flow'), pump = isOn(r.pump) || (flow || 0) > 0.5, inv = n('inv');
+  const v3 = isOn(r.v3), flow = n('flow'), pump = isOn(r.pump) || (flow || 0) > 0.5, inv = n('inv') != null ? n('inv') : n('invHz'), invU = n('inv') == null && n('invHz') != null ? 'Hz' : 'rps';
   $('#gDhw').classList.toggle('act', v3); $('#gSp').classList.toggle('act', !v3);
   $('#vR').classList.toggle('shut', !v3); $('#vB').classList.toggle('shut', v3);
   sch.classList.toggle('flowing', pump); sch.classList.toggle('comp', inv > 0); sch.classList.toggle('fanon', inv > 0);
   sch.classList.toggle('buhon', isOn(r.buh));
-  tx('sInv', inv == null ? '' : inv > 0 ? inv + ' rps' : t('Resting'));
+  tx('sInv', inv == null ? '' : inv > 0 ? inv + ' ' + invU : t('Resting'));
   requestAnimationFrame(() => { fit($('#lComp'), 70); fit($('#sInv'), 70); }); // once displayed: hidden texts have no width
   tx('sV3', r.v3 == null ? '' : v3 ? t('to the hot water') : t('to the house'));
   tx('sPump', r.pump == null && flow == null ? '' : pump ? t('Pump on') : t('Pump off'));
@@ -851,7 +851,7 @@ function paint() {
   // side panel
   tx('dMode', r.mode ? t(r.mode) : '—');
   tx('dIu', v3 ? t('Heating the hot water') : r.iu ? t('Indoor unit: {mode}', {mode: t(r.iu)}) : '');
-  tx('dInv', inv == null ? '—' : inv);
+  tx('dInv', inv == null ? '—' : inv); tx('dInvU', invU);
   const amp = n('amp'), volt = n('volt');
   tx('dInvS', [inv == null ? null : inv > 0 ? t('Running') : t('Resting'), amp == null ? null : f1(amp) + ' A', volt == null ? null : volt + ' V'].filter(Boolean).join(' · '));
   tx('dFlow', flow == null ? '—' : f1(Math.max(0, flow)));
@@ -1184,7 +1184,7 @@ $('#fixUndo').onclick = async () => {
   await loadConfig(); await refreshStatus(); renderFixes();
   msg('#fixMsg', t('Corrections undone, automatic correction off.'), true);
 };
-$('#svRun').onclick = async () => { msg('#svMsg', t('Reading every registry…')); await post('/api/detect'); for (let i = 0; i < 30; i++) { await sleep(1500); await refreshStatus(); if (!status.hp.survey_running) break; } await loadDiagnostics(); msg('#svMsg', t('Done.'), true); };
+$('#svRun').onclick = async () => { msg('#svMsg', t('Reading every registry…')); await post('/api/detect?keep=1'); for (let i = 0; i < 30; i++) { await sleep(1500); await refreshStatus(); if (!status.hp.survey_running) break; } await loadDiagnostics(); msg('#svMsg', t('Done.'), true); };
 // The clipboard API needs https: the device page is plain http, so fall back to the copy command
 function copyText(text) {
   if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);

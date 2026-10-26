@@ -535,7 +535,8 @@ void webBegin()
   webServer.on("/api/detect", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
-    forceDetection = true;
+    // ?keep: the survey report only (Diagnostics), the model chosen by hand stays when the same heat pump answers
+    forceDetection = !r->hasParam("keep");
     requestSurvey();
     sendOk(r);
   });
