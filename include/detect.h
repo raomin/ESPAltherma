@@ -333,6 +333,24 @@ void detectModel(const Survey &s, DetectResult &r)
     }
   }
 
+  // 1c. The same series read on its outdoor unit (ERRQ/ERSQ, X41A on A1P): the same header, a 21-byte 0x20, and the
+  // list of its hydrobox's addresses in 0x40, no indoor registries (issue #95). The rules never propose it: they would
+  // read its registries as an indoor unit's.
+  if (s.protocol == 'I' && !s.has(0x60) && !s.has(0x63) && s.byteAt(0x00, 0) == 0x0A && s.byteAt(0x00, 1) == 0x01 &&
+      r20 != nullptr && r20->answered && r20->len == 21 && s.has(0x40))
+  {
+    int m = catalogFindModel("Altherma(HT ERRQ-ERSQ outdoor unit 11-16kW)");
+    if (m >= 0)
+    {
+      r.model = m;
+      r.fingerprint = true;
+      r.confidence = DETECT_HIGH;
+      r.candidates[0] = m;
+      r.scores[0] = detectScore(s, m);
+      return;
+    }
+  }
+
   // 2. AS number: the candidates. The survey only ranks them.
   r.asCandidates = detectAsCandidates(s);
 

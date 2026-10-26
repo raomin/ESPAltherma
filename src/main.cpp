@@ -316,7 +316,11 @@ bool surveyQuery(uint8_t regID, unsigned char *buffer, char protocol)
 {
   watchdogHp();
   memset(buffer, 0, SURVEY_BUFFER_SIZE);
-  return queryRegistry(regID, buffer, protocol);
+  bool ok = queryRegistry(regID, buffer, protocol);
+  // Registry 0x40 of an outdoor unit lists its indoor units' addresses: the first one is the one 0x50 is read with
+  if (ok && protocol == 'I' && regID == 0x40 && buffer[1] == 0x40 && buffer[2] >= 3)
+    x10aIndoorAddress = buffer[3];
+  return ok;
 }
 
 void requestSurvey()

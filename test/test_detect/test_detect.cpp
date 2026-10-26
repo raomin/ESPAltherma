@@ -482,6 +482,38 @@ void test_detect_hydrobox_by_its_shape(void)
     TEST_ASSERT_NOT_EQUAL(DETECT_HIGH, r.confidence);
 }
 
+// The same series read on its outdoor unit (ERRQ/ERSQ): a 21-byte 0x20 and the hydrobox list in 0x40 (issue #95,
+// PiotrBeeScale's ERRQ016AAV1)
+void test_detect_ht_outdoor_by_its_shape(void)
+{
+    Survey s;
+    DetectResult r;
+    hydroboxSurvey(s, 21);
+    SurveyReg &r40 = s.regs[s.count++];
+    r40.id = 0x40;
+    r40.answered = true;
+    r40.len = 2;
+    r40.payload[0] = 0x01;
+    SurveyReg &r50 = s.regs[s.count++];
+    r50.id = 0x50;
+    r50.answered = true;
+    r50.len = 19;
+    detectModel(s, r);
+    TEST_ASSERT_TRUE(r.model >= 0);
+    TEST_ASSERT_EQUAL_STRING("Altherma(HT ERRQ-ERSQ outdoor unit 11-16kW)", CATALOG_MODELS[r.model].name);
+    TEST_ASSERT_EQUAL(DETECT_HIGH, r.confidence);
+    // never proposed by the rules: only its shape tells it
+    TEST_ASSERT_EQUAL(1, CATALOG_MODELS[r.model].asOnly);
+    // the hydrobox's own port answers 0x40 too: its 17-byte 0x20 keeps it the hydrobox
+    hydroboxSurvey(s, 17);
+    SurveyReg &h40 = s.regs[s.count++];
+    h40.id = 0x40;
+    h40.answered = true;
+    h40.len = 2;
+    detectModel(s, r);
+    TEST_ASSERT_EQUAL_STRING("Altherma(HT EKHBRD-ERRQ series 11-16kW)", CATALOG_MODELS[r.model].name);
+}
+
 void test_detect_json(void)
 {
     Survey s;
@@ -509,6 +541,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_detect_all_as_numbers);
     RUN_TEST(test_detect_real_epga);
     RUN_TEST(test_detect_hydrobox_by_its_shape);
+    RUN_TEST(test_detect_ht_outdoor_by_its_shape);
     RUN_TEST(test_detect_json);
     UNITY_END();
     return 0;

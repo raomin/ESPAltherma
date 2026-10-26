@@ -10,6 +10,10 @@ HardwareSerial MySerial(1);
 #define SER_TIMEOUT 300 //leave 300ms for the machine to answer
 #define REPLY_BUFFER_SIZE 64 //size of the buffers given to queryRegistry
 
+// The Altherma HT read on its outdoor unit: registry 0x50 is the hydrobox's block, answered only to a query that
+// carries the hydrobox's address (04 40 50 <address>). The survey learns the address from registry 0x40.
+uint8_t x10aIndoorAddress = 0x01;
+
 // The X10A link is shared by the polling task, the detection survey and the DebugSerial gateway.
 // Recursive: the DebugSerial callback runs client.loop() while holding it, which can re-enter it.
 SemaphoreHandle_t serialMutex = xSemaphoreCreateRecursiveMutex();
@@ -108,9 +112,18 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
 {
 
   //preparing command:
-  unsigned char prep[] = {0x03, 0x40, regID, 0x00};
+  unsigned char prep[] = {0x03, 0x40, regID, 0x00, 0x00};
   prep[3] = getCRC(prep, 3);
   int queryLength = 4;
+
+  if (protocol == 'I' && (uint8_t)regID == 0x50)
+  {
+    // no protocol I definition reads 0x50 but the Altherma HT outdoor unit's: its hydrobox block, by address
+    prep[0] = 0x04;
+    prep[3] = x10aIndoorAddress;
+    prep[4] = getCRC(prep, 4);
+    queryLength = 5;
+  }
 
   if (protocol == 'S')
   {

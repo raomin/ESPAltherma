@@ -100,6 +100,16 @@ static const FakeReg HT_UNIT[] = {
     {0x30, 7, {0x00}},
 };
 
+// The same series read on its outdoor unit (ERRQ/ERSQ): a 21-byte 0x20, the hydrobox list in 0x40 and its block in 0x50
+static const FakeReg HT_OUTDOOR_UNIT[] = {
+    {0x00, 10, {0x0A, 0x01, 0x00, 0x01, 0x02, 0x02, 0x01, 0x05, 0x41, 0x01}},
+    {0x10, 16, {0x00}},
+    {0x20, 21, {0x68, 0x00}},
+    {0x30, 10, {0x00}},
+    {0x40, 2, {0x01, 0x00}},
+    {0x50, 19, {0x80, 0x01, 0x10, 0x00, 0xC2, 0x90, 0xA0, 0xC8, 0x00, 0xDB, 0x00, 0xCE, 0x00, 0xDA}},
+};
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -263,9 +273,24 @@ void test_survey_hydrobox_without_indoor_registries(void)
     TEST_ASSERT_TRUE(s.has(0x20));
     TEST_ASSERT_FALSE(s.has(0xA0));
     TEST_ASSERT_NULL(s.find(0x61)); // no indoor walk
-    TEST_ASSERT_EQUAL_UINT8(9, s.count); // 0x60 (no answer), 0x10, and the 7 other listed registries
+    TEST_ASSERT_EQUAL_UINT8(10, s.count); // 0x60 (no answer), 0x10, the 7 other listed registries, 0x40 (no answer)
+    TEST_ASSERT_NULL(s.find(0x50)); // no hydrobox list, no hydrobox block
     AsNumber as;
     TEST_ASSERT_FALSE(surveyAsNumber(s, as));
+}
+
+void test_survey_ht_outdoor_unit(void)
+{
+    useFake('I', HT_OUTDOOR_UNIT, sizeof(HT_OUTDOOR_UNIT) / sizeof(FakeReg));
+    Survey s;
+    surveyRun(s, fakeQuery);
+    TEST_ASSERT_EQUAL_CHAR('I', s.protocol);
+    TEST_ASSERT_FALSE(s.has(0x60));
+    TEST_ASSERT_EQUAL_UINT8(21, s.find(0x20)->len);
+    TEST_ASSERT_TRUE(s.has(0x40));
+    TEST_ASSERT_TRUE(s.has(0x50));
+    TEST_ASSERT_EQUAL_UINT8(19, s.find(0x50)->len);
+    TEST_ASSERT_EQUAL_INT(0xDA, s.byteAt(0x50, 13)); // the leaving water, 21.8 C
 }
 
 void test_survey_json_never_overflows(void)
@@ -315,6 +340,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_survey_prefers_i_after_s);
     RUN_TEST(test_survey_keeps_s_when_i_stays_silent);
     RUN_TEST(test_survey_hydrobox_without_indoor_registries);
+    RUN_TEST(test_survey_ht_outdoor_unit);
     RUN_TEST(test_survey_json_never_overflows);
     RUN_TEST(test_survey_key_same_unit);
     UNITY_END();

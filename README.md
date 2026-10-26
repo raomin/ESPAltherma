@@ -44,7 +44,7 @@ Every Daikin Altherma with the serial diagnostic port, which is about all of the
 
 - **Altherma 3** (R32): the split units (EHV/EHB/EHVZ, ETV/ETB/ETVZ, EBV/EBB/EBVZ, EAV/EAB/EAVZ), the EBLA/EDLA monoblocs, the ECH2O tanks (EHSH/EHSX, ETSH/ETSX, EBSH/EBSX), the GEO ground source units, the 3 kW EHFH/EHFZ.
 - **Altherma LT** (R410A): EHVH/EHBH/EHVX/EHBX with an ERLQ outdoor unit, the EBLQ/EDLQ monoblocs, the Hybrid, the multi DHW tanks.
-- **Altherma HT** (EKHBRD hydrobox) and **Altherma 4** (EPSK), with some values missing on their port, see [Troubleshooting](doc/troubleshooting.md).
+- **Altherma HT** (EKHBRD hydrobox, read on its outdoor unit or on the hydrobox) and **Altherma 4** (EPSK), with some values missing on their port, see [Troubleshooting](doc/troubleshooting.md).
 - **Mini chillers** EWAA/EWYA and EWAQ/EWYQ.
 - **Older units** (around 2010 or before) speaking the older S protocol, including the ROTEX HPSU.
 

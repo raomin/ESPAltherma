@@ -149,6 +149,10 @@ static bool surveyRunI(Survey &s, SurveyQueryFn query)
     if (!surveyRead(s, query, reg, 'I'))
       break;
   }
+  // No indoor registries: maybe an outdoor unit's port (the Altherma HT's ERRQ/ERSQ). 0x40 lists the indoor units'
+  // addresses, 0x50 is the first one's block, answered only to a query that carries its address (the query adds it).
+  if (!indoor && surveyRead(s, query, 0x40, 'I'))
+    surveyRead(s, query, 0x50, 'I');
   return true;
 }
 

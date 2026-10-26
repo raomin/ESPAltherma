@@ -65,6 +65,7 @@ FAMILIES = {
     "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW).h": "L",
     "Altherma(HT EKHBRD-ERRQ series 11-16kW).h": "L",
     "Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S).h": "S",
+    "Altherma(HT ERRQ-ERSQ outdoor unit 11-16kW).h": "L",
     "Altherma(Hybrid).h": "L",
     "Altherma(LT_CA_CB_04-08kW).h": "L",
     "Altherma(LT_CA_CB_11-16kW).h": "L",
@@ -86,6 +87,9 @@ FAMILY_ORDER = "GLSR"
 AS_ONLY = {"Altherma 4(EPSK-EPSKS EPBX-EPSX-EPVX-EPVZ series 04-14kW).h"}
 # Never auto-detected, chosen from the list: the same board as another model, read with the other protocol
 MANUAL_ONLY = {"Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S).h"}
+# Told by the shape of their replies only (detect.h): an outdoor unit's port, whose registries the rules would read as
+# another model's
+SHAPE_ONLY = {"Altherma(HT ERRQ-ERSQ outdoor unit 11-16kW).h"}
 
 # Values enabled by default on Protocol I models (exact label match). Protocol S models default to the
 # lines their definition file ships uncommented.
@@ -110,6 +114,8 @@ RECOMMENDED = {
     "Low Pressure (stage)", "Low Pressure(T)", "High Pressure (stage)", "High Pressure(T)",
     "INV Comp. Frequency(Hz)", "EV (pls)", "4 Way Valve", "Switch box cooling fan",
     "R134a liquid temp.", "Target Evap. Temp.",
+    # Altherma HT read on its outdoor unit: the water and the hydrobox's state, from the hydrobox block
+    "Leaving water temp. (hydrobox)", "Inlet water temp. (hydrobox)", "I/U Error Code", "I/U Thermostat ON/OFF",
     # Altherma 4: its refrigerant liquid side, in the outdoor unit
     "Liquid pipe temp.(R6T)",
 }
@@ -354,7 +360,7 @@ def build():
         protocol = "S" if family in "SR" else "I"
         m = CAPACITY.search(name)
         low, high = (int(m.group(1)), int(m.group(2) or m.group(1))) if m else (0, 0)
-        manual = name + ".h" in AS_ONLY or name + ".h" in MANUAL_ONLY
+        manual = name + ".h" in AS_ONLY or name + ".h" in MANUAL_ONLY or name + ".h" in SHAPE_ONLY
         out.append("    {%s, '%s', '%s', %d, %d, %d}," % (c_string(name), family, protocol, low, high, 1 if manual else 0))
     out.append("};")
     out.append("")
