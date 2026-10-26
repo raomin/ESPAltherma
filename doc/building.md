@@ -14,6 +14,7 @@ Use the environment of your board:
 | ----- | ----------- |
 | ESP32 DevKit | `web-esp32` |
 | ESP32-C3 | `web-esp32c3` |
+| ESP32-C6 | `web-esp32c6` |
 | ESP32-S3 | `web-esp32s3` |
 | M5StickC / M5StickC Plus / M5StickC Plus2 | `web-m5stickc` / `web-m5stickcplus` / `web-m5stickcplus2` |
 | M5Stack Tough | `web-m5stack-tough` |

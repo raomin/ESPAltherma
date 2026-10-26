@@ -29,6 +29,7 @@ jobs:
         env:
           - web-esp32
           - web-esp32c3
+          - web-esp32c6
           - web-esp32s3
           - web-m5stickc
           - web-m5stickcplus

@@ -61,7 +61,7 @@ The complete list is the [definitions](definitions) folder: one file per series.
 
 *That's all!*
 
-Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-S3, M5StickC, M5StickC Plus, M5StickC Plus2, M5Stack Tough, M5Stack Atom Lite, WT32-ETH01 and Olimex ESP32-PoE.
+Supported boards: ESP32 DevKit (and most ESP32 boards), ESP32-C3, ESP32-C6 (experimental), ESP32-S3, M5StickC, M5StickC Plus, M5StickC Plus2, M5Stack Tough, M5Stack Atom Lite, WT32-ETH01 and Olimex ESP32-PoE.
 
 ## Step 1: Installing the firmware
 
@@ -99,7 +99,7 @@ The RX and TX pins of each board:
 | Board | RX (to X10A pin 2) | TX (to X10A pin 3) |
 | ----- | ------------------ | ------------------ |
 | ESP32 DevKit, ESP32-S3 | GPIO 16 | GPIO 17 |
-| ESP32-C3 | GPIO 4 | GPIO 5 |
+| ESP32-C3, ESP32-C6 | GPIO 4 | GPIO 5 |
 | M5StickC, M5StickC Plus, M5StickC Plus2 | G36 | G26 |
 | M5Stack Tough | G36 (Port B) | G26 (Port B) |
 | M5Stack Atom Lite | G26 (Grove) | G32 (Grove) |
