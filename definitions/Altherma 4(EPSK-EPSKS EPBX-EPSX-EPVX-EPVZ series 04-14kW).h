@@ -6,11 +6,13 @@
 //  model: the values are those of that generation, and some may differ on the Altherma 4.
 //  - The water heat exchanger is in the outdoor unit: the return water is "Inlet water temp. (water heat exchanger)"
 //    (0xA1) and the water leaves it at "Leaving water temp. (water heat exchanger)". 0x61 R1T/R2T read the indoor unit.
-//  - The DHW tank temperature (R5T) is the thermal store's lower sensor on the EPSX units (36.6 when the app showed
-//    45.3 on an EPSXB10P50AH, issue #523); the other units have no sensor there (-40.7, an open input: the page then
-//    shows no tank until the 3-way valve turns to the hot water). Not on the wire: the indoor unit's inlet (R4T), the
-//    room temperature and the setpoints (hot water, leaving water, room), which the user interface keeps for itself:
-//    those lines are left out, and a setpoint that reads 0 is shown as absent.
+//  - The DHW tank temperature (R5T) is the one tank sensor the hydro board reads itself: the thermal store's lower one
+//    on an EPSXB10P50AH (36.6 when the app showed 45.3 after a tapping, 50.0 for 50.3 once heated; issue #523). The
+//    other tank sensors (the store's upper one, an external tank's sensor on the wall units) are read by the user
+//    interface's board: the hydro board's three tank inputs read open there (-40.7, the page then shows no tank until
+//    the 3-way valve turns to the hot water), and its memory holds no copy of them. Not on the wire either: the indoor
+//    unit's inlet (R4T), the room temperature and the setpoints (hot water, leaving water, room), which the user
+//    interface keeps for itself: those lines are left out, and a setpoint that reads 0 is shown as absent.
 //  - The refrigerant liquid side (R3T of 0x61) reads 0: the refrigerant side is in the outdoor unit too. Its liquid
 //    pipe is "Liquid pipe temp.(R6T)" (0x20), close to the return water while heating, as R3T is on the other units.
 //  uncomment each value you want to query for your installation.
