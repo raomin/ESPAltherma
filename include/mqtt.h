@@ -633,7 +633,8 @@ void publishLimit()
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  mqttSerial.printf("Message arrived [%s] : %s\n", topic, payload);
+  // the payload is not terminated yet, its handlers do it (#598); mqttSerial only queues the line
+  mqttSerial.printf("Message arrived [%s] : %.*s\n", topic, (int)length, (const char *)payload);
 
   if (strcmp(topic, mqttTopics.power) == 0)
   {

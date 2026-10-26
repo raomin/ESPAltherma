@@ -16,3 +16,6 @@ include/webui_data.h
 flasher/firmware/
 flasher/manifest-*.json
 __pycache__/
+include/def/mydef.h
+.DS_Store
+include/.DS_Store
