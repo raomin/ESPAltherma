@@ -409,5 +409,6 @@
  "Voltage as the unit reports it.": "Spanning zoals het toestel die meldt.",
  "Electricity at {v} V, {ph}: change it in Settings.": "Elektriciteit bij {v} V, {ph}: te wijzigen in Instellingen.",
  "3 phases": "3 fasen",
- "1 phase": "1 fase"
+ "1 phase": "1 fase",
+ "Drag to move this block": "Sleep om dit blok te verplaatsen"
 }

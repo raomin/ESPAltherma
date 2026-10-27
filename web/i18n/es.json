@@ -409,5 +409,6 @@
  "Voltage as the unit reports it.": "Tensión según la informa la unidad.",
  "Electricity at {v} V, {ph}: change it in Settings.": "Electricidad a {v} V, {ph}: cámbielo en Ajustes.",
  "3 phases": "trifásico",
- "1 phase": "monofásico"
+ "1 phase": "monofásico",
+ "Drag to move this block": "Arrastre para mover este bloque"
 }

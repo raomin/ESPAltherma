@@ -409,5 +409,6 @@
  "Voltage as the unit reports it.": "Spannung, wie das Gerät sie meldet.",
  "Electricity at {v} V, {ph}: change it in Settings.": "Strom bei {v} V, {ph}: in den Einstellungen änderbar.",
  "3 phases": "3 Phasen",
- "1 phase": "1 Phase"
+ "1 phase": "1 Phase",
+ "Drag to move this block": "Ziehen, um diesen Block zu verschieben"
 }
