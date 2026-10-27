@@ -88,6 +88,7 @@ class Device:
             "relays": {"therm_pin": -1, "therm_high": True, "sg1_pin": -1, "sg2_pin": -1, "sg_high": True, "safety_pin": -1, "safety_high": True},
             "output": {"one_topic": False, "one_topic_prefix": "espaltherma/OneATTR/", "json_table": False, "binary_num": False, "no_log": False, "debug_serial": False},
             "control": {"dhw_target": False, "lwt_target": False, "power_limit": LIMIT_ON},
+            "stats": {"enabled": True, "voltage": 230, "phases": 1, "aux_w": 0, "tz": 60},
             "admin": {"has_pwd": False},
             "telemetry": {"enabled": False, "install_id": "3f2a9c1be07d4411"},
         }
@@ -149,6 +150,14 @@ class Device:
                             "enable": l["enable"], "on": l["on"], "value": l["value"]}
         if ctl:
             st["control"] = ctl
+        if c.get("stats", {}).get("enabled", True):
+            st["stats"] = {"heat_kw": 5.21, "elec_kw": 1.34, "cop": 3.89, "running": True, "mode": "heating", "current_min": 47,
+                           "today": {"heating": {"heat_kwh": 23.4, "elec_kwh": 6.9, "cop": 3.39},
+                                     "dhw": {"heat_kwh": 4.1, "elec_kwh": 1.6, "cop": 2.56},
+                                     "cooling": {"heat_kwh": 0, "elec_kwh": 0, "cop": None},
+                                     "starts": 7, "starts_hour": 1, "defrosts": 2, "run_min": 318, "buh_min": 0,
+                                     "last_run_min": 52, "last_pause_min": 23},
+                           "clock": True, "tz": c["stats"].get("tz", 60), "voltage_read": False}
         return st
 
     def events(self):

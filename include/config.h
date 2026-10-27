@@ -82,6 +82,11 @@ struct AppConfig
   int ctlOrig[2][2];  // the curve each control found before its first write (high, low point; -1: none), restorable
   char ctlOrigSw[9];  // the hydro board software those curves belong to
   bool powerLimit;    // the power limit can be set from Home Assistant and the web interface (control.h)
+  bool statsEnabled;  // energy and cycle statistics (stats.h): heat output, estimated input and COP, the day's counters
+  float statsVoltage; // mains voltage for the estimate, used when the unit reports none
+  uint8_t statsPhases; // 1 or 3
+  float statsAuxW;    // pump and electronics, added while the compressor runs
+  int16_t statsTz;    // minutes east of UTC, kept up to date by the web page: the day's counters reset at local midnight
   bool ctlLimitOn;    // a limit is applied from here, re-applied after a restart of the heat pump or of ESPAltherma
   float ctlLimitValue;
   int ctlLimitOrig;   // the unit's own enable byte, put back when the limit is switched off
@@ -123,6 +128,11 @@ void configDefaults(AppConfig &c)
     c.ctlOrig[k][0] = c.ctlOrig[k][1] = -1;
   c.ctlOrigSw[0] = 0;
   c.powerLimit = false;
+  c.statsEnabled = true;
+  c.statsVoltage = 230;
+  c.statsPhases = 1;
+  c.statsAuxW = 0;
+  c.statsTz = 0;
   c.ctlLimitOn = false;
   c.ctlLimitValue = -1;
   c.ctlLimitOrig = -1;
@@ -221,6 +231,12 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   control["limit_on"] = c.ctlLimitOn;
   control["limit_value"] = c.ctlLimitValue;
   control["limit_orig"] = c.ctlLimitOrig;
+  JsonObject stats = doc["stats"].to<JsonObject>();
+  stats["enabled"] = c.statsEnabled;
+  stats["voltage"] = c.statsVoltage;
+  stats["phases"] = c.statsPhases;
+  stats["aux_w"] = c.statsAuxW;
+  stats["tz"] = c.statsTz;
   control["limit_sw"] = c.ctlLimitSw;
 
   JsonObject admin = doc["admin"].to<JsonObject>();
@@ -349,6 +365,15 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(src["control"]["limit_on"], c.ctlLimitOn);
   readNum(src["control"]["limit_value"], c.ctlLimitValue);
   readNum(src["control"]["limit_orig"], c.ctlLimitOrig);
+  readNum(src["stats"]["enabled"], c.statsEnabled);
+  readNum(src["stats"]["voltage"], c.statsVoltage);
+  readNum(src["stats"]["phases"], c.statsPhases);
+  readNum(src["stats"]["aux_w"], c.statsAuxW);
+  readNum(src["stats"]["tz"], c.statsTz);
+  if (c.statsPhases != 3)
+    c.statsPhases = 1;
+  if (c.statsVoltage < 100 || c.statsVoltage > 500)
+    c.statsVoltage = 230;
   readStr(src["control"]["limit_sw"], c.ctlLimitSw, sizeof(c.ctlLimitSw));
 
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));

@@ -65,6 +65,9 @@ p.sub{margin:4px 0 0}
 .side{padding:6px 22px}
 .side>div{padding:14px 0;border-bottom:1px solid var(--line)}
 .side>div:last-child{border:0}
+.today{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:4px 24px;margin-top:6px}
+.today>div{padding:12px 0;border-bottom:1px solid var(--line)}
+.today .big{font-size:28px}.today .big small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:4px}
 .flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .flags span{font-size:12.5px;padding:3px 10px;border-radius:999px;background:var(--soft);color:var(--ink2)}
 .flags span.on{background:var(--warm);color:#2e2410}
@@ -297,6 +300,9 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   </div>
  </div>
  <div class="dev" id="tiles" translate="no"></div>
+ <div class="card pad" id="todayCard" hidden><h2>Today</h2><p class="sub" id="todaySub"></p>
+  <div class="today" id="today" translate="no"></div>
+  <p class="sub" id="todayNote" style="margin-top:10px"></p></div>
  <div class="card pad" id="dhwCard" hidden><h2>Hot water target</h2><p class="sub" id="dhwSub"></p>
   <div class="acts" style="margin-top:12px"><input type="number" id="dhwVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="dhwSet">Apply</button><button id="dhwRestore" hidden>Restore the unit's curve</button><span class="msg" id="dhwMsg" translate="no"></span></div></div>
  <div class="card pad" id="lwtCard" hidden><h2>Leaving water target</h2><p class="sub" id="lwtSub"></p>
@@ -388,6 +394,12 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
    <label class="f"><span class="k">Base topic</span><input type="text" id="sBase" placeholder="espaltherma" translate="no"></label>
    <p class="sub">Two ESPAltherma on one broker, for instance one on the indoor unit and one on the outdoor unit, need different base topics, such as espaltherma-idu and espaltherma-odu: every topic and every Home Assistant entity then starts with it.</p>
    <label class="chk"><input type="checkbox" id="sJsonTable">JSON table format (ioBroker)</label><label class="chk"><input type="checkbox" id="sBinNum">On/off values as 1/0 (EmonCMS…)</label><label class="chk"><input type="checkbox" id="sNoLog">Do not publish logs on MQTT</label><label class="chk"><input type="checkbox" id="sDebug">MQTT ↔ serial gateway (DebugSerial)</label></div>
+  <div class="card"><h2>Energy and cycles</h2><p class="sub">Computed on the board from the values it reads: the heat delivered (flow and water temperatures), the electricity drawn (inverter current and the mains voltage) and their ratio, the day's figures per mode and the compressor cycles. Shown on the home page and sent to Home Assistant.</p>
+   <label class="chk"><input type="checkbox" id="sStats">Compute energy and cycle figures</label>
+    <label class="f"><span class="k">Mains voltage (V)</span><input type="number" id="sStatsV" min="100" max="500" step="1" translate="no"></label>
+    <label class="f"><span class="k">Supply</span><select id="sStatsPh" translate="no"><option value="1">1 ~ 230 V</option><option value="3">3 ~ 400 V</option></select></label>
+    <label class="f"><span class="k">Pump and electronics (W)</span><input type="number" id="sStatsAux" min="0" max="500" step="10" translate="no"></label>
+   <p class="sub">The electricity is an estimate: the inverter current, which the unit reports, times the voltage; units that report their voltage use it. The pump's watts, when known, are added while the compressor runs.</p></div>
   <div class="card"><h2>Experimental</h2><p class="sub">Under test: may not work on every unit.</p>
    <label class="chk"><input type="checkbox" id="sDhwTarget">Hot water target from Home Assistant and this page</label>
    <label class="chk"><input type="checkbox" id="sLwtTarget">Leaving water target (main zone) from Home Assistant and this page</label>
@@ -631,6 +643,37 @@ function renderTiles() {
   tiles.push(tile('clock', t('Running for'), duration(s.uptime), '', {v: 'upV', s: 'upS'}));
   $('#tiles').replaceChildren(...tiles);
 }
+// The day's energy and cycle figures (stats.h): a card of figures, each with its detail under it
+function renderToday() {
+  const st = status.stats, card = $('#todayCard');
+  card.hidden = !st;
+  if (!st) return;
+  const n = (v, d = 1) => v == null ? '—' : (+v).toFixed(d);
+  const kwh = v => v == null ? '0' : n(v, v < 10 ? 1 : 0);
+  const mins = m => m >= 60 ? t('{h} h {m} min', {h: Math.floor(m / 60), m: m % 60}) : t('{m} min', {m});
+  const fig = (k, v, unit, sub) => el('div', {}, el('div', {class: 'k'}, k), el('div', {class: 'big'}, v, unit ? el('small', {}, unit) : ''), el('div', {class: 'sub'}, sub));
+  const d = st.today, modeName = {heating: t('heating'), dhw: t('hot water'), cooling: t('cooling')}[st.mode];
+  const figs = [];
+  let nowSub;
+  if (!st.running) nowSub = st.current_min > 0 ? t('compressor off for {t}', {t: mins(st.current_min)}) : t('compressor off');
+  else nowSub = modeName + (st.heat_kw != null ? ' · ' + t('{heat} kW heat for {elec} kW', {heat: n(st.heat_kw), elec: n(st.elec_kw)}) : '') + ' · ' + mins(st.current_min);
+  figs.push(fig(t('COP now'), st.cop != null ? n(st.cop, 2) : st.running ? '…' : '—', '', nowSub));
+  for (const [m, name] of [['heating', t('Heating today')], ['dhw', t('Hot water today')], ['cooling', t('Cooling today')]]) {
+    const x = d[m];
+    if (m === 'cooling' && !(x.heat_kwh > 0)) continue;
+    figs.push(fig(name, x.cop != null ? n(x.cop, 2) : '—', x.cop != null ? 'COP' : '', t('{heat} kWh heat · {elec} kWh electricity', {heat: kwh(x.heat_kwh), elec: kwh(x.elec_kwh)})));
+  }
+  figs.push(fig(t('Compressor starts'), String(d.starts), '', t('{n} in the last hour · running {t} today', {n: d.starts_hour, t: mins(d.run_min)})));
+  figs.push(fig(t('Last cycle'), d.last_run_min ? mins(d.last_run_min) : '—', '', d.last_pause_min ? t('then {t} off', {t: mins(d.last_pause_min)}) : ''));
+  if (d.defrosts || d.buh_min) figs.push(fig(t('Defrosts'), String(d.defrosts), '', d.buh_min ? t('backup heater {t}', {t: mins(d.buh_min)}) : ''));
+  $('#today').replaceChildren(...figs);
+  $('#todaySub').textContent = st.clock ? t('Since midnight. Heat from the flow and the water temperatures, electricity estimated from the inverter current.') : t('Since the last restart: the board has no clock yet, the figures reset at the next restart.');
+  const sv = cfg.stats || {};
+  $('#todayNote').textContent = st.voltage_read ? t('Voltage as the unit reports it.') : t('Electricity at {v} V, {ph}: change it in Settings.', {v: sv.voltage || 230, ph: sv.phases == 3 ? t('3 phases') : t('1 phase')});
+  // the day changes at the local midnight: the board learns the time zone from the browser
+  const tz = -new Date().getTimezoneOffset();
+  if (st.tz !== tz && !renderToday.tzSent) { renderToday.tzSent = true; post('/api/config', {stats: {tz}}).catch(() => {}); }
+}
 function renderBanners() {
   const s = status, m = s.mqtt, hp = s.hp;
   const b = $('#banners'); b.replaceChildren();
@@ -747,7 +790,7 @@ for (const u of Object.values(CONTROLS)) {
 function renderStatus() {
   const hp = status.hp;
   $('#hdrModel').textContent = hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : '';
-  renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl();
+  renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl(); renderToday();
   // Values appeared (model just detected or chosen): show them without waiting for the next push
   if (hp.values > 0 && hp.last_poll >= 0 && !lastValues.length) api('/api/values').then(renderValues).catch(() => {});
 }
@@ -1112,6 +1155,9 @@ function fillSettings() {
   $('#sTherm').value = r.therm_pin; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
   $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sBase').value = (cfg.mqtt && cfg.mqtt.base_topic) || 'espaltherma'; $('#sJsonTable').checked = o.json_table; $('#sBinNum').checked = !!o.binary_num; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
+  const st = cfg.stats || {};
+  $('#sStatsPh').options[0].text = t('1 phase (230 V)'); $('#sStatsPh').options[1].text = t('3 phases (400 V)');
+  $('#sStats').checked = st.enabled !== false; $('#sStatsV').value = st.voltage || 230; $('#sStatsPh').value = st.phases == 3 ? '3' : '1'; $('#sStatsAux').value = st.aux_w || 0;
   $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target); $('#sLwtTarget').checked = !!(cfg.control && cfg.control.lwt_target); $('#sPowerLimit').checked = !!(cfg.control && cfg.control.power_limit);
   $('#sHost').value = cfg.hostname; $('#sAdminState').textContent = cfg.admin.has_pwd ? t('(set)') : t('(none)'); $('#sAdminClearL').style.display = cfg.admin.has_pwd ? '' : 'none'; $('#sAdminClear').checked = false;
   fillLangs();
@@ -1126,6 +1172,7 @@ $('#sSave').onclick = async () => {
     relays: {therm_pin: n('#sTherm'), sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
     control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, power_limit: $('#sPowerLimit').checked},
+    stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 0},
     mqtt: {base_topic: $('#sBase').value.trim() || 'espaltherma'},
     hostname: $('#sHost').value.trim() || 'ESPAltherma',
     lang: $('#sLang').value,

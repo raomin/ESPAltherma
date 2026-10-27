@@ -31,6 +31,15 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
  * The components the values announce (key and platform), to tell which ones a later discovery removes (haremoval.h).
  */
 std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count);
+// Extra values the firmware computes (stats.h): announced with the definition's, removed with them when off
+extern const LabelDef *haExtraLabels;
+extern size_t haExtraCount;
+// dataType codes of the extra values (homeassistant.cpp maps them to a device class)
+#define ESP_SENSOR_POWER_KW 989
+#define ESP_SENSOR_ENERGY_KWH 990
+#define ESP_SENSOR_RATIO 991
+#define ESP_SENSOR_COUNT 992
+#define ESP_SENSOR_MINUTES 993
 
 /*
  * Turns a LabelDef into a "component" JSON element for inclusion in the "cmp" array of the Device Discovery payload.

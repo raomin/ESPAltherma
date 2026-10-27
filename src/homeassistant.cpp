@@ -37,13 +37,16 @@ const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 const LabelDef m5_vin = {-1, -1, -1, -1, ESP_SENSOR_M5VIN, "M5VIN"};
 const LabelDef uptime = {-1, -1, -1, -1, ESP_SENSOR_UPTIME, "Uptime"};
 const LabelDef ip_addr = {-1, -1, -1, -1, ESP_SENSOR_IP, "IP"};
+const LabelDef *haExtraLabels = nullptr;
+size_t haExtraCount = 0;
 
 static bool isMeasurementSensor(const std::string &sensorProperties)
 {
     // A numeric converter alone does not make a value a measurement. For example,
     // detailed error codes are numeric but should not participate in statistics.
     return sensorProperties.find("\"p\":\"sensor\"") != std::string::npos &&
-           sensorProperties.find("\"unit_of_meas\"") != std::string::npos;
+           sensorProperties.find("\"unit_of_meas\"") != std::string::npos &&
+           sensorProperties.find("\"stat_cla\"") == std::string::npos; // the computed values set their own
 }
 
 size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx,
@@ -89,6 +92,12 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
         s = "," + makeSensorJson(labels[i], false);
         emit(s.data(), s.size());
     }
+    // The values the firmware computes (energy and cycle statistics)
+    for (size_t i = 0; i < haExtraCount; i++)
+    {
+        s = "," + makeSensorJson(haExtraLabels[i], false);
+        emit(s.data(), s.size());
+    }
     // Values no longer selected: only their platform, so Home Assistant removes their entities
     for (size_t i = 0; removed != nullptr && i < removed->size(); i++)
     {
@@ -110,6 +119,8 @@ std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count)
         bool binary = getSensorDeviceAndUnit(labels[i]).find("\"p\":\"binary_sensor\"") != std::string::npos;
         out.push_back({makeJsonKey(labels[i].label), binary ? "binary_sensor" : "sensor"});
     }
+    for (size_t i = 0; i < haExtraCount; i++)
+        out.push_back({makeJsonKey(haExtraLabels[i].label), "sensor"});
     return out;
 }
 
@@ -180,6 +191,13 @@ std::string getConversion(const LabelDef &label)
         case ESP_SENSOR_FREE_MEM:
         case ESP_SENSOR_UPTIME:
             return "|int";
+        // the computed values are sent as numbers, or null when not known
+        case ESP_SENSOR_POWER_KW:
+        case ESP_SENSOR_ENERGY_KWH:
+        case ESP_SENSOR_RATIO:
+        case ESP_SENSOR_COUNT:
+        case ESP_SENSOR_MINUTES:
+            return std::string(" if value_json['") + label.label + "'] is not none else 'unknown'";
     }
     return "";
 }
@@ -205,6 +223,17 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
         // "IP" (the board's address on the network, a text)
         case ESP_SENSOR_IP:
             return "\"p\":\"sensor\",\"icon\":\"mdi:ip-network\",";
+        // the computed statistics (stats.h)
+        case ESP_SENSOR_POWER_KW:
+            return "\"p\":\"sensor\",\"dev_cla\":\"power\",\"unit_of_meas\":\"kW\",\"sug_dsp_prc\":2,";
+        case ESP_SENSOR_ENERGY_KWH: // the day's total: Home Assistant sees the reset at midnight as a new period
+            return "\"p\":\"sensor\",\"dev_cla\":\"energy\",\"unit_of_meas\":\"kWh\",\"stat_cla\":\"total_increasing\",\"sug_dsp_prc\":2,";
+        case ESP_SENSOR_RATIO:
+            return "\"p\":\"sensor\",\"icon\":\"mdi:gauge\",\"stat_cla\":\"measurement\",\"sug_dsp_prc\":2,";
+        case ESP_SENSOR_COUNT:
+            return "\"p\":\"sensor\",\"icon\":\"mdi:counter\",\"stat_cla\":\"measurement\",";
+        case ESP_SENSOR_MINUTES:
+            return "\"p\":\"sensor\",\"dev_cla\":\"duration\",\"unit_of_meas\":\"min\",\"stat_cla\":\"measurement\",";
 
         /// Built-in ones:
         // TODO: move magic numbers to consts

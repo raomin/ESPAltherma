@@ -25,8 +25,13 @@ extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
+#include "stats.h"
+extern Stats stats;
 bool memoryRequest(uint16_t addr, uint8_t len); // main.cpp: the heat pump task reads the hydro board's memory
 void memoryResult(JsonDocument &doc);
+void statsSetup(); // main.cpp: applies the stats settings
+extern volatile bool discoveryDirty;
+float statsVoltageRead(); // main.cpp: the unit's own voltage reading, NAN when it has none
 extern unsigned long lastPollMs;
 extern DetectResult detection;
 extern CurveControl dhwControl, lwtControl;
@@ -300,6 +305,38 @@ static void statusJson(JsonDocument &doc)
   if (config.dhwTarget || config.lwtTarget || config.powerLimit)
   {
     // Target controls (experimental, control.h)
+    if (config.statsEnabled)
+    {
+      JsonObject st = doc["stats"].to<JsonObject>();
+      uint32_t epoch = time(nullptr) > 1600000000 ? (uint32_t)time(nullptr) : 0, up = millis() / 1000;
+      const StatsDay &d = *stats.day;
+      auto num = [&](JsonObject o, const char *k, float v) { if (!isnan(v)) o[k] = serialized(String(v, 2)); else o[k] = nullptr; };
+      num(st, "heat_kw", stats.heatKW);
+      num(st, "elec_kw", stats.elecKW);
+      num(st, "cop", stats.cop);
+      st["running"] = stats.running;
+      st["mode"] = stats.mode == STATS_DHW ? "dhw" : stats.mode == STATS_COOLING ? "cooling" : "heating";
+      st["current_min"] = stats.currentSec(epoch, up) / 60;
+      JsonObject today = st["today"].to<JsonObject>();
+      const char *modes[] = {"heating", "dhw", "cooling"};
+      for (int m = 0; m < 3; m++)
+      {
+        JsonObject o = today[modes[m]].to<JsonObject>();
+        num(o, "heat_kwh", d.heatKWh[m]);
+        num(o, "elec_kwh", d.elecKWh[m]);
+        num(o, "cop", stats.copToday((StatsMode)m));
+      }
+      today["starts"] = d.starts;
+      today["starts_hour"] = stats.startsLastHour(epoch, up);
+      today["defrosts"] = d.defrosts;
+      today["run_min"] = d.runSec / 60;
+      today["buh_min"] = d.buhSec / 60;
+      today["last_run_min"] = d.lastRunSec / 60;
+      today["last_pause_min"] = d.lastPauseSec / 60;
+      st["clock"] = epoch != 0;
+      st["tz"] = config.statsTz;
+      st["voltage_read"] = !isnan(statsVoltageRead());
+    }
     JsonObject ctl = doc["control"].to<JsonObject>();
     if (config.dhwTarget)
       controlJson(ctl["dhw"].to<JsonObject>(), dhwControl);
@@ -986,6 +1023,9 @@ void webLoop()
     labelsChanged = labelsChanged || strcmp(next->lang, config.lang) != 0;
     bool confirmedNow = next->modelConfirmed && (!config.modelConfirmed || labelsChanged);
     bool telemetryEnabled = next->telemetry && !config.telemetry;
+    bool statsChanged = next->statsEnabled != config.statsEnabled || next->statsVoltage != config.statsVoltage ||
+                        next->statsPhases != config.statsPhases || next->statsAuxW != config.statsAuxW || next->statsTz != config.statsTz;
+    bool statsToggled = next->statsEnabled != config.statsEnabled;
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
@@ -1004,6 +1044,10 @@ void webLoop()
       labelsDirty = true;
     if (confirmedNow || telemetryEnabled)
       telemetryPending = true;
+    if (statsChanged)
+      statsSetup();
+    if (statsToggled)
+      discoveryDirty = true; // the entities come or go
     if (reboot)
     {
       rebootCause = "Settings changed from the web interface";

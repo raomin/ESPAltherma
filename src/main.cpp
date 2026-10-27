@@ -20,6 +20,7 @@
 #include "converters.h"
 #include "comm.h"
 #include "control.h"
+#include "stats.h"
 #include "survey.h"
 #include "catalog.h"
 #include "detect.h"
@@ -517,9 +518,131 @@ void pollRegistries()
 }
 
 // Sends the values of the last query cycle in mqtt. Main loop only.
+// Energy and cycle statistics (stats.h), fed from the labels' current values. Main loop, under the values lock.
+RTC_NOINIT_ATTR StatsDay statsDay;
+Stats stats;
+static const LabelDef STATS_LABELS[] = {
+    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Heat output (kW)"},
+    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Electrical input estimated (kW)"},
+    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP estimated"},
+    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today heating"},
+    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today hot water"},
+    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today heating (kWh)"},
+    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today hot water (kWh)"},
+    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today cooling (kWh)"},
+    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today heating (kWh)"},
+    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today hot water (kWh)"},
+    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today cooling (kWh)"},
+    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts today"},
+    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts last hour"},
+    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Defrosts today"},
+    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Compressor run today (min)"},
+    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Backup heater today (min)"},
+    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last run (min)"},
+    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last pause (min)"},
+};
+
+// The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a number)
+static float statsValue(std::initializer_list<const char *> prefixes, bool *found = nullptr)
+{
+  for (const char *p : prefixes)
+  {
+    for (size_t i = 0; i < converter.activeCount; i++)
+    {
+      const LabelDef &l = converter.activeLabels[i];
+      if (strncasecmp(l.label, p, strlen(p)) != 0)
+        continue;
+      if (found)
+        *found = true;
+      char *end;
+      float v = strtof(l.asString, &end);
+      return end == l.asString ? NAN : v;
+    }
+  }
+  return NAN;
+}
+
+// ON/OFF labels: 1, 0, or -1 when not selected
+static int statsFlag(std::initializer_list<const char *> prefixes)
+{
+  for (const char *p : prefixes)
+  {
+    for (size_t i = 0; i < converter.activeCount; i++)
+    {
+      const LabelDef &l = converter.activeLabels[i];
+      if (strncasecmp(l.label, p, strlen(p)) == 0)
+        return strcasecmp(l.asString, "ON") == 0 || strcmp(l.asString, "1") == 0 ? 1 : 0;
+    }
+  }
+  return -1;
+}
+
+static uint32_t statsEpoch()
+{
+  time_t t = time(nullptr);
+  return t > 1600000000 ? (uint32_t)t : 0;
+}
+
+float statsVoltageRead() { return statsValue({"Voltage (N-phase)"}); }
+
+void statsSetup()
+{
+  stats.begin(&statsDay);
+  stats.settings.voltage = config.statsVoltage;
+  stats.settings.phases = config.statsPhases;
+  stats.settings.auxW = config.statsAuxW;
+  stats.settings.tzMinutes = config.statsTz;
+  haExtraLabels = config.statsEnabled ? STATS_LABELS : nullptr;
+  haExtraCount = config.statsEnabled ? sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) : 0;
+}
+
+static void statsUpdate()
+{
+  if (!config.statsEnabled)
+    return;
+  StatsInput in;
+  in.inv = statsValue({"INV frequency", "INV Comp. Frequency"});
+  in.flow = statsValue({"Flow sensor"});
+  in.lw = statsValue({"Leaving water temp. before BUH", "Outlet Water Heat Exch. Temp.", "[HPSU] Tv inflow Temp", "Leaving water temp. (hydrobox)"});
+  in.inlet = statsValue({"Inlet water temp", "[HPSU] Tr return Temp"});
+  in.amp = statsValue({"INV primary current"});
+  in.volt = statsValue({"Voltage (N-phase)"});
+  in.outdoor = statsValue({"R1T-Outdoor air temp", "Outdoor air temp"});
+  in.v3 = statsFlag({"3way valve", "Priority to domestic water"});
+  in.defrost = statsFlag({"Defrost Operation"});
+  in.buh = statsFlag({"BUH Step1"});
+  for (size_t i = 0; i < converter.activeCount; i++)
+    if (strcasecmp(converter.activeLabels[i].label, "Operation Mode") == 0)
+      in.cooling = strcasestr(converter.activeLabels[i].asString, "cool") != nullptr;
+  stats.update(in, statsEpoch(), millis() / 1000);
+}
+
+// The statistics as ATTR keys, in the order of STATS_LABELS; null when not known. The "Stats:" prefix keeps them
+// together in Home Assistant (sensor.espaltherma_stats_...) and apart from what the unit itself reports.
+void statsAppendJson(char *buf, size_t size)
+{
+  if (!config.statsEnabled)
+    return;
+  uint32_t epoch = statsEpoch(), up = millis() / 1000;
+  const StatsDay &d = *stats.day;
+  float values[] = {stats.heatKW, stats.elecKW, stats.cop, stats.copToday(STATS_HEATING), stats.copToday(STATS_DHW),
+                    d.heatKWh[0], d.heatKWh[1], d.heatKWh[2], d.elecKWh[0], d.elecKWh[1], d.elecKWh[2],
+                    (float)d.starts, (float)stats.startsLastHour(epoch, up), (float)d.defrosts,
+                    d.runSec / 60.0f, d.buhSec / 60.0f, d.lastRunSec / 60.0f, d.lastPauseSec / 60.0f};
+  for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++)
+  {
+    size_t n = strlen(buf);
+    if (isnan(values[i]))
+      snprintf(buf + n, size - n, "\"%s\":null,", STATS_LABELS[i].label);
+    else
+      snprintf(buf + n, size - n, "\"%s\":%.*f,", STATS_LABELS[i].label, i >= 11 && i <= 13 ? 0 : 2, values[i]);
+  }
+}
+
 void publishValues()
 {
   valuesLock();
+  statsUpdate();
   for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
   {
     if (registryOk[i])
@@ -767,6 +890,7 @@ void setup()
 #endif
   configLoad();
   setupPins(); //relays to their inactive state first: they would float during the splash screen
+  statsSetup();
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, config.rxPin, config.txPin);
 #ifdef ARDUINO_M5Stick_C_Plus
