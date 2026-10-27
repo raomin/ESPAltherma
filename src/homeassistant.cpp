@@ -191,13 +191,15 @@ std::string getConversion(const LabelDef &label)
         case ESP_SENSOR_FREE_MEM:
         case ESP_SENSOR_UPTIME:
             return "|int";
-        // the computed values are sent as numbers, or null when not known
+        // the computed values are sent as numbers, or null when not known: the template then renders "None", the
+        // one word the MQTT sensor takes for unknown (a string such as 'unknown' is refused on a numeric sensor,
+        // which keeps its last value)
         case ESP_SENSOR_POWER_KW:
         case ESP_SENSOR_ENERGY_KWH:
         case ESP_SENSOR_RATIO:
         case ESP_SENSOR_COUNT:
         case ESP_SENSOR_MINUTES:
-            return std::string(" if value_json['") + label.label + "'] is not none else 'unknown'";
+            return std::string(" if value_json['") + label.label + "'] is not none else None";
     }
     return "";
 }
