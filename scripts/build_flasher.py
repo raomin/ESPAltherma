@@ -15,6 +15,7 @@ http://localhost:8000 in Chrome or Edge (Web Serial works on localhost).
 """
 
 import argparse
+import configparser
 import json
 import os
 import re
@@ -39,6 +40,17 @@ def commit_time():
         return 0
 
 
+def env_groups(envs):
+    """The environments grouped by the platform platformio.ini gives them, the ones on the default platform first."""
+    ini = configparser.ConfigParser(interpolation=None)
+    ini.read(os.path.join(ROOT, "platformio.ini"), encoding="utf-8")
+    groups = {}
+    for e in envs:
+        platform = ini.get("env:" + e, "platform", fallback="")
+        groups.setdefault(platform, []).append(e)
+    return [groups[k] for k in sorted(groups, key=lambda k: (k != "", k))]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--build", action="store_true", help="build the firmwares first")
@@ -54,9 +66,6 @@ def main():
         boards = json.load(f)
 
     if args.build:
-        cmd = ["pio", "run", "-d", ROOT]
-        for b in boards:
-            cmd += ["-e", b["env"]]
         env = dict(os.environ)
         flags = []
         if args.version:
@@ -65,7 +74,13 @@ def main():
             flags.append("-DESPALTHERMA_BUILD_TIME=%dUL" % build_time)
         if flags:
             env["PLATFORMIO_BUILD_FLAGS"] = " ".join(flags)
-        subprocess.check_call(cmd, env=env)
+        # One pio run per platform, the default one first: a board on another platform (the C6 on pioarduino)
+        # brings its own esptool, which replaces the package the others use in the same run.
+        for envs in env_groups([b["env"] for b in boards]):
+            cmd = ["pio", "run", "-d", ROOT]
+            for e in envs:
+                cmd += ["-e", e]
+            subprocess.check_call(cmd, env=env)
 
     firmware_dir = os.path.join(args.out, "firmware")
     os.makedirs(firmware_dir, exist_ok=True)

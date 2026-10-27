@@ -30,11 +30,11 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.platformio
-          key: pio-release-${{ hashFiles('platformio.ini') }}
+          key: pio-release-2-${{ hashFiles('platformio.ini') }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install platformio
+      - run: pip install platformio intelhex # intelhex: the esptool the C6 platform ships imports it
       - name: Label catalog up to date with definitions/
         run: python scripts/gen_catalog.py --check
       - name: Version
