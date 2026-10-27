@@ -88,6 +88,14 @@ static const ControlProfile CONTROL_PROFILES[] = {
     {"17019A04",
      {0x162A, 0x1668, 366, 367, 0x2EBE, 0x2EC3, 278, 0x01, 0x10B6, 0x1302},
      {0x162C, 0x166A, 373, 372, 0x2ECD, 0x2EC8, 374, 0x0C, 0x111A, 0}},
+    // 9-16 kW EBLA/EDLA D monoblocs (and the 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E series) on the software before
+    // 20002203: no image of it, the addresses come from a memory dump of an EDLA14DAW1 (Senaxx, #599) matched
+    // against 20002203's layout: the converted settings sit 0x0C lower, the targets 0x0E lower, the limit records
+    // 0x65 lower, and every value read back as expected (curve 55/55 and 40/30, effective = min(ceiling, reheat),
+    // reported targets equal to the registers). Not yet written to on a unit.
+    {"20002202",
+     {0x3464, 0x34A2, 366, 367, 0x4F46, 0x4F4B, 278, 0x01, 0x2EDA, 0x3152},
+     {0x3466, 0x34A4, 373, 372, 0x4F55, 0x4F50, 374, 0x0C, 0x2F2E, 0}},
     // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E, EA and EJ series, 9-16 kW EBLA/EDLA monoblocs and EWAA/EWYA chillers
     {"20002203",
      {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160},
