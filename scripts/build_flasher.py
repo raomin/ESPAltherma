@@ -65,6 +65,7 @@ def main():
     with open(os.path.join(ROOT, "flasher", "boards.json"), encoding="utf-8") as f:
         boards = json.load(f)
 
+    build_dirs = {}
     if args.build:
         env = dict(os.environ)
         flags = []
@@ -74,9 +75,14 @@ def main():
             flags.append("-DESPALTHERMA_BUILD_TIME=%dUL" % build_time)
         if flags:
             env["PLATFORMIO_BUILD_FLAGS"] = " ".join(flags)
-        # One pio run per platform, the default one first: a board on another platform (the C6 on pioarduino)
-        # brings its own esptool, which replaces the package the others use in the same run.
-        for envs in env_groups([b["env"] for b in boards]):
+        # One pio run per platform, the default one first, each in a build directory of its own: a board on another
+        # platform (the C6 on pioarduino) brings its own esptool, which replaces the package the others use in the
+        # same run, and PlatformIO cleans the build directory when the platform of a run changes.
+        for i, envs in enumerate(env_groups([b["env"] for b in boards])):
+            if i > 0:
+                env["PLATFORMIO_BUILD_DIR"] = os.path.join(os.environ.get("PLATFORMIO_BUILD_DIR") or os.path.join(ROOT, ".pio", "build"), "platform-%d" % i)
+            for e in envs:
+                build_dirs[e] = env.get("PLATFORMIO_BUILD_DIR")
             cmd = ["pio", "run", "-d", ROOT]
             for e in envs:
                 cmd += ["-e", e]
@@ -87,7 +93,7 @@ def main():
     missing = []
     for b in boards:
         # PLATFORMIO_BUILD_DIR: a build folder of its own, eg. while the IDE's PlatformIO uses .pio/build
-        build = os.path.join(os.environ.get("PLATFORMIO_BUILD_DIR") or os.path.join(ROOT, ".pio", "build"), b["env"])
+        build = os.path.join(build_dirs.get(b["env"]) or os.environ.get("PLATFORMIO_BUILD_DIR") or os.path.join(ROOT, ".pio", "build"), b["env"])
         factory = os.path.join(build, "firmware-factory.bin")
         if not os.path.exists(factory) or not os.path.exists(os.path.join(build, "flash-parts.json")):
             missing.append(b["env"])
