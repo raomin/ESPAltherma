@@ -103,6 +103,7 @@ RECOMMENDED = {
     "Outlet Water Heat Exch. Temp. (R1T)", "Outlet Water BUH Temp. (R2T)", "RT Temp.",
     # and under the names of the ECH2O D series (issue #613)
     "[HPSU] Tv inflow Temp  (R1T)", "[HPSU] Tvbh inflow Temp after Buffer/BUH (R2T)", "[HPSU] Tr return Temp (R4T)",
+    "[HPSU] Mixed leaving water temperature after the tank R7T (DLWA2)",  # the mixed zone of an ECH2O (#599)
     "BUH Step1",  # the backup heater on the drawing
     "Refrig. Temp. liquid side (R3T)", "Discharge pipe temp.",
     "Flow sensor (l/min)", "Water pressure",
@@ -122,6 +123,7 @@ RECOMMENDED = {
 # Only recommended on the models whose definition file name contains the given word: other definitions carry
 # these labels on slots that mean something else on the unit (eg. "Brine" temperatures on air units).
 RECOMMENDED_ONLY = {"Brine inlet temp.": "GEO", "Brine outlet temp.": "GEO", "Mixed water temp.": "Bizone",
+                    "[HPSU] Mixed leaving water temperature after the tank R7T (DLWA2)": "ECH2O",
                     "INV Comp. Frequency(Hz)": "HT", "EV (pls)": "HT", "4 Way Valve": "HT", "Switch box cooling fan": "HT",
                     "Low Pressure(T)": "HT", "High Pressure (stage)": "HT", "High Pressure(T)": "HT",
                     "R134a liquid temp.": "HT", "Target Evap. Temp.": "HT",
