@@ -4,9 +4,11 @@
 // Energy and cycle statistics, computed on the board from the values it already reads:
 //  - heat output: flow x (leaving water before the backup heater - return water) x 4.18 kJ/kg.K, the heat pump's own
 //    output (the backup heater adds its own after the sensor). Hot water uses the same return sensor, never the tank's.
-//  - electrical input, estimated: the inverter's current x the mains voltage (a setting, 230 V by default, or the
-//    unit's own reading when it has one), x sqrt(3) on a three-phase unit, plus a fixed auxiliary power (pump,
-//    electronics) while the compressor runs. No power factor: an estimate, named as such.
+//  - electrical input, estimated: the inverter's current x the phase voltage (a setting, 230 V by default, or the
+//    unit's own reading when it has one), x 3 on a three-phase unit (the reported current is one phase's), plus a
+//    fixed auxiliary power (pump, electronics) while the compressor runs, plus the backup heater's kW per step while
+//    a step is on. No power factor: an estimate, named as such. While the backup heater is on, the heat output takes
+//    the leaving water after it (R2T) when that sensor exists, so its heat is counted with its electricity.
 //  - COP, estimated: the ratio of the two, while the compressor runs, outside defrosts and the first two minutes of a
 //    run, smoothed over a few readings, and dropped when it makes no sense (above 11, or above what the temperatures
 //    allow: Carnot x 0.55).
@@ -44,6 +46,7 @@ struct StatsInput
   float inv = NAN;     // compressor speed (rps or Hz)
   float flow = NAN;    // l/min
   float lw = NAN;      // leaving water before the backup heater (R1T)
+  float lwAfter = NAN; // leaving water after the backup heater (R2T), when the unit has that sensor
   float inlet = NAN;   // return water (R4T)
   float amp = NAN;     // inverter primary current (A)
   float volt = NAN;    // mains voltage, when the unit reports it
@@ -51,13 +54,15 @@ struct StatsInput
   int v3 = -1;         // 3-way valve: 1 = hot water, 0 = space, -1 unknown
   int defrost = -1;    // 1 = defrosting
   int buh = -1;        // backup heater step 1 on
+  int buh2 = -1;       // backup heater step 2 on
   bool cooling = false; // the operation mode says cooling
 };
 
 struct StatsSettings
 {
-  float voltage = 230;
+  float voltage = 230; // the phase voltage (line to neutral), on three phases too
   uint8_t phases = 1;
+  float buhKW[2] = {3, 3}; // the backup heater's steps (3 kW each on the 6 kW kits, 3 and 6 on the 9 kW ones)
   float auxW = 0; // the configuration gives 100 W by default (config.h); 0 here keeps the tests' arithmetic plain
   int tzMinutes = 0;
 };
@@ -190,11 +195,14 @@ public:
       day->defrosts++;
     lastDefrost = defrost;
 
-    // powers
+    // powers. The backup heater heats the water after the heat pump's sensor (R1T): while a step is on, the heat
+    // output takes the sensor after it (R2T) when the unit has one, so its heat counts along with its electricity
+    bool buhOn = in.buh == 1 || in.buh2 == 1;
+    float lwOut = buhOn && !isnan(in.lwAfter) && in.lwAfter > 0 ? in.lwAfter : in.lw;
     heatKW = NAN;
-    if (runNow && !isnan(in.flow) && in.flow > 0.5f && !isnan(in.lw) && !isnan(in.inlet))
+    if ((runNow || buhOn) && !isnan(in.flow) && in.flow > 0.5f && !isnan(lwOut) && !isnan(in.inlet))
     {
-      float delta = mode == STATS_COOLING ? in.inlet - in.lw : in.lw - in.inlet;
+      float delta = mode == STATS_COOLING ? in.inlet - lwOut : lwOut - in.inlet;
       float kw = in.flow / 60.0f * 4.18f * delta;
       if (kw < 0)
         kw = 0;
@@ -204,14 +212,18 @@ public:
     if (!isnan(in.amp))
     {
       float v = !isnan(in.volt) && in.volt > 100 ? in.volt : settings.voltage;
-      float kw = in.amp * v * (settings.phases == 3 ? 1.7320508f : 1.0f) / 1000.0f;
+      float kw = in.amp * v * (settings.phases == 3 ? 3.0f : 1.0f) / 1000.0f; // the phase voltage, one phase's current
       if (runNow)
         kw += settings.auxW / 1000.0f;
+      if (in.buh == 1)
+        kw += settings.buhKW[0];
+      if (in.buh2 == 1)
+        kw += settings.buhKW[1];
       elecKW = kw;
     }
 
-    // energies of the day, while the compressor runs
-    if (runNow && dt > 0)
+    // energies of the day, while the compressor or the backup heater runs
+    if ((runNow || buhOn) && dt > 0)
     {
       if (!isnan(heatKW))
         day->heatKWh[mode] += heatKW * dt / 3600.0f;

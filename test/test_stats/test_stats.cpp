@@ -52,16 +52,17 @@ void test_powers_and_transient(void)
     TEST_ASSERT_EQUAL(120, rtc.runSec);
 }
 
-// Three phases multiply by sqrt(3); the unit's own voltage reading wins over the setting; aux watts while running
+// Three phases multiply the phase voltage by 3; the unit's own voltage reading wins over the setting; aux watts
+// while running
 void test_voltage_sources(void)
 {
     StatsDay rtc;
     Stats s = fresh(rtc);
     s.settings.phases = 3;
-    s.settings.voltage = 400;
+    s.settings.voltage = 230;
     s.settings.auxW = 50;
     s.update(heating(), T0, 10);
-    TEST_ASSERT_FLOAT_WITHIN(0.01, 6 * 400 * 1.732f / 1000 + 0.05f, s.elecKW);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 6 * 230 * 3 / 1000.0f + 0.05f, s.elecKW);
     StatsInput in = heating();
     in.volt = 235;
     s.settings.phases = 1;
@@ -131,6 +132,13 @@ void test_defrost_and_buh(void)
     TEST_ASSERT_TRUE(isnan(s.cop));
     TEST_ASSERT_EQUAL(1, rtc.defrosts);
     TEST_ASSERT_EQUAL(120, rtc.buhSec);
+    // the heater's step adds its kW to the electricity, and the heat is read after it when that sensor is there
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 6 * 230 / 1000.0f + 3, s.elecKW);
+    d.lwAfter = 38;
+    d.buh2 = 1;
+    s.update(d, T0 + 400, 410);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 6 * 230 / 1000.0f + 6, s.elecKW);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 12 / 60.0f * 4.18f * 8, s.heatKW);
     s.update(heating(), T0 + 420, 430);
     TEST_ASSERT_EQUAL(1, rtc.defrosts);
     TEST_ASSERT_FALSE(isnan(s.cop));

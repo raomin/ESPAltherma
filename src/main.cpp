@@ -591,6 +591,8 @@ void statsSetup()
   stats.settings.voltage = config.statsVoltage;
   stats.settings.phases = config.statsPhases;
   stats.settings.auxW = config.statsAuxW;
+  stats.settings.buhKW[0] = config.statsBuhKW[0];
+  stats.settings.buhKW[1] = config.statsBuhKW[1];
   stats.settings.tzMinutes = config.statsTz;
   haExtraLabels = config.statsEnabled ? STATS_LABELS : nullptr;
   haExtraCount = config.statsEnabled ? sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) : 0;
@@ -604,6 +606,7 @@ static void statsUpdate()
   in.inv = statsValue({"INV frequency", "INV Comp. Frequency"});
   in.flow = statsValue({"Flow sensor"});
   in.lw = statsValue({"Leaving water temp. before BUH", "Outlet Water Heat Exch. Temp.", "[HPSU] Tv inflow Temp", "Leaving water temp. (hydrobox)"});
+  in.lwAfter = statsValue({"Leaving water temp. after BUH", "Outlet Water BUH Temp.", "[HPSU] Tvbh inflow Temp"});
   in.inlet = statsValue({"Inlet water temp", "[HPSU] Tr return Temp"});
   in.amp = statsValue({"INV primary current"});
   in.volt = statsValue({"Voltage (N-phase)"});
@@ -611,6 +614,7 @@ static void statsUpdate()
   in.v3 = statsFlag({"3way valve", "Priority to domestic water"});
   in.defrost = statsFlag({"Defrost Operation"});
   in.buh = statsFlag({"BUH Step1"});
+  in.buh2 = statsFlag({"BUH Step2"});
   for (size_t i = 0; i < converter.activeCount; i++)
     if (strcasecmp(converter.activeLabels[i].label, "Operation Mode") == 0)
       in.cooling = strcasestr(converter.activeLabels[i].asString, "cool") != nullptr;
