@@ -958,6 +958,12 @@ void loop()
     LOOP_STAGE("HA discovery");
     publishHomeAssistantDeviceDiscovery();
   }
+  if (fwUpdate.dirty && client.connected())
+  {
+    fwUpdate.dirty = false;
+    LOOP_STAGE("update entity");
+    publishUpdateEntity();
+  }
   if ((dhwControl.changed || lwtControl.changed || limitControl.changed) && client.connected())
   {
     LOOP_STAGE("target controls state");

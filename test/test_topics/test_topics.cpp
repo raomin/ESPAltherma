@@ -28,6 +28,9 @@ void test_default_base_keeps_the_legacy_strings(void)
     TEST_ASSERT_EQUAL_STRING("homeassistant/switch/espAltherma/safety/config", t.cfgSafety);
     TEST_ASSERT_EQUAL_STRING("homeassistant/number/espAltherma/dhw_target/config", t.cfgCtl[0]);
     TEST_ASSERT_EQUAL_STRING("homeassistant/device/espaltherma-mqtt-discovery/config", t.cfgDevice);
+    TEST_ASSERT_EQUAL_STRING("homeassistant/update/espAltherma/firmware/config", t.cfgUpdate);
+    TEST_ASSERT_EQUAL_STRING("espaltherma/update", t.updateTopic);
+    TEST_ASSERT_EQUAL_STRING("update.espaltherma_firmware", t.updateEntity);
     TEST_ASSERT_EQUAL_STRING("espaltherma-mqtt-discovery", t.deviceId);
     TEST_ASSERT_EQUAL_STRING("Daikin Altherma via ESPAltherma", t.deviceName);
     TEST_ASSERT_EQUAL_STRING("ESPAltherma", t.relayDeviceId);
@@ -53,6 +56,10 @@ void test_other_base_gives_its_own_names(void)
     TEST_ASSERT_EQUAL_STRING("ESPAltherma-espaltherma_odu", t.relayDeviceId);
     TEST_ASSERT_EQUAL_STRING("espaltherma_odu_lwt_target", t.ctlUniq[1]);
     TEST_ASSERT_EQUAL_STRING("number.espaltherma_odu_hot_water_target", t.ctlEntity[0]);
+    TEST_ASSERT_EQUAL_STRING("homeassistant/update/espaltherma_odu/firmware/config", t.cfgUpdate);
+    TEST_ASSERT_EQUAL_STRING("espaltherma-odu/update", t.updateTopic);
+    TEST_ASSERT_EQUAL_STRING("espaltherma_odu_firmware", t.updateUniq);
+    TEST_ASSERT_EQUAL_STRING("update.espaltherma_odu_firmware", t.updateEntity);
 }
 
 // Identifiers: Home Assistant wants lower case letters, digits and underscores

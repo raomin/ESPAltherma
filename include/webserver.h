@@ -26,6 +26,7 @@ extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
 #include "stats.h"
+#include "fwupdate.h"
 extern Stats stats;
 bool memoryRequest(uint16_t addr, uint8_t len); // main.cpp: the heat pump task reads the hydro board's memory
 void memoryResult(JsonDocument &doc);
@@ -270,6 +271,15 @@ static void statusJson(JsonDocument &doc)
   mqtt["connected"] = (bool)mqttConnectedCache;
   mqtt["server"] = config.mqttServer;
   mqtt["state"] = (int)mqttStateCache;
+
+  JsonObject up = doc["update"].to<JsonObject>(); // the daily check for a newer firmware (update.h)
+  up["check"] = config.updateCheck;
+  if (fwUpdate.checked)
+  {
+    up["latest"] = fwUpdate.latest;
+    up["available"] = fwUpdate.available;
+    up["checked"] = (millis() - fwUpdate.checkedAt) / 1000;
+  }
 
   JsonObject hp = doc["hp"].to<JsonObject>();
   hp["protocol"] = String(config.protocol);
@@ -981,6 +991,55 @@ static void sendTelemetry()
   }
 }
 
+// Once a day, reads the manifest of this board on the ESPAltherma site and notes whether a newer build exists: the
+// home page says so and Home Assistant gets it through the update entity (publishUpdateEntity). Nothing is
+// downloaded. First 3 minutes after boot, again an hour after a failed attempt. Main loop only.
+static void updateCheckLoop()
+{
+  static unsigned long lastAttempt = 0;
+  static bool attempted = false;
+  if (!config.updateCheck || !netOnline() || surveyInProgress)
+    return;
+  unsigned long now = millis();
+  if (!attempted ? now < UPDATE_CHECK_FIRST_MS : now - lastAttempt < (fwUpdate.checked ? UPDATE_CHECK_EVERY_MS : UPDATE_CHECK_RETRY_MS))
+    return;
+  attempted = true;
+  lastAttempt = now;
+  if (ESP.getFreeHeap() < 70000) // the TLS connection needs the room: next hour
+    return;
+  LOOP_STAGE("update check");
+  WiFiClientSecure tls;
+  tls.setInsecure();
+  HTTPClient http;
+  http.setTimeout(8000);
+  if (!http.begin(tls, UPDATE_SITE "manifest-" BOARD_NAME ".json"))
+    return;
+  int code = http.GET();
+  if (code == 200)
+  {
+    JsonDocument filter, doc;
+    filter["version"] = true;
+    filter["build_time"] = true;
+    if (deserializeJson(doc, http.getStream(), DeserializationOption::Filter(filter)) == DeserializationError::Ok)
+    {
+      const char *latest = doc["version"] | "";
+      uint32_t build = doc["build_time"] | 0UL;
+      bool available = updateNewer(latest, build, ESPALTHERMA_VERSION, ESPALTHERMA_BUILD_TIME);
+      if (!fwUpdate.checked || available != fwUpdate.available || strcmp(latest, fwUpdate.latest) != 0)
+        fwUpdate.dirty = true; // Home Assistant hears of it
+      strlcpy(fwUpdate.latest, latest, sizeof(fwUpdate.latest));
+      fwUpdate.latestBuild = build;
+      fwUpdate.available = available;
+      fwUpdate.checked = true;
+      fwUpdate.checkedAt = now;
+      mqttSerial.printf("Update check: %s on the site, this board runs %s%s\n", latest, ESPALTHERMA_VERSION, available ? " (update available)" : "");
+    }
+  }
+  else
+    mqttSerial.printf("Update check: HTTP %d\n", code);
+  http.end();
+}
+
 // Sends the report when this heat pump + model has not been reported yet (eg. the box was ticked before the
 // firmware could send, or a report failed). Once a minute at most, and 6 hours after a failed attempt.
 static void telemetryLoop()
@@ -1027,6 +1086,7 @@ void webLoop()
     bool statsChanged = next->statsEnabled != config.statsEnabled || next->statsVoltage != config.statsVoltage ||
                         next->statsPhases != config.statsPhases || next->statsAuxW != config.statsAuxW || next->statsTz != config.statsTz;
     bool statsToggled = next->statsEnabled != config.statsEnabled;
+    bool updateToggled = next->updateCheck != config.updateCheck;
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
@@ -1049,6 +1109,8 @@ void webLoop()
       statsSetup();
     if (statsToggled)
       discoveryDirty = true; // the entities come or go
+    if (updateToggled)
+      fwUpdate.dirty = true; // the update entity comes or goes
     if (reboot)
     {
       rebootCause = "Settings changed from the web interface";
@@ -1063,6 +1125,7 @@ void webLoop()
   if (telemetryPending)
     sendTelemetry();
   telemetryLoop();
+  updateCheckLoop();
 
   if (factoryResetRequested)
   {

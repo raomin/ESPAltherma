@@ -452,6 +452,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <div class="cols">
   <div class="card"><h2>Firmware update</h2><p class="sub">Check for a newer release: this browser downloads it from the ESPAltherma site and sends it to the board. Or select the OTA firmware file (.bin) of your board, from the <a href="https://github.com/raomin/ESPAltherma/releases" target="_blank" rel="noopener">releases on GitHub</a></p>
    <div class="acts"><button id="upCheck">Check for an update</button><button class="p" id="upBtn" hidden translate="no"></button><label class="chk" style="margin:0"><input type="checkbox" id="upDev">Development builds</label></div>
+   <label class="chk"><input type="checkbox" id="upDaily">Check once a day and tell Home Assistant (nothing is installed by itself)</label>
+   <p class="sub" id="upNote" translate="no"></p>
    <input type="file" id="fwFile" accept=".bin">
    <div class="acts"><button id="fwBtn">Update</button><span class="msg" id="fwMsg" translate="no"></span></div>
    <progress id="fwProg" max="100" value="0" hidden></progress></div>
@@ -728,11 +730,15 @@ function renderBanners() {
   else if (!m.connected) banner('warn', t('The MQTT broker is unreachable ({server}).', {server: m.server}), t('Check'), '#setup/mqtt');
   if (hp.model && !hp.confirmed) banner('info', t('Heat pump found: {family}. Please confirm your exact model to read all its values.', {family: family((s.detect || {}).family) || '?'}), t('Confirm model'), '#setup/hp');
   if (!hp.model && !hp.survey_running) banner('warn', t('No heat pump answered yet. Check the X10A cable, or choose your model.'), t('Heat pump'), '#setup/hp');
+  if (s.update && s.update.available) banner('info', t('ESPAltherma {v} is available.', {v: s.update.latest}), t('Update'), '#system');
 }
 function renderSystem() {
   const s = status;
   // Reset reasons and restart causes stay in English: they are diagnostics, pasted in bug reports
   const lastReset = s.reset_reason + (s.restart_cause ? ': ' + s.restart_cause : '');
+  // the daily check's word (the button above asks the site again, by hand)
+  const u = s.update || {};
+  tx('upNote', !u.check ? '' : u.available ? t('ESPAltherma {v} is available.', {v: u.latest}) : u.latest ? t('Up to date, checked {when}.', {when: ago(u.checked)}) : t('Not checked yet.'));
   const tiles = [
     [t('Firmware'), s.fw, s.board],
     [t('Running for'), duration(s.uptime), t('Last reset: {why}', {why: lastReset})],
@@ -866,6 +872,12 @@ function reading(list) {
   if (r.lw2 != null && +r.lw2 === 0 && r.lw1 != null) r.lw2 = r.lw1;
   // The mixed zone's water is the bizone kit's sensor where the kit is fitted (the ECH2O units have no other)
   if (r.mixedKit != null && +r.mixedKit !== 0) r.mixed = r.mixedKit;
+  // ECH2O units (the [HPSU] values): their mixed water is the kit's sensor only ("Mixed water temp." reads noise
+  // there), and the Daikin board's room temperature and target read a constant 20, the RoCon has the real ones
+  if (list.some(x => /^\[HPSU\]/i.test(x.l))) {
+    if (r.mixedKit == null || +r.mixedKit === 0) delete r.mixed;
+    if (r.room != null && +r.room === 20 && (r.rtSp == null || +r.rtSp === 20)) { delete r.room; delete r.rtSp; }
+  }
   // A setpoint of exactly 0 is none: the Altherma 4 keeps its targets in the user interface
   for (const k of ['dhwSp', 'lwSp', 'rtSp', 'lwSpAdd']) if (r[k] != null && +r[k] === 0) delete r[k];
   // One error shown: the outdoor unit's, or the indoor unit's when only that one has an error (or is selected)
@@ -873,12 +885,6 @@ function reading(list) {
   if ((r.iuErr != null || r.iuCode != null) && ((r.err == null && r.code == null) || (!bad(r.err, r.code) && bad(r.iuErr, r.iuCode))))
     [r.err, r.code] = [r.iuErr, r.iuCode];
   return r;
-  // ECH2O units (the [HPSU] values): their mixed water is the kit's sensor only ("Mixed water temp." reads noise
-  // there), and the Daikin board's room temperature and target read a constant 20, the RoCon has the real ones
-  if (list.some(x => /^\[HPSU\]/i.test(x.l))) {
-    if (r.mixedKit == null || +r.mixedKit === 0) delete r.mixed;
-    if (r.room != null && +r.room === 20 && (r.rtSp == null || +r.rtSp === 20)) { delete r.room; delete r.rtSp; }
-  }
 }
 // tag: label, key, x, y, width, what it measures
 const TAGS = [[N_('Outside'), 'out', 40, 118, 84, 'R1T'], [N_('Heat pump out'), 'lw1', 342, 172, 110, 'R1T'], [N_('Leaving'), 'lw2', 340, 38, 84, 'R2T'],
@@ -1061,18 +1067,18 @@ $('#mSave').onclick = async () => {
   try { await post('/api/config', d); await loadConfig(); msg('#mMsg', t('Saved. Connecting…'), true); setTimeout(() => location.hash = '#setup/hp', 1500); }
   catch (e) { msg('#mMsg', e.message, false); }
 };
-
-// ---- setup: heat pump
-let hpChoice = null;
-const niceModel = m => m.replace(/^Altherma\((.*)\)$/, 'Altherma $1');
-async function setupHp() {
-  const box = $('#hpDetect');
 // Without a broker: the readings stay on this page, no connection attempt, no restart for an unreachable broker
 $('#mSkip').onclick = async e => {
   e.preventDefault();
   try { await post('/api/config', {mqtt: {off: true}}); await loadConfig(); await refreshStatus(); msg('#mMsg', t('Saved: ESPAltherma runs on its own.'), true); setTimeout(() => location.hash = '#setup/hp', 1500); }
   catch (err) { msg('#mMsg', err.message, false); }
 };
+
+// ---- setup: heat pump
+let hpChoice = null;
+const niceModel = m => m.replace(/^Altherma\((.*)\)$/, 'Altherma $1');
+async function setupHp() {
+  const box = $('#hpDetect');
   $('#hpConfirm').hidden = true; $('#tmBox').hidden = true; hpChoice = null;
   box.replaceChildren(el('p', {class: 'sub'}, t('Reading the heat pump…')));
   if (!models.length) models = await api('/api/models');
@@ -1390,6 +1396,7 @@ $('#upBtn').onclick = async () => {
   $('#upBtn').disabled = false;
 };
 $('#sysTm').onchange = e => post('/api/config', {telemetry: {enabled: e.target.checked}});
+$('#upDaily').onchange = e => post('/api/config', {update: {check: e.target.checked}});
 $('#cfgExport').onclick = async () => {
   const data = await api('/api/config');
   const a = el('a', {href: URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'})), download: 'espaltherma-config.json'});
@@ -1403,7 +1410,7 @@ $('#rebootBtn').onclick = async () => { await post('/api/reboot'); msg('#rstMsg'
 $('#resetBtn').onclick = async () => { if (confirm(t('Erase all settings (WiFi, MQTT, model) and restart?'))) { await post('/api/factory-reset'); msg('#rstMsg', t('Settings erased. Restarting…'), true); } };
 
 // ---- live data
-async function loadConfig() { try { cfg = await api('/api/config'); $('#sysTm').checked = !!(cfg.telemetry && cfg.telemetry.enabled); } catch (e) {} }
+async function loadConfig() { try { cfg = await api('/api/config'); $('#sysTm').checked = !!(cfg.telemetry && cfg.telemetry.enabled); $('#upDaily').checked = !(cfg.update && cfg.update.check === false); } catch (e) {} }
 function connectEvents() {
   if (!window.EventSource) return;
   const es = new EventSource('/events');

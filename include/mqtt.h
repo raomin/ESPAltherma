@@ -1,6 +1,8 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include "restart.h"
+#include "fwupdate.h"
+#include "version.h"
 #include "comm.h"
 
 #include "topics.h"
@@ -28,6 +30,7 @@ extern Converter converter;
 extern CurveControl dhwControl, lwtControl;
 extern LimitControl limitControl;
 static bool limitDiscoveryOn = false;   // the power limit entities are in Home Assistant
+static bool updateDiscoveryOn = false;  // the firmware update entity is in Home Assistant
 static LimitKind limitDiscoveryKind = LIMIT_POWER;
 
 // The two target controls on MQTT (experimental, control.h): the entity's name and icon; the topics and the ids
@@ -157,11 +160,11 @@ void mqttRetireDiscovery()
     return;
   const char *cfgs[] = {mqttTopics.cfgSensor, mqttTopics.cfgSwitch, mqttTopics.cfgSg, mqttTopics.cfgSafety,
                         mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgRestore[0], mqttTopics.cfgRestore[1],
-                        mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgDevice};
+                        mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgUpdate, mqttTopics.cfgDevice};
   for (const char *t : cfgs)
     client.publish(t, "", true);
   const char *states[] = {mqttTopics.ctlState[0], mqttTopics.ctlState[1], mqttTopics.ctlAttrs[0], mqttTopics.ctlAttrs[1],
-                          mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect};
+                          mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect, mqttTopics.updateTopic};
   for (const char *t : states)
     client.publish(t, "", true);
   client.publish(mqttTopics.lwt, "Offline", true);
@@ -292,6 +295,8 @@ bool mqttConnectOnce()
       }
       limitDiscoveryOn = false;
       limitControl.changed = true;
+      updateDiscoveryOn = false; // the update entity is published again by the main loop
+      fwUpdate.dirty = true;
       if (config.powerLimit)
       {
         client.subscribe(mqttTopics.limitSet);
@@ -584,6 +589,40 @@ void publishControl(CurveControl &c)
     mqttPublish(mqttTopics.cfgRestore[k], "", true);
     restoreOn[k] = false;
   }
+}
+
+// The firmware update entity: "Firmware" under the device, on when the ESPAltherma site has a newer build than this
+// one (update.h, the daily check). Home Assistant shows it under Settings → Updates; the installation stays on the
+// board's web page, so there is no command topic. Removed when the daily check is off. Main loop only.
+void publishUpdateEntity()
+{
+  if (!config.updateCheck)
+  {
+    if (updateDiscoveryOn)
+    {
+      mqttPublish(mqttTopics.cfgUpdate, "", true);
+      mqttPublish(mqttTopics.updateTopic, "", true);
+      updateDiscoveryOn = false;
+    }
+    return;
+  }
+  if (!fwUpdate.checked)
+    return;
+  char json[560];
+  if (!updateDiscoveryOn)
+  {
+    snprintf(json, sizeof(json),
+             "{\"name\":\"Firmware\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"stat_t\":\"%s\",\"dev_cla\":\"firmware\",\"ent_cat\":\"config\","
+             "\"title\":\"ESPAltherma\",\"release_url\":\"https://github.com/raomin/ESPAltherma/releases\","
+             "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
+             mqttTopics.updateUniq, mqttTopics.updateEntity, mqttTopics.updateTopic, mqttTopics.lwt, mqttTopics.deviceId, mqttTopics.deviceName);
+    if (!mqttPublish(mqttTopics.cfgUpdate, json, true))
+      return;
+    updateDiscoveryOn = true;
+  }
+  snprintf(json, sizeof(json), "{\"installed_version\":\"%s\",\"latest_version\":\"%s\"}", ESPALTHERMA_VERSION,
+           fwUpdate.available ? fwUpdate.latest : ESPALTHERMA_VERSION);
+  mqttPublish(mqttTopics.updateTopic, json, true);
 }
 
 // The power limit: a number entity (kW or A, the unit's kind) and a switch, created when the control is ready,

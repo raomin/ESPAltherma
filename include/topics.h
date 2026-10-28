@@ -59,6 +59,7 @@ struct MqttTopics
   char ctlUniq[2][48], ctlEntity[2][64];
   char restoreUniq[2][48], restoreEntity[2][64]; // the "restore the unit's curve" buttons
   char limitUniq[48], limitEntity[64], limitOnUniq[48], limitOnEntity[64];
+  char updateTopic[48], cfgUpdate[80], updateUniq[48], updateEntity[64]; // the firmware update entity
   char clientId[48];       // the MQTT client id: the broker drops a connection when another one takes its id
 
   void init(const char *baseTopic, const char *configuredClientId = TOPICS_DEFAULT_CLIENT_ID)
@@ -116,6 +117,9 @@ struct MqttTopics
     snprintf(limitEntity, sizeof(limitEntity), "number.%s_power_limit", id);
     snprintf(limitOnUniq, sizeof(limitOnUniq), "%s_power_limit_on", id);
     snprintf(limitOnEntity, sizeof(limitOnEntity), "switch.%s_power_limit", id);
+    snprintf(updateTopic, sizeof(updateTopic), "%s/update", base);
+    snprintf(updateUniq, sizeof(updateUniq), "%s_firmware", id);
+    snprintf(updateEntity, sizeof(updateEntity), "update.%s_firmware", id);
     // discovery: the legacy strings had their own spellings, kept for the default base
     const char *seg = legacy ? "espAltherma" : id;
     const char *dev = legacy ? "espaltherma" : id;
@@ -130,6 +134,7 @@ struct MqttTopics
     }
     snprintf(cfgLimit, sizeof(cfgLimit), "homeassistant/number/%s/power_limit/config", seg);
     snprintf(cfgLimitOn, sizeof(cfgLimitOn), "homeassistant/switch/%s/power_limit/config", seg);
+    snprintf(cfgUpdate, sizeof(cfgUpdate), "homeassistant/update/%s/firmware/config", seg);
     snprintf(cfgDevice, sizeof(cfgDevice), "homeassistant/device/%s-mqtt-discovery/config", dev);
     snprintf(deviceId, sizeof(deviceId), "%s-mqtt-discovery", dev);
     // the default client id would be shared by both boards: it follows the base, a chosen one is kept

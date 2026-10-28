@@ -98,6 +98,7 @@ struct AppConfig
 
   // Opt-in telemetry: sends the heat pump identification to help the auto-detection
   bool telemetry;
+  bool updateCheck;   // reads the site's manifest once a day and tells the page and Home Assistant of a newer build
   char installId[17]; // random, to deduplicate reports
   uint32_t telemetrySent; // hash of the identification key + model last reported, 0 when none
 };
@@ -115,6 +116,7 @@ void configDefaults(AppConfig &c)
   strlcpy(c.mqttBase, TOPICS_DEFAULT_BASE, sizeof(c.mqttBase));
   c.protocol = 'I';
   c.frequency = 30000;
+  c.updateCheck = true;
   c.rxPin = BOARD_DEFAULT_RX_PIN;
   c.txPin = BOARD_DEFAULT_TX_PIN;
   c.thermPin = -1;
@@ -178,9 +180,9 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   if (includeSecrets)
     mqtt["pwd"] = c.mqttPwd;
   mqtt["tls"] = c.mqttTls;
+  mqtt["off"] = c.mqttOff;
   mqtt["client_id"] = c.mqttClientId;
   mqtt["base_topic"] = c.mqttBase;
-  mqtt["off"] = c.mqttOff;
 
   JsonObject hp = doc["hp"].to<JsonObject>();
   hp["protocol"] = String(c.protocol);
@@ -248,6 +250,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
 
   JsonObject telemetry = doc["telemetry"].to<JsonObject>();
   telemetry["enabled"] = c.telemetry;
+  doc["update"]["check"] = c.updateCheck;
   telemetry["install_id"] = c.installId;
   telemetry["sent"] = c.telemetrySent;
 
@@ -299,10 +302,10 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readStr(mqtt["user"], c.mqttUser, sizeof(c.mqttUser));
   readStr(mqtt["pwd"], c.mqttPwd, sizeof(c.mqttPwd));
   readNum(mqtt["tls"], c.mqttTls);
+  readNum(mqtt["off"], c.mqttOff);
   readStr(mqtt["client_id"], c.mqttClientId, sizeof(c.mqttClientId));
   readStr(mqtt["base_topic"], c.mqttBase, sizeof(c.mqttBase));
   topicsSanitizeBase(c.mqttBase, sizeof(c.mqttBase));
-  readNum(mqtt["off"], c.mqttOff);
 
   JsonVariantConst hp = src["hp"];
   if (hp["protocol"].is<const char *>())
@@ -377,14 +380,15 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
     c.statsPhases = 1;
   if (c.statsVoltage < 100 || c.statsVoltage > 500)
     c.statsVoltage = 230;
+  if (c.statsAuxW < 1) // 0 W is no pump at all: the default instead (a configuration saved before beta.19 holds 0)
+    c.statsAuxW = 100;
   readStr(src["control"]["limit_sw"], c.ctlLimitSw, sizeof(c.ctlLimitSw));
 
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));
   readNum(src["telemetry"]["enabled"], c.telemetry);
+  readNum(src["update"]["check"], c.updateCheck);
   readStr(src["telemetry"]["install_id"], c.installId, sizeof(c.installId));
   readNum(src["telemetry"]["sent"], c.telemetrySent);
-  if (c.statsAuxW < 1) // 0 W is no pump at all: the default instead (a configuration saved before beta.19 holds 0)
-    c.statsAuxW = 100;
 }
 
 void configSave()
