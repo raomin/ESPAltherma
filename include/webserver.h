@@ -265,7 +265,8 @@ static void statusJson(JsonDocument &doc)
 #endif
 
   JsonObject mqtt = doc["mqtt"].to<JsonObject>();
-  mqtt["configured"] = config.mqttServer[0] != 0;
+  mqtt["configured"] = config.mqttServer[0] != 0 && !config.mqttOff;
+  mqtt["off"] = config.mqttOff; // the owner's choice: no broker
   mqtt["connected"] = (bool)mqttConnectedCache;
   mqtt["server"] = config.mqttServer;
   mqtt["state"] = (int)mqttStateCache;
@@ -1013,7 +1014,7 @@ void webLoop()
     bool baseChanged = strcmp(next->mqttBase, config.mqttBase) != 0;
     bool mqttChanged = baseChanged || strcmp(next->mqttServer, config.mqttServer) != 0 || next->mqttPort != config.mqttPort ||
                        strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
-                       next->mqttTls != config.mqttTls || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
+                       next->mqttTls != config.mqttTls || next->mqttOff != config.mqttOff || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
                        next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber ||
                        next->dhwTarget != config.dhwTarget || next->lwtTarget != config.lwtTarget ||
                        next->powerLimit != config.powerLimit; // subscriptions and entities follow

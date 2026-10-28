@@ -367,7 +367,7 @@ void mqttLoop()
       netHistory(true, "MQTT: the broker stopped taking data, reconnecting");
     }
   }
-  if (!config.mqttServer[0] || client.connected())
+  if (!config.mqttServer[0] || config.mqttOff || client.connected())
     return;
   unsigned long now = millis();
   if (mqttLastAttempt != 0 && now - mqttLastAttempt < MQTT_RETRY_MS)
@@ -391,7 +391,7 @@ static void mqttHistory(unsigned long now)
     mqttLastUp = up;
     mqttHistoryChanges++;
   }
-  if (!config.mqttServer[0] || up == mqttHistoryUp || (mqttHistoryAt != 0 && now - mqttHistoryAt < 300000UL))
+  if (!config.mqttServer[0] || config.mqttOff || up == mqttHistoryUp || (mqttHistoryAt != 0 && now - mqttHistoryAt < 300000UL))
     return;
   char changes[40] = "";
   if (mqttHistoryChanges > 1)
@@ -408,6 +408,8 @@ static void mqttHistory(unsigned long now)
 // Forces an immediate MQTT reconnection, eg. after a configuration change.
 void mqttReconnectNow()
 {
+  if (config.mqttOff && client.connected()) // leaving for good: a clean disconnect does not fire the will
+    client.publish(mqttTopics.lwt, "Offline", true);
   client.disconnect();
   setupMqttClient();
   mqttLastAttempt = 0;
@@ -516,7 +518,7 @@ void netLoop()
   in.ethUp = ethUp;
   in.apActive = apActive;
   in.apClients = apActive ? WiFi.softAPgetStationNum() : 0;
-  in.mqttConfigured = config.mqttServer[0] != 0;
+  in.mqttConfigured = config.mqttServer[0] != 0 && !config.mqttOff;
   in.mqttUp = client.connected();
   uint8_t act = netPolicy.step(in);
   if (act & NET_REBOOT)

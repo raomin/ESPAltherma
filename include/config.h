@@ -37,6 +37,7 @@ struct AppConfig
   char mqttUser[65];
   char mqttPwd[65];
   bool mqttTls;
+  bool mqttOff;       // runs without a broker: no connection attempts, no "broker unreachable" restart (#627)
   char mqttClientId[33];
   char mqttBase[33]; // base of every topic and of the Home Assistant ids ("espaltherma"): two boards on one broker need two
 
@@ -179,6 +180,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   mqtt["tls"] = c.mqttTls;
   mqtt["client_id"] = c.mqttClientId;
   mqtt["base_topic"] = c.mqttBase;
+  mqtt["off"] = c.mqttOff;
 
   JsonObject hp = doc["hp"].to<JsonObject>();
   hp["protocol"] = String(c.protocol);
@@ -300,6 +302,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readStr(mqtt["client_id"], c.mqttClientId, sizeof(c.mqttClientId));
   readStr(mqtt["base_topic"], c.mqttBase, sizeof(c.mqttBase));
   topicsSanitizeBase(c.mqttBase, sizeof(c.mqttBase));
+  readNum(mqtt["off"], c.mqttOff);
 
   JsonVariantConst hp = src["hp"];
   if (hp["protocol"].is<const char *>())

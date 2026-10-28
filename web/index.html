@@ -343,6 +343,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   <label class="chk"><input type="checkbox" id="mTls">Encrypted connection (TLS)</label>
   <p class="sub">Tip: in Home Assistant, create a dedicated user for ESPAltherma (Settings → People) and use it here.</p>
   <div class="acts"><button class="p" id="mSave">Save and continue</button><button id="mTest">Test the connection</button><span class="msg" id="mMsg" translate="no"></span></div>
+  <p class="sub" data-th>No Home Assistant? <a href="#" id="mSkip">Use ESPAltherma on its own</a>: the readings stay on this page, nothing is sent anywhere, and a broker can be connected here later.</p>
  </div>
  <div class="panel card pad" data-step="hp">
   <div class="k">Step 3 · Your heat pump</div>
@@ -591,11 +592,11 @@ function online(s = status) { return s.net ? s.net.link !== 'none' : !!(s.wifi &
 function onEthernet(s = status) { return !!(s.net && s.net.link === 'ethernet'); }
 function firstStep() {
   if (!online()) return 'wifi';
-  if (!status.mqtt.configured) return 'mqtt';
+  if (!status.mqtt.configured && !status.mqtt.off) return 'mqtt';
   if (!status.hp.confirmed) return 'hp';
   return 'wifi';
 }
-const stepDone = s => s === 'wifi' ? online() : s === 'mqtt' ? status.mqtt.configured : s === 'hp' ? status.hp.confirmed : false;
+const stepDone = s => s === 'wifi' ? online() : s === 'mqtt' ? status.mqtt.configured || status.mqtt.off : s === 'hp' ? status.hp.confirmed : false;
 function showStep(step) {
   document.querySelectorAll('#setup .panel').forEach(p => p.hidden = p.dataset.step !== step);
   document.querySelectorAll('#steps li').forEach(li => li.className = li.dataset.step === step ? 'cur' : stepDone(li.dataset.step) ? 'done' : '');
@@ -617,7 +618,7 @@ function renderChips() {
   else if (w.connected) chip('#cNet', icon('wifi'), w.ssid, signal(w.rssi));
   else if (w.ap) chip('#cNet', dot('warn'), t('Setup access point'), w.ap_ssid);
   else chip('#cNet', dot('bad'), t('No network'), '');
-  chip('#cHa', dot(m.connected ? 'ok' : m.configured ? 'bad' : 'warn'), 'Home Assistant', m.connected ? t('connected') : m.configured ? t('offline') : t('not set up'));
+  chip('#cHa', m.off && !m.connected ? null : dot(m.connected ? 'ok' : m.configured ? 'bad' : 'warn'), 'Home Assistant', m.connected ? t('connected') : m.configured ? t('offline') : m.off ? t('off') : t('not set up'));
   renderAge();
 }
 function renderAge() {
@@ -637,7 +638,7 @@ function renderTiles() {
   else if (w.ap) tiles.push(tile('wifi', t('Setup access point'), w.ap_ssid, w.ap_ip));
   else tiles.push(tile('wifi', t('Wi-Fi'), t('Not connected'), w.ssid ? t('connecting to {ssid}', {ssid: w.ssid}) : t('not configured')));
   tiles.push(tile('globe', t('Address'), online(s) ? (s.net ? s.net.ip : w.ip) : '—', s.hostname + '.local'));
-  tiles.push(tile('home', 'Home Assistant', m.connected ? t('Connected') : m.configured ? t('Offline') : t('Not set up'), m.configured ? t('via {server}', {server: m.server}) : t('Setup, step 2')));
+  tiles.push(tile('home', 'Home Assistant', m.connected ? t('Connected') : m.configured ? t('Offline') : m.off ? t('Off') : t('Not set up'), m.configured ? t('via {server}', {server: m.server}) : m.off ? t('on its own, no broker · Setup, step 2') : t('Setup, step 2')));
   if (pw && pw.vbus != null) tiles.push(tile('power', t('Power'), pw.vbus.toFixed(2) + ' V', t(pw.source) + (pw.battery != null ? ' · ' + t('battery {n} %', {n: pw.battery_level}) : '') + (pw.vbus < 4.5 ? ' · ' + t('low, on battery') : '')));
   const togs = [];
   const tog = (on, text) => el('div', {class: 'tog' + (on ? ' on' : '')}, el('i'), text);
@@ -723,7 +724,7 @@ function renderBanners() {
   const b = $('#banners'); b.replaceChildren();
   const banner = (cls, text, label, href) => b.append(el('div', {class: 'banner ' + cls}, icon(cls === 'info' ? 'ok' : 'warn'), el('p', {}, text), el('a', {class: 'btn', href}, label)));
   if (!online(s)) banner('warn', t('ESPAltherma is not connected to your network yet.'), t('Set up Wi-Fi'), '#setup/wifi');
-  else if (!m.configured) banner('warn', t('Connect ESPAltherma to Home Assistant to get your heat pump sensors.'), t('Connect'), '#setup/mqtt');
+  else if (!m.configured && !m.off) banner('warn', t('Connect ESPAltherma to Home Assistant to get your heat pump sensors.'), t('Connect'), '#setup/mqtt');
   else if (!m.connected) banner('warn', t('The MQTT broker is unreachable ({server}).', {server: m.server}), t('Check'), '#setup/mqtt');
   if (hp.model && !hp.confirmed) banner('info', t('Heat pump found: {family}. Please confirm your exact model to read all its values.', {family: family((s.detect || {}).family) || '?'}), t('Confirm model'), '#setup/hp');
   if (!hp.model && !hp.survey_running) banner('warn', t('No heat pump answered yet. Check the X10A cable, or choose your model.'), t('Heat pump'), '#setup/hp');
@@ -1014,7 +1015,7 @@ $('#wifiSave').onclick = async () => {
 
 // ---- setup: mqtt
 function mqttForm() {
-  const d = {mqtt: {server: $('#mServer').value.trim(), port: +$('#mPort').value || 1883, user: $('#mUser').value, tls: $('#mTls').checked}};
+  const d = {mqtt: {server: $('#mServer').value.trim(), port: +$('#mPort').value || 1883, user: $('#mUser').value, tls: $('#mTls').checked, off: false}};
   if ($('#mPwd').value) d.mqtt.pwd = $('#mPwd').value;
   return d;
 }
@@ -1066,6 +1067,12 @@ let hpChoice = null;
 const niceModel = m => m.replace(/^Altherma\((.*)\)$/, 'Altherma $1');
 async function setupHp() {
   const box = $('#hpDetect');
+// Without a broker: the readings stay on this page, no connection attempt, no restart for an unreachable broker
+$('#mSkip').onclick = async e => {
+  e.preventDefault();
+  try { await post('/api/config', {mqtt: {off: true}}); await loadConfig(); await refreshStatus(); msg('#mMsg', t('Saved: ESPAltherma runs on its own.'), true); setTimeout(() => location.hash = '#setup/hp', 1500); }
+  catch (err) { msg('#mMsg', err.message, false); }
+};
   $('#hpConfirm').hidden = true; $('#tmBox').hidden = true; hpChoice = null;
   box.replaceChildren(el('p', {class: 'sub'}, t('Reading the heat pump…')));
   if (!models.length) models = await api('/api/models');

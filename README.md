@@ -130,7 +130,7 @@ Open `http://espaltherma.local`, or the address shown by the installer (and on t
 
     ![Confirming the heat pump model](doc/images/setup-heatpump.png)
 
-2. **Home Assistant.** Click **Find my Home Assistant**: ESPAltherma looks for the MQTT broker on your network (usually the Mosquitto add-on of Home Assistant). Or enter its address, and a user and password if your broker needs one. **Test the connection**, then save. The sensors appear in Home Assistant automatically.
+2. **Home Assistant.** Click **Find my Home Assistant**: ESPAltherma looks for the MQTT broker on your network (usually the Mosquitto add-on of Home Assistant). Or enter its address, and a user and password if your broker needs one. **Test the connection**, then save. The sensors appear in Home Assistant automatically. No Home Assistant? **Use ESPAltherma on its own**: the readings stay on the web page, and a broker can be connected later.
 
 3. **Values.** The recommended values of your model are selected. Pick more (or less) in the **Values** tab, which also shows their current readings. *Try not to get everything: it would make a very big MQTT message.*
 
@@ -213,7 +213,7 @@ The rest is in [doc/home-assistant.md](doc/home-assistant.md): the discovery det
 
 # Updating
 
-In **System → Firmware update**, click **Check for an update**: your browser looks for a newer release on the installer's site, downloads the file of your board and sends it to the board (the board itself never goes to the Internet for it). Without Internet access from the browser, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) instead. Either way, if the new version cannot get back online, the board goes back to the previous one by itself. Running the [web installer](https://espaltherma.pages.dev/) again over USB works too, and keeps the settings.
+In **System → Firmware update**, click **Check for an update**: your browser looks for a newer release on the installer's site, downloads the file of your board and sends it to the board. The board also looks once a day on its own, reading the same file: a newer release shows as a notice on the home page and as a **Firmware** update entity in Home Assistant (Settings → Updates), which the ESPAltherma card mentions too. Nothing is installed by itself; untick the box under the button to stop the daily check. Without Internet access from the browser, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) instead. Either way, if the new version cannot get back online, the board goes back to the previous one by itself. Running the [web installer](https://espaltherma.pages.dev/) again over USB works too, and keeps the settings.
 
 You can also [build it yourself](doc/building.md) with PlatformIO.
 
