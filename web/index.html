@@ -402,8 +402,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
    <label class="chk"><input type="checkbox" id="sStats">Compute energy and cycle figures</label>
     <label class="f"><span class="k">Mains voltage (V)</span><input type="number" id="sStatsV" min="100" max="500" step="1" translate="no"></label>
     <label class="f"><span class="k">Supply</span><select id="sStatsPh" translate="no"><option value="1">1 ~ 230 V</option><option value="3">3 ~ 400 V</option></select></label>
-    <label class="f"><span class="k">Pump and electronics (W)</span><input type="number" id="sStatsAux" min="0" max="500" step="10" translate="no"></label>
-   <p class="sub">The electricity is an estimate: the inverter current, which the unit reports, times the voltage; units that report their voltage use it. The pump's watts, when known, are added while the compressor runs.</p></div>
+    <label class="f"><span class="k">Pump and electronics (W)</span><input type="number" id="sStatsAux" min="10" max="500" step="10" translate="no"></label>
+   <p class="sub">The electricity is an estimate: the inverter current, which the unit reports, times the voltage; units that report their voltage use it. The pump and the electronics are added while the compressor runs: 100 W unless a meter on your unit says otherwise.</p></div>
   <div class="card"><h2>Experimental</h2><p class="sub">Under test: may not work on every unit.</p>
    <label class="chk"><input type="checkbox" id="sDhwTarget">Hot water target from Home Assistant and this page</label>
    <label class="chk"><input type="checkbox" id="sLwtTarget">Leaving water target (main zone) from Home Assistant and this page</label>
@@ -1207,7 +1207,7 @@ function fillSettings() {
   $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sBase').value = (cfg.mqtt && cfg.mqtt.base_topic) || 'espaltherma'; $('#sJsonTable').checked = o.json_table; $('#sBinNum').checked = !!o.binary_num; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
   const st = cfg.stats || {};
   $('#sStatsPh').options[0].text = t('1 phase (230 V)'); $('#sStatsPh').options[1].text = t('3 phases (400 V)');
-  $('#sStats').checked = st.enabled !== false; $('#sStatsV').value = st.voltage || 230; $('#sStatsPh').value = st.phases == 3 ? '3' : '1'; $('#sStatsAux').value = st.aux_w || 0;
+  $('#sStats').checked = st.enabled !== false; $('#sStatsV').value = st.voltage || 230; $('#sStatsPh').value = st.phases == 3 ? '3' : '1'; $('#sStatsAux').value = st.aux_w || 100;
   $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target); $('#sLwtTarget').checked = !!(cfg.control && cfg.control.lwt_target); $('#sPowerLimit').checked = !!(cfg.control && cfg.control.power_limit);
   $('#sHost').value = cfg.hostname; $('#sAdminState').textContent = cfg.admin.has_pwd ? t('(set)') : t('(none)'); $('#sAdminClearL').style.display = cfg.admin.has_pwd ? '' : 'none'; $('#sAdminClear').checked = false;
   fillLangs();
@@ -1222,7 +1222,7 @@ $('#sSave').onclick = async () => {
     relays: {therm_pin: n('#sTherm'), sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
     control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, power_limit: $('#sPowerLimit').checked},
-    stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 0},
+    stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 100},
     mqtt: {base_topic: $('#sBase').value.trim() || 'espaltherma'},
     hostname: $('#sHost').value.trim() || 'ESPAltherma',
     lang: $('#sLang').value,

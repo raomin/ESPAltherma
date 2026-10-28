@@ -58,7 +58,7 @@ struct StatsSettings
 {
   float voltage = 230;
   uint8_t phases = 1;
-  float auxW = 0;
+  float auxW = 0; // the configuration gives 100 W by default (config.h); 0 here keeps the tests' arithmetic plain
   int tzMinutes = 0;
 };
 

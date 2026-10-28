@@ -131,7 +131,7 @@ void configDefaults(AppConfig &c)
   c.statsEnabled = true;
   c.statsVoltage = 230;
   c.statsPhases = 1;
-  c.statsAuxW = 0;
+  c.statsAuxW = 100; // the pump, the fan at low speed and the boards: 120-135 W measured on an EPRA12 (#599)
   c.statsTz = 0;
   c.ctlLimitOn = false;
   c.ctlLimitValue = -1;
@@ -380,6 +380,8 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(src["telemetry"]["enabled"], c.telemetry);
   readStr(src["telemetry"]["install_id"], c.installId, sizeof(c.installId));
   readNum(src["telemetry"]["sent"], c.telemetrySent);
+  if (c.statsAuxW < 1) // 0 W is no pump at all: the default instead (a configuration saved before beta.19 holds 0)
+    c.statsAuxW = 100;
 }
 
 void configSave()
