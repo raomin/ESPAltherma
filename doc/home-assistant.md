@@ -105,7 +105,7 @@ Settings → MQTT output can also publish one topic per value, use the JSON tabl
 
 **One topic per value** (OpenHAB and others): tick **One topic per value** in Settings → MQTT output. Each value is then also published in `espaltherma/OneATTR/[valuename]`, e.g. `espaltherma/OneATTR/Boiler Heating Target Temp.` (the prefix can be changed there). The value names are the labels shown in the Values tab.
 
-**Two boards on one broker**, for instance one on the indoor unit and one on the outdoor unit of an Altherma HT, need different base topics, such as `espaltherma-idu` and `espaltherma-odu`: the Home Assistant entities of a board then start with its base too (`sensor.espaltherma_odu_...`), on a device of their own. The card looks for the `espaltherma_` entities: keep the default base on the board you want in it. The one-topic-per-value prefix is a setting of its own: change it too if both boards use that option.
+**Two boards on one broker**, for instance one on the indoor unit and one on the outdoor unit of an Altherma HT, need different base topics, such as `espaltherma-idu` and `espaltherma-odu`: the Home Assistant entities of a board then start with its base too (`sensor.espaltherma_odu_...`), on a device of their own. The card looks for the `espaltherma_` entities: keep the default base on the board you want in it, or give the card the other board's prefix (`prefix: espaltherma_odu`), and point single values at the other board with its `entities` option. The one-topic-per-value prefix is a setting of its own: change it too if both boards use that option.
 
 **Watching the messages:** in Home Assistant, Settings → Devices & services → MQTT → Configure → Listen to a topic `espaltherma/#`, or:
 
