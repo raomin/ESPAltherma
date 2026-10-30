@@ -421,5 +421,8 @@
  "Restored.": "Wiederhergestellt.",
  "Restarting…": "Neustart…",
  "Erase all settings (WiFi, MQTT, model) and restart?": "Alle Einstellungen (WLAN, MQTT, Modell) löschen und neu starten?",
- "Settings erased. Restarting…": "Einstellungen gelöscht. Neustart…"
+ "Settings erased. Restarting…": "Einstellungen gelöscht. Neustart…",
+ "About": "Über",
+ "Sponsor on GitHub": "Auf GitHub sponsern",
+ "Buy me a beer": "Ein Bier ausgeben"
 }

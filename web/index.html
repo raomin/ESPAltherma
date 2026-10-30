@@ -465,6 +465,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
    <div class="acts"><button id="cfgExport">Download a backup</button><label class="btn" for="cfgImport">Restore a backup</label><input type="file" id="cfgImport" accept=".json" hidden><span class="msg" id="cfgMsg" translate="no"></span></div></div>
   <div class="card"><h2>Restart</h2><p class="sub">A restart releases the relays for a few seconds.</p>
    <div class="acts"><button id="rebootBtn">Restart</button><button class="x" id="resetBtn">Factory reset</button><span class="msg" id="rstMsg" translate="no"></span></div></div>
+  <div class="card"><h2>About</h2><p class="sub" id="sysSponsor" translate="no"></p>
+   <div class="acts"><a class="btn" href="https://github.com/sponsors/raomin" target="_blank" rel="noopener">Sponsor on GitHub</a><a class="btn" href="https://www.buymeacoffee.com/raomin" target="_blank" rel="noopener">Buy me a beer</a></div></div>
  </div>
 </section>
 
@@ -510,7 +512,15 @@ function translatePage() {
   document.querySelectorAll('[placeholder]').forEach(e => { if (!e.dataset.ph) e.dataset.ph = e.placeholder; if (e.dataset.ph) e.placeholder = t(e.dataset.ph); });
 }
 lang = browserLang();
+// The sponsor sentence of the setup's last step and of the System tab, in the page's language
+function sponsorLines() {
+  const link = (href, s) => '<a href="' + href + '" target="_blank" rel="noopener">' + t(s) + '</a>';
+  const html = t('ESPAltherma is free and made in the evenings. If it is useful to you, {sponsor} or {beer} helps keep it going.',
+    {sponsor: link('https://github.com/sponsors/raomin', N_('sponsoring it')), beer: link('https://www.buymeacoffee.com/raomin', N_('buying a beer'))});
+  for (const id of ['doneSponsor', 'sysSponsor']) $('#' + id).innerHTML = html;
+}
 translatePage();
+sponsorLines();
 
 const FAMILY_CODES = ['G', 'L', 'S', 'R'];
 const family = f => ({G: t('Newer units (R32 · D/E series)'), L: t('Older units (LT · Hybrid · GEO2)'), S: t('Protocol S'), R: t('Protocol S (ROTEX)')})[f];
@@ -572,6 +582,7 @@ async function loadNames() {
 function setLang(code) {
   lang = code === 'en' || I18N[code] ? code : 'en';
   translatePage();
+  sponsorLines();
   if (status.hp) renderStatus();
   paint();
   route();
@@ -1133,9 +1144,7 @@ $('#tmShow').onclick = async e => { e.preventDefault(); const p = $('#tmPreview'
 // ---- setup: done
 function setupDone() {
   tx('doneText', t('{n} readings go to Home Assistant every {s} seconds.', {n: status.hp.values, s: cfg.hp ? Math.round(cfg.hp.frequency / 1000) : 30}));
-  const link = (href, s) => '<a href="' + href + '" target="_blank" rel="noopener">' + t(s) + '</a>';
-  $('#doneSponsor').innerHTML = t('ESPAltherma is free and made in the evenings. If it is useful to you, {sponsor} or {beer} helps keep it going.',
-    {sponsor: link('https://github.com/sponsors/raomin', N_('sponsoring it')), beer: link('https://www.buymeacoffee.com/raomin', N_('buying a beer'))});
+  sponsorLines();
 }
 $('#doneBtn').onclick = () => location.hash = '#dashboard';
 $('#doneValues').onclick = () => location.hash = '#values';
