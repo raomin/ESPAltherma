@@ -73,6 +73,14 @@ struct FakeUnit
         setWord(p.lwt.ramA, 36 << 8);
         setWord(p.lwt.ramEffective, 37 << 8 | 0x4D);
         memcpy(ram + p.dhw.slotA, LIMITS, 32);
+        if (p.limit.ramEnable) // power limitation: none, power kind, limit 1 = 20 kW, amps 50, nothing active
+        {
+            ram[p.limit.ramEnable] = 0;
+            ram[p.limit.ramKind] = 1;
+            setFloat(p.limit.ramKw, 20.0f);
+            for (int i = 0; i < 4; i++)
+                ram[p.limit.ramAmp + i] = 50;
+        }
     }
 
     static const ControlProfile &profileFor(const char *id)
@@ -595,10 +603,47 @@ void test_power_limit_restored_and_current_kind()
     TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
 
     unit.reset();
-    unit.board(CONTROL_PROFILES[1]); // a board without the limitation addresses
+    unit.board(unit.profileFor("20002202")); // a board without the limitation addresses
     LimitControl u = freshLimit();
     TEST_ASSERT_FALSE(u.identify(1000));
     TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, u.status);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// Every mapped board: the limit is written at that board's words and nothing at the first board's; a unit set
+// to current limits reads the active limit from the board's own A float where it has one
+void test_power_limit_on_every_mapped_board()
+{
+    int mapped = 0;
+    for (size_t i = 1; i < CONTROL_PROFILE_COUNT; i++)
+    {
+        const ControlProfile &p = CONTROL_PROFILES[i];
+        if (p.limit.ramEnable == 0)
+            continue;
+        mapped++;
+        unit.reset();
+        unit.board(p);
+        LimitControl c = freshLimit();
+        TEST_ASSERT_TRUE_MESSAGE(c.identify(1000), p.softwareId);
+        TEST_ASSERT_EQUAL(LIMIT_POWER, c.kind);
+        TEST_ASSERT_EQUAL_FLOAT(20.0f, c.limit);
+        c.request(5.0f);
+        c.tick(2000);
+        TEST_ASSERT_EQUAL_FLOAT_MESSAGE(5.0f, unit.getFloat(p.limit.ramKw), p.softwareId);
+        TEST_ASSERT_EQUAL(1, unit.ram[p.limit.ramEnable]);
+        TEST_ASSERT_EQUAL(0, unit.ram[CONTROL_PROFILES[0].limit.ramEnable]); // nothing at the first board's addresses
+        TEST_ASSERT_EQUAL_FLOAT(0.0f, unit.getFloat(CONTROL_PROFILES[0].limit.ramKw));
+        unit.reset();
+        unit.board(p);
+        unit.ram[p.limit.ramKind] = 0; // current kind
+        unit.setFloat(p.limit.ramActive, 20.0f);
+        unit.setFloat(p.limit.ramActiveAmp ? p.limit.ramActiveAmp : p.limit.ramActive, 50.0f);
+        LimitControl a = freshLimit();
+        TEST_ASSERT_TRUE_MESSAGE(a.identify(1000), p.softwareId);
+        TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
+        TEST_ASSERT_EQUAL_FLOAT(50.0f, a.active);
+    }
+    TEST_ASSERT_EQUAL(8, mapped);
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
@@ -625,5 +670,6 @@ int main(int, char **)
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
+    RUN_TEST(test_power_limit_on_every_mapped_board);
     return UNITY_END();
 }

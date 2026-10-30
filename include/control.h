@@ -56,6 +56,7 @@ struct CurveSpec
 struct LimitSpec
 {
   uint16_t ramEnable, ramKind, ramKw, ramAmp, ramActive; // all 0: not mapped on this board
+  uint16_t ramActiveAmp;                                 // the active limit in A where the board keeps a second float (0: ramActive)
 };
 
 struct ControlProfile
@@ -72,22 +73,27 @@ static const ControlProfile CONTROL_PROFILES[] = {
     {"18002904",
      {0x187A, 0x18B8, 366, 367, 0x30C0, 0x30C5, 278, 0x01, 0x1306, 0x1552},
      {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0},
-     {0x2FE8, 0x2FE9, 0x1880, 0x2FC8, 0x19F4}}, // power limitation tested live on the same unit
+     {0x2FE8, 0x2FE9, 0x1880, 0x2FC8, 0x19F4, 0}}, // power limitation tested live on the same unit
     // 14-18 kW ETVH/ETVX/ETVZ/ETBH/ETBX 16 E/EJ and ETSH/ETSX 16 series (Altherma 3 H HT): from the software, not
     // yet confirmed on a unit. identify() only accepts it when the modes and limits read back make sense.
     {"20017705",
      {0x37A8, 0x37E6, 366, 367, 0x5409, 0x540E, 278, 0x01, 0x3166, 0x34C2},
-     {0x37AA, 0x37E8, 373, 372, 0x5418, 0x5413, 374, 0x0C, 0x31BA, 0}},
+     {0x37AA, 0x37E8, 373, 372, 0x5418, 0x5413, 374, 0x0C, 0x31BA, 0},
+     {0x5299, 0x529A, 0x37AE, 0x5279, 0x45E0, 0x45E4}},
     // The profiles below come from the board's software too (same memory layout at every byte the control
-    // uses, same 15 cross-checks as 20017705), none confirmed on a unit yet.
+    // uses, same 15 cross-checks as 20017705), none confirmed on a unit yet. Their power limitation words come
+    // from the same code shape as the reference's (the kW path, the A path, the chooser and the converter all
+    // found); the softwares from 20002203 on keep a second active float for the A kind.
     // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX DA and DJ series (Altherma 3 R)
     {"17014006",
      {0x1766, 0x17A4, 366, 367, 0x2EB5, 0x2EBA, 278, 0x01, 0x11F2, 0x143E},
-     {0x1768, 0x17A6, 373, 372, 0x2EC4, 0x2EBF, 374, 0x0C, 0x1256, 0}},
+     {0x1768, 0x17A6, 373, 372, 0x2EC4, 0x2EBF, 374, 0x0C, 0x1256, 0},
+     {0x2DE4, 0x2DE5, 0x176C, 0x2DC4, 0x18E0, 0}},
     // 4-8 kW EHSH/EHSX P30/P50 D series (Altherma 3 R ECH2O)
     {"17019A04",
      {0x162A, 0x1668, 366, 367, 0x2EBE, 0x2EC3, 278, 0x01, 0x10B6, 0x1302},
-     {0x162C, 0x166A, 373, 372, 0x2ECD, 0x2EC8, 374, 0x0C, 0x111A, 0}},
+     {0x162C, 0x166A, 373, 372, 0x2ECD, 0x2EC8, 374, 0x0C, 0x111A, 0},
+     {0x2DF2, 0x2DF3, 0x1630, 0x2DD2, 0x17A4, 0}},
     // 9-16 kW EBLA/EDLA D monoblocs (and the 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E series) on the software before
     // 20002203: no image of it, the addresses come from a memory dump of an EDLA14DAW1 (Senaxx, #599) matched
     // against 20002203's layout: the converted settings and the targets sit 0x0E lower, the limit records
@@ -99,26 +105,31 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E, EA and EJ series, 9-16 kW EBLA/EDLA monoblocs and EWAA/EWYA chillers
     {"20002203",
      {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160},
-     {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0}},
+     {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0},
+     {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC}},
     // 11-16 kW EBBH/EBBX DF, EBVH/EBVX/EBVZ S18/S23 DJ and EBSH/EBSX(B) P30/P50 DF and DG series (Altherma 3 H F
     // and its ECH2O, on ERLA outdoor units)
     {"20007903",
      {0x378C, 0x37CA, 366, 367, 0x5372, 0x5377, 278, 0x01, 0x314A, 0x34A6},
-     {0x378E, 0x37CC, 373, 372, 0x5381, 0x537C, 374, 0x0C, 0x319E, 0}},
+     {0x378E, 0x37CC, 373, 372, 0x5381, 0x537C, 374, 0x0C, 0x319E, 0},
+     {0x5207, 0x5208, 0x3792, 0x51E7, 0x4578, 0x457C}},
     // 12 kW ETVH/ETVX/ETVZ/ETBH/ETBX EA, EJ and EF series and ETSH/ETSX 12 P30/P50 (Altherma 3 H HT 8-12 kW)
     {"20007904",
      {0x3794, 0x37D2, 366, 367, 0x53C2, 0x53C7, 278, 0x01, 0x3152, 0x34AE},
-     {0x3796, 0x37D4, 373, 372, 0x53D1, 0x53CC, 374, 0x0C, 0x31A6, 0}},
+     {0x3796, 0x37D4, 373, 372, 0x53D1, 0x53CC, 374, 0x0C, 0x31A6, 0},
+     {0x5253, 0x5254, 0x379A, 0x5233, 0x4580, 0x4584}},
     // 4-8 kW EHSH/EHSX P30/P50 EF and EG series (Altherma 3 R ECH2O), 4-8 kW EBLA/EDLA E monoblocs and EWAA/EWYA
     {"20017704",
      {0x37A0, 0x37DE, 366, 367, 0x53E3, 0x53E8, 278, 0x01, 0x315E, 0x34BA},
-     {0x37A2, 0x37E0, 373, 372, 0x53F2, 0x53ED, 374, 0x0C, 0x31B2, 0}},
+     {0x37A2, 0x37E0, 373, 372, 0x53F2, 0x53ED, 374, 0x0C, 0x31B2, 0},
+     {0x5273, 0x5274, 0x37A6, 0x5253, 0x45D8, 0x45DC}},
     // 12 kW ELVH/ELVX/ELVZ/ELBH/ELBX EJ/EF and ELSH/ELSX 12 P30/P50 (the 2026 series). One of the three memory-read
     // handler candidates of this software could not be resolved; the two others and the converter agree on the
     // same layout as every other board, and identify() reads everything back before a write.
     {"22009C02",
      {0x37B0, 0x37EE, 366, 367, 0x5428, 0x542D, 278, 0x01, 0x316E, 0x34CA},
-     {0x37B2, 0x37F0, 373, 372, 0x5437, 0x5432, 374, 0x0C, 0x31C2, 0}},
+     {0x37B2, 0x37F0, 373, 372, 0x5437, 0x5432, 374, 0x0C, 0x31C2, 0},
+     {0x52B5, 0x52B6, 0x37B6, 0x5295, 0x45E2, 0x45E6}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
@@ -660,7 +671,7 @@ struct LimitControl : X10aClient
         return false;
       l = b;
     }
-    readFloat(spec->ramActive, a);
+    readFloat(kind == LIMIT_CURRENT && spec->ramActiveAmp ? spec->ramActiveAmp : spec->ramActive, a);
     if (e != enable || l != limit || a != active)
       changed = true;
     enable = e;
