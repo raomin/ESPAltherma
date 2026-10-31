@@ -313,41 +313,42 @@ static void statusJson(JsonDocument &doc)
     relays["safety"] = safetyActive;
   if (config.sg1Pin >= 0)
     relays["smart_grid"] = sgMode;
+  // Energy and cycle figures (stats.h)
+  if (config.statsEnabled)
+  {
+    JsonObject st = doc["stats"].to<JsonObject>();
+    uint32_t epoch = time(nullptr) > 1600000000 ? (uint32_t)time(nullptr) : 0, up = millis() / 1000;
+    const StatsDay &d = *stats.day;
+    auto num = [&](JsonObject o, const char *k, float v) { if (!isnan(v)) o[k] = serialized(String(v, 2)); else o[k] = nullptr; };
+    num(st, "heat_kw", stats.heatKW);
+    num(st, "elec_kw", stats.elecKW);
+    num(st, "cop", stats.cop);
+    st["running"] = stats.running;
+    st["mode"] = stats.mode == STATS_DHW ? "dhw" : stats.mode == STATS_COOLING ? "cooling" : "heating";
+    st["current_min"] = stats.currentSec(epoch, up) / 60;
+    JsonObject today = st["today"].to<JsonObject>();
+    const char *modes[] = {"heating", "dhw", "cooling"};
+    for (int m = 0; m < 3; m++)
+    {
+      JsonObject o = today[modes[m]].to<JsonObject>();
+      num(o, "heat_kwh", d.heatKWh[m]);
+      num(o, "elec_kwh", d.elecKWh[m]);
+      num(o, "cop", stats.copToday((StatsMode)m));
+    }
+    today["starts"] = d.starts;
+    today["starts_hour"] = stats.startsLastHour(epoch, up);
+    today["defrosts"] = d.defrosts;
+    today["run_min"] = d.runSec / 60;
+    today["buh_min"] = d.buhSec / 60;
+    today["last_run_min"] = d.lastRunSec / 60;
+    today["last_pause_min"] = d.lastPauseSec / 60;
+    st["clock"] = epoch != 0;
+    st["tz"] = config.statsTz;
+    st["voltage_read"] = !isnan(statsVoltageRead());
+  }
   if (config.dhwTarget || config.lwtTarget || config.powerLimit)
   {
     // Target controls (experimental, control.h)
-    if (config.statsEnabled)
-    {
-      JsonObject st = doc["stats"].to<JsonObject>();
-      uint32_t epoch = time(nullptr) > 1600000000 ? (uint32_t)time(nullptr) : 0, up = millis() / 1000;
-      const StatsDay &d = *stats.day;
-      auto num = [&](JsonObject o, const char *k, float v) { if (!isnan(v)) o[k] = serialized(String(v, 2)); else o[k] = nullptr; };
-      num(st, "heat_kw", stats.heatKW);
-      num(st, "elec_kw", stats.elecKW);
-      num(st, "cop", stats.cop);
-      st["running"] = stats.running;
-      st["mode"] = stats.mode == STATS_DHW ? "dhw" : stats.mode == STATS_COOLING ? "cooling" : "heating";
-      st["current_min"] = stats.currentSec(epoch, up) / 60;
-      JsonObject today = st["today"].to<JsonObject>();
-      const char *modes[] = {"heating", "dhw", "cooling"};
-      for (int m = 0; m < 3; m++)
-      {
-        JsonObject o = today[modes[m]].to<JsonObject>();
-        num(o, "heat_kwh", d.heatKWh[m]);
-        num(o, "elec_kwh", d.elecKWh[m]);
-        num(o, "cop", stats.copToday((StatsMode)m));
-      }
-      today["starts"] = d.starts;
-      today["starts_hour"] = stats.startsLastHour(epoch, up);
-      today["defrosts"] = d.defrosts;
-      today["run_min"] = d.runSec / 60;
-      today["buh_min"] = d.buhSec / 60;
-      today["last_run_min"] = d.lastRunSec / 60;
-      today["last_pause_min"] = d.lastPauseSec / 60;
-      st["clock"] = epoch != 0;
-      st["tz"] = config.statsTz;
-      st["voltage_read"] = !isnan(statsVoltageRead());
-    }
     JsonObject ctl = doc["control"].to<JsonObject>();
     if (config.dhwTarget)
       controlJson(ctl["dhw"].to<JsonObject>(), dhwControl);
