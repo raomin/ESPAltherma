@@ -26,7 +26,15 @@ const char *resetReasonName()
 
 #if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
 #define HAS_POWER_MONITOR
-#define LOW_SUPPLY_MV 4500 // below: the USB/5V supply is sagging, the board may run on its battery
+// The X10A 5V reaches the board through a long thin cable and sits anywhere between 4.3 and 4.9 V, moving with
+// every WiFi burst: only a real sag is worth an event, and only once it lasts. One event when the supply has been
+// under LOW_SUPPLY_MV for LOW_SUPPLY_SAMPLES samples, one more when it has been back above SUPPLY_BACK_MV for
+// SUPPLY_BACK_SAMPLES samples, with the lowest value seen in between: a supply that dips every few seconds logs two
+// lines, not two hundred.
+#define LOW_SUPPLY_MV 4200
+#define SUPPLY_BACK_MV 4500
+#define LOW_SUPPLY_SAMPLES 3   // 15 s at one sample every 5 s
+#define SUPPLY_BACK_SAMPLES 12 // 60 s
 
 // Last readings, sampled by the main loop: the power chip shares the I2C bus with the screen
 struct PowerReadings
@@ -45,6 +53,7 @@ void samplePower()
 {
   static unsigned long last = 0;
   static bool lowReported = false;
+  static int lowCount = 0, backCount = 0, lowestMv = 0, dips = 0;
   if (last != 0 && millis() - last < 5000)
     return;
   last = millis();
@@ -71,17 +80,41 @@ void samplePower()
   {
     if (power.vbusMin < 0 || power.vbus < power.vbusMin)
       power.vbusMin = power.vbus;
-    if (power.vbus < LOW_SUPPLY_MV && !lowReported)
+    if (power.vbus < LOW_SUPPLY_MV)
     {
-      mqttSerial.printf("External supply low: %.2f V on the %s, running on the battery (%.2f V)\n", power.vbus / 1000.0, power.source, power.battery / 1000.0);
-      eventAddf("Supply low: %.2f V on the %s, battery %.2f V", power.vbus / 1000.0, power.source, power.battery / 1000.0);
-      lowReported = true;
+      backCount = 0;
+      if (lowReported)
+      {
+        if (power.vbus < lowestMv)
+          lowestMv = power.vbus;
+        if (lowCount == 0)
+          dips++; // under again after a recovery that did not last
+        lowCount++;
+      }
+      else if (++lowCount >= LOW_SUPPLY_SAMPLES)
+      {
+        mqttSerial.printf("External supply low: %.2f V on the %s, running on the battery (%.2f V)\n", power.vbus / 1000.0, power.source, power.battery / 1000.0);
+        eventAddf("Supply low: %.2f V on the %s, battery %.2f V", power.vbus / 1000.0, power.source, power.battery / 1000.0);
+        lowReported = true;
+        lowestMv = power.vbus;
+        dips = 0;
+      }
     }
-    else if (power.vbus >= LOW_SUPPLY_MV + 200 && lowReported)
+    else if (power.vbus >= SUPPLY_BACK_MV)
     {
-      eventAddf("Supply back: %.2f V on the %s", power.vbus / 1000.0, power.source);
-      lowReported = false;
+      lowCount = 0;
+      if (lowReported && ++backCount >= SUPPLY_BACK_SAMPLES)
+      {
+        if (dips)
+          eventAddf("Supply back: %.2f V on the %s, after %d more dips down to %.2f V", power.vbus / 1000.0, power.source, dips, lowestMv / 1000.0);
+        else
+          eventAddf("Supply back: %.2f V on the %s, lowest %.2f V", power.vbus / 1000.0, power.source, lowestMv / 1000.0);
+        lowReported = false;
+        backCount = 0;
+      }
     }
+    else
+      lowCount = backCount = 0; // between the two thresholds: neither side counts
   }
 }
 #else
