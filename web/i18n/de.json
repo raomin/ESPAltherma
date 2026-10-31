@@ -366,6 +366,7 @@
  "Detecting…": "Erkennung…",
  "{n} readings go to Home Assistant every {s} seconds.": "{n} Messwerte gehen alle {s} Sekunden an Home Assistant.",
  "ESPAltherma is free and made in the evenings. If it is useful to you, {sponsor} or {beer} helps keep it going.": "ESPAltherma ist kostenlos und entsteht abends. Wenn es dir nützt, hilft {sponsor} oder {beer}, es am Leben zu halten.",
+ "ESPAltherma is free and made in the evenings. If it is useful to you, {sponsor} helps keep it going.": "ESPAltherma ist kostenlos und entsteht abends. Wenn es dir nützt, hilft {sponsor}, es am Leben zu halten.",
  "sponsoring it": "ein Sponsoring",
  "buying a beer": "ein Bier",
  "Wi-Fi signal": "WLAN-Signal",
@@ -423,6 +424,5 @@
  "Erase all settings (WiFi, MQTT, model) and restart?": "Alle Einstellungen (WLAN, MQTT, Modell) löschen und neu starten?",
  "Settings erased. Restarting…": "Einstellungen gelöscht. Neustart…",
  "About": "Über",
- "Sponsor on GitHub": "Auf GitHub sponsern",
- "Buy me a beer": "Ein Bier ausgeben"
+ "Sponsor on GitHub": "Auf GitHub sponsern"
 }
