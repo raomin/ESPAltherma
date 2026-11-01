@@ -155,7 +155,7 @@ LabelDef labelDefs[] = {
 //{0x61,8,105,2,1,"Temp. agua de retorno (R4T)"},
 //{0x61,10,105,2,1,"Temp. depósito ACS (R5T)"},
 //{0x61,12,105,2,1,"Temperatura ambiente interior (R1T)"},
-//{0x61,14,105,2,1,"Sensor ambiente interior opcional (R6T)"},
+//{0x61,14,105,2,1,"Sensor auxiliar (R6T) - Ambiente / Exterior"},
 //{0x62,0,307,1,-1,"Activación/desactivación datos"},
 //{0x62,1,152,1,-1,"Dirección U Int"},
 //{0x62,2,307,1,-1,"Recalentamiento ON/OFF"},

@@ -2,13 +2,13 @@
 #define ESPALTHERMA_STATS_H
 
 // Energy and cycle statistics, computed on the board from the values it already reads:
-//  - heat output: flow x (leaving water before the backup heater - return water) x 4.18 kJ/kg.K, the heat pump's own
-//    output (the backup heater adds its own after the sensor). Hot water uses the same return sensor, never the tank's.
+//  - heat output: flow x (leaving water - return water) x 4.18 kJ/kg.K. The leaving water is the sensor after the backup
+//    heater (R2T) when the unit has one and it reads, the one before it (R1T) otherwise: the water the house gets, and
+//    the heater's heat counted with its electricity. Hot water uses the same return sensor, never the tank's.
 //  - electrical input, estimated: the inverter's current x the phase voltage (a setting, 230 V by default, or the
 //    unit's own reading when it has one), x 3 on a three-phase unit (the reported current is one phase's), plus a
 //    fixed auxiliary power (pump, electronics) while the compressor runs, plus the backup heater's kW per step while
-//    a step is on. No power factor: an estimate, named as such. While the backup heater is on, the heat output takes
-//    the leaving water after it (R2T) when that sensor exists, so its heat is counted with its electricity.
+//    a step is on. No power factor: an estimate, named as such.
 //  - COP, estimated: the ratio of the two, while the compressor runs, outside defrosts and the first two minutes of a
 //    run, smoothed over a few readings, and dropped when it makes no sense (above 11, or above what the temperatures
 //    allow: Carnot x 0.55).
@@ -195,10 +195,10 @@ public:
       day->defrosts++;
     lastDefrost = defrost;
 
-    // powers. The backup heater heats the water after the heat pump's sensor (R1T): while a step is on, the heat
-    // output takes the sensor after it (R2T) when the unit has one, so its heat counts along with its electricity
+    // powers. The leaving water is the sensor after the backup heater (R2T) when the unit has one and it reads (0 when
+    // it is not fitted): the water the house gets, and the heater's heat counts along with its electricity
     bool buhOn = in.buh == 1 || in.buh2 == 1;
-    float lwOut = buhOn && !isnan(in.lwAfter) && in.lwAfter > 0 ? in.lwAfter : in.lw;
+    float lwOut = !isnan(in.lwAfter) && in.lwAfter > 0 ? in.lwAfter : in.lw;
     heatKW = NAN;
     if ((runNow || buhOn) && !isnan(in.flow) && in.flow > 0.5f && !isnan(lwOut) && !isnan(in.inlet))
     {
@@ -239,7 +239,7 @@ public:
     if (settled && !isnan(heatKW) && !isnan(elecKW) && elecKW > 0.1f && heatKW > 0.1f)
     {
       float c = heatKW / elecKW;
-      float ceiling = carnotCeiling(in.lw, in.outdoor);
+      float ceiling = carnotCeiling(lwOut, in.outdoor);
       if (c <= STATS_MAX_COP && (isnan(ceiling) || c <= ceiling))
         copSmoothed = isnan(copSmoothed) ? c : copSmoothed + 0.3f * (c - copSmoothed);
     }

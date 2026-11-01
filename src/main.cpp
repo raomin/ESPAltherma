@@ -609,7 +609,7 @@ static void statsUpdate()
   in.lwAfter = statsValue({"Leaving water temp. after BUH", "Outlet Water BUH Temp.", "[HPSU] Tvbh inflow Temp"});
   in.inlet = statsValue({"Inlet water temp", "[HPSU] Tr return Temp"});
   in.amp = statsValue({"INV primary current"});
-  in.volt = statsValue({"Voltage (N-phase)"});
+  in.volt = statsValue({"Voltage (N-phase)", "Voltage (V)"}); // the Hybrid names it without the phase
   in.outdoor = statsValue({"R1T-Outdoor air temp", "Outdoor air temp"});
   in.v3 = statsFlag({"3way valve", "Priority to domestic water"});
   in.defrost = statsFlag({"Defrost Operation"});

@@ -155,7 +155,7 @@ LabelDef labelDefs[] = {
 //{0x61,8,105,2,1,"Temp. retour d'eau (R4T)"},
 //{0x61,10,105,2,1,"Temp. ballon ECS (R5T)"},
 //{0x61,12,105,2,1,"Temp. ambiante intérieure (R1T)"},
-//{0x61,14,105,2,1,"Capteur ext. de temp. ambiante intérieure (R6T)"},
+//{0x61,14,105,2,1,"Capteur auxiliaire (R6T) - Ambiance / Extérieur"},
 //{0x62,0,307,1,-1,"Activer/Désactiver les données"},
 //{0x62,1,152,1,-1,"Adresse d'unité intérieure"},
 //{0x62,2,307,1,-1,"Réchauffage ON/OFF"},

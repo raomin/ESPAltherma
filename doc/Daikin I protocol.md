@@ -48,7 +48,7 @@ From the /include/ALTHERMAxxx.h the registry 0x61 contains the following labels:
 {0x61,8,105,2,1,"Inlet water temp.(R4T)"},
 {0x61,10,105,2,1,"DHW tank temp. (R5T)"},
 {0x61,12,105,2,1,"Indoor ambient temp. (R1T)"},
-{0x61,14,105,2,1,"Ext. indoor ambient sensor (R6T)"},
+{0x61,14,105,2,1,"Auxiliary sensor (R6T) - Room / Outdoor"},
 
 Label format: {int registryIDp, int offsetp, int convidp, int dataSizep, int dataTypep, const char *labelp} 
 Offset: position of the value in the registry (starting at byte 4)

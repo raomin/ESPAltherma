@@ -153,7 +153,7 @@ LabelDef labelDefs[] = {
 //{0x61,8,105,2,1,"R4T-Rücklauftemp. vor Plattenwärmetauscher"},
 //{0x61,10,105,2,1,"R5T-Warmwassertemp. im Speicher"},
 //{0x61,12,105,2,1,"IG Luftansaugtemperatur (R1T)"},
-//{0x61,14,105,2,1,"Ext. Raumtemperatursensor (R6T)"},
+//{0x61,14,105,2,1,"Zusatzfühler (R6T) - Raum / Außen"},
 //{0x62,0,307,1,-1,"Daten aktivieren/deaktivieren"},
 //{0x62,1,152,1,-1,"Adresse des Innengeräts"},
 //{0x62,2,307,1,-1,"Warmwasser-Nachheizbetrieb"},

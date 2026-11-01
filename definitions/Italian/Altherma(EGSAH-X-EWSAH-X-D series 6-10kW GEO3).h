@@ -123,7 +123,7 @@ LabelDef labelDefs[] = {
 //{0x61,8,105,2,1,"Temp. acqua in ingresso (R4T)"},
 //{0x61,10,105,2,1,"Temp. serbatoio ACS (R5T)"},
 //{0x61,12,105,2,1,"Temp. ambiente interno (R1T)"},
-//{0x61,13,105,2,1,"Sensore ambiente interno est. (R6T)"},
+//{0x61,13,105,2,1,"Sensore ausiliario (R6T) - Ambiente / Esterno"},
 //{0x62,0,307,1,-1,"Abilita/disabilita dati"},
 //{0x62,1,152,1,-1,"Indirizzo unità interna"},
 //{0x62,2,307,1,-1,"Risc. prev/mant ON/OFF"},
