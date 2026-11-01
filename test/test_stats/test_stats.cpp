@@ -116,6 +116,21 @@ void test_cycles(void)
     TEST_ASSERT_EQUAL(600, s.currentSec(t, t - T0));
 }
 
+// The power factor scales the inverter's part only, never the pump nor the backup heater
+void test_power_factor(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    s.settings.powerFactor = 0.7f;
+    s.settings.auxW = 50;
+    s.update(heating(), T0, 10);
+    TEST_ASSERT_FLOAT_WITHIN(0.001, 6 * 230 * 0.7f / 1000.0f + 0.05f, s.elecKW);
+    StatsInput d = heating();
+    d.buh = 1;
+    s.update(d, T0 + 10, 20);
+    TEST_ASSERT_FLOAT_WITHIN(0.001, 6 * 230 * 0.7f / 1000.0f + 0.05f + 3, s.elecKW);
+}
+
 // Defrost edges are counted; the COP is not computed during one; the backup heater's time adds up
 void test_defrost_and_buh(void)
 {
@@ -216,6 +231,7 @@ int main(int argc, char **argv)
     UNITY_BEGIN();
     RUN_TEST(test_powers_and_transient);
     RUN_TEST(test_voltage_sources);
+    RUN_TEST(test_power_factor);
     RUN_TEST(test_day_energy_per_mode);
     RUN_TEST(test_cycles);
     RUN_TEST(test_defrost_and_buh);

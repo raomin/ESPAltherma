@@ -8,7 +8,8 @@
 //  - electrical input, estimated: the inverter's current x the phase voltage (a setting, 230 V by default, or the
 //    unit's own reading when it has one), x 3 on a three-phase unit (the reported current is one phase's), plus a
 //    fixed auxiliary power (pump, electronics) while the compressor runs, plus the backup heater's kW per step while
-//    a step is on. No power factor: an estimate, named as such.
+//    a step is on. The inverter's part is apparent power (VA) unless the power factor setting says otherwise: an
+//    estimate, named as such.
 //  - COP, estimated: the ratio of the two, while the compressor runs, outside defrosts and the first two minutes of a
 //    run, smoothed over a few readings, and dropped when it makes no sense (above 11, or above what the temperatures
 //    allow: Carnot x 0.55).
@@ -64,6 +65,7 @@ struct StatsSettings
   uint8_t phases = 1;
   float buhKW[2] = {3, 3}; // the backup heater's steps (3 kW each on the 6 kW kits, 3 and 6 on the 9 kW ones)
   float auxW = 0; // the configuration gives 100 W by default (config.h); 0 here keeps the tests' arithmetic plain
+  float powerFactor = 1; // cos phi of the inverter's draw: 1 keeps the VA, a meter on the unit gives the real one (0.6 to 0.9 at low load)
   int tzMinutes = 0;
 };
 
@@ -212,7 +214,7 @@ public:
     if (!isnan(in.amp))
     {
       float v = !isnan(in.volt) && in.volt > 100 ? in.volt : settings.voltage;
-      float kw = in.amp * v * (settings.phases == 3 ? 3.0f : 1.0f) / 1000.0f; // the phase voltage, one phase's current
+      float kw = in.amp * v * (settings.phases == 3 ? 3.0f : 1.0f) * settings.powerFactor / 1000.0f; // the phase voltage, one phase's current
       if (runNow)
         kw += settings.auxW / 1000.0f;
       if (in.buh == 1)

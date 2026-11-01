@@ -591,6 +591,7 @@ void statsSetup()
   stats.settings.voltage = config.statsVoltage;
   stats.settings.phases = config.statsPhases;
   stats.settings.auxW = config.statsAuxW;
+  stats.settings.powerFactor = config.statsPowerFactor;
   stats.settings.buhKW[0] = config.statsBuhKW[0];
   stats.settings.buhKW[1] = config.statsBuhKW[1];
   stats.settings.tzMinutes = config.statsTz;

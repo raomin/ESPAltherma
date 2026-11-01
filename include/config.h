@@ -87,6 +87,7 @@ struct AppConfig
   float statsVoltage; // mains voltage for the estimate, used when the unit reports none
   uint8_t statsPhases; // 1 or 3
   float statsAuxW;    // pump and electronics, added while the compressor runs
+  float statsPowerFactor; // applied to the inverter's part of the estimate: 1 = apparent power, a meter gives the real one
   float statsBuhKW[2]; // the backup heater's kW per step, added while a step is on
   int16_t statsTz;    // minutes east of UTC, kept up to date by the web page: the day's counters reset at local midnight
   bool ctlLimitOn;    // a limit is applied from here, re-applied after a restart of the heat pump or of ESPAltherma
@@ -136,6 +137,7 @@ void configDefaults(AppConfig &c)
   c.statsVoltage = 230;
   c.statsPhases = 1;
   c.statsAuxW = 100; // the pump, the fan at low speed and the boards: 120-135 W measured on an EPRA12 (#599)
+  c.statsPowerFactor = 1;
   c.statsBuhKW[0] = c.statsBuhKW[1] = 3; // the common kits: 3 kW steps (a 9 kW kit has 3 and 6)
   c.statsTz = 0;
   c.ctlLimitOn = false;
@@ -242,6 +244,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   stats["voltage"] = c.statsVoltage;
   stats["phases"] = c.statsPhases;
   stats["aux_w"] = c.statsAuxW;
+  stats["power_factor"] = c.statsPowerFactor;
   stats["buh1_kw"] = c.statsBuhKW[0];
   stats["buh2_kw"] = c.statsBuhKW[1];
   stats["tz"] = c.statsTz;
@@ -379,11 +382,14 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(src["stats"]["voltage"], c.statsVoltage);
   readNum(src["stats"]["phases"], c.statsPhases);
   readNum(src["stats"]["aux_w"], c.statsAuxW);
+  readNum(src["stats"]["power_factor"], c.statsPowerFactor);
   readNum(src["stats"]["buh1_kw"], c.statsBuhKW[0]);
   readNum(src["stats"]["buh2_kw"], c.statsBuhKW[1]);
   readNum(src["stats"]["tz"], c.statsTz);
   if (c.statsPhases != 3)
     c.statsPhases = 1;
+  if (!(c.statsPowerFactor >= 0.4f && c.statsPowerFactor <= 1.0f))
+    c.statsPowerFactor = 1;
   if (c.statsVoltage < 100 || c.statsVoltage > 500)
     c.statsVoltage = 230;
   if (c.statsPhases == 3 && c.statsVoltage > 300) // a line-to-line voltage typed in before beta.20: the phase voltage now

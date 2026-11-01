@@ -1086,6 +1086,7 @@ void webLoop()
     bool telemetryEnabled = next->telemetry && !config.telemetry;
     bool statsChanged = next->statsEnabled != config.statsEnabled || next->statsVoltage != config.statsVoltage ||
                         next->statsPhases != config.statsPhases || next->statsAuxW != config.statsAuxW || next->statsTz != config.statsTz ||
+                        next->statsPowerFactor != config.statsPowerFactor ||
                         next->statsBuhKW[0] != config.statsBuhKW[0] || next->statsBuhKW[1] != config.statsBuhKW[1];
     bool statsToggled = next->statsEnabled != config.statsEnabled;
     bool updateToggled = next->updateCheck != config.updateCheck;
