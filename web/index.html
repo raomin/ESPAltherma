@@ -891,6 +891,9 @@ function reading(list) {
     if (r.mixedKit == null || +r.mixedKit === 0) delete r.mixed;
     if (r.room != null && +r.room === 20 && (r.rtSp == null || +r.rtSp === 20)) { delete r.room; delete r.rtSp; }
   }
+  // The thermostat relay drives the unit from Home Assistant: the room target lives there, and the unit's own
+  // room setpoint is a number nobody set
+  if (status && status.relays && 'thermostat' in status.relays) delete r.rtSp;
   // A setpoint of exactly 0 is none: the Altherma 4 keeps its targets in the user interface
   for (const k of ['dhwSp', 'lwSp', 'rtSp', 'lwSpAdd']) if (r[k] != null && +r[k] === 0) delete r[k];
   // One error shown: the outdoor unit's, or the indoor unit's when only that one has an error (or is selected)
