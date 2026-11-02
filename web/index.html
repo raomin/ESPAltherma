@@ -77,7 +77,7 @@ p.sub{margin:4px 0 0}
 .flags span.on{background:var(--warm);color:#2e2410}
 .status{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:600;margin-top:4px}
 .good{color:var(--ok)}.bad{color:var(--bad)}.attn{color:var(--note)}
-.dev{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:16px}
+.dev{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:16px 0}
 .dev>div{padding:14px 16px;min-width:0}
 .dev .head{display:flex;align-items:center;gap:8px;color:var(--ink2)}
 .dev .v{font-size:18px;font-weight:600;margin-top:6px;overflow-wrap:anywhere}
@@ -530,7 +530,7 @@ const API_ERRORS = [N_('invalid JSON'), N_('unknown model'), N_('busy, retry'), 
 const MQTT_ERRORS = [N_('broker unreachable'), N_('wrong user or password'), N_('connection refused')];
 const SUPPLIES = [N_('5V pin'), N_('USB')];
 const HP_WORDS = [N_('Fan Only'), N_('Heating'), N_('Cooling'), N_('Auto'), N_('Stop'), N_('DHW'), N_('Heating + DHW'), N_('Cooling + DHW'), N_('Normal')];
-let status = {}, cfg = {}, models = [], catalog = [], selected = new Set(), lastValues = [], statusAt = Date.now();
+let status = {}, cfg = {}, models = [], catalog = [], selected = new Set(), lastValues = [], statusAt = Date.now(), valuesAt = 0, events = null;
 
 async function api(path, opts = {}) {
   const r = await fetch(path, opts);
@@ -858,8 +858,10 @@ function renderStatus() {
   const hp = status.hp;
   $('#hdrModel').textContent = hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : '';
   renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl(); renderToday();
-  // Values appeared (model just detected or chosen): show them without waiting for the next push
-  if (hp.values > 0 && hp.last_poll >= 0 && !lastValues.length) api('/api/values').then(renderValues).catch(() => {});
+  // Values appeared (model just detected or chosen), or the board polled since the last push reached us (a dropped
+  // event stream, a missed message): fetch them rather than draw a reading that is minutes or hours old
+  if (hp.values > 0 && hp.last_poll >= 0 && (!lastValues.length || Date.now() - valuesAt > (hp.last_poll + 20) * 1000)) api('/api/values').then(renderValues).catch(() => {});
+  if (events && events.readyState === EventSource.CLOSED) connectEvents();
 }
 async function refreshStatus() { try { status = await api('/api/status'); statusAt = Date.now(); renderStatus(); } catch (e) {} }
 setInterval(renderAge, 1000);
@@ -989,7 +991,7 @@ function paint() {
   $('#flags').replaceChildren(...FL.filter(([k]) => r[k] != null).map(([k, l]) => el('span', {class: isOn(r[k]) ? 'on' : ''}, t(l))),
     ...(set(r.thermoOff) ? [el('span', {}, t('Thermo off {code}', {code: r.thermoOff}))] : []));
 }
-function renderValues(list) { lastValues = list || []; paint(); renderReadings(); }
+function renderValues(list) { lastValues = list || []; valuesAt = Date.now(); paint(); renderReadings(); }
 let allToggled = false;
 $('#allBox').addEventListener('toggle', () => allToggled = true);
 function renderReadings() {
@@ -1432,7 +1434,7 @@ $('#resetBtn').onclick = async () => { if (confirm(t('Erase all settings (WiFi, 
 async function loadConfig() { try { cfg = await api('/api/config'); $('#sysTm').checked = !!(cfg.telemetry && cfg.telemetry.enabled); $('#upDaily').checked = !(cfg.update && cfg.update.check === false); } catch (e) {} }
 function connectEvents() {
   if (!window.EventSource) return;
-  const es = new EventSource('/events');
+  const es = events = new EventSource('/events');
   es.addEventListener('values', e => renderValues(JSON.parse(e.data)));
   es.addEventListener('status', e => { status = JSON.parse(e.data); statusAt = Date.now(); renderStatus(); });
   es.addEventListener('log', e => { const l = $('#log'); l.textContent += e.data; if (l.textContent.length > 60000) l.textContent = l.textContent.slice(-40000); scrollLog(); });
