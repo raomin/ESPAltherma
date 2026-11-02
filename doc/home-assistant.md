@@ -64,7 +64,7 @@ template:
         state_class: measurement
         state: >
           {% set flow = states('sensor.espaltherma_flow_sensor_lmin') | float(0) %}
-          {% set dt = states('sensor.espaltherma_leaving_water_temp_before_buh_r1t') | float(0)
+          {% set dt = states('sensor.espaltherma_leaving_water_temp_after_buh_r2t') | float(0)
                     - states('sensor.espaltherma_inlet_water_tempr4t') | float(0) %}
           {{ [flow * 0.06 * 1.16 * dt, 0] | max | round(2) }}
       - name: "Heat pump COP"
@@ -78,7 +78,8 @@ template:
 
 - Replace `sensor.my_heat_pump_power` with your power meter, in W (drop the `/ 1000` if it reports kW).
 - Check the entity ids in Settings → Devices & services → Entities: they come from the English labels and can differ a bit between models.
-- If the meter also powers the backup heater, use the water after it: `sensor.espaltherma_leaving_water_temp_after_buh_r2t`.
+- The leaving water is the sensor after the backup heater (R2T): it is the water the house gets, and when a heater step is on its heat is counted along with the electricity your meter sees. On a unit without that sensor, use the one before the heater: `sensor.espaltherma_leaving_water_temp_before_buh_r1t`. The firmware's own energy figures (Settings → Energy and cycles) follow the same rule.
+- To compare R1T and R2T, read them while the pump runs and the heater is off: with the water standing still the two drift apart by several degrees (R1T sits at the plate exchanger) and the gap means nothing. With the water moving they differ by a few tenths of a degree, in either direction depending on the unit: that is the tolerance of the sensors, and neither reads truer. A steady gap of a degree or more on a monobloc is worth a service check: on some EDLA units the tape heaters on the plate exchanger pipes were left on whenever the pump ran (#367).
 - During a defrost the heat output is negative: it shows 0.
 
 **COP of a day.** The instant COP jumps around (start, defrost, hot water). Over a day, divide energies instead: create an *Integral* helper (Settings → Devices & services → Helpers → *Create helper* → *Integral sensor*, method *Left*) on "Heat pump heat output", and one on your power meter, unless it already gives kWh. Put a daily *Utility meter* helper on each, and divide the two in a template like the one above.
