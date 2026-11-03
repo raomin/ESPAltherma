@@ -877,7 +877,7 @@ const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|
   inv: /^INV frequency/i, invHz: /^INV comp\. frequency\(Hz\)/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^(O\/U )?error type/i, code: /^(O\/U )?error code/i, thermo: /^([OI]\/U )?thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
   freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \((N-phase|V)\)/i,
-  mixed: /^mixed water temp/i, mixedKit: /^(\[EKMIK\] bizone kit mixed leaving water|\[HPSU\] mixed leaving water temperature after the tank)/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i, r6t: /^liquid pipe temp\.\(R6T\)/i,
+  mixed: /^mixed water temp/i, mixedKit: /^\[EKMIK\] bizone kit mixed leaving water/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i, r6t: /^liquid pipe temp\.\(R6T\)/i,
   // the backup heater (Altherma BUH step 1, Rotex external heater), and the codes of protocol S units
   buh: /^(BUH Step1|external heater)/i, solar: /^burner inhibit/i, warn: /^warning code/i, caution: /^caution code/i, thermoOff: /^thermo off error/i,
   // the indoor unit's error, when the outdoor unit has one too ("O/U Error Code", "I/U Error Code")
@@ -888,7 +888,9 @@ function reading(list) {
   if (r.r3t == null && r.r6t != null) r.r3t = r.r6t; // the Altherma 4 has its refrigerant liquid side in the outdoor unit
   // No backup heater (EDLA...W1/V3 monoblocs): its outlet sensor (R2T) reads exactly 0, the leaving water is the heat exchanger's (R1T)
   if (r.lw2 != null && +r.lw2 === 0 && r.lw1 != null) r.lw2 = r.lw1;
-  // The mixed zone's water is the bizone kit's sensor where the kit is fitted (the ECH2O units have no other)
+  // The mixed zone's water is the bizone kit's sensor where the kit is fitted (the ECH2O units have no other). Not
+  // the ECH2O's "[HPSU] Mixed leaving water temperature after the tank R7T": every ECH2O has that one, it is the
+  // supply to the house after the tank (38.3 against 38.0 leaving and 32.5 in the kit's zone on dc6jn's, #629)
   if (r.mixedKit != null && +r.mixedKit !== 0) r.mixed = r.mixedKit;
   // ECH2O units (the [HPSU] values): their mixed water is the kit's sensor only ("Mixed water temp." reads noise
   // there), and the Daikin board's room temperature and target read a constant 20, the RoCon has the real ones
