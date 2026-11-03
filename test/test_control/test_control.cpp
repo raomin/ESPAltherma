@@ -13,6 +13,8 @@ static const uint8_t LIMITS[32] = {0xFF, 0x00, 0x15, 0x23, 0x08, 0xFF, 0x00, 0x0
 struct FakeUnit
 {
     uint8_t softwareId[4];
+    bool hasL = true;      // the 2014-2017 boards have no 'L' command: registry 0x60 carries their software
+    uint8_t reg60[17];     // registry 0x60 payload, the software word at bytes 15 and 14
     uint8_t memory[1024]; // the board's memory, by offset
     uint8_t ram[0x6000];  // RAM, by address
     bool answer = true;
@@ -22,6 +24,8 @@ struct FakeUnit
     {
         const uint8_t id[4] = {0x04, 0x29, 0x00, 0x18}; // reads "18002904"
         memcpy(softwareId, id, 4);
+        hasL = true;
+        memset(reg60, 0, sizeof(reg60));
         memset(memory, 0, sizeof(memory));
         memset(ram, 0, sizeof(ram));
         answer = true;
@@ -59,10 +63,17 @@ struct FakeUnit
     // from the profile (the limit records sit 5 bytes apart, in the order hot water A, B, leaving water B, A)
     void board(const ControlProfile &p)
     {
-        for (int i = 0; i < 4; i++)
+        hasL = strlen(p.softwareId) == 8;
+        for (int i = 0; i < 4 && hasL; i++)
         {
             char hex[3] = {p.softwareId[2 * i], p.softwareId[2 * i + 1], 0};
             softwareId[3 - i] = (uint8_t)strtol(hex, nullptr, 16);
+        }
+        if (!hasL) // "76F2": xx = 76 at byte 15, yy = F2 at byte 14
+        {
+            char hi[3] = {p.softwareId[0], p.softwareId[1], 0}, lo[3] = {p.softwareId[2], p.softwareId[3], 0};
+            reg60[15] = (uint8_t)strtol(hi, nullptr, 16);
+            reg60[14] = (uint8_t)strtol(lo, nullptr, 16);
         }
         memset(ram, 0, sizeof(ram));
         setWord(p.dhw.ramA, 48 << 8);
@@ -127,10 +138,17 @@ struct FakeUnit
         const uint8_t *data = frame + 2;
         size_t n = len - 3, out = 0;
         reply[out++] = cmd;
-        if (cmd == 0x4C && n == 0)
+        if (cmd == 0x4C && n == 0 && hasL)
         {
             memcpy(reply + out, softwareId, 4);
             out += 4;
+        }
+        else if (cmd == 0x40 && n == 1 && data[0] == 0x60) // 40 60 L payload[L-2] crc
+        {
+            reply[out++] = 0x60;
+            reply[out++] = (uint8_t)(sizeof(reg60) + 2);
+            memcpy(reply + out, reg60, sizeof(reg60));
+            out += sizeof(reg60);
         }
         else if (cmd == 0x49 && n == 2)
         {
@@ -643,8 +661,33 @@ void test_power_limit_on_every_mapped_board()
         TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
         TEST_ASSERT_EQUAL_FLOAT(50.0f, a.active);
     }
-    TEST_ASSERT_EQUAL(8, mapped);
+    TEST_ASSERT_EQUAL(9, mapped);
     TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The 2014-2017 boards have no 'L' command: the software comes from registry 0x60, and the profile keyed on that
+// word drives both controls. A board that answers neither is "no answer", as before.
+void test_a_board_without_the_L_command_is_identified_by_registry_0x60()
+{
+    const ControlProfile &p = FakeUnit::profileFor("76F2");
+    TEST_ASSERT_EQUAL_STRING("76F2", p.softwareId);
+    unit.board(p);
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    TEST_ASSERT_EQUAL_STRING("76F2", c.softwareId);
+    TEST_ASSERT_EQUAL(48, c.target);
+    LimitControl l = freshLimit();
+    TEST_ASSERT_TRUE(l.identify(1000));
+    TEST_ASSERT_EQUAL_STRING("76F2", l.softwareId);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, l.limit);
+    // the word of an unknown software: unsupported, not "no answer"
+    unit.reg60[15] = 0x45;
+    unit.reg60[14] = 0x62;
+    CurveControl u = fresh();
+    TEST_ASSERT_FALSE(u.identify(1000));
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, u.status);
+    TEST_ASSERT_EQUAL_STRING("4562", u.softwareId);
 }
 
 int main(int, char **)
@@ -671,5 +714,6 @@ int main(int, char **)
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
     RUN_TEST(test_power_limit_on_every_mapped_board);
+    RUN_TEST(test_a_board_without_the_L_command_is_identified_by_registry_0x60);
     return UNITY_END();
 }

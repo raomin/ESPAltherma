@@ -130,6 +130,13 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x37B0, 0x37EE, 366, 367, 0x5428, 0x542D, 278, 0x01, 0x316E, 0x34CA},
      {0x37B2, 0x37F0, 373, 372, 0x5437, 0x5432, 374, 0x0C, 0x31C2, 0},
      {0x52B5, 0x52B6, 0x37B6, 0x5295, 0x45E2, 0x45E6}},
+    // 4-16 kW EHVH/EHVX/EHBH/EHBX CB series (Altherma LT of 2014-2017, AS1706432 boards). These boards have no 'L'
+    // command: the software is the word of registry 0x60. Same memory bytes and mode bits as the others, the
+    // four limitation converters found, a single active limit for both kinds. Not yet read on a unit (#599).
+    {"76F2",
+     {0x15A4, 0x15E2, 366, 367, 0x2BF1, 0x2BF6, 278, 0x01, 0x103C, 0x1278},
+     {0x15A6, 0x15E4, 373, 372, 0x2C00, 0x2BFB, 374, 0x0C, 0x10A0, 0},
+     {0x2B61, 0x2B62, 0x15AA, 0x2B41, 0x1706, 0}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
@@ -271,12 +278,31 @@ struct X10aClient
   }
 
   // The software version of the hydro board, 8 hex digits, as the 'L' command reports it
+  // The hydro board's software: the 'L' command, 4 bytes, the digits reversed (04 29 00 18 is 18002904). The
+  // boards of 2014-2017 (Altherma LT CA and CB) have no 'L' command and give it in registry 0x60 instead, bytes
+  // 15 and 14 ("I/U Software ID (xx)" and "(yy)": 76 F2 is 76F2), the one printed by the service tools.
   bool readSoftwareId(char *out9)
   {
     uint8_t id[4];
-    if (!command(0x4C, nullptr, 0, id, 4))
+    if (command(0x4C, nullptr, 0, id, 4))
+    {
+      snprintf(out9, 9, "%02X%02X%02X%02X", id[3], id[2], id[1], id[0]);
+      return true;
+    }
+    // 03 40 60 crc -> 40 60 L payload[L-2] crc
+    uint8_t reg = 0x60, frame[CONTROL_FRAME_MAX], got[CONTROL_FRAME_MAX];
+    if (exchange == nullptr)
       return false;
-    snprintf(out9, 9, "%02X%02X%02X%02X", id[3], id[2], id[1], id[0]);
+    size_t len = x10aFrame(0x40, &reg, 1, frame);
+    size_t r = exchange(frame, len, got, sizeof(got), 300);
+    if (r < 4 || got[0] != 0x40 || got[1] != reg || got[2] < 18 || r < (size_t)got[2] + 2)
+      return false; // no answer, or a payload too short to hold the two bytes
+    uint8_t sum = 0;
+    for (size_t i = 0; i < (size_t)got[2] + 1; i++)
+      sum += got[i];
+    if ((uint8_t)~sum != got[got[2] + 1])
+      return false;
+    snprintf(out9, 9, "%02X%02X", got[3 + 15], got[3 + 14]);
     return true;
   }
 };
@@ -337,14 +363,12 @@ struct CurveControl : X10aClient
     checkedAt = now;
     ControlStatus before = status;
     int minBefore = minTarget, maxBefore = maxTarget;
-    uint8_t id[4];
-    if (!command(0x4C, nullptr, 0, id, 4))
+    if (!readSoftwareId(softwareId))
     {
       status = CONTROL_NO_ANSWER;
     }
     else
     {
-      snprintf(softwareId, sizeof(softwareId), "%02X%02X%02X%02X", id[3], id[2], id[1], id[0]);
       profile = nullptr;
       for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       {
