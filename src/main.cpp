@@ -869,15 +869,20 @@ void controlLoop()
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
   limitTick();
   memoryTick();
-  if (config.protocol == 'I' && !busy)
+  // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
+  bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;
+  DiiiStatus before = diii.status;
+  if (!diiiOn)
   {
-    DiiiStatus before = diii.status;
+    if (diii.status != DIII_OFF)
+      diii.reset();
+  }
+  else if (!busy)
     diii.tick();
-    if ((before == DIII_READY) != (diii.status == DIII_READY))
-    {
-      haExtraSetup(); // its sensors join (or leave) the Home Assistant discovery
-      discoveryDirty = true;
-    }
+  if ((before == DIII_READY) != (diii.status == DIII_READY))
+  {
+    haExtraSetup(); // its sensors join (or leave) the Home Assistant discovery
+    discoveryDirty = true;
   }
 }
 
@@ -912,7 +917,9 @@ void hpTask(void *)
       mqttSerial.printf("Done. Waiting %ld ms...", (long)(config.frequency - (millis() - start)));
     }
     HP_STAGE("wait");
-    while (millis() - start < config.frequency && !surveyRequested && !labelsDirty)
+    // While a DIII phase is learnt, a 30 s poll would hit the short hydro frame every minute: shift it by 7 s
+    unsigned long wait = config.frequency + (diii.learning() ? 7000 : 0);
+    while (millis() - start < wait && !surveyRequested && !labelsDirty)
     {
       watchdogHp();
       HP_STAGE("hot water target");
