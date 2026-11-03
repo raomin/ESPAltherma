@@ -20,6 +20,7 @@
 #include "converters.h"
 #include "comm.h"
 #include "control.h"
+#include "diii_comm.h"
 #include "stats.h"
 #include "survey.h"
 #include "catalog.h"
@@ -55,6 +56,13 @@ volatile bool surveyInProgress = false; //the survey is being written: readers m
 volatile bool surveyReady = false;
 CurveControl dhwControl, lwtControl;   //experimental hot water and leaving water targets (control.h), heat pump task
 LimitControl limitControl;             //experimental power limit (control.h), heat pump task
+DiiiComm diii;                     //read-only DIII E0/63 frames of an HT outdoor unit (diii_comm.h), heat pump task
+static void diiiSleep(unsigned long ms)
+{
+  watchdogHp();
+  delay(ms);
+}
+static void diiiLog(const char *s) { mqttSerial.print(s); }
 
 // The heat pump task converts values while the main loop publishes them.
 SemaphoreHandle_t valuesMutex = xSemaphoreCreateMutex();
@@ -492,6 +500,7 @@ void pollRegistries()
   for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
   {
     watchdogHp();
+    diii.hold(1500, diiiSleep); // a registry query must not land in a DIII E0 window
     unsigned char buff[REPLY_BUFFER_SIZE] = {0};
     int tries = 0;
     while (!queryRegistry(registryIDs[i], buff, config.protocol) && tries++ < 3)
@@ -542,6 +551,27 @@ static const LabelDef STATS_LABELS[] = {
     {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last pause (min)"},
 };
 
+// The DIII values (diii_comm.h appendJson keys): dataType 1 = temperature, conv 105 + "(A)" = current
+static const LabelDef DIII_LABELS[] = {
+    {-1, -1, -1, -1, 1, "E0: Leaving water (C)"},
+    {-1, -1, -1, -1, 1, "E0: Return water (C)"},
+    {-1, -1, -1, -1, 1, "E0: Remote room temp (C)"},
+    {-1, -1, -1, -1, -1, "E0: Pump"},
+    {-1, -1, -1, -1, -1, "E0: EVL (pls)"},
+    {-1, -1, -1, -1, -1, "E0: EVH (pls)"},
+    {-1, -1, 105, -1, -1, "E0: INV current (A)"},
+    {-1, -1, -1, -1, -1, "E0: INV speed (rps)"},
+    {-1, -1, -1, -1, 1, "E0: INV fin temp (C)"},
+    {-1, -1, -1, -1, -1, "E0: Sync"},
+    {-1, -1, -1, -1, 1, "63: Leaving water (C)"},
+    {-1, -1, -1, -1, 1, "63: Return water (C)"},
+    {-1, -1, -1, -1, 1, "63: R410A liquid (C)"},
+    {-1, -1, -1, -1, 1, "63: BRC1 room temp (C)"},
+    {-1, -1, 105, -1, -1, "RAM: Outdoor input current (A)"},
+    {-1, -1, 105, -1, -1, "RAM: Outdoor rated current (A)"},
+    {-1, -1, -1, -1, -1, "RAM: Outdoor load (%)"},
+};
+
 // The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a number)
 static float statsValue(std::initializer_list<const char *> prefixes, bool *found = nullptr)
 {
@@ -585,6 +615,8 @@ static uint32_t statsEpoch()
 
 float statsVoltageRead() { return statsValue({"Voltage (N-phase)"}); }
 
+void haExtraSetup();
+
 void statsSetup()
 {
   stats.begin(&statsDay);
@@ -595,8 +627,32 @@ void statsSetup()
   stats.settings.buhKW[0] = config.statsBuhKW[0];
   stats.settings.buhKW[1] = config.statsBuhKW[1];
   stats.settings.tzMinutes = config.statsTz;
-  haExtraLabels = config.statsEnabled ? STATS_LABELS : nullptr;
-  haExtraCount = config.statsEnabled ? sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) : 0;
+  haExtraSetup();
+}
+
+// The statistics and the DIII values share the one list of extra Home Assistant sensors. The DIII ones only
+// once the reader found its outdoor unit (no empty sensors on the other units).
+void haExtraSetup()
+{
+  static LabelDef extra[sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0])];
+  size_t n = 0;
+  if (config.statsEnabled)
+    for (const LabelDef &l : STATS_LABELS)
+      extra[n++] = l;
+  if (diii.status == DIII_READY)
+    for (const LabelDef &l : DIII_LABELS)
+      extra[n++] = l;
+  haExtraCount = 0; // the main loop may be reading the list
+  haExtraLabels = n ? extra : nullptr;
+  haExtraCount = n;
+}
+
+// The DIII values as ATTR keys (mqtt.h, next to the statistics)
+void diiiAppendJson(char *buf, size_t size)
+{
+  valuesLock();
+  diii.appendJson(buf, size);
+  valuesUnlock();
 }
 
 static void statsUpdate()
@@ -813,6 +869,16 @@ void controlLoop()
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
   limitTick();
   memoryTick();
+  if (config.protocol == 'I' && !busy)
+  {
+    DiiiStatus before = diii.status;
+    diii.tick();
+    if ((before == DIII_READY) != (diii.status == DIII_READY))
+    {
+      haExtraSetup(); // its sensors join (or leave) the Home Assistant discovery
+      discoveryDirty = true;
+    }
+  }
 }
 
 // Owns the X10A link: runs the survey on request and queries the registries every config.frequency ms.
@@ -852,7 +918,7 @@ void hpTask(void *)
       HP_STAGE("hot water target");
       controlLoop();
       HP_STAGE("wait");
-      delay(100);
+      delay(diii.idleMs()); // 100 ms, 10 ms while a DIII frame is being learnt or is due
     }
   }
 }
@@ -926,6 +992,11 @@ void setup()
   initRegistries();
   requestSurvey();
   lwtControl.kind = CONTROL_LWT;
+  diii.exchange = x10aExchange;
+  diii.clock = millis;
+  diii.log = diiiLog;
+  diii.lock = valuesLock;
+  diii.unlock = valuesUnlock;
   xTaskCreate(hpTask, "heatpump", 8192, nullptr, 1, nullptr);
   watchdogBegin();
   mqttSerial.print("ESPAltherma started!");
