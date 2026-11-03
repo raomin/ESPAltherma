@@ -30,6 +30,8 @@ LabelDef labelDefs[] = {
 //{0x10,0,217,1,-1,"Operation Mode"},
 //{0x10,1,307,1,-1,"Thermostat ON/OFF"},
 //{0x10,1,306,1,-1,"Restart standby"},
+// Bit 5: on about 60 s before each compressor start, off 30-95 s after it (24 h on a live ERSQ016)
+//{0x10,1,305,1,-1,"Startup control"},
 //{0x10,1,304,1,-1,"Defrost Operation"},
 //{0x10,1,303,1,-1,"Oil Return Operation"},
 //{0x10,1,302,1,-1,"Pressure equalizing operation"},
@@ -52,11 +54,12 @@ LabelDef labelDefs[] = {
 //{0x10,13,218,1,-1,"Operation control mode"},
 //{0x20,0,105,2,1,"R1T-Outdoor air temp."},
 //{0x20,2,105,2,1,"R4T (deicer)"},
-// Unnamed; from live values probably the subcooling heat exchanger gas side
-//{0x20,4,105,2,1,"20-4 (subcool hex gas?)"},
+// 20-4, 20-8 and 20-18: the same 0x20 layout as the VRV3S (RXYSQ4-6P) outdoor units, whose names they take.
+// Live on an ERSQ016: 20-8 about 1 K under the outdoor air (evaporator outlet), 20-18 within 1 K of Low
+// Pressure(T) (evaporator inlet). 20-4 is not checked live.
+//{0x20,4,105,2,1,"R6T (subcool hex gas)"},
 //{0x20,6,105,2,1,"R2T (discharge)"},
-// Unnamed; from live values probably a first suction sensor
-//{0x20,8,105,2,1,"20-8 (suction 1?)"},
+//{0x20,8,105,2,1,"R3T (suction 1)"},
 //{0x20,10,105,2,1,"R5T (suction 2)"},
 //{0x20,12,105,2,1,"R7T (liquid)"},
 //{0x20,14,105,2,2,"Low Pressure"},
@@ -64,8 +67,7 @@ LabelDef labelDefs[] = {
 //{0x20,16,105,2,2,"High Pressure"},
 // R410A curve (801); High Pressure(T) 27.6 C vs Target Cond. 28.2 C on the live unit
 //{0x20,16,405,2,1,"High Pressure(T)"},
-// Unnamed; from live values probably a second liquid sensor
-//{0x20,18,105,2,1,"20-18 (liquid 2?)"},
+//{0x20,18,105,2,1,"Heat exchanger liquid temp."},
 // 0x30 (10 bytes): compressor, fan, expansion valves, 4-way valve, crankcase heater, solenoid valve
 //{0x30,0,152,1,-1,"INV Comp. Frequency(Hz)"},
 //{0x30,1,211,1,-1,"Fan 1 (step)"},
@@ -74,7 +76,11 @@ LabelDef labelDefs[] = {
 //{0x30,6,307,1,-1,"4 Way Valve"},
 // Inferred from the 0x00 quantities, not checked live
 //{0x30,7,307,1,-1,"Crank case heater 1"},
+// Bits 7 and 5 named as on the VRV3S. Unload: on at 30-49 Hz, never at 80 Hz and above, as the compressor step
+// table of the service manual has it. Hot gas: never on while running, on before a start and around defrosts
+//{0x30,8,307,1,-1,"SV (hot gas)"},
 //{0x30,8,306,1,-1,"SV (liquid pipe shut)"},
+//{0x30,8,305,1,-1,"SV (unload)"},
 // The hydrobox, as the outdoor unit sees it (read with its address)
 //{0x50,1,152,1,-1,"Hydrobox Address"},
 //{0x50,2,313,1,-1,"I/U operation mode"},
