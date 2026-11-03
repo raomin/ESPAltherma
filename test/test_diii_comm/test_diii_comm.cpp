@@ -1,0 +1,231 @@
+#include <stdlib.h>
+#include <string.h>
+#include <unity.h>
+
+#include "diii_comm.h"
+
+// Fake outdoor controller: a RAM image whose DIII slots fill on a timeline like the real unit's.
+//  - hydro E0 page 0x80 in the rx slot (0x0C85) at second 22 of every minute, for 800 ms
+//  - the outdoor's own E0 page 2 in the tx slot (0x0C25) at second 55, for 2 s
+//  - 63 in the rx slot every 300 s (first at 100 s), for 10 s
+// Each 'R' read costs 30 ms of the fake clock.
+static unsigned long fakeNow = 0;
+static unsigned long fakeClock() { return fakeNow; }
+
+struct FakeOutdoor
+{
+  bool answer = true;
+  bool dp0009 = true;
+  int reads = 0, otherCommands = 0, unsafeReads = 0;
+  int windowReads = 0; // reads in the 60 s after both E0 phases are locked
+
+  void reset() { *this = FakeOutdoor(); }
+
+  void fill(uint16_t addr, uint8_t *out, unsigned long t)
+  {
+    static uint8_t ram[0x8000];
+    memset(ram, 0, sizeof(ram));
+    const char *id = dp0009 ? "DP0009_003" : "XX1234_001";
+    memcpy(ram + 0x0682, id, strlen(id));
+    float cur = 4.4f, rated = 27.0f;
+    memcpy(ram + 0x2B73, &cur, 4);
+    memcpy(ram + 0x2B79, &rated, 4);
+    ram[0x2B7D] = 41; // 4.4 / 27 x 256
+    unsigned long sec = t % 60000;
+    if (sec >= 22000 && sec < 22800)
+    {
+      uint8_t *e = ram + 0x0C8B; // E0[0] = slot 0x0C85 + 6
+      ram[0x0C8A] = 0xE0;
+      e[4] = 0xFF;  // d[5]
+      e[5] = 0x80;  // page
+      e[7] = 48;    // EVL / 10
+      e[8] = 0;     // EVH / 10
+      e[9] = 0x0C;  // pump hi
+      e[10] = 0x0C; // pump lo
+      e[14] = 33;   // LWT
+      e[15] = 28;   // RWT
+      e[16] = 0x80 | 2; // room -2 (sign-magnitude)
+      e[18] = 30;   // discharge/2
+      e[19] = 40;   // fin
+    }
+    else if ((t >= 100000) && ((t - 100000) % 300000) < 10000)
+    {
+      ram[0x0C8A] = 0x63;
+      ram[0x0C8B] = 0x01;
+      ram[0x0C90] = 0x1C; // RWT 28.5
+      ram[0x0C91] = 0x80;
+      ram[0x0C92] = 0x1E; // liquid 30.25
+      ram[0x0C93] = 0x40;
+      ram[0x0C94] = 0x21; // LWT 33.0
+      ram[0x0C95] = 0x00;
+      ram[0x0CA3] = 0x15; // BRC1 21.5
+      ram[0x0CA4] = 0x80;
+    }
+    if (sec >= 55000 && sec < 57000)
+    {
+      ram[0x0C2A] = 0xE0;
+      ram[0x0C2F] = 0x00;
+      ram[0x0C30] = 0x02;
+      ram[0x0C3A + 0x0D] = 32; // rps
+      ram[0x0C3A + 0x0E] = 45; // fin
+      ram[0x0C3A + 0x0F] = 5;  // A
+    }
+    memcpy(out, ram + addr, 16);
+  }
+};
+
+static FakeOutdoor unit;
+
+static size_t fakeExchange(const uint8_t *frame, size_t len, uint8_t *reply, size_t maxLen, unsigned long)
+{
+  fakeNow += 30;
+  if (len != 5 || frame[0] != 0x04 || frame[1] != 0x52)
+  {
+    unit.otherCommands++;
+    return 0;
+  }
+  uint16_t a = frame[2] | frame[3] << 8;
+  unit.reads++;
+  if (!DiiiComm::safeAddress(a))
+    unit.unsafeReads++;
+  if (!unit.answer || maxLen < 18)
+    return 0;
+  reply[0] = 0x52;
+  unit.fill(a, reply + 1, fakeNow);
+  uint8_t sum = 0;
+  for (int i = 0; i < 17; i++)
+    sum += reply[i];
+  reply[17] = (uint8_t)~sum;
+  return 18;
+}
+
+static DiiiComm reader;
+
+static void runFor(unsigned long ms)
+{
+  unsigned long end = fakeNow + ms;
+  while (fakeNow < end)
+  {
+    reader.tick();
+    fakeNow += reader.idleMs();
+  }
+}
+
+void setUp()
+{
+  unit.reset();
+  fakeNow = 0;
+  reader = DiiiComm();
+  reader.exchange = fakeExchange;
+  reader.clock = fakeClock;
+}
+
+void tearDown() {}
+
+void test_silent_before_start_delay()
+{
+  runFor(89000);
+  TEST_ASSERT_EQUAL(0, unit.reads);
+}
+
+void test_other_software_reads_nothing_more()
+{
+  unit.dp0009 = false;
+  runFor(20 * 60000UL);
+  TEST_ASSERT_EQUAL(DIII_UNSUPPORTED, reader.status);
+  TEST_ASSERT_TRUE(unit.reads <= 2 * 3); // identification only, every 10 min
+}
+
+void test_catches_all_frames_read_only()
+{
+  runFor(15 * 60000UL);
+  TEST_ASSERT_EQUAL(DIII_READY, reader.status);
+  TEST_ASSERT_EQUAL_STRING("DP0009_003", reader.softwareId);
+  TEST_ASSERT_TRUE(reader.hydro.locked);
+  TEST_ASSERT_TRUE(reader.outdoor.locked);
+  TEST_ASSERT_EQUAL(0, unit.otherCommands);
+  TEST_ASSERT_EQUAL(0, unit.unsafeReads);
+  TEST_ASSERT_EQUAL(33, reader.v.lwt);
+  TEST_ASSERT_EQUAL(28, reader.v.rwt);
+  TEST_ASSERT_EQUAL(-2, reader.v.room);
+  TEST_ASSERT_EQUAL(480, reader.v.evl);
+  TEST_ASSERT_EQUAL(0x0C0C, reader.v.pump);
+  TEST_ASSERT_EQUAL(32, reader.v.invRps);
+  TEST_ASSERT_EQUAL(45, reader.v.invFin);
+  TEST_ASSERT_EQUAL(5, reader.v.invAmp);
+  TEST_ASSERT_TRUE(reader.v.f63At > 0);
+  TEST_ASSERT_FLOAT_WITHIN(0.01f, 33.0f, reader.v.lwt63);
+  TEST_ASSERT_FLOAT_WITHIN(0.01f, 28.5f, reader.v.rwt63);
+  TEST_ASSERT_FLOAT_WITHIN(0.01f, 30.25f, reader.v.liq63);
+  TEST_ASSERT_FLOAT_WITHIN(0.01f, 21.5f, reader.v.room63);
+  TEST_ASSERT_FLOAT_WITHIN(0.01f, 4.4f, reader.v.current);
+  TEST_ASSERT_FLOAT_WITHIN(0.01f, 27.0f, reader.v.rated);
+  TEST_ASSERT_EQUAL(41, reader.v.load);
+  TEST_ASSERT_TRUE(reader.r63Period > 290000 && reader.r63Period < 310000);
+}
+
+void test_locked_traffic_is_low()
+{
+  runFor(15 * 60000UL);
+  TEST_ASSERT_TRUE(reader.hydro.locked && reader.outdoor.locked && reader.r63Period);
+  int before = unit.reads;
+  runFor(5 * 60000UL);
+  int perMinute = (unit.reads - before) / 5;
+  TEST_ASSERT_TRUE(perMinute <= 60);
+  TEST_ASSERT_TRUE(perMinute >= 4);
+}
+
+void test_json_keys()
+{
+  runFor(15 * 60000UL);
+  char buf[1024] = "";
+  reader.appendJson(buf, sizeof(buf));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: Leaving water (C)\":33,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: Remote room temp (C)\":-2,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: INV current (A)\":5,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: Sync\":3,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"63: Leaving water (C)\":33.00,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"RAM: Outdoor input current (A)\":4.40,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"RAM: Outdoor rated current (A)\":27.0,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"RAM: Outdoor load (%)\":16,"));
+  reader.readCurrent = false;
+  buf[0] = 0;
+  reader.appendJson(buf, sizeof(buf));
+  TEST_ASSERT_NULL(strstr(buf, "RAM:"));
+}
+
+void test_values_go_null_when_frames_stop()
+{
+  runFor(15 * 60000UL);
+  unit.answer = false;
+  runFor(4 * 60000UL);
+  char buf[1024] = "";
+  reader.appendJson(buf, sizeof(buf));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: Leaving water (C)\":null,"));
+  TEST_ASSERT_FALSE(reader.hydro.locked);
+}
+
+void test_window_hold_keeps_polls_off()
+{
+  runFor(15 * 60000UL);
+  // just before the hydro window: hold() must tick through it and return once it is over
+  unsigned long target = (fakeNow / 60000 + 1) * 60000 + 22000 - 3000;
+  runFor(target - fakeNow);
+  TEST_ASSERT_TRUE(reader.windowWithin(5000));
+  reader.hold(5000, [](unsigned long ms) { fakeNow += ms; });
+  TEST_ASSERT_FALSE(reader.windowWithin(1000));
+  TEST_ASSERT_TRUE(fakeClock() - reader.v.hydroAt < 5000);
+}
+
+int main(int, char **)
+{
+  UNITY_BEGIN();
+  RUN_TEST(test_silent_before_start_delay);
+  RUN_TEST(test_other_software_reads_nothing_more);
+  RUN_TEST(test_catches_all_frames_read_only);
+  RUN_TEST(test_locked_traffic_is_low);
+  RUN_TEST(test_json_keys);
+  RUN_TEST(test_values_go_null_when_frames_stop);
+  RUN_TEST(test_window_hold_keeps_polls_off);
+  return UNITY_END();
+}
