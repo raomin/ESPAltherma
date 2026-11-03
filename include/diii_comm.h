@@ -584,6 +584,10 @@ struct DiiiComm
       serviceCurrent();
   }
 
+  // True while a phase is being learnt. The caller should then not poll on a period that divides 60 s (the
+  // default 30 s does): the poll would land on the short hydro frame every minute and the phase never lock.
+  bool learning() { return status == DIII_READY && readE0 && (!hydro.locked || !outdoor.locked); }
+
   // True when an E0 window is open or opens within ms: keep other traffic (a registry poll) off the link.
   bool windowWithin(unsigned long ms) { return nearE0Window((long)ms); }
 

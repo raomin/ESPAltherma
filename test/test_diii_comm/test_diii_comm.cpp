@@ -164,6 +164,31 @@ void test_catches_all_frames_read_only()
   TEST_ASSERT_TRUE(reader.r63Period > 290000 && reader.r63Period < 310000);
 }
 
+// A blocking registry poll every 30 s (2 s long) while learning, with the caller's +7 s shift while learning():
+// the hydro phase must still lock (a plain 30 s poll can hide the < 1 s hydro frame every minute).
+void test_learns_despite_a_30s_poll()
+{
+  // like hpTask: the period runs from the start of a poll; worst case, every poll starts at second 21.5 or
+  // 51.5 and blocks the link for 2 s, over the whole hydro frame (second 22.0..22.8)
+  unsigned long pollStart = 21500;
+  unsigned long end = 15 * 60000UL;
+  while (fakeNow < end)
+  {
+    if (fakeNow >= pollStart)
+    {
+      unsigned long start = fakeNow;
+      reader.hold(1500, [](unsigned long ms) { fakeNow += ms; });
+      fakeNow += 2000; // the poll itself (no reads by the reader)
+      pollStart = start + 30000 + (reader.learning() ? 7000 : 0);
+    }
+    reader.tick();
+    fakeNow += reader.idleMs();
+  }
+  TEST_ASSERT_TRUE(reader.hydro.locked);
+  TEST_ASSERT_TRUE(reader.outdoor.locked);
+  TEST_ASSERT_FALSE(reader.learning());
+}
+
 void test_locked_traffic_is_low()
 {
   runFor(15 * 60000UL);
@@ -223,6 +248,7 @@ int main(int, char **)
   RUN_TEST(test_silent_before_start_delay);
   RUN_TEST(test_other_software_reads_nothing_more);
   RUN_TEST(test_catches_all_frames_read_only);
+  RUN_TEST(test_learns_despite_a_30s_poll);
   RUN_TEST(test_locked_traffic_is_low);
   RUN_TEST(test_json_keys);
   RUN_TEST(test_values_go_null_when_frames_stop);
