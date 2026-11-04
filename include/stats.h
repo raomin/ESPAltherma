@@ -7,7 +7,7 @@
 //    the heater's heat counted with its electricity. Hot water uses the same return sensor, never the tank's.
 //  - electrical input, estimated: the inverter's current x the phase voltage (a setting, 230 V by default, or the
 //    unit's own reading when it has one), x 3 on a three-phase unit (the reported current is one phase's), plus a
-//    fixed auxiliary power (pump, electronics) while the compressor runs, plus the backup heater's kW per step while
+//    fixed auxiliary power (pump, electronics) while the compressor or the pump runs, plus the backup heater's kW per step while
 //    a step is on. The inverter's part is apparent power (VA) unless the power factor setting says otherwise: an
 //    estimate, named as such.
 //  - COP, estimated: the ratio of the two, while the compressor runs, outside defrosts and the first two minutes of a
@@ -215,7 +215,7 @@ public:
     {
       float v = !isnan(in.volt) && in.volt > 100 ? in.volt : settings.voltage;
       float kw = in.amp * v * (settings.phases == 3 ? 3.0f : 1.0f) * settings.powerFactor / 1000.0f; // the phase voltage, one phase's current
-      if (runNow)
+      if (runNow || (!isnan(in.flow) && in.flow > 0.5f)) // the pump also runs on its own, before and after the compressor
         kw += settings.auxW / 1000.0f;
       if (in.buh == 1)
         kw += settings.buhKW[0];

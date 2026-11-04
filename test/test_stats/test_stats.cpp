@@ -53,7 +53,7 @@ void test_powers_and_transient(void)
 }
 
 // Three phases multiply the phase voltage by 3; the unit's own voltage reading wins over the setting; aux watts
-// while running
+// while the compressor or the pump runs
 void test_voltage_sources(void)
 {
     StatsDay rtc;
@@ -68,8 +68,11 @@ void test_voltage_sources(void)
     s.settings.phases = 1;
     s.update(in, T0 + 10, 20);
     TEST_ASSERT_FLOAT_WITHIN(0.001, 6 * 235 / 1000.0f + 0.05f, s.elecKW);
-    in.inv = 0; // stopped: no aux
+    in.inv = 0; // compressor stopped, the pump still running: its watts stay
     s.update(in, T0 + 20, 30);
+    TEST_ASSERT_FLOAT_WITHIN(0.001, 6 * 235 / 1000.0f + 0.05f, s.elecKW);
+    in.flow = 0; // pump off: no aux
+    s.update(in, T0 + 30, 40);
     TEST_ASSERT_FLOAT_WITHIN(0.001, 6 * 235 / 1000.0f, s.elecKW);
 }
 
