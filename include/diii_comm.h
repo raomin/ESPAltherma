@@ -16,7 +16,7 @@
 // the expected time: about 25-45 reads a minute once locked.
 //
 // Only the 'R' command (0x52, read 16 bytes of RAM) is ever sent; nothing is written. The addresses belong to
-// one controller software: the reader first looks for its id ("DP0009") in the RAM and does nothing else on
+// known controller softwares: the reader first looks for the id ("DP0009", "YP0211") in the RAM and does nothing else on
 // any other unit. Never reads 0x0000-0x03FF or 0x2C00-0x2FFF (special function registers).
 //
 // Verified on one unit: EKHBRD016ACV1 + ERSQ016 class outdoor, outdoor A1P software DP0009_003, ESP on the
@@ -233,7 +233,7 @@ struct DiiiComm
   DiiiTrack outdoor = {0x0C2A, 1500, 2500, 100, 0, false, false, false, false, true, 0};
   unsigned long checkedAt = 0, nextRead = 0, next63 = 0, r63Arrive = 0, r63Period = 0, r63Seen = 0, curNext = 0;
   uint8_t r63Misses = 0;
-  bool learnToggle = false, r63Rejected = false;
+  bool learnToggle = false, r63Rejected = false, curRejected = false;
 
   unsigned long now() { return clock ? clock() : 0; }
 
@@ -278,9 +278,9 @@ struct DiiiComm
   void begin() { if (lock) lock(); }
   void end() { if (unlock) unlock(); }
 
-  void rawRows(const char *tag, const uint8_t *a, const uint8_t *b, const uint8_t *c)
+  void rawRows(const char *tag, const uint8_t *a, const uint8_t *b, const uint8_t *c, bool always = false)
   {
-    if (!rawLog || log == nullptr)
+    if ((!rawLog && !always) || log == nullptr)
       return;
     char line[180];
     int n = snprintf(line, sizeof(line), "%s", tag);
@@ -291,7 +291,10 @@ struct DiiiComm
     log(line);
   }
 
-  // --- identification: the controller software id sits as text at 0x0680 ("DP0009_003" on the verified unit)
+  // --- identification: the controller software id sits as text at 0x0680 ("DP0009_003" on the verified unit,
+  // "YP0211_004" on an ERSQ016AV1, whose DIII slots have the same addresses and layout)
+  static bool knownSoftware(const uint8_t *p) { return memcmp(p, "DP0009", 6) == 0 || memcmp(p, "YP0211", 6) == 0; }
+
   bool identify()
   {
     checkedAt = now();
@@ -302,19 +305,27 @@ struct DiiiComm
       return false;
     }
     status = DIII_UNSUPPORTED;
+    softwareId[0] = 0;
     for (int i = 0; i + 6 <= 32; i++)
     {
-      if (memcmp(a + i, "DP0009", 6) != 0)
+      // an id looks like "DP0009_003": two capitals and four digits
+      bool id = a[i] >= 'A' && a[i] <= 'Z' && a[i + 1] >= 'A' && a[i + 1] <= 'Z';
+      for (int k = 2; id && k < 6; k++)
+        id = a[i + k] >= '0' && a[i + k] <= '9';
+      if (!id)
         continue;
       int n = 0;
-      while (n < 10 && i + n < 32 && a[i + n] >= 0x20 && a[i + n] < 0x7F)
+      while (n < 10 && i + n < 32 && a[i + n] > 0x20 && a[i + n] < 0x7F)
         n++;
       memcpy(softwareId, a + i, n);
       softwareId[n] = 0;
-      status = DIII_READY;
+      if (knownSoftware(a + i))
+        status = DIII_READY;
       break;
     }
     say("DIII reader: %s%s%s\n", diiiStatusName(status), softwareId[0] ? ", software " : "", softwareId);
+    if (status == DIII_UNSUPPORTED && !softwareId[0])
+      rawRows("ID", a, a + 16, nullptr, true);
     return status == DIII_READY;
   }
 
@@ -514,10 +525,7 @@ struct DiiiComm
       return;
     r63Rejected = true;
     say("63 rejected (%s), please report:\n", why);
-    bool raw = rawLog;
-    rawLog = true;
-    rawRows("63REJ", d, d2, nullptr);
-    rawLog = raw;
+    rawRows("63REJ", d, d2, nullptr, true);
   }
 
   bool nearE0Window(long ms)
@@ -584,11 +592,27 @@ struct DiiiComm
     float f, r;
     memcpy(&f, d + 3, 4); // little-endian floats, like the ESP32
     memcpy(&r, d + 9, 4);
-    if (!(f >= 0 && f < 60))
+    // the three values must agree (rated 5-60 A, current up to 1.5 x rated, load = current / rated x 256), so
+    // that another software with other variables here gives null, not a wrong current
+    bool ok = r >= 5 && r <= 60 && f >= 0 && f <= 1.5f * r;
+    if (ok)
+    {
+      float load = f / r * 256;
+      ok = d[0x0D] >= load - 2 && d[0x0D] <= load + 2;
+    }
+    if (!ok)
+    {
+      if (!curRejected)
+      {
+        curRejected = true;
+        say("RAM current not recognised at 0x2B73, left out:\n");
+        rawRows("CUR", d, nullptr, nullptr, true);
+      }
       return;
+    }
     begin();
     v.current = f;
-    v.rated = (r > 0 && r < 100) ? r : 0;
+    v.rated = r;
     v.load = d[0x0D];
     v.curAt = now();
     end();

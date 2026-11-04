@@ -15,7 +15,8 @@ static unsigned long fakeClock() { return fakeNow; }
 struct FakeOutdoor
 {
   bool answer = true;
-  bool dp0009 = true;
+  const char *swId = "DP0009_003";
+  float rated = 27.0f;       // 0x2B79
   uint8_t id63 = 0x01;       // 63 d[1]: another DIII system id
   uint16_t room63 = 0x1580;  // 63 BRC1 room, 8.8 (0: no thermistor)
   bool badWater = false;     // 63 with LWT 0: implausible
@@ -28,9 +29,8 @@ struct FakeOutdoor
   {
     static uint8_t ram[0x8000];
     memset(ram, 0, sizeof(ram));
-    const char *id = dp0009 ? "DP0009_003" : "XX1234_001";
-    memcpy(ram + 0x0682, id, strlen(id));
-    float cur = 4.4f, rated = 27.0f;
+    memcpy(ram + 0x0682, swId, strlen(swId));
+    float cur = 4.4f;
     memcpy(ram + 0x2B73, &cur, 4);
     memcpy(ram + 0x2B79, &rated, 4);
     ram[0x2B7D] = 41; // 4.4 / 27 x 256
@@ -134,7 +134,7 @@ void test_silent_before_start_delay()
 
 void test_other_software_reads_nothing_more()
 {
-  unit.dp0009 = false;
+  unit.swId = "XX1234_001";
   runFor(20 * 60000UL);
   TEST_ASSERT_EQUAL(DIII_UNSUPPORTED, reader.status);
   TEST_ASSERT_TRUE(unit.reads <= 2 * 3); // identification only, every 10 min
@@ -257,6 +257,47 @@ void test_63_reject_logged_once()
   TEST_ASSERT_TRUE(reader.hydro.locked && reader.outdoor.locked); // E0 not affected
 }
 
+// the ERSQ016AV1 software: same slots, so the frames are read
+void test_yp0211_is_read()
+{
+  unit.swId = "YP0211_004";
+  runFor(15 * 60000UL);
+  TEST_ASSERT_EQUAL(DIII_READY, reader.status);
+  TEST_ASSERT_EQUAL_STRING("YP0211_004", reader.softwareId);
+  TEST_ASSERT_TRUE(reader.hydro.locked && reader.outdoor.locked && reader.r63Period > 0);
+}
+
+// an unknown software id is kept for the log, nothing else is read
+void test_unknown_id_is_reported()
+{
+  unit.swId = "ZQ9999_001";
+  runFor(3 * 60000UL);
+  TEST_ASSERT_EQUAL(DIII_UNSUPPORTED, reader.status);
+  TEST_ASSERT_EQUAL_STRING("ZQ9999_001", reader.softwareId);
+}
+
+// other variables at 0x2B70 (rated 0 here): no current, logged once, the frames still read
+static int curLines = 0;
+static void countCur(const char *s)
+{
+  if (strstr(s, "RAM current not recognised") || strncmp(s, "CUR", 3) == 0)
+    curLines++;
+}
+void test_current_checked()
+{
+  curLines = 0;
+  reader.log = countCur;
+  unit.rated = 0;
+  runFor(15 * 60000UL);
+  TEST_ASSERT_TRUE(reader.curRejected);
+  TEST_ASSERT_EQUAL(2, curLines);
+  TEST_ASSERT_EQUAL(0, reader.v.curAt);
+  char buf[1024] = "";
+  reader.appendJson(buf, sizeof(buf));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"RAM: Outdoor input current (A)\":null,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: Leaving water (C)\":33,"));
+}
+
 void test_values_go_null_when_frames_stop(){
   runFor(15 * 60000UL);
   unit.answer = false;
@@ -290,6 +331,9 @@ int main(int, char **)
   RUN_TEST(test_json_keys);
   RUN_TEST(test_63_other_system_no_brc1);
   RUN_TEST(test_63_reject_logged_once);
+  RUN_TEST(test_yp0211_is_read);
+  RUN_TEST(test_unknown_id_is_reported);
+  RUN_TEST(test_current_checked);
   RUN_TEST(test_values_go_null_when_frames_stop);
   RUN_TEST(test_window_hold_keeps_polls_off);
   return UNITY_END();
