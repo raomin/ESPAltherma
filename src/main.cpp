@@ -56,6 +56,7 @@ volatile bool surveyInProgress = false; //the survey is being written: readers m
 volatile bool surveyReady = false;
 CurveControl dhwControl, lwtControl;   //experimental hot water and leaving water targets (control.h), heat pump task
 LimitControl limitControl;             //experimental power limit (control.h), heat pump task
+MeterReader unitMeter; // the unit's own energy meter, where the hydro board is mapped for it (control.h)
 DiiiComm diii;                     //read-only DIII E0/63 frames of an HT outdoor unit (diii_comm.h), heat pump task
 static void diiiSleep(unsigned long ms)
 {
@@ -630,11 +631,14 @@ void statsSetup()
   haExtraSetup();
 }
 
-// The statistics and the DIII values share the one list of extra Home Assistant sensors. The DIII ones only
-// once the reader found its outdoor unit (no empty sensors on the other units).
+// The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
+static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
+
+// The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
+// DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
 void haExtraSetup()
 {
-  static LabelDef extra[sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0])];
+  static LabelDef extra[sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1];
   size_t n = 0;
   if (config.statsEnabled)
     for (const LabelDef &l : STATS_LABELS)
@@ -642,6 +646,8 @@ void haExtraSetup()
   if (diii.status == DIII_READY)
     for (const LabelDef &l : DIII_LABELS)
       extra[n++] = l;
+  if (unitMeter.status == CONTROL_READY)
+    extra[n++] = METER_LABEL;
   haExtraCount = 0; // the main loop may be reading the list
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
@@ -653,6 +659,18 @@ void diiiAppendJson(char *buf, size_t size)
   valuesLock();
   diii.appendJson(buf, size);
   valuesUnlock();
+}
+
+// The unit's own energy meter as an ATTR key (mqtt.h): null while a read fails, absent on the boards not mapped
+void meterAppendJson(char *buf, size_t size)
+{
+  if (unitMeter.status != CONTROL_READY)
+    return;
+  size_t n = strlen(buf);
+  if (unitMeter.known)
+    snprintf(buf + n, size - n, "\"%s\":%lu,", METER_LABEL.label, (unsigned long)unitMeter.heatKWh);
+  else
+    snprintf(buf + n, size - n, "\"%s\":null,", METER_LABEL.label);
 }
 
 static void statsUpdate()
@@ -807,6 +825,36 @@ static void limitTick()
   }
 }
 
+// The unit's own energy meter: identification, then a read a minute. Heat pump task only. Not on the HT outdoor
+// unit's controller: no meter there, and the DIII reader owns the quiet time.
+static void meterTick()
+{
+  MeterReader &m = unitMeter;
+  if (config.protocol != 'I' || strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr)
+  {
+    if (m.status != CONTROL_OFF)
+      m.reset();
+    return;
+  }
+  if (busy)
+    return;
+  if (m.exchange == nullptr)
+    m.exchange = x10aExchange;
+  ControlStatus before = m.status;
+  m.tick(millis());
+  if (m.status == before)
+    return;
+  if (m.status == CONTROL_READY)
+    mqttSerial.printf("Unit energy meter: %lu kWh produced (software %s)\n", (unsigned long)m.heatKWh, m.softwareId);
+  else
+    mqttSerial.printf("Unit energy meter: %s (software %s)\n", controlStatusName(m.status), m.softwareId);
+  if ((before == CONTROL_READY) != (m.status == CONTROL_READY))
+  {
+    haExtraSetup(); // its sensor joins (or leaves) the Home Assistant discovery
+    discoveryDirty = true;
+  }
+}
+
 // Diagnostics: a read of the hydro board's memory asked from the web page (R command, 16 bytes a time, nothing
 // written). The page asks with memoryRequest() and polls memoryResult(); the heat pump task does the reads.
 #define MEMORY_READ_MAX 64
@@ -868,6 +916,7 @@ void controlLoop()
   controlTick(dhwControl, config.dhwTarget, "Hot water");
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
   limitTick();
+  meterTick();
   memoryTick();
   // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
   bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;

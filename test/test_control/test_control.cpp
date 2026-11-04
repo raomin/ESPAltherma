@@ -690,6 +690,40 @@ void test_a_board_without_the_L_command_is_identified_by_registry_0x60()
     TEST_ASSERT_EQUAL_STRING("4562", u.softwareId);
 }
 
+// The unit's own energy meter where the profile knows its address: a 32-bit count read once a minute, unknown
+// after a failed read until the next one, not offered on the boards without the address. Nothing written.
+void test_the_unit_energy_meter_is_read_where_mapped()
+{
+    unit.board(FakeUnit::profileFor("76F2"));
+    const uint8_t count[4] = {0xEC, 0x34, 0x01, 0x00}; // 79084, little-endian
+    memcpy(unit.ram + 0x084E, count, 4);
+    MeterReader m;
+    m.exchange = fakeExchange;
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_EQUAL_STRING("76F2", m.softwareId);
+    TEST_ASSERT_TRUE(m.known);
+    TEST_ASSERT_EQUAL_UINT32(79084, m.heatKWh);
+    unit.ram[0x084E] = 0xED; // 79085
+    m.tick(30000);           // not yet
+    TEST_ASSERT_EQUAL_UINT32(79084, m.heatKWh);
+    m.tick(61000);
+    TEST_ASSERT_EQUAL_UINT32(79085, m.heatKWh);
+    unit.answer = false;
+    m.tick(122000);
+    TEST_ASSERT_FALSE(m.known);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    // the reference board: no address known, nothing else read
+    unit.reset();
+    MeterReader u;
+    u.exchange = fakeExchange;
+    u.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, u.status);
+    TEST_ASSERT_EQUAL_STRING("18002904", u.softwareId);
+    TEST_ASSERT_FALSE(u.known);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -715,5 +749,6 @@ int main(int, char **)
     RUN_TEST(test_power_limit_restored_and_current_kind);
     RUN_TEST(test_power_limit_on_every_mapped_board);
     RUN_TEST(test_a_board_without_the_L_command_is_identified_by_registry_0x60);
+    RUN_TEST(test_the_unit_energy_meter_is_read_where_mapped);
     return UNITY_END();
 }

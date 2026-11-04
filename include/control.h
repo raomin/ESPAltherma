@@ -65,6 +65,7 @@ struct ControlProfile
   CurveSpec dhw;          // hot water target
   CurveSpec lwt;          // leaving water target of the main zone
   LimitSpec limit;        // power limitation (missing on the boards not mapped for it)
+  uint16_t ramHeatKwh;    // the unit's own energy meter, the heat produced in kWh as a 32-bit count (0: not mapped)
 };
 
 static const ControlProfile CONTROL_PROFILES[] = {
@@ -132,11 +133,15 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x52B5, 0x52B6, 0x37B6, 0x5295, 0x45E2, 0x45E6}},
     // 4-16 kW EHVH/EHVX/EHBH/EHBX CB series (Altherma LT of 2014-2017, AS1706432 boards). These boards have no 'L'
     // command: the software is the word of registry 0x60. Same memory bytes and mode bits as the others, the
-    // four limitation converters found, a single active limit for both kinds. Not yet read on a unit (#599).
+    // four limitation converters found, a single active limit for both kinds. Read on an EHVX11S26CB9 (MvdB1982,
+    // #599): the limits, both curves and the live leaving water target sit where mapped, the four kW limits at
+    // 20.0. Its energy meter (the user interface's menu 6.2, heat produced) is a 32-bit count at 0x084E, the
+    // same number again as a float at 0x185A.
     {"76F2",
      {0x15A4, 0x15E2, 366, 367, 0x2BF1, 0x2BF6, 278, 0x01, 0x103C, 0x1278},
      {0x15A6, 0x15E4, 373, 372, 0x2C00, 0x2BFB, 374, 0x0C, 0x10A0, 0},
-     {0x2B61, 0x2B62, 0x15AA, 0x2B41, 0x1706, 0}},
+     {0x2B61, 0x2B62, 0x15AA, 0x2B41, 0x1706, 0},
+     0x084E},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
@@ -823,6 +828,73 @@ struct LimitControl : X10aClient
       }
     }
     else if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS)
+      identify(now);
+  }
+};
+
+// The unit's own energy meter: the heat produced since its installation in kWh, the number the user interface
+// shows under energy metering, where the profile knows its address in the hydro board's RAM. Read-only, one
+// 16-byte read a minute. Identified from the software like the targets; no profile or no address: unsupported.
+#define METER_READ_INTERVAL_MS 60000UL
+struct MeterReader : X10aClient
+{
+  const ControlProfile *profile = nullptr;
+  ControlStatus status = CONTROL_OFF;
+  char softwareId[9] = "";
+  uint32_t heatKWh = 0; // the last count read
+  bool known = false;   // the last read succeeded
+  unsigned long checkedAt = 0, readAt = 0;
+
+  void reset()
+  {
+    profile = nullptr;
+    status = CONTROL_OFF;
+    softwareId[0] = 0;
+    heatKWh = 0;
+    known = false;
+    checkedAt = readAt = 0;
+  }
+
+  bool identify(unsigned long now)
+  {
+    checkedAt = now;
+    if (!readSoftwareId(softwareId))
+    {
+      status = CONTROL_NO_ANSWER;
+      return false;
+    }
+    profile = nullptr;
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+      if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
+        profile = &CONTROL_PROFILES[i];
+    if (profile == nullptr || profile->ramHeatKwh == 0)
+    {
+      status = CONTROL_UNSUPPORTED;
+      return false;
+    }
+    status = read(now) ? CONTROL_READY : CONTROL_NO_ANSWER;
+    return status == CONTROL_READY;
+  }
+
+  bool read(unsigned long now)
+  {
+    readAt = now;
+    uint8_t b[16];
+    known = profile != nullptr && readRam(profile->ramHeatKwh, b);
+    if (known)
+      heatKWh = (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
+    return known;
+  }
+
+  // Heat pump task only. Identifies once, again after a while when the unit did not answer; then a read a minute.
+  void tick(unsigned long now)
+  {
+    if (status == CONTROL_READY)
+    {
+      if (now - readAt >= METER_READ_INTERVAL_MS)
+        read(now);
+    }
+    else if (status != CONTROL_UNSUPPORTED && (checkedAt == 0 || now - checkedAt >= CONTROL_CHECK_INTERVAL_MS))
       identify(now);
   }
 };
