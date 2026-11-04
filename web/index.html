@@ -868,15 +868,16 @@ setInterval(renderAge, 1000);
 
 // ---- dashboard: the drawing shows the readings it finds among the selected values (other models: "—")
 // Some definitions name them their own way: the Rotex on protocol S "Outlet Water Temp." for R1T and "Priority to
-// domestic water" (on while the tank is heated) for the 3-way valve; the Hybrid, the EBLQ 5-7kW monobloc and the
+// domestic water" (on while the tank is heated) for the 3-way valve and "Circulation pump" for the main pump (on the
+// Altherma "Circulation pump operation" is the hot water recirculation pump, a Health chip); the Hybrid, the EBLQ 5-7kW monobloc and the
 // EWAQ mini chiller "Outlet Water Heat Exch. Temp. (R1T)" and "Outlet Water BUH Temp. (R2T)", the Hybrid "RT Temp.",
 // the ECH2O (HPSU) units "[HPSU] Tv inflow Temp (R1T)", "[HPSU] Tvbh inflow Temp after Buffer/BUH (R2T)" and
 // "[HPSU] Tr return Temp (R4T)"
 const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|outlet water temp|outlet water heat exch\. temp|\[HPSU\] Tv inflow temp)/i, lw2: /^(leaving water temp\. after BUH|outlet water BUH temp|\[HPSU\] Tvbh inflow temp|leaving water temp\. \(hydrobox\))/i, r3t: /^refrig\. temp\. liquid side/i,
   inlet: /^(inlet water temp|\[HPSU\] Tr return temp)/i, tank: /^DHW tank temp/i, room: /^(indoor ambient temp|RT temp\.)/i, dhwSp: /^DHW setpoint/i, lwSp: /^LW setpoint \(main\)/i, rtSp: /^RT setpoint/i,
-  inv: /^INV frequency/i, invHz: /^INV comp\. frequency\(Hz\)/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^water pump operation/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
+  inv: /^INV frequency/i, invHz: /^INV comp\. frequency\(Hz\)/i, v3: /^(3way valve|priority to domestic water)/i, pump: /^(water pump operation|circulation pump$)/i, flow: /^flow sensor/i, bar: /^water pressure/i, mode: /^operation mode/i,
   iu: /^I\/U operation mode/i, err: /^(O\/U )?error type/i, code: /^(O\/U )?error code/i, thermo: /^([OI]\/U )?thermostat ON\/OFF/i, defrost: /^defrost operation/i, silent: /^silent mode/i,
-  freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump/i, amp: /^INV primary current/i, volt: /^voltage \((N-phase|V)\)/i,
+  freeze: /^freeze protection for water piping/i, powerful: /^powerful DHW/i, circ: /^circulation pump operation/i, amp: /^INV primary current/i, volt: /^voltage \((N-phase|V)\)/i,
   mixed: /^mixed water temp/i, mixedKit: /^\[EKMIK\] bizone kit mixed leaving water/i, mainPump: /^main pump/i, addPump: /^add pump/i, lwSpAdd: /^LW setpoint \(add\)/i, r6t: /^liquid pipe temp\.\(R6T\)/i,
   // the backup heater (Altherma BUH step 1, Rotex external heater), and the codes of protocol S units
   buh: /^(BUH Step1|external heater)/i, solar: /^burner inhibit/i, warn: /^warning code/i, caution: /^caution code/i, thermoOff: /^thermo off error/i,
@@ -913,7 +914,7 @@ function reading(list) {
 const TAGS = [[N_('Outside'), 'out', 40, 118, 84, 'R1T'], [N_('Heat pump out'), 'lw1', 342, 172, 110, 'R1T'], [N_('Leaving'), 'lw2', 340, 38, 84, 'R2T'],
   [N_('Refrigerant'), 'r3t', 156, 342, 96, 'R3T'], [N_('Return'), 'inlet', 312, 418, 84, 'R4T'], [N_('Flow'), 'flow', 316, 468, 98, 'l/min']];
 $('#tags').innerHTML = TAGS.map(g => `<g class="tag" transform="translate(${g[2]},${g[3]})"><title>${g[5]}</title><rect width="${g[4]}" height="46" rx="14"/><text class="tl" x="12" y="18" style="font-size:11.5px" id="gl_${g[1]}"></text><text class="tv" x="12" y="38" id="g_${g[1]}"></text></g>`).join('');
-const FL = [['thermo', N_('Thermostat')], ['defrost', N_('Defrost')], ['silent', N_('Silent')], ['freeze', N_('Frost protection')], ['powerful', N_('Powerful hot water')], ['circ', N_('Circulation')],
+const FL = [['thermo', N_('Thermostat')], ['defrost', N_('Defrost')], ['silent', N_('Silent')], ['freeze', N_('Frost protection')], ['powerful', N_('Powerful hot water')], ['circ', N_('Hot water circulation')],
   ['buh', N_('Backup heater')], ['solar', N_('Solar inhibit')]];
 const DK = matchMedia('(prefers-color-scheme: dark)');
 // water colour: blue (15°) to red (55°), between the stops of the legend (CSS colours #rrggbb)
