@@ -908,17 +908,17 @@ void hpTask(void *)
       HP_STAGE("survey");
       runSurvey();
     }
+    // While a DIII phase is learnt, a 30 s poll would hit the short hydro frame every minute: shift it by 7 s
+    unsigned long wait = config.frequency + (diii.learning() ? 7000 : 0);
     if (!busy && (uint8_t)registryIDs[0] != 0xFF)
     {
       HP_STAGE("query");
       pollRegistries();
       lastPollMs = millis();
       cycleReady = true;
-      mqttSerial.printf("Done. Waiting %ld ms...", (long)(config.frequency - (millis() - start)));
+      mqttSerial.printf("Done. Waiting %ld ms...", (long)(wait - (millis() - start)));
     }
     HP_STAGE("wait");
-    // While a DIII phase is learnt, a 30 s poll would hit the short hydro frame every minute: shift it by 7 s
-    unsigned long wait = config.frequency + (diii.learning() ? 7000 : 0);
     while (millis() - start < wait && !surveyRequested && !labelsDirty)
     {
       watchdogHp();

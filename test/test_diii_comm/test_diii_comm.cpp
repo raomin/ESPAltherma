@@ -16,6 +16,9 @@ struct FakeOutdoor
 {
   bool answer = true;
   bool dp0009 = true;
+  uint8_t id63 = 0x01;       // 63 d[1]: another DIII system id
+  uint16_t room63 = 0x1580;  // 63 BRC1 room, 8.8 (0: no thermistor)
+  bool badWater = false;     // 63 with LWT 0: implausible
   int reads = 0, otherCommands = 0, unsafeReads = 0;
   int windowReads = 0; // reads in the 60 s after both E0 phases are locked
 
@@ -51,15 +54,16 @@ struct FakeOutdoor
     else if ((t >= 100000) && ((t - 100000) % 300000) < 10000)
     {
       ram[0x0C8A] = 0x63;
-      ram[0x0C8B] = 0x01;
+      ram[0x0C8B] = id63;
+      ram[0x0C8F] = 0xFF; // d[5]
       ram[0x0C90] = 0x1C; // RWT 28.5
       ram[0x0C91] = 0x80;
       ram[0x0C92] = 0x1E; // liquid 30.25
       ram[0x0C93] = 0x40;
-      ram[0x0C94] = 0x21; // LWT 33.0
+      ram[0x0C94] = badWater ? 0x00 : 0x21; // LWT 33.0
       ram[0x0C95] = 0x00;
-      ram[0x0CA3] = 0x15; // BRC1 21.5
-      ram[0x0CA4] = 0x80;
+      ram[0x0CA3] = room63 >> 8; // BRC1 21.5
+      ram[0x0CA4] = room63 & 0xFF;
     }
     if (sec >= 55000 && sec < 57000)
     {
@@ -219,8 +223,41 @@ void test_json_keys()
   TEST_ASSERT_NULL(strstr(buf, "RAM:"));
 }
 
-void test_values_go_null_when_frames_stop()
+// another system id and no BRC1 thermistor: the 63 water values still come, only the room stays null
+void test_63_other_system_no_brc1()
 {
+  unit.id63 = 0x02;
+  unit.room63 = 0;
+  runFor(15 * 60000UL);
+  TEST_ASSERT_TRUE(reader.r63Period > 0);
+  TEST_ASSERT_FALSE(reader.r63Rejected);
+  char buf[1024] = "";
+  reader.appendJson(buf, sizeof(buf));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"63: Leaving water (C)\":33.00,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"63: Return water (C)\":28.50,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"63: BRC1 room temp (C)\":null,"));
+}
+
+// a 63 frame with an implausible water value is rejected, and logged once as hex
+static int rejLines = 0;
+static void countRej(const char *s)
+{
+  if (strstr(s, "63 rejected") || strstr(s, "63REJ"))
+    rejLines++;
+}
+void test_63_reject_logged_once()
+{
+  rejLines = 0;
+  reader.log = countRej;
+  unit.badWater = true;
+  runFor(15 * 60000UL);
+  TEST_ASSERT_TRUE(reader.r63Rejected);
+  TEST_ASSERT_EQUAL(2, rejLines); // the "rejected" line and one 63REJ hex line
+  TEST_ASSERT_EQUAL(0, reader.r63Period);
+  TEST_ASSERT_TRUE(reader.hydro.locked && reader.outdoor.locked); // E0 not affected
+}
+
+void test_values_go_null_when_frames_stop(){
   runFor(15 * 60000UL);
   unit.answer = false;
   runFor(4 * 60000UL);
@@ -251,6 +288,8 @@ int main(int, char **)
   RUN_TEST(test_learns_despite_a_30s_poll);
   RUN_TEST(test_locked_traffic_is_low);
   RUN_TEST(test_json_keys);
+  RUN_TEST(test_63_other_system_no_brc1);
+  RUN_TEST(test_63_reject_logged_once);
   RUN_TEST(test_values_go_null_when_frames_stop);
   RUN_TEST(test_window_hold_keeps_polls_off);
   return UNITY_END();

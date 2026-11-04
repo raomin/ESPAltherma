@@ -189,6 +189,7 @@ struct DiiiValues
   // 63 frame
   unsigned long f63At = 0;
   float rwt63 = 0, liq63 = 0, lwt63 = 0, room63 = 0;
+  bool room63Ok = false; // the BRC1 room value was plausible
   // RAM row 0x2B70: the outdoor unit's own current bookkeeping (not a DIII frame, always in RAM)
   unsigned long curAt = 0;
   float current = 0;   // 0x2B73 float: TOTAL outdoor input (mains) current, A
@@ -225,7 +226,7 @@ struct DiiiComm
   DiiiTrack outdoor = {0x0C2A, 1500, 2500, 100, 0, false, false, false, false, true, 0};
   unsigned long checkedAt = 0, nextRead = 0, next63 = 0, r63Arrive = 0, r63Period = 0, r63Seen = 0, curNext = 0;
   uint8_t r63Misses = 0;
-  bool learnToggle = false;
+  bool learnToggle = false, r63Rejected = false;
 
   unsigned long now() { return clock ? clock() : 0; }
 
@@ -469,23 +470,47 @@ struct DiiiComm
   // --- 63
   bool read63Frame()
   {
-    uint8_t d[16], d2[16], d3[16];
-    if (!readRow(0x0C8A, d) || d[0] != 0x63 || d[1] != 0x01 || d[2] || d[3] || d[4])
+    uint8_t d[16] = {0}, d2[16], d3[16];
+    // same header test as the hydro E0 (kind, d[5] FF); d[1..4] (01 00 00 00 here) may differ on other systems
+    if (!readRow(0x0C8A, d) || d[0] != 0x63 || d[5] != 0xFF)
+    {
+      if (d[0] == 0x63)
+        reject63("header", d, nullptr);
       return false;
+    }
     if (!readRow(0x0C9A, d2) || !readRow(0x0C8A, d3) || memcmp(d, d3, 16) != 0)
       return false;
-    int16_t raw = (int16_t)((d2[9] << 8) | d2[10]);
-    if (raw <= 0 || raw > 45 * 256)
+    float rwt = be88(d + 6), liq = be88(d + 8), lwt = be88(d + 10);
+    if (!(rwt >= 1 && rwt <= 90 && lwt >= 1 && lwt <= 90))
+    {
+      reject63("water", d, d2);
       return false;
+    }
+    // the BRC1 room thermistor alone may be missing: then only its value stays null
+    int16_t raw = (int16_t)((d2[9] << 8) | d2[10]);
     begin();
+    v.room63Ok = raw > 0 && raw <= 45 * 256;
     v.room63 = raw / 256.0f;
-    v.rwt63 = be88(d + 6);
-    v.liq63 = be88(d + 8);
-    v.lwt63 = be88(d + 10);
+    v.rwt63 = rwt;
+    v.liq63 = liq;
+    v.lwt63 = lwt;
     v.f63At = now();
     end();
     rawRows("63RAW", d, d2, nullptr);
     return true;
+  }
+
+  // the first 63 candidate that fails a check is logged once as hex, whatever rawLog says
+  void reject63(const char *why, const uint8_t *d, const uint8_t *d2)
+  {
+    if (r63Rejected)
+      return;
+    r63Rejected = true;
+    say("63 rejected (%s), please report:\n", why);
+    bool raw = rawLog;
+    rawLog = true;
+    rawRows("63REJ", d, d2, nullptr);
+    rawLog = raw;
   }
 
   bool nearE0Window(long ms)
@@ -650,7 +675,7 @@ struct DiiiComm
       DIII_PUT("63: Leaving water (C)", f, "%.2f", v.lwt63);
       DIII_PUT("63: Return water (C)", f, "%.2f", v.rwt63);
       DIII_PUT("63: R410A liquid (C)", f, "%.2f", v.liq63);
-      DIII_PUT("63: BRC1 room temp (C)", f, "%.2f", v.room63);
+      DIII_PUT("63: BRC1 room temp (C)", f && v.room63Ok, "%.2f", v.room63);
     }
     if (readCurrent)
     {
