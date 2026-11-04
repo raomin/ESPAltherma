@@ -86,6 +86,13 @@ struct DiiiTrack
 //   [07]   d[8]      EVL R410A expansion valve (heating), u x10 pls      C8 -> 2000      used
 //   [08]   d[9]      EVH R134a expansion valve, u x10 pls                17 -> 230       used
 //   [09..0A] d[10..11] Heating pump revolution speed, 2btouam rpm       0D B0 -> 3504   used
+//            Pump value on the verified unit: 881 at start-up, 3524 while the compressor stops, 0 once (pump
+//            off), 1300-3100 while heating, 4200 the most seen. Estimates from our data, not measured:
+//            - flow ~ 5.5 L/min per 1000 (4.5-6.6), from the R134a stage energy balance at pump 1287-1762;
+//              proportional over a wider range not checked. 1542 -> ~8.5 L/min; 4200 ~ the 22.9 L/min nominal
+//              (16 kW at dT 10 K). A unit with a real flow sensor can check the factor.
+//            - pump power ~ 5 + 96 x (n / 4200)^3 W, max 101 W (service manual; the cubic law is assumed).
+//            A true rpm is not confirmed: 881 and 1542 are under the ~2500 rpm minimum of [E-03].
 //   [0B]   d[12]     Compressor freq. (R134a), u Hz                     2B -> 43
 //   [0C]   d[13]     bits: 7 SVBO bottom plate heater, 5 backup heater step 1, 4 backup heater step 2,
 //                    2 DHW 3-way valve, 1 cooling output signal, 0 defrost solenoid valve (6, 3: commented out
