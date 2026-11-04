@@ -90,7 +90,8 @@ struct DiiiTrack
 //            off), 1300-3100 while heating, 4200 the most seen. Estimates from our data, not measured:
 //            - flow ~ 5.5 L/min per 1000 (4.5-6.6), from the R134a stage energy balance at pump 1287-1762;
 //              proportional over a wider range not checked. 1542 -> ~8.5 L/min; 4200 ~ the 22.9 L/min nominal
-//              (16 kW at dT 10 K). A unit with a real flow sensor can check the factor.
+//              (16 kW at dT 10 K). Checked on stav242's unit with a real flow sensor: pump 4100 -> 23.55 L/min,
+//              i.e. 5.74 per 1000.
 //            - pump power ~ 5 + 96 x (n / 4200)^3 W, max 101 W (service manual; the cubic law is assumed).
 //            A true rpm is not confirmed: 881 and 1542 are under the ~2500 rpm minimum of [E-03].
 //   [0B]   d[12]     Compressor freq. (R134a), u Hz                     2B -> 43
