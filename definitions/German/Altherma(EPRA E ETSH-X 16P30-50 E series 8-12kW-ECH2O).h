@@ -141,7 +141,7 @@ LabelDef labelDefs[] = {
 //{0x60,12,304,1,-1,"Reserveheizung Stufe 1"},
 //{0x60,12,303,1,-1,"Reserveheizung Stufe 2"},
 //{0x60,12,302,1,-1,"Fußbodenkreis-Absperrventil"},
-//{0x60,12,301,1,-1,"Umwälzpumpe 1 Hauptzone"},
+//{0x60,12,301,1,-1,"Umwälzpumpe Hauptzone"},
 //{0x60,12,300,1,-1,"Solarpumpe"},
 //{0x60,13,152,1,-1,"IG Optionscode"},
 //{0x60,15,215,1,-1,"IG Software-ID (xx)"},
