@@ -179,7 +179,7 @@ td.r{font:12px var(--mono);color:var(--ink2);white-space:nowrap;text-align:right
 table.events td{font-size:13px;overflow-wrap:anywhere}
 td.nowrap{white-space:nowrap;color:var(--ink2)}
 #gZones,.bz{display:none}#sch.bizone #gZones,#sch.bizone .bz{display:block}
-#sch.bizone #pSpace,#sch.bizone #pSpace+.fl,#sch.bizone #bSpace,#sch.bizone #pLoop,#sch.bizone #pLoop+.fl,#sch.bizone .sz{display:none}#sch.bizone #gGauge{transform:translate(-48px,-435px)}
+#sch.bizone #pSpace,#sch.bizone #pSpace+.fl,#sch.bizone #bSpace,#sch.bizone #pLoop,#sch.bizone #pLoop+.fl,#sch.bizone .sz{display:none}#sch.bizone #gGauge{transform:translate(-48px,-435px)}#sch.bizone #gPump{transform:translate(60px,0)}
 #gZones .zoff{opacity:.3}#gZones .zoff .fl{animation:none;opacity:0}
 /* no hot water tank or no room thermostat (none of their values selected): left out, the supply joins the house */
 #sch.nodhw .dhw,#sch.noroom .room,#pJoin,#pJoin+.fl{display:none}#sch.nodhw #pJoin,#sch.nodhw #pJoin+.fl{display:block}
@@ -257,8 +257,9 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
       <path d="M565 424H579M565 470H579" style="stroke:var(--card);stroke-width:14"/>
       <g id="gMixed"><title translate="no">Main pump</title><path class="pipe" id="pMixed" d="M494 424H600V476"/>
        <path class="pipe" id="pLoopM" style="stroke-width:4.5" d="M600 476H686V490H612V504H686V518H600"/>
-       <path class="pipe" id="pMixedR" d="M600 518H588V470H464V525"/>
+       <path class="pipe" id="pMixedR" d="M600 518H588V470H455V525"/>
        <path class="pipe" id="pBypass" d="M482 470V433"/>
+       <g id="gCheck"><path d="M447 488h16l-8 12z" style="fill:var(--ink2)"/><path class="ln" d="M447 503h16"/></g>
        <circle class="sens" cx="528" cy="424" r="4.5"/>
        <circle class="eq" cx="525" cy="470" r="9"/><path d="M516 470l13-7.5v15z" style="fill:var(--ink2)"/>
        <g class="valve"><path d="M473 415H491L482 424Z"/><path d="M473 433H491L482 424Z"/><path d="M494 415V433L482 424Z"/></g>
@@ -268,8 +269,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     </g>
     <g class="valve dhw"><path id="vL" d="M470 81V99L482 90Z"/><path id="vR" class="shut" d="M494 81V99L482 90Z"/><path id="vB" d="M473 102H491L482 90Z"/></g>
     <text class="tl dhw" x="494" y="128">3-way valve</text><text class="ts dhw" x="494" y="145" id="sV3" translate="no"></text>
-    <circle class="eq" cx="440" cy="525" r="16"/><path d="M425 525l21-12v24z" style="fill:var(--ink2)"/>
-    <text class="tl" x="440" y="556" text-anchor="middle" id="sPump" translate="no"></text>
+    <g id="gPump"><circle class="eq" cx="440" cy="525" r="16"/><path d="M425 525l21-12v24z" style="fill:var(--ink2)"/>
+    <text class="tl" x="440" y="556" text-anchor="middle" id="sPump" translate="no"></text></g>
     <g id="gGauge"><path class="ln" d="M500 506V525"/><circle class="eq" cx="500" cy="492" r="14"/><path id="needle" class="ln" style="stroke:var(--hot);stroke-width:2.2" d="M500 492L491 499"/>
     <text class="tv" x="500" y="468" text-anchor="middle" id="sBar" translate="no"></text></g>
     <rect x="346" y="519" width="14" height="12" rx="3" style="fill:var(--ink2)"/>
@@ -950,7 +951,7 @@ function paint() {
   $('#gDirect').classList.toggle('zoff', r.addPump != null && !isOn(r.addPump)); $('#gMixed').classList.toggle('zoff', r.mainPump != null && !isOn(r.mainPump));
   tx('sMixed', deg(mixed)); tx('sLwSpMix', r.lwSp ? t('Target {n}°', {n: n('lwSp')}) : '');
   $('#tankFill').style.fill = tcol(tank);
-  const v3 = isOn(r.v3), flow = n('flow'), pump = isOn(r.pump) || (flow || 0) > 0.5, inv = n('inv') != null ? n('inv') : n('invHz'), invU = n('inv') == null && n('invHz') != null ? 'Hz' : 'rps';
+  const v3 = isOn(r.v3), flow = n('flow'), pump = isOn(r.pump) || (r.pump == null && two && isOn(r.addPump)) || (flow || 0) > 0.5, inv = n('inv') != null ? n('inv') : n('invHz'), invU = n('inv') == null && n('invHz') != null ? 'Hz' : 'rps';
   $('#gDhw').classList.toggle('act', v3); $('#gSp').classList.toggle('act', !v3);
   $('#vR').classList.toggle('shut', !v3); $('#vB').classList.toggle('shut', v3);
   sch.classList.toggle('flowing', pump); sch.classList.toggle('comp', inv > 0); sch.classList.toggle('fanon', inv > 0);
