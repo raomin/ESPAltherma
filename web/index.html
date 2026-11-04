@@ -390,7 +390,9 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <text x="292" y="31">5V</text><text x="292" y="51" id="pinRx"></text><text x="292" y="71" id="pinTx"></text><text x="292" y="91">GND</text></g>
     <path d="M80 26H280M80 86H280" style="stroke:var(--ink2);stroke-width:2;fill:none;opacity:.6"/><path d="M80 46H280" style="stroke:var(--hot);stroke-width:3;fill:none;stroke-linecap:round"/><path d="M80 66H280" style="stroke:var(--cold);stroke-width:3;fill:none;stroke-linecap:round"/>
    </svg>
-   <div class="row"><label class="f"><span class="k">RX pin (to X10A TX)</span><input type="number" id="sRx"></label><label class="f"><span class="k">TX pin (to X10A RX)</span><input type="number" id="sTx"></label><label class="f"><span class="k">Read every (seconds)</span><input type="number" id="sFreq" min="5"></label></div></div>
+   <div class="row"><label class="f"><span class="k">RX pin (to X10A TX)</span><input type="number" id="sRx"></label><label class="f"><span class="k">TX pin (to X10A RX)</span><input type="number" id="sTx"></label><label class="f"><span class="k">Read every (seconds)</span><input type="number" id="sFreq" min="5"></label></div>
+   <div class="row"><label class="f"><span class="k">Outdoor temperature on the home page</span><select id="sOutdoor"><option value="unit">Outdoor unit's sensor</option><option value="aux">External sensor (R6T)</option></select></label></div>
+   <p class="sub">When field setting [C-08] is "outdoor sensor", the unit follows the external sensor: choose it here to show it, with the auxiliary sensor (R6T) among the selected values.</p></div>
   <div class="card"><h2>Relays</h2><p class="sub">Optional: a thermostat input, the safety stop, Smart Grid. -1 = not used.</p>
    <div class="row"><label class="f"><span class="k">Thermostat relay pin</span><input type="number" id="sTherm"></label><label class="f"><span class="k">Safety relay pin</span><input type="number" id="sSafety"></label><label class="f"><span class="k">Smart Grid pin 1</span><input type="number" id="sSg1"></label><label class="f"><span class="k">Smart Grid pin 2</span><input type="number" id="sSg2"></label></div>
    <label class="chk"><input type="checkbox" id="sThermHigh">Thermostat relay active high</label><label class="chk"><input type="checkbox" id="sSafetyHigh">Safety relay active high</label><label class="chk"><input type="checkbox" id="sSgHigh">Smart Grid relays active high</label></div>
@@ -883,11 +885,16 @@ const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|
   // the backup heater (Altherma BUH step 1, Rotex external heater), and the codes of protocol S units
   buh: /^(BUH Step1|external heater)/i, solar: /^burner inhibit/i, warn: /^warning code/i, caution: /^caution code/i, thermoOff: /^thermo off error/i,
   // the indoor unit's error, when the outdoor unit has one too ("O/U Error Code", "I/U Error Code")
-  iuErr: /^I\/U error type/i, iuCode: /^I\/U error code/i};
+  iuErr: /^I\/U error type/i, iuCode: /^I\/U error code/i,
+  // the hydro board's auxiliary input: an outdoor or a room sensor, the installer's field setting [C-08]
+  aux: /^auxiliary sensor \(R6T\)/i};
 function reading(list) {
   const r = {};
   for (const [k, re] of Object.entries(KEYS)) { const v = list.find(x => re.test(x.l)); if (v && String(v.v).trim() !== '') r[k] = String(v.v).trim(); }
   if (r.r3t == null && r.r6t != null) r.r3t = r.r6t; // the Altherma 4 has its refrigerant liquid side in the outdoor unit
+  // The outdoor temperature from the external sensor when Settings say so: with [C-08] on "outdoor sensor" the unit runs
+  // its curve from that one, not from the outdoor unit's (#629)
+  if (cfg.hp && cfg.hp.outdoor_aux && r.aux != null) { r.out = r.aux; r.outAux = true; }
   // No backup heater (EDLA...W1/V3 monoblocs): its outlet sensor (R2T) reads exactly 0, the leaving water is the heat exchanger's (R1T)
   if (r.lw2 != null && +r.lw2 === 0 && r.lw1 != null) r.lw2 = r.lw1;
   // The mixed zone's water is the bizone kit's sensor where the kit is fitted (the ECH2O units have no other). Not
@@ -933,6 +940,7 @@ const fit = (el, max) => { el.style.fontSize = ''; const w = el.getComputedTextL
   if (w > max) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * max / w).toFixed(1) + 'px'; };
 function paint() {
   const r = reading(lastValues), n = k => num(r[k]);
+  $('#tags .tag title').textContent = r.outAux ? 'R6T' : 'R1T'; // the Outside tag's tooltip names its sensor
   const deg = v => v == null ? '—' : f1(v) + '°';
   for (const [label, k] of TAGS) { tx('gl_' + k, t(label)); const v = n(k); tx('g_' + k, k === 'flow' ? (v == null ? '—' : f1(Math.max(0, v)) + ' l/min') : deg(v)); }
   // A tank below 0 °C is no tank sensor (an open input reads about -37): the unit has no hot water tank
@@ -1237,6 +1245,7 @@ function fillSettings() {
   if (!cfg.hp) return;
   const r = cfg.relays, o = cfg.output, w = cfg.wifi;
   $('#sRx').value = cfg.hp.rx; $('#sTx').value = cfg.hp.tx; $('#sFreq').value = Math.round(cfg.hp.frequency / 1000);
+  $('#sOutdoor').options[0].text = t("Outdoor unit's sensor"); $('#sOutdoor').options[1].text = t('External sensor (R6T)'); $('#sOutdoor').value = cfg.hp.outdoor_aux ? 'aux' : 'unit';
   tx('pinRx', 'G' + cfg.hp.rx); tx('pinTx', 'G' + cfg.hp.tx); tx('pinBoard', status.board || 'ESP32');
   $('#sTherm').value = r.therm_pin; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
@@ -1255,7 +1264,7 @@ $('#sStatic').onchange = e => $('#sStaticBox').hidden = !e.target.checked;
 $('#sSave').onclick = async () => {
   const n = id => parseInt($(id).value, 10);
   const d = {
-    hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000},
+    hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000, outdoor_aux: $('#sOutdoor').value === 'aux'},
     relays: {therm_pin: n('#sTherm'), sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
     control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, power_limit: $('#sPowerLimit').checked},

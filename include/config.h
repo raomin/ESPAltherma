@@ -56,6 +56,7 @@ struct AppConfig
   // Registries read with the layout of another definition, because the model's does not match the unit
   // (layoutfix.h). Cleared when the model changes.
   bool layoutCheck; // correct registries automatically
+  bool outdoorAux;  // the home page shows the auxiliary sensor (R6T) as the outdoor temperature: field setting [C-08] = outdoor sensor (#629)
   uint8_t fixCount;
   uint8_t fixReg[CONFIG_MAX_FIXES];
   char fixModel[CONFIG_MAX_FIXES][80];
@@ -113,6 +114,7 @@ void configDefaults(AppConfig &c)
   memset(&c, 0, sizeof(c));
   strlcpy(c.hostname, "ESPAltherma", sizeof(c.hostname));
   c.layoutCheck = true;
+  c.outdoorAux = false;
   c.mqttPort = 1883;
   strlcpy(c.mqttClientId, TOPICS_DEFAULT_CLIENT_ID, sizeof(c.mqttClientId));
   strlcpy(c.mqttBase, TOPICS_DEFAULT_BASE, sizeof(c.mqttBase));
@@ -197,6 +199,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   hp["confirmed"] = c.modelConfirmed;
   hp["detected_key"] = c.detectedKey;
   hp["layout_check"] = c.layoutCheck;
+  hp["outdoor_aux"] = c.outdoorAux;
   JsonArray fixes = hp["layout_fixes"].to<JsonArray>();
   for (uint8_t i = 0; i < c.fixCount; i++)
   {
@@ -328,6 +331,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(hp["confirmed"], c.modelConfirmed);
   readStr(hp["detected_key"], c.detectedKey, sizeof(c.detectedKey));
   readNum(hp["layout_check"], c.layoutCheck);
+  readNum(hp["outdoor_aux"], c.outdoorAux);
   if (hp["layout_fixes"].is<JsonArrayConst>())
   {
     c.fixCount = 0;
