@@ -557,6 +557,8 @@ static const LabelDef DIII_LABELS[] = {
     {-1, -1, -1, -1, 1, "E0: Leaving water (C)"},
     {-1, -1, -1, -1, 1, "E0: Return water (C)"},
     {-1, -1, -1, -1, 1, "E0: Remote room temp (C)"},
+    {-1, -1, -1, -1, 1, "E0: DHW tank (C)"},
+    {-1, -1, -1, -1, -1, "E0: 3-way valve DHW"},
     {-1, -1, -1, -1, -1, "E0: Pump"},
     {-1, -1, -1, -1, -1, "E0: EVL (pls)"},
     {-1, -1, -1, -1, -1, "E0: EVH (pls)"},

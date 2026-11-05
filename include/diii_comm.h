@@ -97,7 +97,7 @@ struct DiiiTrack
 //   [0B]   d[12]     Compressor freq. (R134a), u Hz                     2B -> 43
 //   [0C]   d[13]     bits: 7 SVBO bottom plate heater, 5 backup heater step 1, 4 backup heater step 2,
 //                    2 DHW 3-way valve, 1 cooling output signal, 0 defrost solenoid valve (6, 3: commented out
-//                    in the SDT file)                                   42 -> bits 6, 1
+//                    in the SDT file)                                   42 -> bits 6, 1  bit 2 used
 //   [0D]   d[14]     TscL R410A liquid, sm C                            09 -> 9
 //   [0E]   d[15]     HTwL leaving water (heating), sm C                 1F -> 31        used
 //   [0F]   d2[0]     TwR return water, sm C                             1C -> 28        used
@@ -118,7 +118,7 @@ struct DiiiTrack
 //                    I/O PCB outputs solar / DHW / error / operation    21 -> fan, operation
 //   [20]   d3[1]     bits: 6 multi setpoint 2, 5 multi setpoint 1, 4 Q2L backup heater safety, 2 external room
 //                    thermostat contact, 1 solar input, 0 tariff (demand) input       00
-//   [21]   d3[2]     TwS domestic hot water, sm C                       AF -> -47 (no tank sensor)
+//   [21]   d3[2]     TwS domestic hot water, sm C                       AF -> -47 (no tank sensor)  used
 //   [22]   d3[3]     TaB (commented out in the SDT file), sm C          AF -> -47
 //   [23]   d3[4]     bit 5 operation ON                                 20 -> ON
 //   [24]   d3[5]     -                                                  00
@@ -186,9 +186,12 @@ struct DiiiValues
   int lwt = 0;              // E0[0E] leaving water, whole degrees (truncated)
   unsigned pump = 0;        // E0[09..0A] pump value (unverified: rpm?)
   unsigned evl = 0, evh = 0; // E0[07], E0[08] x 10: expansion valve pulses
+  unsigned v3 = 0;          // E0[0C] bit 2: DHW 3-way valve, 1 = hot water
   unsigned long waterAt = 0;
   int rwt = 0;              // E0[0F] return water, whole degrees
   int room = 0;             // E0[10] remote controller room temperature
+  unsigned long tankAt = 0; // 0 while no tank sensor is fitted
+  int tank = 0;             // E0[21] domestic hot water tank, whole degrees
   // outdoor E0 page 2
   unsigned long invAt = 0;
   unsigned invRps = 0;      // E0[1C] inverter speed, rps (Hz / 2 of the 0x20 registry's frequency)
@@ -358,18 +361,29 @@ struct DiiiComm
       v.evl = d[8] * 10;
       v.evh = d[9] * 10;
       v.pump = (d[10] << 8) | d[11];
+      v.v3 = (d[13] >> 2) & 1;
       v.lwt = btosa(d[15]);
       v.hydroAt = at;
+      // E0[21] tank: a third row, read only while the second still held 0x80 data. 0 = the frame went (the
+      // positions are zero in the next one), -47 (AF) = no tank sensor: both left out
+      bool ok3 = water && readRow(t.addr + 0x20, d3);
+      int tank = ok3 ? btosa(d3[2]) : 0;
       if (water)
       {
         v.rwt = btosa(d2[0]);
         v.room = btosa(d2[1]);
         v.waterAt = at;
       }
+      if (ok3 && d3[2] != 0 && tank >= -30 && tank <= 95)
+      {
+        v.tank = tank;
+        v.tankAt = at;
+      }
       end();
       if (rawLog)
       {
-        bool ok3 = readRow(t.addr + 0x20, d3);
+        if (!water)
+          ok3 = readRow(t.addr + 0x20, d3);
         rawRows("E0RAW", d, ok2 ? d2 : nullptr, ok3 ? d3 : nullptr);
       }
       return true;
@@ -677,7 +691,8 @@ struct DiiiComm
     auto fresh = [t](unsigned long at, unsigned long maxAge) { return at != 0 && t - at < maxAge; };
     size_t n;
     bool h = fresh(v.hydroAt, DIII_E0_STALE_MS), w = fresh(v.waterAt, DIII_E0_STALE_MS),
-         o = fresh(v.invAt, DIII_E0_STALE_MS), f = fresh(v.f63At, DIII_63_STALE_MS), c = fresh(v.curAt, 3 * DIII_CURRENT_INTERVAL_MS);
+         o = fresh(v.invAt, DIII_E0_STALE_MS), f = fresh(v.f63At, DIII_63_STALE_MS), c = fresh(v.curAt, 3 * DIII_CURRENT_INTERVAL_MS),
+         k = fresh(v.tankAt, DIII_E0_STALE_MS);
     char s[48];
 #define DIII_PUT(key, ok, fmt, val)                    \
   do                                                   \
@@ -694,6 +709,8 @@ struct DiiiComm
       DIII_PUT("E0: Leaving water (C)", h, "%d", v.lwt);
       DIII_PUT("E0: Return water (C)", w, "%d", v.rwt);
       DIII_PUT("E0: Remote room temp (C)", w, "%d", v.room);
+      DIII_PUT("E0: DHW tank (C)", k, "%d", v.tank);
+      DIII_PUT("E0: 3-way valve DHW", h, "%u", v.v3);
       DIII_PUT("E0: Pump", h, "%u", v.pump);
       DIII_PUT("E0: EVL (pls)", h, "%u", v.evl);
       DIII_PUT("E0: EVH (pls)", h, "%u", v.evh);

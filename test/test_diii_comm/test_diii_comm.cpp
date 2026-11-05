@@ -20,6 +20,8 @@ struct FakeOutdoor
   uint8_t id63 = 0x01;       // 63 d[1]: another DIII system id
   uint16_t room63 = 0x1580;  // 63 BRC1 room, 8.8 (0: no thermistor)
   bool badWater = false;     // 63 with LWT 0: implausible
+  uint8_t tank = 48;         // E0[21] DHW tank (0xAF = -47: no sensor)
+  uint8_t bits0C = 0x04;     // E0[0C] bit 2: 3-way valve on hot water
   int reads = 0, otherCommands = 0, unsafeReads = 0;
   int windowReads = 0; // reads in the 60 s after both E0 phases are locked
 
@@ -45,11 +47,13 @@ struct FakeOutdoor
       e[8] = 0;     // EVH / 10
       e[9] = 0x0C;  // pump hi
       e[10] = 0x0C; // pump lo
+      e[12] = bits0C;
       e[14] = 33;   // LWT
       e[15] = 28;   // RWT
       e[16] = 0x80 | 2; // room -2 (sign-magnitude)
       e[18] = 30;   // discharge/2
       e[19] = 40;   // fin
+      e[0x21] = tank;
     }
     else if ((t >= 100000) && ((t - 100000) % 300000) < 10000)
     {
@@ -298,6 +302,29 @@ void test_current_checked()
   TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: Leaving water (C)\":33,"));
 }
 
+// the DHW tank and the 3-way valve from the hydro E0
+void test_dhw_tank_and_valve()
+{
+  runFor(15 * 60000UL);
+  char buf[1024] = "";
+  reader.appendJson(buf, sizeof(buf));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: DHW tank (C)\":48,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: 3-way valve DHW\":1,"));
+}
+
+// no tank sensor (-47) and the valve on space heating: tank null, valve 0
+void test_no_tank_sensor()
+{
+  unit.tank = 0xAF;
+  unit.bits0C = 0x42;
+  runFor(15 * 60000UL);
+  char buf[1024] = "";
+  reader.appendJson(buf, sizeof(buf));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: DHW tank (C)\":null,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: 3-way valve DHW\":0,"));
+  TEST_ASSERT_NOT_NULL(strstr(buf, "\"E0: Leaving water (C)\":33,"));
+}
+
 void test_values_go_null_when_frames_stop(){
   runFor(15 * 60000UL);
   unit.answer = false;
@@ -334,6 +361,8 @@ int main(int, char **)
   RUN_TEST(test_yp0211_is_read);
   RUN_TEST(test_unknown_id_is_reported);
   RUN_TEST(test_current_checked);
+  RUN_TEST(test_dhw_tank_and_valve);
+  RUN_TEST(test_no_tank_sensor);
   RUN_TEST(test_values_go_null_when_frames_stop);
   RUN_TEST(test_window_hold_keeps_polls_off);
   return UNITY_END();

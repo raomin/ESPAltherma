@@ -18,6 +18,8 @@ It is read-only. It sends only `R` (RAM read, 16 bytes) and never writes anythin
 |---|---|---|
 | `E0: Leaving water (C)`, `E0: Return water (C)` | hydro E0, every 60 s | whole degrees |
 | `E0: Remote room temp (C)` | hydro E0 | |
+| `E0: DHW tank (C)` | hydro E0 | domestic hot water tank, whole degrees; stays `null` without a tank sensor (it reads −47) |
+| `E0: 3-way valve DHW` | hydro E0 | 1 = the 3-way valve is on hot water, 0 = space heating (bit named in Daikin's tool; not yet checked on a unit with a tank) |
 | `E0: Pump` | hydro E0 | "pump revolution speed" in Daikin's tool; a true rpm is not confirmed, see [Pump and flow](#pump-and-flow) |
 | `E0: EVL (pls)`, `E0: EVH (pls)` | hydro E0 | R410A / R134a expansion valves |
 | `E0: INV current (A)`, `E0: INV speed (rps)`, `E0: INV fin temp (C)` | outdoor E0 page 2 | compressor (secondary) current, not the mains current |
@@ -32,9 +34,9 @@ A value is `null` when its frame has not been caught recently.
 | Unit | Outdoor software | E0 | 63 | RAM current |
 |---|---|---|---|---|
 | EKHBRD016ACV1 + ERSQ016 (selman61) | `DP0009_003` | ✔ | ✔ | ✔ |
-| EKHBRD + ERRQ (stav242) | `DP0009_003` | ✔ (`Sync` 3 after 48 min) | the fix in `1c080ce` is not confirmed yet | ✔ (2.93 A, rated 27) |
+| EKHBRD + ERRQ (stav242) | `DP0009_003` | ✔ (`Sync` 3 after 48 min) | null on a build before `1c080ce`; not checked on beta.25 yet | ✔ (2.93 A, rated 27) |
 | ERSQ016AV1 (julianbl) | `YP0211_004` | DIII slots at the same addresses, from Memory reads; not run yet | not run yet | self-checked, not run yet |
-| EKHBRD + ERRQ (another user) | `YP0211_004` | Memory reads caught the outdoor E0 page 2 and the hydro E0 page 0x81 in the slots; not run yet | a 63 frame caught in the slot passes the checks; not run yet | self-checked, not run yet |
+| EKHBRD + ERRQ (another user) | `YP0211_004` | ✔ on v2.0.0-beta.25 (polls every 29.5 s = both phases locked) | ✔ (period 169 s) | ✔ |
 
 On these units the DIII system id (`d[1..4]` of each frame) differs: it is `01 00 00 00` on selman61's unit, `6B 53 E0 B8` on julianbl's and `92 59 E0 B8` on the ERRQ above. The reader does not depend on it.
 
