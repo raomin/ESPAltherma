@@ -34,8 +34,9 @@ A value is `null` when its frame has not been caught recently.
 | EKHBRD016ACV1 + ERSQ016 (selman61) | `DP0009_003` | ✔ | ✔ | ✔ |
 | EKHBRD + ERRQ (stav242) | `DP0009_003` | ✔ (`Sync` 3 after 48 min) | the fix in `1c080ce` is not confirmed yet | ✔ (2.93 A, rated 27) |
 | ERSQ016AV1 (julianbl) | `YP0211_004` | DIII slots at the same addresses, from Memory reads; not run yet | not run yet | self-checked, not run yet |
+| EKHBRD + ERRQ (another user) | `YP0211_004` | Memory reads caught the outdoor E0 page 2 and the hydro E0 page 0x81 in the slots; not run yet | a 63 frame caught in the slot passes the checks; not run yet | self-checked, not run yet |
 
-On these units the DIII system id (`d[1..4]` of each frame) differs: it is `01 00 00 00` on selman61's unit and `6B 53 E0 B8` on julianbl's. The reader does not depend on it.
+On these units the DIII system id (`d[1..4]` of each frame) differs: it is `01 00 00 00` on selman61's unit, `6B 53 E0 B8` on julianbl's and `92 59 E0 B8` on the ERRQ above. The reader does not depend on it.
 
 ## Log lines
 

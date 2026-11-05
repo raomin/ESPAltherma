@@ -293,7 +293,7 @@ struct DiiiComm
   }
 
   // --- identification: the controller software id sits as text at 0x0680 ("DP0009_003" on the verified unit,
-  // "YP0211_004" on an ERSQ016AV1, whose DIII slots have the same addresses and layout)
+  // "YP0211_004" on an ERSQ016AV1 and on an ERRQ, whose DIII slots have the same addresses and layout)
   static bool knownSoftware(const uint8_t *p) { return memcmp(p, "DP0009", 6) == 0 || memcmp(p, "YP0211", 6) == 0; }
 
   bool identify()
