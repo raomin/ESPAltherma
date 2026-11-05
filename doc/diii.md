@@ -54,7 +54,7 @@ On these units the DIII system id (`d[1..4]` of each frame) differs: it is `01 0
 ## Pump and flow
 
 These are estimates only:
-- **Flow:** about 5.5 L/min per 1000 of `E0: Pump` (range 4.5–6.6), from the R134a energy balance on selman61's unit at pump values 1287–1762. stav242's flow sensor measured 23.55 L/min at pump 4100, which is 5.74 per 1000.
+- **Flow:** about 5.5 L/min per 1000 of `E0: Pump` (range 4.5–6.6), from the R134a energy balance on selman61's unit at pump values 1287–1762. stav242's flow sensor measured 0 L/min at pump 0 and 23.55 L/min at pump 4100: a line through zero, 5.74 per 1000, so **flow ≈ 5.74 × `E0: Pump` / 1000 L/min**. Points in between are still needed to tell a line from a curve.
 - **Pump power:** about 5 + 96 × (n / 4200)³ W, max 101 W. The cubic law is assumed.
 
 More pairs of `E0: Pump` and measured flow, taken at the same moment, are welcome.
