@@ -294,12 +294,15 @@ template:
     - name: "DHW Temp"
       unique_id: "dhw"
       state: "{{ state_attr('sensor.althermasensors','DHW tank temp. (R5T)') }}"
+      device_class: temperature
+      state_class: measurement
       unit_of_measurement: '°C'
     - name: "Inverter primary current"
       unique_id: "inv_primary_current"
       state: "{{ state_attr('sensor.althermasensors','INV primary current (A)') }}"
       unit_of_measurement: 'A'
       device_class: current
+      state_class: measurement
 ```
 
 After restarting Home Assistant, these entities can be added to an history card:
