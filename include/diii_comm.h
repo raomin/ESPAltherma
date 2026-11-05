@@ -356,6 +356,10 @@ struct DiiiComm
       // and 63 leave these positions zero).
       bool ok2 = readRow(t.addr + 0x10, d2);
       bool water = ok2 && d2[0] >= 1 && d2[0] <= 90 && d2[3] != 0 && d2[4] >= 1 && d2[4] <= 90;
+      // E0[21] tank: a third row, read only while the second still held 0x80 data. 0 = the frame went (the
+      // positions are zero in the next one), -47 (AF) = no tank sensor: both left out
+      bool ok3 = water && readRow(t.addr + 0x20, d3);
+      int tank = ok3 ? btosa(d3[2]) : 0;
       unsigned long at = now();
       begin();
       v.evl = d[8] * 10;
@@ -364,10 +368,6 @@ struct DiiiComm
       v.v3 = (d[13] >> 2) & 1;
       v.lwt = btosa(d[15]);
       v.hydroAt = at;
-      // E0[21] tank: a third row, read only while the second still held 0x80 data. 0 = the frame went (the
-      // positions are zero in the next one), -47 (AF) = no tank sensor: both left out
-      bool ok3 = water && readRow(t.addr + 0x20, d3);
-      int tank = ok3 ? btosa(d3[2]) : 0;
       if (water)
       {
         v.rwt = btosa(d2[0]);
