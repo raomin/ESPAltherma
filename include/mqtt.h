@@ -565,12 +565,13 @@ void publishControl(CurveControl &c)
   }
   if (ready && c.target >= 0)
   {
-    char value[8], attrs[160];
+    char value[8], attrs[200];
     snprintf(value, sizeof(value), "%d", c.target);
     mqttPublish(mqttTopics.ctlState[k], value, true);
     // What the thermostat really aims for, the unit's own maximum, and the second point of the curve
-    snprintf(attrs, sizeof(attrs), "{\"effective\":%d,\"ceiling\":%d,\"curve_low\":%d,\"saved\":%d,\"min\":%d,\"max\":%d,\"curve_orig_hi\":%d,\"curve_orig_lo\":%d,\"restoring\":%s}",
-             c.effective, c.ceiling, c.targetLo, c.saved, c.minTarget, c.maxTarget, c.origA, c.origB, c.restoring ? "true" : "false");
+    snprintf(attrs, sizeof(attrs), "{\"effective\":%d,\"ceiling\":%d,\"curve_low\":%d,\"saved\":%d,\"min\":%d,\"max\":%d,\"curve_orig_hi\":%d,\"curve_orig_lo\":%d,\"restoring\":%s,\"ram_only\":%s,\"held\":%d}",
+             c.effective, c.ceiling, c.targetLo, c.saved, c.minTarget, c.maxTarget, c.origA, c.origB, c.restoring ? "true" : "false",
+             c.ramOnly ? "true" : "false", c.held);
     mqttPublish(mqttTopics.ctlAttrs[k], attrs, true);
   }
   // The "restore the unit's curve" button: present while a curve from before the first write is known

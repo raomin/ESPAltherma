@@ -431,5 +431,7 @@
  "Erase all settings (WiFi, MQTT, model) and restart?": "Alle Einstellungen (WLAN, MQTT, Modell) löschen und neu starten?",
  "Settings erased. Restarting…": "Einstellungen gelöscht. Neustart…",
  "About": "Über",
- "Sponsor on GitHub": "Auf GitHub sponsern"
+ "Sponsor on GitHub": "Auf GitHub sponsern",
+ "Keep the targets in the unit's working memory only": "Ziele nur im Arbeitsspeicher der Einheit halten",
+ "Without it, a target is also saved in the unit's memory, 30 s after it was set and at most every 5 minutes, so that it survives a restart. For a target that changes often (an automation following the price or the solar surplus), keep it in the working memory only: the memory is never written and keeps the unit's own curve, a restart of the heat pump brings that curve back and ESPAltherma writes the target again within 2 minutes. Restoring the unit's curve ends it.": "Ohne diese Option wird ein Ziel zusätzlich im Speicher der Einheit gesichert, 30 s nach dem Setzen und höchstens alle 5 Minuten, damit es einen Neustart übersteht. Für ein Ziel, das sich oft ändert (eine Automatisierung nach Strompreis oder Solarüberschuss), halte es nur im Arbeitsspeicher: Der Speicher wird nie beschrieben und behält die eigene Kurve der Einheit, ein Neustart der Wärmepumpe bringt diese Kurve zurück und ESPAltherma schreibt das Ziel innerhalb von 2 Minuten erneut. „Kurve der Einheit wiederherstellen“ beendet es."
 }

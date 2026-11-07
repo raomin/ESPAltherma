@@ -431,5 +431,7 @@
  "Erase all settings (WiFi, MQTT, model) and restart?": "¿Borrar todos los ajustes (Wi-Fi, MQTT, modelo) y reiniciar?",
  "Settings erased. Restarting…": "Ajustes borrados. Reiniciando…",
  "About": "Acerca de",
- "Sponsor on GitHub": "Patrocinar en GitHub"
+ "Sponsor on GitHub": "Patrocinar en GitHub",
+ "Keep the targets in the unit's working memory only": "Mantener las consignas solo en la memoria de trabajo de la unidad",
+ "Without it, a target is also saved in the unit's memory, 30 s after it was set and at most every 5 minutes, so that it survives a restart. For a target that changes often (an automation following the price or the solar surplus), keep it in the working memory only: the memory is never written and keeps the unit's own curve, a restart of the heat pump brings that curve back and ESPAltherma writes the target again within 2 minutes. Restoring the unit's curve ends it.": "Sin esta opción, una consigna también se guarda en la memoria de la unidad, 30 s después de fijarla y como mucho cada 5 minutos, para que sobreviva a un reinicio. Para una consigna que cambia a menudo (una automatización que sigue el precio o el excedente solar), mantenla solo en la memoria de trabajo: la memoria nunca se escribe y conserva la curva propia de la unidad, un reinicio de la bomba de calor recupera esa curva y ESPAltherma vuelve a escribir la consigna en menos de 2 minutos. Restaurar la curva de la unidad lo termina."
 }

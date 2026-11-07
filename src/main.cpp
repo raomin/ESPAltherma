@@ -752,6 +752,7 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   }
   if (c.exchange == nullptr)
     c.exchange = x10aExchange;
+  c.ramOnly = config.ctlRamOnly;
   ControlStatus before = c.status;
   c.tick(millis());
   if (c.status != before)

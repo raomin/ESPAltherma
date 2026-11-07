@@ -11,6 +11,11 @@
 // it survives a restart). Both are written: the RAM at once, the memory 30 s later and at most every 5
 // minutes, to spare it.
 //
+// RAM only (opt-in): for a target that changes often (an automation following the price or the solar surplus),
+// the memory is never written. The target is held instead: a restart of the heat pump reloads the unit's curve
+// from its memory, and the next read-back (every 2 minutes) writes the held target into the RAM again, as the
+// power limit does. A restore releases it; the unit's memory still holds its own curve.
+//
 // The curve found before the first write is remembered (the caller keeps it across restarts): a restore request
 // writes it back, both points at once, in the RAM and in the memory.
 //
@@ -328,6 +333,8 @@ struct CurveControl : X10aClient
   int saved = -1;                   // value in the unit's memory, when both points of the curve hold the same one
   int savedA = -1, savedB = -1;     // each point as the unit's memory holds it
   int origA = -1, origB = -1;       // the curve found before the first write from here (-1: none), restorable
+  bool ramOnly = false;             // never write the unit's memory: the target is held in its RAM (set by the caller)
+  int held = -1;                    // the target held in RAM only, written again when the RAM lost it (-1: none)
   volatile int wanted = -1;         // requested value, -1 when none (set from other tasks)
   volatile bool restoreWanted = false; // restore the original curve (set from other tasks)
   int pendingA = -1, pendingB = -1; // the request being handled (clamped), both points
@@ -356,7 +363,7 @@ struct CurveControl : X10aClient
     status = CONTROL_OFF;
     softwareId[0] = 0;
     target = targetLo = saved = savedA = savedB = effective = ceiling = -1;
-    wanted = pendingA = pendingB = -1;
+    wanted = pendingA = pendingB = held = -1;
     restoring = restoreWanted = false; // origA/origB stay: the curve can still be restored once enabled again
     checkedAt = 0; // identified again as soon as enabled
     changed = true;
@@ -502,11 +509,14 @@ struct CurveControl : X10aClient
         identify(now);
       return;
     }
+    if (!ramOnly)
+      held = -1;
     // A restore takes over any request; a request cancels a restore
     if (restoreWanted)
     {
       restoreWanted = false;
       wanted = -1;
+      held = -1; // released: the unit's curve is back, in its RAM and (if it was changed) in its memory
       if (origA >= 0 && origB >= 0 && !restoring)
       {
         pendingA = origA;
@@ -548,9 +558,15 @@ struct CurveControl : X10aClient
         }
       }
       bool done = false;
+      if (ramOnly && !restoring)
+        held = pendingA;
       if (savedA == pendingA && savedB == pendingB)
       {
         done = true; // already in the unit's memory
+      }
+      else if (ramOnly && !restoring)
+      {
+        done = true; // RAM only: the memory keeps the unit's curve, the target is held
       }
       else if ((restoring || now - wantedAt >= CONTROL_SAVE_DELAY_MS) && (savedAt == 0 || now - savedAt >= CONTROL_SAVE_INTERVAL_MS))
       {
@@ -583,6 +599,12 @@ struct CurveControl : X10aClient
       identify(now);
     else if (now - readAt >= CONTROL_READ_INTERVAL_MS)
       readTarget(now);
+    bool ramLostTheTarget = held >= 0 && status == CONTROL_READY && target >= 0 && (target != held || targetLo != held);
+    if (ramLostTheTarget)
+    {
+      pendingA = pendingB = held; // a restart of the heat pump, or a save on its interface: written again next tick
+      wantedAt = now;
+    }
   }
 };
 

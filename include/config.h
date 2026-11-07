@@ -81,6 +81,7 @@ struct AppConfig
   // interface (control.h)
   bool dhwTarget;
   bool lwtTarget;
+  bool ctlRamOnly;      // the targets are held in the unit's RAM only, never saved in its memory (control.h)
   int ctlOrig[2][2];  // the curve each control found before its first write (high, low point; -1: none), restorable
   char ctlOrigSw[9];  // the hydro board software those curves belong to
   bool powerLimit;    // the power limit can be set from Home Assistant and the web interface (control.h)
@@ -135,6 +136,7 @@ void configDefaults(AppConfig &c)
     c.ctlOrig[k][0] = c.ctlOrig[k][1] = -1;
   c.ctlOrigSw[0] = 0;
   c.powerLimit = false;
+  c.ctlRamOnly = false;
   c.statsEnabled = true;
   c.statsVoltage = 230;
   c.statsPhases = 1;
@@ -233,6 +235,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   JsonObject control = doc["control"].to<JsonObject>();
   control["dhw_target"] = c.dhwTarget;
   control["lwt_target"] = c.lwtTarget;
+  control["ram_only"] = c.ctlRamOnly;
   control["orig_dhw_hi"] = c.ctlOrig[0][0];
   control["orig_dhw_lo"] = c.ctlOrig[0][1];
   control["orig_lwt_hi"] = c.ctlOrig[1][0];
@@ -373,6 +376,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(out["debug_serial"], c.debugSerial);
   readNum(src["control"]["dhw_target"], c.dhwTarget);
   readNum(src["control"]["lwt_target"], c.lwtTarget);
+  readNum(src["control"]["ram_only"], c.ctlRamOnly);
   readNum(src["control"]["orig_dhw_hi"], c.ctlOrig[0][0]);
   readNum(src["control"]["orig_dhw_lo"], c.ctlOrig[0][1]);
   readNum(src["control"]["orig_lwt_hi"], c.ctlOrig[1][0]);
