@@ -431,5 +431,8 @@
  "Erase all settings (WiFi, MQTT, model) and restart?": "Cancellare tutte le impostazioni (Wi-Fi, MQTT, modello) e riavviare?",
  "Settings erased. Restarting…": "Impostazioni cancellate. Riavvio…",
  "About": "Informazioni",
- "Sponsor on GitHub": "Sponsorizza su GitHub"
+ "Sponsor on GitHub": "Sponsorizza su GitHub",
+ "Keep the targets in the unit's working memory only": "Mantenere i setpoint solo nella memoria di lavoro dell'unità",
+ "By default, a target is also saved in the unit's memory, 30 s after it was set and at most every 5 minutes, so that it survives a restart. For a target that changes often (an automation following the price or the solar surplus), keep it in the working memory only: the memory is never written and keeps the unit's own curve, a restart of the heat pump brings that curve back and ESPAltherma writes the target again within 2 minutes. Restoring the unit's curve ends it.": "Per impostazione predefinita, un setpoint viene salvato anche nella memoria dell'unità, 30 s dopo essere stato impostato e al massimo ogni 5 minuti, per sopravvivere a un riavvio. Per un setpoint che cambia spesso (un'automazione che segue il prezzo o il surplus solare), mantienilo solo nella memoria di lavoro: la memoria non viene mai scritta e conserva la curva propria dell'unità, un riavvio della pompa di calore riporta quella curva ed ESPAltherma riscrive il setpoint entro 2 minuti. Ripristinare la curva dell'unità lo termina.",
+ "The shift set on the unit's interface or in the Daikin app adds to this target: with a +10 K shift, 35 °C here makes 45 °C at the floor or the radiators. Check the effective target above after a change.": "Lo spostamento impostato sull'interfaccia dell'unità o nell'app Daikin si somma a questo setpoint: con uno spostamento di +10 K, 35 °C qui diventano 45 °C al pavimento o ai radiatori. Controllare il setpoint effettivo qui sopra dopo una modifica."
 }

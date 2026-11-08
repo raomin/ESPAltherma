@@ -11,6 +11,11 @@
 // it survives a restart). Both are written: the RAM at once, the memory 30 s later and at most every 5
 // minutes, to spare it.
 //
+// RAM only (opt-in): for a target that changes often (an automation following the price or the solar surplus),
+// the memory is never written. The target is held instead: a restart of the heat pump reloads the unit's curve
+// from its memory, and the next read-back (every 2 minutes) writes the held target into the RAM again, as the
+// power limit does. A restore releases it; the unit's memory still holds its own curve.
+//
 // The curve found before the first write is remembered (the caller keeps it across restarts): a restore request
 // writes it back, both points at once, in the RAM and in the memory.
 //
@@ -31,6 +36,8 @@
 #define CONTROL_SAVE_DELAY_MS 30000UL       // the target is saved in the unit's memory once unchanged for this long
 #define CONTROL_SAVE_INTERVAL_MS 300000UL   // and at most this often
 #define CONTROL_CHECK_INTERVAL_MS 600000UL  // the unit is identified again (mode, limits) this often
+#define CONTROL_RETRY_FIRST_MS 30000UL      // a unit not ready yet (no answer, or its limits still empty just after a
+                                            // power-up) is tried again this soon, then twice as long each time
 #define CONTROL_READ_INTERVAL_MS 120000UL   // the target is read back this often (the interface may change it)
 #define CONTROL_READ_AFTER_WRITE_MS 5000UL  // and this long after a write, once the board has recomputed
 
@@ -386,12 +393,16 @@ struct CurveControl : X10aClient
   int saved = -1;                   // value in the unit's memory, when both points of the curve hold the same one
   int savedA = -1, savedB = -1;     // each point as the unit's memory holds it
   int origA = -1, origB = -1;       // the curve found before the first write from here (-1: none), restorable
+  bool ramOnly = false;             // never write the unit's memory: the target is held in its RAM (set by the caller)
+  int held = -1;                    // the target held in RAM only, written again when the RAM lost it (-1: none)
+  bool heldChanged = false;         // held changed: the caller persists it, so an ESP restart keeps the hold
   volatile int wanted = -1;         // requested value, -1 when none (set from other tasks)
   volatile bool restoreWanted = false; // restore the original curve (set from other tasks)
   int pendingA = -1, pendingB = -1; // the request being handled (clamped), both points
   bool restoring = false;           // the pending pair is the original curve
   bool origChanged = false;         // origA/origB changed: the caller persists them
   unsigned long wantedAt = 0, savedAt = 0, checkedAt = 0, readAt = 0;
+  unsigned long retryAfter = CONTROL_RETRY_FIRST_MS; // until the next identification while not ready
   volatile bool changed = false; // something to publish (state or availability)
   int applied = -1, appliedLo = -1; // last pair applied, for the caller's log (-1 when none since the last read)
 
@@ -415,8 +426,9 @@ struct CurveControl : X10aClient
     softwareId[0] = 0;
     target = targetLo = saved = savedA = savedB = effective = ceiling = -1;
     wanted = pendingA = pendingB = -1;
-    restoring = restoreWanted = false; // origA/origB stay: the curve can still be restored once enabled again
+    restoring = restoreWanted = false; // origA/origB and the hold stay: they apply again once enabled
     checkedAt = 0; // identified again as soon as enabled
+    retryAfter = CONTROL_RETRY_FIRST_MS;
     changed = true;
   }
 
@@ -426,12 +438,16 @@ struct CurveControl : X10aClient
     checkedAt = now;
     ControlStatus before = status;
     int minBefore = minTarget, maxBefore = maxTarget;
+    char softwareBefore[9];
+    snprintf(softwareBefore, sizeof(softwareBefore), "%s", softwareId);
     if (!readSoftwareId(softwareId))
     {
-      status = CONTROL_NO_ANSWER;
+      status = CONTROL_NO_ANSWER; // what a restart of the heat pump looks like: the hold stays
     }
     else
     {
+      if (softwareBefore[0] && strcmp(softwareBefore, softwareId) != 0)
+        setHeld(-1); // another hydro board software: the held target belongs to the previous one
       profile = nullptr;
       for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       {
@@ -456,6 +472,8 @@ struct CurveControl : X10aClient
         status = minTarget >= 5 && maxTarget <= 90 && minTarget < maxTarget ? CONTROL_READY : CONTROL_UNSUPPORTED;
       }
     }
+    if (status == CONTROL_NOT_CURVE_MODE)
+      setHeld(-1); // the setpoint left the weather-dependent mode: coming back to it must not bring the old target back
     if (status == CONTROL_READY)
     {
       readTarget(now);
@@ -532,6 +550,15 @@ struct CurveControl : X10aClient
     return writeMemory(spec->memA, (uint8_t)(rawA << 2 | (a & 3))) && writeMemory(spec->memB, (uint8_t)(rawB << 2 | (b & 3)));
   }
 
+  void setHeld(int value)
+  {
+    if (held != value)
+    {
+      held = value;
+      heldChanged = true;
+    }
+  }
+
   // Asks for a target. Applied by tick() on the task that owns the X10A link.
   void request(int value)
   {
@@ -551,20 +578,48 @@ struct CurveControl : X10aClient
     origB = b;
   }
 
+  // The wait before the next try at a unit that is not ready: doubled each time, up to the check interval, so a
+  // unit that never gets ready is not asked more often than before
+  static unsigned long nextRetry(unsigned long wait)
+  {
+    return wait * 2 > CONTROL_CHECK_INTERVAL_MS ? CONTROL_CHECK_INTERVAL_MS : wait * 2;
+  }
+
   // Runs the pending work: identification, requests, delayed saves, periodic reads. Owner task only.
   void tick(unsigned long now)
   {
     if (status != CONTROL_READY)
     {
-      if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS || checkedAt == 0)
+      // A heat pump just powered up (with ESPAltherma, when the X10A port powers it) answers before its RAM holds
+      // its limits: tried again after half a minute, then less and less often, not only at the next check
+      if (checkedAt == 0 || now - checkedAt >= retryAfter)
+      {
+        bool retrying = checkedAt != 0;
         identify(now);
+        if (status == CONTROL_READY)
+          retryAfter = CONTROL_RETRY_FIRST_MS;
+        else if (retrying)
+          retryAfter = nextRetry(retryAfter);
+      }
       return;
+    }
+    if (!ramOnly && held >= 0)
+    {
+      // RAM only switched off: the held target is saved in the unit's memory like a fresh request
+      if (pendingA < 0 && wanted < 0 && !restoreWanted)
+      {
+        pendingA = pendingB = held;
+        restoring = false;
+        wantedAt = now;
+      }
+      setHeld(-1);
     }
     // A restore takes over any request; a request cancels a restore
     if (restoreWanted)
     {
       restoreWanted = false;
       wanted = -1;
+      setHeld(-1); // released: the unit's curve is back, in its RAM and (if it was changed) in its memory
       if (origA >= 0 && origB >= 0 && !restoring)
       {
         pendingA = origA;
@@ -606,9 +661,15 @@ struct CurveControl : X10aClient
         }
       }
       bool done = false;
+      if (ramOnly && !restoring)
+        setHeld(pendingA);
       if (savedA == pendingA && savedB == pendingB)
       {
         done = true; // already in the unit's memory
+      }
+      else if (ramOnly && !restoring)
+      {
+        done = true; // RAM only: the memory keeps the unit's curve, the target is held
       }
       else if ((restoring || now - wantedAt >= CONTROL_SAVE_DELAY_MS) && (savedAt == 0 || now - savedAt >= CONTROL_SAVE_INTERVAL_MS))
       {
@@ -641,6 +702,12 @@ struct CurveControl : X10aClient
       identify(now);
     else if (now - readAt >= CONTROL_READ_INTERVAL_MS)
       readTarget(now);
+    bool ramLostTheTarget = held >= 0 && status == CONTROL_READY && target >= 0 && (target != held || targetLo != held);
+    if (ramLostTheTarget)
+    {
+      pendingA = pendingB = clamp(held); // a restart of the heat pump, or a save on its interface: written again next
+      wantedAt = now;                    // tick, within the unit's limits (an installer may have narrowed them since)
+    }
   }
 };
 

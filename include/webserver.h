@@ -204,6 +204,8 @@ static void controlJson(JsonObject c, const CurveControl &k)
     c["saved"] = k.saved;
     c["pending"] = (int)k.wanted;
     c["restoring"] = k.restoring;
+    c["ram_only"] = k.ramOnly;
+    c["held"] = k.held;
     if (k.origA >= 0)
     {
       c["orig_hi"] = k.origA; // the unit's own curve, from before the first write: restorable

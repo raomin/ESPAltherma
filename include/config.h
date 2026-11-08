@@ -81,8 +81,10 @@ struct AppConfig
   // interface (control.h)
   bool dhwTarget;
   bool lwtTarget;
+  bool ctlRamOnly;      // the targets are held in the unit's RAM only, never saved in its memory (control.h)
   int ctlOrig[2][2];  // the curve each control found before its first write (high, low point; -1: none), restorable
   char ctlOrigSw[9];  // the hydro board software those curves belong to
+  int ctlHeld[2];     // the target each control holds in RAM only (-1: none), written again after a restart
   bool powerLimit;    // the power limit can be set from Home Assistant and the web interface (control.h)
   bool statsEnabled;  // energy and cycle statistics (stats.h): heat output, estimated input and COP, the day's counters
   float statsVoltage; // mains voltage for the estimate, used when the unit reports none
@@ -132,9 +134,10 @@ void configDefaults(AppConfig &c)
   c.safetyActiveHigh = true;
   strlcpy(c.oneTopicPrefix, "espaltherma/OneATTR/", sizeof(c.oneTopicPrefix));
   for (int k = 0; k < 2; k++)
-    c.ctlOrig[k][0] = c.ctlOrig[k][1] = -1;
+    c.ctlOrig[k][0] = c.ctlOrig[k][1] = c.ctlHeld[k] = -1;
   c.ctlOrigSw[0] = 0;
   c.powerLimit = false;
+  c.ctlRamOnly = false;
   c.statsEnabled = true;
   c.statsVoltage = 230;
   c.statsPhases = 1;
@@ -233,11 +236,14 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   JsonObject control = doc["control"].to<JsonObject>();
   control["dhw_target"] = c.dhwTarget;
   control["lwt_target"] = c.lwtTarget;
+  control["ram_only"] = c.ctlRamOnly;
   control["orig_dhw_hi"] = c.ctlOrig[0][0];
   control["orig_dhw_lo"] = c.ctlOrig[0][1];
   control["orig_lwt_hi"] = c.ctlOrig[1][0];
   control["orig_lwt_lo"] = c.ctlOrig[1][1];
   control["orig_sw"] = c.ctlOrigSw;
+  control["held_dhw"] = c.ctlHeld[0];
+  control["held_lwt"] = c.ctlHeld[1];
   control["power_limit"] = c.powerLimit;
   control["limit_on"] = c.ctlLimitOn;
   control["limit_value"] = c.ctlLimitValue;
@@ -373,11 +379,14 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(out["debug_serial"], c.debugSerial);
   readNum(src["control"]["dhw_target"], c.dhwTarget);
   readNum(src["control"]["lwt_target"], c.lwtTarget);
+  readNum(src["control"]["ram_only"], c.ctlRamOnly);
   readNum(src["control"]["orig_dhw_hi"], c.ctlOrig[0][0]);
   readNum(src["control"]["orig_dhw_lo"], c.ctlOrig[0][1]);
   readNum(src["control"]["orig_lwt_hi"], c.ctlOrig[1][0]);
   readNum(src["control"]["orig_lwt_lo"], c.ctlOrig[1][1]);
   readStr(src["control"]["orig_sw"], c.ctlOrigSw, sizeof(c.ctlOrigSw));
+  readNum(src["control"]["held_dhw"], c.ctlHeld[0]);
+  readNum(src["control"]["held_lwt"], c.ctlHeld[1]);
   readNum(src["control"]["power_limit"], c.powerLimit);
   readNum(src["control"]["limit_on"], c.ctlLimitOn);
   readNum(src["control"]["limit_value"], c.ctlLimitValue);

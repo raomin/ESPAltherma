@@ -275,6 +275,45 @@ void test_no_answer()
     TEST_ASSERT_EQUAL(-1, c.target);
 }
 
+// A heat pump just powered up (ESPAltherma with it, when the X10A port powers it) answers before its RAM holds the
+// limits: tried again after half a minute, then a minute later, and ready as soon as the limits are there
+void test_a_unit_just_powered_up_is_tried_again_soon()
+{
+    uint8_t limits[32];
+    memcpy(limits, unit.ram + 0x30C0, sizeof(limits));
+    memset(unit.ram + 0x30C0, 0, sizeof(limits)); // the limit records still empty
+    CurveControl c = fresh();
+    c.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+    c.tick(1000 + CONTROL_RETRY_FIRST_MS - 1);
+    TEST_ASSERT_EQUAL(1000, c.checkedAt); // not yet
+    c.tick(1000 + CONTROL_RETRY_FIRST_MS);
+    TEST_ASSERT_EQUAL(1000 + CONTROL_RETRY_FIRST_MS, c.checkedAt);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+    memcpy(unit.ram + 0x30C0, limits, sizeof(limits)); // the board has loaded them
+    c.tick(1000 + 3 * CONTROL_RETRY_FIRST_MS - 1);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status); // the second retry waits twice as long
+    c.tick(1000 + 3 * CONTROL_RETRY_FIRST_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    TEST_ASSERT_EQUAL(CONTROL_RETRY_FIRST_MS, c.retryAfter); // the next loss of the unit starts short again
+}
+
+// A unit that never gets ready is not asked more often than before: the wait grows up to the check interval
+void test_a_unit_never_ready_is_tried_at_the_check_interval_in_the_end()
+{
+    memset(unit.ram + 0x30C0, 0, 32);
+    CurveControl c = fresh();
+    unsigned long now = 1000;
+    c.tick(now);
+    for (int i = 0; i < 10; i++)
+    {
+        now += c.retryAfter;
+        c.tick(now);
+    }
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+    TEST_ASSERT_EQUAL(CONTROL_CHECK_INTERVAL_MS, c.retryAfter);
+}
+
 void test_applies_then_saves()
 {
     CurveControl c = fresh();
@@ -545,6 +584,213 @@ void test_restore_from_the_saved_original_keeps_the_memory_interval()
     TEST_ASSERT_EQUAL((54 - 45) << 2 | 0x03, unit.memory[367]);
     TEST_ASSERT_FALSE(c.restoring);
     TEST_ASSERT_EQUAL(-1, c.origA);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// RAM only: the target is written in the RAM and never in the board's memory, however long it stays
+void test_ram_only_never_writes_the_memory()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(-1, (int)c.wanted); // done at once: nothing waits for a save
+    TEST_ASSERT_EQUAL(50, c.held);
+    c.request(53);
+    c.tick(3000);
+    c.tick(3000 + CONTROL_SAVE_DELAY_MS + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(53 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(53, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL((48 - 35) << 2 | 0x01, unit.memory[366]); // the unit's own curve, untouched
+    TEST_ASSERT_EQUAL((52 - 45) << 2 | 0x03, unit.memory[367]);
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A restart of the heat pump reloads its curve from the memory: the held target is written again at the next
+// read-back, without capturing the reloaded curve as a new original
+void test_ram_only_writes_the_target_again_after_the_unit_restarts()
+{
+    CurveControl c = fresh(CONTROL_LWT);
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(38);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(38 << 8, unit.word(0x187C));
+    TEST_ASSERT_EQUAL(38 << 8, unit.word(0x18BA));
+    c.origChanged = false;
+    unit.setWord(0x187C, 36 << 8); // the unit restarted: its curve from the memory
+    unit.setWord(0x18BA, 40 << 8);
+    int writes = unit.ramWrites;
+    c.tick(2000 + CONTROL_READ_INTERVAL_MS - 1);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites); // not read back yet
+    c.tick(2000 + CONTROL_READ_INTERVAL_MS);   // read back: the target is gone
+    c.tick(2000 + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(38 << 8, unit.word(0x187C));
+    TEST_ASSERT_EQUAL(38 << 8, unit.word(0x18BA));
+    TEST_ASSERT_EQUAL(writes + 2, unit.ramWrites);
+    TEST_ASSERT_EQUAL(36, c.origA); // still the curve from before the first write
+    TEST_ASSERT_EQUAL(40, c.origB);
+    TEST_ASSERT_FALSE(c.origChanged);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A restore puts the curve back in the RAM; the memory still holds it, so it is not written, and the hold ends
+void test_ram_only_restore_releases_without_writing_the_memory()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    c.requestRestore();
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(-1, c.origA);
+    TEST_ASSERT_FALSE(c.restoring);
+    int writes = unit.ramWrites;
+    c.tick(3000 + CONTROL_READ_INTERVAL_MS); // read back, nothing held: nothing written
+    c.tick(3000 + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// Unticking RAM only saves the held target in the unit's memory, like a fresh request, and ends the hold
+void test_ram_only_off_saves_the_held_target()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50, c.held);
+    TEST_ASSERT_TRUE(c.heldChanged); // the caller persists it
+    c.heldChanged = false;
+    c.ramOnly = false;
+    c.tick(2500);
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_TRUE(c.heldChanged);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites); // after the usual delay
+    c.tick(2500 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL(2, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(50, c.saved);
+    TEST_ASSERT_EQUAL((50 - 35) << 2 | 0x01, unit.memory[366]);
+    TEST_ASSERT_EQUAL((50 - 45) << 2 | 0x03, unit.memory[367]);
+    unit.setWord(0x187A, 48 << 8); // a later RAM change is not chased any more
+    unit.setWord(0x18B8, 52 << 8);
+    int writes = unit.ramWrites;
+    c.tick(2500 + CONTROL_SAVE_DELAY_MS + CONTROL_READ_INTERVAL_MS);
+    c.tick(2500 + CONTROL_SAVE_DELAY_MS + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// Leaving the weather-dependent mode ends the hold: back in that mode later, the old target does not return
+void test_ram_only_hold_ends_when_the_curve_mode_is_left()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50, c.held);
+    unit.memory[278] = 0x00; // absolute setpoint on the interface
+    c.tick(1000 + CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_NOT_CURVE_MODE, c.status);
+    TEST_ASSERT_EQUAL(-1, c.held);
+    unit.memory[278] = 0x01; // weather dependent again, with the unit's curve in RAM
+    unit.setWord(0x187A, 48 << 8);
+    unit.setWord(0x18B8, 52 << 8);
+    int writes = unit.ramWrites;
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + CONTROL_READ_INTERVAL_MS);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+}
+
+// No answer is what a restart of the heat pump looks like: the hold survives it and the target comes back
+void test_ram_only_hold_survives_a_unit_that_does_not_answer()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    unit.answer = false;
+    c.tick(1000 + CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, c.status);
+    TEST_ASSERT_EQUAL(50, c.held);
+    unit.answer = true; // back, with its curve from the memory
+    unit.setWord(0x187A, 48 << 8);
+    unit.setWord(0x18B8, 52 << 8);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + 10); // the lost target is seen
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + 20); // and written again
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
+// Another hydro board software (a board replaced, a firmware update): the held target belonged to the old one
+void test_ram_only_hold_ends_with_another_software()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    unit.board(FakeUnit::profileFor("20002203"));
+    c.tick(1000 + CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_STRING("20002203", c.softwareId);
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_TRUE(c.heldChanged);
+}
+
+// A hold given back by the caller after an ESP restart is written again when the unit lost it
+void test_ram_only_hold_from_the_saved_configuration()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.held = 50; // as the caller does from the configuration
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS);
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A held target outside the unit's limits (narrowed since, or a hand-edited configuration) is written clamped,
+// and the hold follows the clamped value
+void test_ram_only_hold_is_written_within_the_limits()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000)); // hot water: 45..55
+    c.held = 60;
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS);
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(55 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(55 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(55, c.held);
+    TEST_ASSERT_TRUE(c.heldChanged); // the caller saves the clamped value
+    int writes = unit.ramWrites;
+    c.tick(1000 + 2 * CONTROL_READ_INTERVAL_MS + 10); // read back: the RAM holds it, nothing more to write
+    c.tick(1000 + 2 * CONTROL_READ_INTERVAL_MS + 20);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
@@ -860,6 +1106,8 @@ int main(int, char **)
     RUN_TEST(test_refuses_an_unknown_software);
     RUN_TEST(test_refuses_without_the_curve_mode);
     RUN_TEST(test_no_answer);
+    RUN_TEST(test_a_unit_just_powered_up_is_tried_again_soon);
+    RUN_TEST(test_a_unit_never_ready_is_tried_at_the_check_interval_in_the_end);
     RUN_TEST(test_applies_then_saves);
     RUN_TEST(test_reads_the_effective_target_after_a_write);
     RUN_TEST(test_saves_at_most_every_five_minutes);
@@ -872,6 +1120,15 @@ int main(int, char **)
     RUN_TEST(test_every_other_software_writes_its_own_addresses);
     RUN_TEST(test_restores_the_original_curve);
     RUN_TEST(test_restore_from_the_saved_original_keeps_the_memory_interval);
+    RUN_TEST(test_ram_only_never_writes_the_memory);
+    RUN_TEST(test_ram_only_writes_the_target_again_after_the_unit_restarts);
+    RUN_TEST(test_ram_only_restore_releases_without_writing_the_memory);
+    RUN_TEST(test_ram_only_off_saves_the_held_target);
+    RUN_TEST(test_ram_only_hold_ends_when_the_curve_mode_is_left);
+    RUN_TEST(test_ram_only_hold_survives_a_unit_that_does_not_answer);
+    RUN_TEST(test_ram_only_hold_ends_with_another_software);
+    RUN_TEST(test_ram_only_hold_from_the_saved_configuration);
+    RUN_TEST(test_ram_only_hold_is_written_within_the_limits);
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);

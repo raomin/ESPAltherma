@@ -775,6 +775,11 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   }
   if (c.exchange == nullptr)
     c.exchange = x10aExchange;
+  if (c.ramOnly != config.ctlRamOnly)
+  {
+    c.ramOnly = config.ctlRamOnly;
+    c.changed = true; // the MQTT attributes say it
+  }
   ControlStatus before = c.status;
   c.tick(millis());
   if (c.status != before)
@@ -783,6 +788,9 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   if (before != CONTROL_READY && c.status == CONTROL_READY && c.origA < 0 && config.ctlOrig[k][0] >= 0 &&
       strcmp(config.ctlOrigSw, c.softwareId) == 0)
     c.setOriginal(config.ctlOrig[k][0], config.ctlOrig[k][1]); // the unit's curve, saved before the first write
+  bool heldKnown = config.ctlHeld[k] >= 0 && strcmp(config.ctlOrigSw, c.softwareId) == 0;
+  if (before != CONTROL_READY && c.status == CONTROL_READY && c.held < 0 && config.ctlRamOnly && heldKnown)
+    c.held = config.ctlHeld[k]; // held before ESPAltherma restarted: written again if the unit lost it
   if (c.applied >= 0)
   {
     if (c.appliedLo != c.applied)
@@ -803,6 +811,14 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
     config.ctlOrig[k][0] = c.origA;
     config.ctlOrig[k][1] = c.origB;
     if (c.origA >= 0)
+      strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
+    configSave();
+  }
+  if (c.heldChanged)
+  {
+    c.heldChanged = false;
+    config.ctlHeld[k] = c.held;
+    if (c.held >= 0)
       strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
     configSave();
   }
