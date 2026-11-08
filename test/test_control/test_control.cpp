@@ -57,6 +57,7 @@ struct FakeUnit
     }
 
     void setFloat(uint16_t addr, float v) { memcpy(ram + addr, &v, 4); }
+    void setU32(uint16_t addr, uint32_t v) { memcpy(ram + addr, &v, 4); }
     float getFloat(uint16_t addr) const { float v; memcpy(&v, ram + addr, 4); return v; }
 
     // The same unit on another hydro board software: the memory bytes are the same, every RAM address comes
@@ -76,6 +77,8 @@ struct FakeUnit
             reg60[14] = (uint8_t)strtol(lo, nullptr, 16);
         }
         memset(ram, 0, sizeof(ram));
+        if (p.dhw.ramA == 0) // mapped for the meter and the counters only
+            return;
         setWord(p.dhw.ramA, 48 << 8);
         setWord(p.dhw.ramB, 52 << 8);
         setWord(p.dhw.ramEffective, 48 << 8);
@@ -437,6 +440,8 @@ void test_every_other_software_writes_its_own_addresses()
     for (size_t i = 1; i < CONTROL_PROFILE_COUNT; i++)
     {
         const ControlProfile &p = CONTROL_PROFILES[i];
+        if (p.dhw.ramA == 0)
+            continue; // the meter and the counters only
         unit.reset();
         unit.board(p);
         CurveControl c = fresh();
@@ -661,7 +666,7 @@ void test_power_limit_on_every_mapped_board()
         TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
         TEST_ASSERT_EQUAL_FLOAT(50.0f, a.active);
     }
-    TEST_ASSERT_EQUAL(9, mapped);
+    TEST_ASSERT_EQUAL(10, mapped); // 20017701 from its dump included
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
@@ -714,62 +719,91 @@ void test_the_unit_energy_meter_is_read_where_mapped()
     TEST_ASSERT_FALSE(m.known);
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
-    // the reference board: no address known, nothing else read
+    // a board without a meter address: nothing else read
     unit.reset();
+    unit.board(FakeUnit::profileFor("20017701"));
     MeterReader u;
     u.exchange = fakeExchange;
     u.tick(1000);
     TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, u.status);
-    TEST_ASSERT_EQUAL_STRING("18002904", u.softwareId);
+    TEST_ASSERT_EQUAL_STRING("20017701", u.softwareId);
     TEST_ASSERT_FALSE(u.known);
 }
 
-// 20002203: the heat produced (a 32-bit count), the compressor and pump hours and the compressor starts of the
-// interface (16-bit counts) and the outdoor temperature the board works with, read together once a minute. Nothing
-// written.
+// Every software mapped for the meter reads it and its counters at its own addresses, 32 bits each; a software
+// mapped for the meter only has no counters
+void test_every_mapped_software_reads_its_meter_and_counters()
+{
+    int mapped = 0;
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+    {
+        const ControlProfile &p = CONTROL_PROFILES[i];
+        if (p.ramHeatKwh == 0)
+            continue;
+        mapped++;
+        unit.reset();
+        unit.board(p);
+        unit.setU32(p.ramHeatKwh, 70000 + i);
+        for (size_t k = 0; k < UNIT_COUNTER_COUNT; k++)
+            if (unitCounterAddress(p.counters, k))
+                unit.setU32(unitCounterAddress(p.counters, k), 65536 * (k + 1) + i); // beyond 16 bits
+        MeterReader m;
+        m.exchange = fakeExchange;
+        m.tick(1000);
+        TEST_ASSERT_EQUAL_MESSAGE(CONTROL_READY, m.status, p.softwareId);
+        TEST_ASSERT_EQUAL_STRING(p.softwareId, m.softwareId);
+        TEST_ASSERT_EQUAL_UINT32(70000 + i, m.heatKWh);
+        for (size_t k = 0; k < UNIT_COUNTER_COUNT; k++)
+        {
+            TEST_ASSERT_EQUAL_MESSAGE(unitCounterAddress(p.counters, k) != 0, m.counterMapped(k), p.softwareId);
+            if (m.counterMapped(k))
+            {
+                TEST_ASSERT_TRUE_MESSAGE(m.counterKnown[k], p.softwareId);
+                TEST_ASSERT_EQUAL_UINT32(65536 * (k + 1) + i, m.counter[k]);
+            }
+            else
+                TEST_ASSERT_FALSE(m.counterKnown[k]);
+        }
+        TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    }
+    TEST_ASSERT_EQUAL(13, mapped);
+}
+
+// 20002203: the heat produced, the compressor and pump hours and the compressor starts of the interface, 32-bit
+// counts read together once a minute. Nothing written.
 static MeterReader meterOn20002203()
 {
     unit.board(FakeUnit::profileFor("20002203"));
-    const uint8_t heat[4] = {0x20, 0x49, 0x00, 0x00}; // 18720
-    memcpy(unit.ram + 0x08E6, heat, 4);
-    unit.setWord(0x36B2, 3240); // compressor hours, space heating
-    unit.setWord(0x3696, 251);  // space cooling
-    unit.setWord(0x3650, 691);  // hot water
-    unit.setWord(0x3692, 4552); // pump
-    unit.setWord(0x3752, 2751); // compressor starts
-    unit.setWord(0x2D96, (uint16_t)(int16_t)(-3.5 * 256)); // outdoor -3.5 °C
+    unit.setU32(0x08E6, 18720);
+    unit.setU32(0x36B2, 3240); // compressor hours, space heating
+    unit.setU32(0x3696, 251);  // space cooling
+    unit.setU32(0x3650, 691);  // hot water
+    unit.setU32(0x3692, 4552); // pump
+    unit.setU32(0x3752, 2751); // compressor starts
     MeterReader m;
     m.exchange = fakeExchange;
     return m;
 }
 
-void test_the_unit_values_are_read_with_the_meter()
+void test_the_unit_counters_are_read_with_the_meter()
 {
     MeterReader m = meterOn20002203();
     m.tick(1000);
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
     TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
-    TEST_ASSERT_EQUAL(6, m.valueCount);
-    TEST_ASSERT_EQUAL_STRING("Unit meter: Compressor hours, space heating (h)", m.values[0]->label);
-    TEST_ASSERT_TRUE(m.valueKnown[0]);
-    TEST_ASSERT_EQUAL_UINT16(3240, m.valueRaw[0]);
-    TEST_ASSERT_EQUAL_UINT16(251, m.valueRaw[1]);
-    TEST_ASSERT_EQUAL_UINT16(691, m.valueRaw[2]);
-    TEST_ASSERT_EQUAL_UINT16(4552, m.valueRaw[3]);
-    TEST_ASSERT_EQUAL_UINT16(2751, m.valueRaw[4]);
-    TEST_ASSERT_EQUAL(UNIT_COUNT, m.values[4]->kind);
-    TEST_ASSERT_EQUAL(UNIT_TEMPERATURE, m.values[5]->kind);
-    TEST_ASSERT_EQUAL_FLOAT(-3.5f, m.values[5]->celsius(m.valueRaw[5]));
+    TEST_ASSERT_EQUAL_STRING("Unit meter: Compressor hours, space heating (h)", UNIT_COUNTER_DEFS[0].label);
+    for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
+        TEST_ASSERT_TRUE(m.counterMapped(i) && m.counterKnown[i]);
+    TEST_ASSERT_EQUAL_UINT32(3240, m.counter[0]);
+    TEST_ASSERT_EQUAL_UINT32(251, m.counter[1]);
+    TEST_ASSERT_EQUAL_UINT32(691, m.counter[2]);
+    TEST_ASSERT_EQUAL_UINT32(4552, m.counter[3]);
+    TEST_ASSERT_EQUAL_UINT32(2751, m.counter[4]);
+    TEST_ASSERT_EQUAL(UNIT_COUNT, UNIT_COUNTER_DEFS[4].kind);
     unit.answer = false;
     m.tick(62000);
-    TEST_ASSERT_FALSE(m.valueKnown[0]); // unknown until the next read
+    TEST_ASSERT_FALSE(m.counterKnown[0]); // unknown until the next read
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
-    // another board: no values
-    unit.reset();
-    MeterReader u;
-    u.exchange = fakeExchange;
-    u.tick(1000);
-    TEST_ASSERT_EQUAL(0, u.valueCount);
 }
 
 // A heat pump just powered up answers before it has loaded its counts: they read 0. Nothing is published (a
@@ -778,55 +812,44 @@ void test_the_unit_values_are_read_with_the_meter()
 void test_a_unit_just_powered_up_publishes_no_zero()
 {
     MeterReader m = meterOn20002203();
-    uint8_t heat[4];
-    memcpy(heat, unit.ram + 0x08E6, 4);
-    memset(unit.ram + 0x08E6, 0, 4);
-    unit.setWord(0x36B2, 0);
+    unit.setU32(0x08E6, 0);
+    unit.setU32(0x36B2, 0);
     m.tick(1000);
     TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, m.status);
     TEST_ASSERT_FALSE(m.known);
-    TEST_ASSERT_FALSE(m.valueKnown[0]);
+    TEST_ASSERT_FALSE(m.counterKnown[0]);
     m.tick(1000 + METER_READ_INTERVAL_MS - 1);
     TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, m.status); // not tried yet
-    memcpy(unit.ram + 0x08E6, heat, 4); // loaded
-    unit.setWord(0x36B2, 3240);
+    unit.setU32(0x08E6, 18720); // loaded
+    unit.setU32(0x36B2, 3240);
     m.tick(1000 + METER_READ_INTERVAL_MS);
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
     TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
-    TEST_ASSERT_EQUAL_UINT16(3240, m.valueRaw[0]);
+    TEST_ASSERT_EQUAL_UINT32(3240, m.counter[0]);
     // the unit restarts while ESPAltherma runs on: its counts read 0 again, unknown, not 0
-    memset(unit.ram + 0x08E6, 0, 4);
+    unit.setU32(0x08E6, 0);
     m.tick(1000 + 2 * METER_READ_INTERVAL_MS);
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
     TEST_ASSERT_FALSE(m.known);
-    TEST_ASSERT_FALSE(m.valueKnown[0]);
+    TEST_ASSERT_FALSE(m.counterKnown[0]);
 }
 
-// A lifetime count read lower than one already seen (a glitch) keeps the higher one; the outdoor temperature reads 0
-// until the board has one, so a first 0 is not taken, but a later one is (0 °C is a temperature too)
-void test_lifetime_counts_never_go_back_and_a_first_zero_temperature_waits()
+// A lifetime count read lower than one already seen (a glitch) keeps the higher one
+void test_lifetime_counts_never_go_back()
 {
     MeterReader m = meterOn20002203();
-    unit.setWord(0x2D96, 0);
     m.tick(1000);
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
-    TEST_ASSERT_FALSE(m.valueKnown[5]);
-    unit.setWord(0x2D96, 6 * 256);
-    unit.setWord(0x3752, 2750); // lower than the 2751 seen
-    const uint8_t lower[4] = {0x1F, 0x49, 0x00, 0x00}; // 18719
-    memcpy(unit.ram + 0x08E6, lower, 4);
+    unit.setU32(0x3752, 2750); // lower than the 2751 seen
+    unit.setU32(0x08E6, 18719);
     m.tick(1000 + METER_READ_INTERVAL_MS);
-    TEST_ASSERT_EQUAL_UINT16(2751, m.valueRaw[4]);
-    TEST_ASSERT_TRUE(m.valueKnown[4]);
+    TEST_ASSERT_EQUAL_UINT32(2751, m.counter[4]);
+    TEST_ASSERT_TRUE(m.counterKnown[4]);
     TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
     TEST_ASSERT_TRUE(m.known);
-    TEST_ASSERT_TRUE(m.valueKnown[5]);
-    TEST_ASSERT_EQUAL_FLOAT(6.0f, m.values[5]->celsius(m.valueRaw[5]));
-    unit.setWord(0x2D96, 0);
-    unit.setWord(0x3752, 2752);
+    unit.setU32(0x3752, 2752);
     m.tick(1000 + 2 * METER_READ_INTERVAL_MS);
-    TEST_ASSERT_EQUAL_FLOAT(0.0f, m.values[5]->celsius(m.valueRaw[5]));
-    TEST_ASSERT_EQUAL_UINT16(2752, m.valueRaw[4]);
+    TEST_ASSERT_EQUAL_UINT32(2752, m.counter[4]);
 }
 
 int main(int, char **)
@@ -855,8 +878,9 @@ int main(int, char **)
     RUN_TEST(test_power_limit_on_every_mapped_board);
     RUN_TEST(test_a_board_without_the_L_command_is_identified_by_registry_0x60);
     RUN_TEST(test_the_unit_energy_meter_is_read_where_mapped);
-    RUN_TEST(test_the_unit_values_are_read_with_the_meter);
+    RUN_TEST(test_every_mapped_software_reads_its_meter_and_counters);
+    RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
     RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);
-    RUN_TEST(test_lifetime_counts_never_go_back_and_a_first_zero_temperature_waits);
+    RUN_TEST(test_lifetime_counts_never_go_back);
     return UNITY_END();
 }

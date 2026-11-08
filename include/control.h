@@ -59,6 +59,16 @@ struct LimitSpec
   uint16_t ramActiveAmp;                                 // the active limit in A where the board keeps a second float (0: ramActive)
 };
 
+// The unit's lifetime counters, 32-bit counts in the hydro board's RAM (0: not mapped): the compressor's hours in
+// each mode, the pump's hours and the compressor starts, all modes. The board loads them from its persistent block
+// at start, each from its own slot of that block, which is how the same counter was found in every software; the
+// starts are the sum of three per-mode counts in every software, the same check. 20002203 was read against its
+// interface (Information > Operating hours), 18002904 on a unit.
+struct UnitCounters
+{
+  uint16_t hoursHeating, hoursCooling, hoursDhw, hoursPump, starts;
+};
+
 struct ControlProfile
 {
   const char *softwareId; // software version of the hydro board, 8 digits as reported by the 'L' command
@@ -66,21 +76,32 @@ struct ControlProfile
   CurveSpec lwt;          // leaving water target of the main zone
   LimitSpec limit;        // power limitation (missing on the boards not mapped for it)
   uint16_t ramHeatKwh;    // the unit's own energy meter, the heat produced in kWh as a 32-bit count (0: not mapped)
+  UnitCounters counters;  // its operating hours and compressor starts (0: not mapped)
 };
 
+// The energy meter (the heat produced since the installation, the user interface's energy data) is a 32-bit count
+// in the register area, cast from a float that is the sum of the heat of the three modes; the same code in every
+// software, the two numbers equal on the units read (76F2, 18002904, 20002203, 20002202).
 static const ControlProfile CONTROL_PROFILES[] = {
     // A = mild weather point, B = cold weather point. The memory bytes and mode bits are the same on both boards.
-    // 16 kW EAVH/EAVX/EAVZ/EABH/EABX DA, DF and DJ series: measured on an EAVH16S18DA6V.
+    // 16 kW EAVH/EAVX/EAVZ/EABH/EABX DA, DF and DJ series: measured on an EAVH16S18DA6V (the meter and the counters
+    // read on the same unit: the meter equals the sum of the three mode floats, the starts the sum of the three
+    // per-mode counts).
     {"18002904",
      {0x187A, 0x18B8, 366, 367, 0x30C0, 0x30C5, 278, 0x01, 0x1306, 0x1552},
      {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0},
-     {0x2FE8, 0x2FE9, 0x1880, 0x2FC8, 0x19F4, 0}}, // power limitation tested live on the same unit
-    // 14-18 kW ETVH/ETVX/ETVZ/ETBH/ETBX 16 E/EJ and ETSH/ETSX 16 series (Altherma 3 H HT): from the software, not
-    // yet confirmed on a unit. identify() only accepts it when the modes and limits read back make sense.
+     {0x2FE8, 0x2FE9, 0x1880, 0x2FC8, 0x19F4, 0}, // power limitation tested live on the same unit
+     0x08C2,
+     {0x1A90, 0x1A74, 0x1A22, 0x1A70, 0x1B44}},
+    // 14-18 kW ETVH/ETVX/ETVZ/ETBH/ETBX 16 E/EJ and ETSH/ETSX 16 series (Altherma 3 H HT): from the software, the
+    // leaving water target confirmed on an ETBH16EF9W9 (#648). identify() only accepts it when the modes and limits
+    // read back make sense.
     {"20017705",
      {0x37A8, 0x37E6, 366, 367, 0x5409, 0x540E, 278, 0x01, 0x3166, 0x34C2},
      {0x37AA, 0x37E8, 373, 372, 0x5418, 0x5413, 374, 0x0C, 0x31BA, 0},
-     {0x5299, 0x529A, 0x37AE, 0x5279, 0x45E0, 0x45E4}},
+     {0x5299, 0x529A, 0x37AE, 0x5279, 0x45E0, 0x45E4},
+     0x0946,
+     {0x39D6, 0x39BA, 0x3980, 0x39B6, 0x3A6A}},
     // The profiles below come from the board's software too (same memory layout at every byte the control
     // uses, same 15 cross-checks as 20017705), none confirmed on a unit yet. Their power limitation words come
     // from the same code shape as the reference's (the kW path, the A path, the chooser and the converter all
@@ -89,49 +110,80 @@ static const ControlProfile CONTROL_PROFILES[] = {
     {"17014006",
      {0x1766, 0x17A4, 366, 367, 0x2EB5, 0x2EBA, 278, 0x01, 0x11F2, 0x143E},
      {0x1768, 0x17A6, 373, 372, 0x2EC4, 0x2EBF, 374, 0x0C, 0x1256, 0},
-     {0x2DE4, 0x2DE5, 0x176C, 0x2DC4, 0x18E0, 0}},
+     {0x2DE4, 0x2DE5, 0x176C, 0x2DC4, 0x18E0, 0},
+     0x08A6,
+     {0x197C, 0x1960, 0x190E, 0x195C, 0x1A30}},
     // 4-8 kW EHSH/EHSX P30/P50 D series (Altherma 3 R ECH2O)
     {"17019A04",
      {0x162A, 0x1668, 366, 367, 0x2EBE, 0x2EC3, 278, 0x01, 0x10B6, 0x1302},
      {0x162C, 0x166A, 373, 372, 0x2ECD, 0x2EC8, 374, 0x0C, 0x111A, 0},
-     {0x2DF2, 0x2DF3, 0x1630, 0x2DD2, 0x17A4, 0}},
+     {0x2DF2, 0x2DF3, 0x1630, 0x2DD2, 0x17A4, 0},
+     0x08A4,
+     {0x1840, 0x1824, 0x17D2, 0x1820, 0x18F4}},
     // 9-16 kW EBLA/EDLA D monoblocs (and the 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E series) on the software before
     // 20002203: no image of it, the addresses come from a memory dump of an EDLA14DAW1 (Senaxx, #599) matched
     // against 20002203's layout: the converted settings and the targets sit 0x0E lower, the limit records
     // 0x65 lower, and every value read back as expected (curve 55/55 and 40/30, effective = min(ceiling, reheat),
-    // reported targets equal to the registers). Not yet written to on a unit.
+    // reported targets equal to the registers). Not yet written to on a unit. The counters sit 6 lower than
+    // 20002203's and the meter 0x0C lower: the dump holds the meter as a float (42812.0) and the same count at
+    // 0x08DA, the starts (3852) as the sum of the heating and hot water starts.
     {"20002202",
      {0x3462, 0x34A0, 366, 367, 0x4F46, 0x4F4B, 278, 0x01, 0x2EDA, 0x3152},
-     {0x3464, 0x34A2, 373, 372, 0x4F55, 0x4F50, 374, 0x0C, 0x2F2E, 0}}, // no limitation words: no image, the dump alone does not show them
-    // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E, EA and EJ series, 9-16 kW EBLA/EDLA monoblocs and EWAA/EWYA chillers
+     {0x3464, 0x34A2, 373, 372, 0x4F55, 0x4F50, 374, 0x0C, 0x2F2E, 0},
+     {0, 0, 0, 0, 0, 0}, // no limitation words: no image, the dump alone does not show them
+     0x08DA,
+     {0x36AC, 0x3690, 0x364A, 0x368C, 0x374C}},
+    // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E, EA and EJ series, 9-16 kW EBLA/EDLA monoblocs and EWAA/EWYA chillers.
+    // The leaving water target confirmed on two units; the meter and the counters read on an EHBX08EF6V against
+    // its interface (ppuetsch, #647): the meter rises with the heat delivered, the same count again as a float at
+    // 0x3756, the hours equal to the interface's.
     {"20002203",
      {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160},
      {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0},
      {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC},
-     0x08E6}, // energy meter read on an EHBX08EF6V: rises with the heat delivered, the same count again as a float at 0x3756
+     0x08E6,
+     {0x36B2, 0x3696, 0x3650, 0x3692, 0x3752}},
     // 11-16 kW EBBH/EBBX DF, EBVH/EBVX/EBVZ S18/S23 DJ and EBSH/EBSX(B) P30/P50 DF and DG series (Altherma 3 H F
     // and its ECH2O, on ERLA outdoor units)
     {"20007903",
      {0x378C, 0x37CA, 366, 367, 0x5372, 0x5377, 278, 0x01, 0x314A, 0x34A6},
      {0x378E, 0x37CC, 373, 372, 0x5381, 0x537C, 374, 0x0C, 0x319E, 0},
-     {0x5207, 0x5208, 0x3792, 0x51E7, 0x4578, 0x457C}},
+     {0x5207, 0x5208, 0x3792, 0x51E7, 0x4578, 0x457C},
+     0x093A,
+     {0x39BA, 0x399E, 0x3964, 0x399A, 0x3A4E}},
     // 12 kW ETVH/ETVX/ETVZ/ETBH/ETBX EA, EJ and EF series and ETSH/ETSX 12 P30/P50 (Altherma 3 H HT 8-12 kW)
     {"20007904",
      {0x3794, 0x37D2, 366, 367, 0x53C2, 0x53C7, 278, 0x01, 0x3152, 0x34AE},
      {0x3796, 0x37D4, 373, 372, 0x53D1, 0x53CC, 374, 0x0C, 0x31A6, 0},
-     {0x5253, 0x5254, 0x379A, 0x5233, 0x4580, 0x4584}},
+     {0x5253, 0x5254, 0x379A, 0x5233, 0x4580, 0x4584},
+     0x0942,
+     {0x39C2, 0x39A6, 0x396C, 0x39A2, 0x3A56}},
     // 4-8 kW EHSH/EHSX P30/P50 EF and EG series (Altherma 3 R ECH2O), 4-8 kW EBLA/EDLA E monoblocs and EWAA/EWYA
     {"20017704",
      {0x37A0, 0x37DE, 366, 367, 0x53E3, 0x53E8, 278, 0x01, 0x315E, 0x34BA},
      {0x37A2, 0x37E0, 373, 372, 0x53F2, 0x53ED, 374, 0x0C, 0x31B2, 0},
-     {0x5273, 0x5274, 0x37A6, 0x5253, 0x45D8, 0x45DC}},
+     {0x5273, 0x5274, 0x37A6, 0x5253, 0x45D8, 0x45DC},
+     0x093E,
+     {0x39CE, 0x39B2, 0x3978, 0x39AE, 0x3A62}},
+    // The same ECH2O boards on their earlier software: no image of it, the addresses come from a memory dump of an
+    // EHSXB08P50EF (forTT78, #642) matched against 20017704's layout: the converted settings and the targets sit
+    // 0x18 lower (the curve, the limits at 20.0 kW, the reported targets and the ceiling all read as the unit
+    // showed them), the limit records 0xC5 lower, the limitation bytes 0xB4 lower ([4-08] 0 and [4-09] 1 as set,
+    // the four 50 A limits), the active limits at 0x3A42/0x3A46 (the board's 20.0 kW / 50.0 A defaults while no
+    // limit applies). Not yet written to on a unit; no meter or counters found in the dump.
+    {"20017701",
+     {0x3788, 0x37C6, 366, 367, 0x531E, 0x5323, 278, 0x01, 0x3146, 0x34A2},
+     {0x378A, 0x37C8, 373, 372, 0x532D, 0x5328, 374, 0x0C, 0x319A, 0},
+     {0x51BF, 0x51C0, 0x378E, 0x519F, 0x3A42, 0x3A46}},
     // 12 kW ELVH/ELVX/ELVZ/ELBH/ELBX EJ/EF and ELSH/ELSX 12 P30/P50 (the 2026 series). One of the three memory-read
     // handler candidates of this software could not be resolved; the two others and the converter agree on the
     // same layout as every other board, and identify() reads everything back before a write.
     {"22009C02",
      {0x37B0, 0x37EE, 366, 367, 0x5428, 0x542D, 278, 0x01, 0x316E, 0x34CA},
      {0x37B2, 0x37F0, 373, 372, 0x5437, 0x5432, 374, 0x0C, 0x31C2, 0},
-     {0x52B5, 0x52B6, 0x37B6, 0x5295, 0x45E2, 0x45E6}},
+     {0x52B5, 0x52B6, 0x37B6, 0x5295, 0x45E2, 0x45E6},
+     0x094A,
+     {0x39DE, 0x39C2, 0x3988, 0x39BE, 0x3A72}},
     // 4-16 kW EHVH/EHVX/EHBH/EHBX CB series (Altherma LT of 2014-2017, AS1706432 boards). These boards have no 'L'
     // command: the software is the word of registry 0x60. Same memory bytes and mode bits as the others, the
     // four limitation converters found, a single active limit for both kinds. Read on an EHVX11S26CB9 (MvdB1982,
@@ -142,7 +194,12 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x15A4, 0x15E2, 366, 367, 0x2BF1, 0x2BF6, 278, 0x01, 0x103C, 0x1278},
      {0x15A6, 0x15E4, 373, 372, 0x2C00, 0x2BFB, 374, 0x0C, 0x10A0, 0},
      {0x2B61, 0x2B62, 0x15AA, 0x2B41, 0x1706, 0},
-     0x084E},
+     0x084E,
+     {0x17A2, 0x1786, 0x1734, 0x1782, 0x1856}},
+    // Two softwares mapped for the meter and the counters only (no targets yet): the 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX
+    // E series on their 2019 software, and the 2026 ground-source EGSAH/EGSAX boards.
+    {"19016505", {}, {}, {}, 0x08E2, {0x37BE, 0x37A2, 0x375C, 0x379E, 0x385E}},
+    {"23015103", {}, {}, {}, 0x0986, {0x4070, 0x4054, 0x401A, 0x4050, 0x4104}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
@@ -838,39 +895,46 @@ struct LimitControl : X10aClient
 // 16-byte read a minute. Identified from the software like the targets; no profile or no address: unsupported.
 #define METER_READ_INTERVAL_MS 60000UL
 
-// More values the user interface shows, where a board is mapped for them, read with the meter: its operating hours
-// (the compressor's in each mode, the pump's), the compressor starts, the outdoor temperature the board works with.
-// 16 bits each in the hydro board's RAM, each found on a unit equal to the number on its interface.
-#define UNIT_VALUE_MAX 8
+// The unit's lifetime counters read with the meter, where the profile maps them: 32-bit counts, lifetime totals
+// in Home Assistant, in the order of UnitCounters
+#define UNIT_COUNTER_COUNT 5
 
-enum UnitValueKind : uint8_t
+enum UnitCounterKind : uint8_t
 {
-  UNIT_HOURS,       // a lifetime count of hours
-  UNIT_COUNT,       // a lifetime count
-  UNIT_TEMPERATURE, // a signed word in 1/256 °C
+  UNIT_HOURS, // a lifetime count of hours
+  UNIT_COUNT, // a lifetime count
 };
 
-struct UnitValue
+struct UnitCounterDef
 {
-  const char *softwareId;
-  uint16_t ram; // little-endian
-  UnitValueKind kind;
+  UnitCounterKind kind;
   const char *label; // the key in MQTT and the sensor's name in Home Assistant
-
-  bool isLifetimeCount() const { return kind != UNIT_TEMPERATURE; }
-  float celsius(uint16_t raw) const { return (int16_t)raw / 256.0f; }
 };
 
-static const UnitValue UNIT_VALUES[] = {
-    // 20002203, read on an EHBX08EF6V against the interface (Information > Operating hours, Sensors) in November 2026
-    {"20002203", 0x36B2, UNIT_HOURS, "Unit meter: Compressor hours, space heating (h)"},
-    {"20002203", 0x3696, UNIT_HOURS, "Unit meter: Compressor hours, space cooling (h)"},
-    {"20002203", 0x3650, UNIT_HOURS, "Unit meter: Compressor hours, hot water (h)"},
-    {"20002203", 0x3692, UNIT_HOURS, "Unit meter: Pump hours (h)"},
-    {"20002203", 0x3752, UNIT_COUNT, "Unit meter: Compressor starts"},
-    {"20002203", 0x2D96, UNIT_TEMPERATURE, "Hydro board: Outdoor air temp."}, // keeps up while the outdoor unit idles
+static const UnitCounterDef UNIT_COUNTER_DEFS[UNIT_COUNTER_COUNT] = {
+    {UNIT_HOURS, "Unit meter: Compressor hours, space heating (h)"},
+    {UNIT_HOURS, "Unit meter: Compressor hours, space cooling (h)"},
+    {UNIT_HOURS, "Unit meter: Compressor hours, hot water (h)"},
+    {UNIT_HOURS, "Unit meter: Pump hours (h)"},
+    {UNIT_COUNT, "Unit meter: Compressor starts"},
 };
-#define UNIT_VALUE_COUNT (sizeof(UNIT_VALUES) / sizeof(UNIT_VALUES[0]))
+
+inline uint16_t unitCounterAddress(const UnitCounters &c, size_t i)
+{
+  switch (i)
+  {
+  case 0:
+    return c.hoursHeating;
+  case 1:
+    return c.hoursCooling;
+  case 2:
+    return c.hoursDhw;
+  case 3:
+    return c.hoursPump;
+  default:
+    return c.starts;
+  }
+}
 
 // A heat pump just powered up answers before it has loaded its counts into RAM: they read 0 for a minute or so. A
 // meter in use is never back at 0, so a count of 0 means "not ready": nothing is published (a lifetime total going
@@ -883,11 +947,8 @@ struct MeterReader : X10aClient
   uint32_t heatKWh = 0; // the last count read
   bool known = false;   // the last read succeeded
   unsigned long checkedAt = 0, readAt = 0;
-  const UnitValue *values[UNIT_VALUE_MAX]; // the values mapped for this software
-  size_t valueCount = 0;
-  uint16_t valueRaw[UNIT_VALUE_MAX];
-  bool valueKnown[UNIT_VALUE_MAX] = {false}; // the last read gave it
-  bool valueSeen[UNIT_VALUE_MAX] = {false};  // read once since the start: a lifetime count never goes below it
+  uint32_t counter[UNIT_COUNTER_COUNT] = {0};     // the highest count read of each mapped counter since the start
+  bool counterKnown[UNIT_COUNTER_COUNT] = {false}; // the last read gave it
 
   void reset()
   {
@@ -897,49 +958,32 @@ struct MeterReader : X10aClient
     heatKWh = 0;
     known = false;
     checkedAt = readAt = 0;
-    valueCount = 0;
+    forgetCounters();
+    memset(counter, 0, sizeof(counter));
   }
 
-  void findValues()
-  {
-    valueCount = 0;
-    for (size_t i = 0; i < UNIT_VALUE_COUNT && valueCount < UNIT_VALUE_MAX; i++)
-      if (strcmp(UNIT_VALUES[i].softwareId, softwareId) == 0)
-      {
-        valueKnown[valueCount] = valueSeen[valueCount] = false;
-        values[valueCount++] = &UNIT_VALUES[i];
-      }
-  }
+  bool counterMapped(size_t i) const { return profile != nullptr && unitCounterAddress(profile->counters, i) != 0; }
 
-  // A lifetime count read lower than one already seen keeps the higher one; a temperature reads 0 until the board
-  // has one, so a first 0 is not taken
-  void takeValue(size_t i, uint16_t raw)
+  // A lifetime count read lower than one already seen (a glitch) keeps the higher one
+  void readCounters()
   {
-    bool lifetime = values[i]->isLifetimeCount();
-    bool wentBack = lifetime && valueSeen[i] && raw < valueRaw[i];
-    bool notThereYet = !lifetime && !valueSeen[i] && raw == 0;
-    if (notThereYet)
-      return;
-    if (!wentBack)
-      valueRaw[i] = raw;
-    valueKnown[i] = valueSeen[i] = true;
-  }
-
-  void readValues()
-  {
-    for (size_t i = 0; i < valueCount; i++)
+    for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
     {
       uint8_t b[16];
-      valueKnown[i] = false;
-      if (readRam(values[i]->ram, b))
-        takeValue(i, (uint16_t)(b[0] | b[1] << 8));
+      counterKnown[i] = false;
+      if (!counterMapped(i) || !readRam(unitCounterAddress(profile->counters, i), b))
+        continue;
+      uint32_t v = (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
+      if (v >= counter[i])
+        counter[i] = v;
+      counterKnown[i] = true;
     }
   }
 
-  void forgetValues()
+  void forgetCounters()
   {
-    for (size_t i = 0; i < valueCount; i++)
-      valueKnown[i] = false;
+    for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
+      counterKnown[i] = false;
   }
 
   bool identify(unsigned long now)
@@ -954,7 +998,6 @@ struct MeterReader : X10aClient
     for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
         profile = &CONTROL_PROFILES[i];
-    findValues();
     if (profile == nullptr || profile->ramHeatKwh == 0)
     {
       status = CONTROL_UNSUPPORTED;
@@ -977,9 +1020,9 @@ struct MeterReader : X10aClient
       heatKWh = count;
     known = loaded;
     if (loaded)
-      readValues();
+      readCounters();
     else
-      forgetValues();
+      forgetCounters();
     return known;
   }
 
