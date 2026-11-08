@@ -100,6 +100,7 @@ details.all[open] summary::before{content:"▾"}
 .ln{fill:none;stroke:var(--ink2);stroke-width:1.5}
 .area{fill:var(--soft);stroke:none}
 .tag rect{fill:var(--card);stroke:var(--line);stroke-width:1.2}
+.owtag rect{fill:var(--card);stroke:var(--acc);stroke-width:1.4;stroke-dasharray:4 3}.owtick{stroke:var(--acc);stroke-width:2}
 .tl{font:600 12px var(--f);fill:var(--ink2)}
 .tv{font:600 18px var(--f);fill:var(--ink)}
 .tb{font:600 38px var(--f);fill:var(--ink)}
@@ -276,6 +277,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <rect x="346" y="519" width="14" height="12" rx="3" style="fill:var(--ink2)"/>
     <circle class="sens" cx="330" cy="190" r="4.5"/><circle class="sens" cx="390" cy="90" r="4.5"/><circle class="sens" cx="300" cy="440" r="4.5"/>
     <g id="tags" translate="no"></g>
+    <g id="owTags" translate="no"></g>
     <text class="ts sz" x="456" y="62" id="sLwSp" translate="no"></text>
     <text class="tl dhw" x="665" y="104" text-anchor="middle">Hot water</text>
     <text class="tb dhw" x="665" y="148" text-anchor="middle" id="sTank" translate="no"></text>
@@ -305,6 +307,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   </div>
  </div>
  <div class="dev" id="tiles" translate="no" data-block="tiles"></div>
+ <div class="card pad" id="owCard" data-block="onewire" hidden><h2>Temperature sensors (DS18B20)</h2><p class="sub">Dashed in the drawing. Names and places: Settings → Temperature sensors.</p>
+  <table class="events"><tbody id="owDash" translate="no"></tbody></table></div>
  <div class="card pad" id="todayCard" data-block="today" hidden><h2>Today</h2><p class="sub" id="todaySub"></p>
   <div class="today" id="today" translate="no"></div>
   <p class="sub" id="todayNote" style="margin-top:10px"></p></div>
@@ -396,6 +400,13 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   <div class="card"><h2>Relays</h2><p class="sub">Optional: a thermostat input, the safety stop, Smart Grid. -1 = not used.</p>
    <div class="row"><label class="f"><span class="k">Thermostat relay pin</span><input type="number" id="sTherm"></label><label class="f"><span class="k">Safety relay pin</span><input type="number" id="sSafety"></label><label class="f"><span class="k">Smart Grid pin 1</span><input type="number" id="sSg1"></label><label class="f"><span class="k">Smart Grid pin 2</span><input type="number" id="sSg2"></label></div>
    <label class="chk"><input type="checkbox" id="sThermHigh">Thermostat relay active high</label><label class="chk"><input type="checkbox" id="sSafetyHigh">Safety relay active high</label><label class="chk"><input type="checkbox" id="sSgHigh">Smart Grid relays active high</label></div>
+  <div class="card"><h2>Temperature sensors (DS18B20)</h2><p class="sub">Optional: DS18B20 sensors on free GPIOs of this board, for the tank, the floor loop or a wood stove circuit. One data GPIO per bus, with a 4.7 kΩ pull-up from the data line to the sensors' supply; several sensors per bus. Up to 4 buses; none when not used.</p>
+   <div id="owBuses"></div>
+   <div class="acts"><button id="owAddBus">+ Add a bus</button></div>
+   <p class="sub">A bus can take its supply and its ground from GPIOs instead of 3.3 V and GND, so that VDD, DATA and GND fit one connector next to each other (the pull-up then goes from DATA to the supply GPIO). When no sensor of such a bus answers any more, its supply is switched off for a second and the buses searched again.</p>
+   <table class="events"><tbody id="owTable" translate="no"></tbody></table>
+   <div class="acts" style="margin-top:8px"><button id="owSearch">Search the buses again</button><span class="msg" id="owMsg" translate="no"></span></div>
+   <p class="sub">A name per sensor names it in Home Assistant (DS18B20: name); without one, the sensor goes by its ROM code. "Placed at" puts the sensor in the drawing of the home page. Saved with the settings below.</p></div>
   <div class="card"><h2>MQTT output</h2><p class="sub">For other home automation systems; Home Assistant needs nothing here.</p>
    <label class="chk"><input type="checkbox" id="sOneTopic">One topic per value</label>
    <label class="f"><span class="k">Topic prefix (one topic per value)</span><input type="text" id="sPrefix"></label>
@@ -1247,6 +1258,7 @@ function fillSettings() {
   $('#sRx').value = cfg.hp.rx; $('#sTx').value = cfg.hp.tx; $('#sFreq').value = Math.round(cfg.hp.frequency / 1000);
   $('#sOutdoor').options[0].text = t("Outdoor unit's sensor"); $('#sOutdoor').options[1].text = t('External sensor (R6T)'); $('#sOutdoor').value = cfg.hp.outdoor_aux ? 'aux' : 'unit';
   tx('pinRx', 'G' + cfg.hp.rx); tx('pinTx', 'G' + cfg.hp.tx); tx('pinBoard', status.board || 'ESP32');
+  renderOwBuses((cfg.onewire && cfg.onewire.buses) || []); loadOneWire();
   $('#sTherm').value = r.therm_pin; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
   $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sBase').value = (cfg.mqtt && cfg.mqtt.base_topic) || 'espaltherma'; $('#sJsonTable').checked = o.json_table; $('#sBinNum').checked = !!o.binary_num; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
@@ -1260,6 +1272,113 @@ function fillSettings() {
   $('#sStatic').checked = w.static; $('#sIp').value = w.ip; $('#sGw').value = w.gateway; $('#sMask').value = w.subnet; $('#sDns1').value = w.dns1;
   $('#sStaticBox').hidden = !w.static;
 }
+// DS18B20 sensors: what the buses found, with a name field each
+let owSensors = [];
+// Where a sensor sits: its place in the drawing of the home page. Tank layers from 0 (bottom) to 10 (top).
+const OW_TANK_LAYERS = 11;
+const OW_ROLES = [['hp_flow', N_('Flow at the heat pump')], ['hp_return', N_('Return at the heat pump')],
+  ['tank_flow', N_('Flow into the tank coil')], ['tank_return', N_('Return from the tank coil')],
+  ['iu_gas', N_('Gas line at the indoor unit')], ['iu_liquid', N_('Liquid line at the indoor unit')],
+  ['ou_gas', N_('Gas line at the outdoor unit')], ['ou_liquid', N_('Liquid line at the outdoor unit')]];
+const owTankRole = level => 'tank' + level;
+const owTankLevel = role => { const match = /^tank(\d+)$/.exec(role || ''); return match ? +match[1] : null; };
+function owRoleName(role) {
+  const level = owTankLevel(role);
+  if (level != null) return t('Tank layer {n}', {n: level}) + (level === 0 ? ' (' + t('bottom') + ')' : level === OW_TANK_LAYERS - 1 ? ' (' + t('top') + ')' : '');
+  const known = OW_ROLES.find(r => r[0] === role);
+  return known ? t(known[1]) : t('Not placed');
+}
+// Sort order: the tank from the top down, then the circuit, the refrigerant, the sensors not placed
+function owRoleOrder(role) {
+  const level = owTankLevel(role);
+  if (level != null) return OW_TANK_LAYERS - 1 - level;
+  const i = OW_ROLES.findIndex(r => r[0] === role);
+  return i >= 0 ? OW_TANK_LAYERS + i : 99;
+}
+function owRoleSelect(role) {
+  const tank = [...Array(OW_TANK_LAYERS).keys()].reverse().map(owTankRole);
+  const roles = ['', ...tank, ...OW_ROLES.map(r => r[0])];
+  const sel = el('select', {class: 'owRole'}, ...roles.map(r => el('option', {value: r}, owRoleName(r))));
+  sel.value = role || '';
+  return sel;
+}
+async function loadOneWire() {
+  try { owSensors = (await api('/api/onewire')).sensors; } catch (e) { owSensors = []; }
+  const tb = $('#owTable'); tb.replaceChildren();
+  if (!owSensors.length) { tb.append(el('tr', {}, el('td', {}, t('No sensor found.')))); return; }
+  tb.append(el('tr', {}, ...[t('GPIO'), t('ROM code'), t('Reading'), t('Name'), t('Placed at')].map(h => el('th', {}, h))));
+  for (const s of owSensors) {
+    const name = el('input', {type: 'text', class: 'owName', maxlength: 23, value: s.name || '', placeholder: t('e.g. Tank top')});
+    const row = el('tr', {}, el('td', {}, 'G' + s.pin), el('td', {}, s.rom), el('td', {}, s.celsius == null ? '–' : s.celsius.toFixed(1) + ' °C'), el('td', {}, name), el('td', {}, owRoleSelect(s.role)));
+    row.dataset.rom = s.rom;
+    tb.append(row);
+  }
+}
+// The sensors on the home page: a dashed tag at their place in the drawing (tank layers as ticks right of the tank),
+// and the list of all of them. Places: x, y, width of the tag in the drawing's units.
+const OW_PLACES = {hp_flow: [346, 100, 104], hp_return: [196, 440, 100], tank_flow: [500, 165, 86], tank_return: [564, 268, 96],
+  iu_gas: [176, 140, 96], iu_liquid: [176, 392, 96], ou_gas: [20, 404, 72], ou_liquid: [96, 404, 72]};
+const OW_TAG_HEIGHT = 40, OW_TANK_BOTTOM_Y = 256, OW_TANK_LAYER_STEP = 22, OW_TANK_TICK_X = 740;
+const OW_REFRESH_MS = 30000;
+let owLive = [];
+const xmlText = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
+const owValue = s => s.celsius == null ? '—' : f1(s.celsius) + '°';
+const owLabel = s => s.name || owRoleName(s.role);
+function owTankTick(s) {
+  const y = OW_TANK_BOTTOM_Y - owTankLevel(s.role) * OW_TANK_LAYER_STEP;
+  return `<g><title>${xmlText(owLabel(s) + ' · ' + owRoleName(s.role))}</title><path class="owtick" d="M${OW_TANK_TICK_X - 8} ${y}H${OW_TANK_TICK_X + 6}"/>` +
+    `<text class="ts" x="${OW_TANK_TICK_X + 9}" y="${y + 4}" style="fill:${tcol(s.celsius)};font-weight:700">${xmlText(owValue(s))}</text></g>`;
+}
+function owPlacedTag(s, stacked) {
+  const [x, y0, w] = OW_PLACES[s.role], y = y0 + stacked * (OW_TAG_HEIGHT + 4);
+  return `<g class="tag owtag" transform="translate(${x},${y})"><title>${xmlText(owRoleName(s.role) + ' · ' + s.rom)}</title><rect width="${w}" height="${OW_TAG_HEIGHT}" rx="12"/>` +
+    `<text class="tl owfit" data-w="${w - 16}" x="8" y="15" style="font-size:11px">${xmlText(owLabel(s))}</text><text class="tv" x="8" y="33" style="font-size:16px">${xmlText(owValue(s))}</text></g>`;
+}
+function renderOneWireDash() {
+  const placedSoFar = {};
+  $('#owTags').innerHTML = owLive.map(s => {
+    if (owTankLevel(s.role) != null) return owTankTick(s);
+    if (!OW_PLACES[s.role]) return '';
+    const stacked = placedSoFar[s.role] = (placedSoFar[s.role] ?? -1) + 1;
+    return owPlacedTag(s, stacked);
+  }).join('');
+  $('#owTags').querySelectorAll('.owfit').forEach(e => fit(e, +e.dataset.w));
+  $('#owCard').hidden = !owLive.length;
+  const tb = $('#owDash'); tb.replaceChildren();
+  for (const s of [...owLive].sort((a, b) => owRoleOrder(a.role) - owRoleOrder(b.role)))
+    tb.append(el('tr', {}, el('td', {}, owRoleName(s.role)), el('td', {}, s.name || s.rom), el('td', {class: 'n'}, s.celsius == null ? '—' : f1(s.celsius) + ' °C')));
+}
+async function refreshOneWireDash() {
+  try { owLive = (await api('/api/onewire')).sensors || []; } catch (e) { return; }
+  renderOneWireDash();
+}
+// The buses: one row each (data, supply, ground GPIO), + adds one, × removes it
+const OW_MAX_BUSES = 4;
+function owBusRow(bus) {
+  const field = (label, cls, value, min) => el('label', {class: 'f'}, el('span', {class: 'k'}, label), el('input', {type: 'number', class: cls, min, max: 63, value: value ?? -1}));
+  const row = el('div', {class: 'row owBus'}, field(t('Data GPIO'), 'owData', bus.data, 0), field(t('Supply GPIO (-1: 3.3 V)'), 'owPower', bus.power, -1),
+    field(t('Ground GPIO (-1: GND)'), 'owGround', bus.ground, -1));
+  row.append(el('div', {class: 'acts', style: 'align-self:end'}, el('button', {title: t('Remove this bus'), onclick: () => { row.remove(); owBusesChanged(); }}, '×')));
+  return row;
+}
+function owBusesChanged() { $('#owAddBus').disabled = document.querySelectorAll('#owBuses .owBus').length >= OW_MAX_BUSES; }
+function renderOwBuses(buses) {
+  $('#owBuses').replaceChildren(...buses.map(owBusRow));
+  owBusesChanged();
+}
+$('#owAddBus').onclick = () => { $('#owBuses').append(owBusRow({data: ''})); owBusesChanged(); };
+function oneWireForm() {
+  const gpio = (row, cls) => { const v = parseInt(row.querySelector(cls).value, 10); return v >= 0 && v < 64 ? v : -1; };
+  const buses = [...document.querySelectorAll('#owBuses .owBus')].map(r => ({data: gpio(r, '.owData'), power: gpio(r, '.owPower'), ground: gpio(r, '.owGround')})).filter(b => b.data >= 0);
+  const shown = [...document.querySelectorAll('#owTable tr[data-rom]')];
+  const names = shown.map(r => ({rom: r.dataset.rom, name: r.querySelector('.owName').value.trim(), role: r.querySelector('.owRole').value})).filter(x => x.name || x.role);
+  const kept = ((cfg.onewire && cfg.onewire.names) || []).filter(x => !shown.some(r => r.dataset.rom === x.rom)); // a sensor not found right now keeps its name
+  return {buses, names: names.concat(kept)};
+}
+$('#owSearch').onclick = async () => {
+  try { await post('/api/onewire/search'); msg('#owMsg', t('Searching…')); await sleep(2500); await loadOneWire(); msg('#owMsg', ''); }
+  catch (e) { msg('#owMsg', e.message, false); }
+};
 $('#sStatic').onchange = e => $('#sStaticBox').hidden = !e.target.checked;
 $('#sSave').onclick = async () => {
   const n = id => parseInt($(id).value, 10);
@@ -1271,6 +1390,7 @@ $('#sSave').onclick = async () => {
     stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 100, power_factor: parseFloat($('#sStatsPf').value) || 1,
             buh1_kw: parseFloat($('#sStatsBuh1').value) || 0, buh2_kw: parseFloat($('#sStatsBuh2').value) || 0},
     mqtt: {base_topic: $('#sBase').value.trim() || 'espaltherma'},
+    onewire: oneWireForm(),
     hostname: $('#sHost').value.trim() || 'ESPAltherma',
     lang: $('#sLang').value,
     wifi: {static: $('#sStatic').checked, ip: $('#sIp').value, gateway: $('#sGw').value, subnet: $('#sMask').value, dns1: $('#sDns1').value},
@@ -1461,6 +1581,8 @@ function connectEvents() {
   route();
   connectEvents();
   setInterval(refreshStatus, 15000);
+  refreshOneWireDash();
+  setInterval(refreshOneWireDash, OW_REFRESH_MS);
 })();
 </script>
 </body>

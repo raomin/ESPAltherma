@@ -34,6 +34,7 @@ And in Home Assistant, with the [ESPAltherma card](https://github.com/raomin/esp
 - **Detects your heat pump** and reads its recommended values out of the box ([how it works](doc/how-it-works.md)).
 - **A web interface**: the live drawing, a setup wizard, the choice of values, diagnostics and updates. In English, French, German, Italian and Spanish.
 - **Home Assistant** finds it by itself (MQTT discovery), with the sensor names in your language. Any other MQTT consumer works too.
+- **DS18B20 temperature sensors** on free GPIOs of the board (tank, floor loop, wood stove...), sent with the heat pump values.
 - **Controls** the heat pump as well: on/off through a relay, the Smart Grid inputs (relays too), and, on supported units, the hot water and leaving water targets.
 
 Just an ESP32, no extra hardware. Wi-Fi, or wired Ethernet on the WT32-ETH01 and Olimex ESP32-PoE.
@@ -195,6 +196,16 @@ When a setpoint is *weather dependent*, the hydro board of the heat pump compute
 4. To give the unit its own curve back, click **Restore the unit's curve** on the card (ESPAltherma remembers the two points it found before its first write), press the matching button entity in Home Assistant, or send `restore` to the same MQTT topic.
 
 The addresses written depend on the software of the hydro board, read from the unit at start: only the versions whose addresses are known are accepted, nothing is written on any other. Known so far: 18002904 (tested on a unit), and 17014006, 17019A04, 20002202, 20002203, 20007903, 20007904, 20017704, 20017705 and 22009C02 (from the boards' software, or a memory dump for 20002202, awaiting a first report each), and 76F2 (the EHVH/EHVX/EHBH/EHBX CB series of 2014-2017, its addresses read back on an owner's unit). If the card says "not available", please open an issue with the software version it shows. What the thermostat really aims for, the hysteresis, and the other things to know are in [the details](doc/control.md#hot-water-and-leaving-water-targets).
+
+# Temperature sensors (DS18B20)
+
+The board can read DS18B20 sensors next to the heat pump (the tank layers, the floor loop, a wood stove circuit), so one board does the job of two. Each sensor shows up in Home Assistant as a temperature of the "Daikin Altherma via ESPAltherma" device.
+
+1. Wire the sensors to a free GPIO: VDD to 3.3V, GND to GND, DATA to the GPIO with a 4.7 kΩ resistor from DATA to 3.3V (one per GPIO). Several sensors can share a GPIO; up to 16 sensors on up to 4 buses. Each bus can also take its supply and ground from GPIOs instead of 3.3V and GND, so that its three wires fit one connector.
+2. Under **Settings → Temperature sensors (DS18B20)**, add a bus per data GPIO (**+ Add a bus**) and save: the sensors found are listed with their reading.
+3. Give each sensor a name (`Tank top`) and save again: it becomes `DS18B20: Tank top` in MQTT and Home Assistant.
+
+Wiring tips, which GPIOs to use, what happens with a missing sensor or a bad reading: [doc/onewire.md](doc/onewire.md).
 
 # Home Assistant
 

@@ -31,6 +31,10 @@ extern Stats stats;
 bool memoryRequest(uint16_t addr, uint8_t len); // main.cpp: the heat pump task reads the hydro board's memory
 void memoryResult(JsonDocument &doc);
 void statsSetup(); // main.cpp: applies the stats settings
+#include "onewire_temp.h"
+void oneWireSetup(); // main.cpp: applies the 1-Wire settings (buses, names)
+extern OneWireTemps oneWireTemps;
+extern volatile bool oneWireSearchRequested;
 extern volatile bool discoveryDirty;
 float statsVoltageRead(); // main.cpp: the unit's own voltage reading, NAN when it has none
 extern unsigned long lastPollMs;
@@ -837,6 +841,42 @@ void webBegin()
     sendJson(r, doc);
   });
 
+  // DS18B20 sensors (onewire_temp.h): the buses and what they found, with the current readings
+  webServer.on("/api/onewire", HTTP_GET, [](AsyncWebServerRequest *r) {
+    JsonDocument doc;
+    JsonArray pins = doc["pins"].to<JsonArray>();
+    for (size_t b = 0; b < oneWireTemps.busCount; b++)
+      pins.add(oneWireTemps.pins[b]);
+    doc["power_cycles"] = oneWireTemps.powerCycles;
+    JsonArray list = doc["sensors"].to<JsonArray>();
+    for (size_t i = 0; i < oneWireTemps.count; i++)
+    {
+      const OneWireSensor &s = oneWireTemps.sensors[i];
+      JsonObject o = list.add<JsonObject>();
+      char hex[17];
+      oneWireRomToHex(s.rom, hex);
+      o["rom"] = hex;
+      o["pin"] = oneWireTemps.pins[s.bus];
+      o["label"] = s.label;
+      const char *name = oneWireTemps.nameFor(s.rom);
+      o["name"] = name ? name : "";
+      o["role"] = oneWireTemps.roleFor(s.rom);
+      if (s.valid)
+        o["celsius"] = s.celsius;
+      else
+        o["celsius"] = nullptr;
+    }
+    sendJson(r, doc);
+  });
+
+  // Searches the 1-Wire buses again (a sensor added or replaced), from the main loop
+  webServer.on("/api/onewire/search", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
+    oneWireSearchRequested = true;
+    sendOk(r);
+  });
+
   webServer.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
@@ -1089,6 +1129,10 @@ void webLoop()
                         next->statsPowerFactor != config.statsPowerFactor ||
                         next->statsBuhKW[0] != config.statsBuhKW[0] || next->statsBuhKW[1] != config.statsBuhKW[1];
     bool statsToggled = next->statsEnabled != config.statsEnabled;
+    bool oneWireChanged = memcmp(next->oneWireBuses, config.oneWireBuses, sizeof(config.oneWireBuses)) != 0 ||
+                          next->oneWireNameCount != config.oneWireNameCount ||
+                          memcmp(next->oneWireNames, config.oneWireNames, sizeof(OneWireName) * next->oneWireNameCount) != 0 ||
+                          next->frequency != config.frequency;
     bool updateToggled = next->updateCheck != config.updateCheck;
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
@@ -1112,6 +1156,8 @@ void webLoop()
       statsSetup();
     if (statsToggled)
       discoveryDirty = true; // the entities come or go
+    if (oneWireChanged)
+      oneWireSetup(); // the buses are searched again, the sensors renamed
     if (updateToggled)
       fwUpdate.dirty = true; // the update entity comes or goes
     if (reboot)

@@ -22,6 +22,7 @@
 #include "control.h"
 #include "diii_comm.h"
 #include "stats.h"
+#include "onewire_esp.h"
 #include "survey.h"
 #include "catalog.h"
 #include "detect.h"
@@ -619,6 +620,7 @@ static uint32_t statsEpoch()
 float statsVoltageRead() { return statsValue({"Voltage (N-phase)"}); }
 
 void haExtraSetup();
+extern OneWireTemps oneWireTemps; // defined with the 1-Wire functions below
 
 void statsSetup()
 {
@@ -636,15 +638,21 @@ void statsSetup()
 // The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
 static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
 
+// Room for every extra sensor: the statistics, the DIII values, the unit's meter and what other features add
+#define HA_EXTRA_LABELS_MAX 96
+
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
 void haExtraSetup()
 {
-  static LabelDef extra[sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1];
+  static LabelDef extra[HA_EXTRA_LABELS_MAX];
   size_t n = 0;
   if (config.statsEnabled)
     for (const LabelDef &l : STATS_LABELS)
       extra[n++] = l;
+  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1 + ONEWIRE_MAX_SENSORS <= HA_EXTRA_LABELS_MAX, "room for the DS18B20 sensors");
+  for (size_t i = 0; i < oneWireTemps.count && n < HA_EXTRA_LABELS_MAX; i++) // dataType 1: a temperature in Home Assistant
+    extra[n++] = LabelDef(-1, -1, -1, -1, 1, oneWireTemps.sensors[i].label);
   if (diii.status == DIII_READY)
     for (const LabelDef &l : DIII_LABELS)
       extra[n++] = l;
@@ -662,6 +670,164 @@ void diiiAppendJson(char *buf, size_t size)
   diii.appendJson(buf, size);
   valuesUnlock();
 }
+
+// DS18B20 sensors on spare GPIOs (onewire_temp.h): one bus per configured data pin, each with an optional supply
+// and ground GPIO, read from the main loop
+OneWireTemps oneWireTemps;
+static EspOneWireBus oneWireBuses[ONEWIRE_MAX_BUSES];
+static EspOneWirePower oneWireSupplies[ONEWIRE_MAX_BUSES];
+static OneWireBusPins oneWireActive[ONEWIRE_MAX_BUSES]; // the GPIOs the buses hold right now
+static size_t oneWireActiveCount = 0;
+volatile bool oneWireSearchRequested = false;
+
+// A pin the board already uses for the X10A port or a relay is never taken by a bus
+static bool pinInUse(int pin)
+{
+  return pin == config.rxPin || pin == config.txPin || pin == config.thermPin || pin == config.sg1Pin ||
+         pin == config.sg2Pin || pin == config.safetyPin;
+}
+
+// The buses as they can be: a data pin in use (or taken twice) skips its bus, a supply or ground pin in use is
+// left out (3.3 V and GND then). The log says which.
+static size_t oneWirePlan(OneWireBusPins *plan)
+{
+  int8_t taken[ONEWIRE_MAX_BUSES * 3];
+  size_t takenCount = 0;
+  auto claim = [&](int pin, const char *role) -> bool {
+    if (pin < 0)
+      return false;
+    bool twice = false;
+    for (size_t i = 0; i < takenCount; i++)
+      twice = twice || taken[i] == pin;
+    if (pinInUse(pin) || twice)
+    {
+      mqttSerial.printf("1-Wire: GPIO %d is already in use, not taken as %s\n", pin, role);
+      return false;
+    }
+    taken[takenCount++] = (int8_t)pin;
+    return true;
+  };
+  size_t n = 0;
+  for (const OneWireBusPins &wanted : config.oneWireBuses)
+  {
+    if (!wanted.used() || !claim(wanted.data, "a bus"))
+      continue;
+    OneWireBusPins &bus = plan[n++];
+    bus.data = wanted.data;
+    bus.ground = claim(wanted.ground, "a ground") ? wanted.ground : -1;
+    bus.power = claim(wanted.power, "a supply") ? wanted.power : -1;
+  }
+  return n;
+}
+
+static bool oneWireHolds(const OneWireBusPins *buses, size_t n, int pin, bool supply)
+{
+  for (size_t b = 0; b < n; b++)
+    if (pin >= 0 && (supply ? buses[b].power : buses[b].ground) == pin)
+      return true;
+  return false;
+}
+
+// A supply or ground GPIO that keeps its role is left as it is (saving the settings does not switch the sensors
+// off); the others are released before the new buses take their pins
+static void oneWireReleaseOldPins(const OneWireBusPins *plan, size_t n)
+{
+  for (size_t b = 0; b < oneWireActiveCount; b++)
+  {
+    const OneWireBusPins &old = oneWireActive[b];
+    if (old.power >= 0 && !oneWireHolds(plan, n, old.power, true))
+      gpio_reset_pin((gpio_num_t)old.power);
+    if (old.ground >= 0 && !oneWireHolds(plan, n, old.ground, false))
+      gpio_reset_pin((gpio_num_t)old.ground);
+  }
+}
+
+// A ground GPIO driven low at full drive: it sinks 20 mA, the sensors draw 1.5 mA each at most
+static void oneWireGround(int pin)
+{
+  if (pin < 0 || oneWireHolds(oneWireActive, oneWireActiveCount, pin, false))
+    return;
+  gpio_num_t ground = (gpio_num_t)pin;
+  gpio_reset_pin(ground);
+  gpio_set_direction(ground, GPIO_MODE_OUTPUT);
+  gpio_set_drive_capability(ground, GPIO_DRIVE_CAP_3);
+  gpio_set_level(ground, 0);
+}
+
+// The supply of bus b, when it comes from a GPIO. True when it was switched on just now.
+static bool oneWireSupply(size_t b, const OneWireBusPins &bus)
+{
+  oneWireTemps.power[b] = nullptr;
+  if (bus.power < 0)
+    return false;
+  EspOneWirePower &supply = oneWireSupplies[b];
+  bool alreadyOn = oneWireHolds(oneWireActive, oneWireActiveCount, bus.power, true);
+  if (alreadyOn)
+    supply.adopt((uint8_t)bus.power);
+  else
+    supply.begin((uint8_t)bus.power);
+  supply.dataPinCount = 0;
+  supply.addDataPin((uint8_t)bus.data);
+  oneWireTemps.power[b] = &supply;
+  return !alreadyOn;
+}
+
+// Applies the 1-Wire settings: the buses with their supply and ground, the names, the reading interval. At start
+// and when the settings change.
+void oneWireSetup()
+{
+  OneWireBusPins plan[ONEWIRE_MAX_BUSES];
+  size_t n = oneWirePlan(plan);
+  oneWireReleaseOldPins(plan, n);
+  OneWireBus *list[ONEWIRE_MAX_BUSES];
+  for (size_t b = 0; b < n; b++)
+  {
+    oneWireGround(plan[b].ground); // before the supply: the sensors never see VDD without their ground
+    oneWireBuses[b].begin((uint8_t)plan[b].data);
+    list[b] = &oneWireBuses[b].protocol;
+  }
+  oneWireTemps.attach(list, n);
+  bool switchedOn = false;
+  for (size_t b = 0; b < ONEWIRE_MAX_BUSES; b++)
+  {
+    oneWireTemps.pins[b] = b < n ? plan[b].data : -1;
+    oneWireTemps.power[b] = nullptr;
+    if (b < n)
+      switchedOn = oneWireSupply(b, plan[b]) || switchedOn;
+  }
+  memcpy(oneWireActive, plan, sizeof(OneWireBusPins) * n);
+  oneWireActiveCount = n;
+  if (switchedOn)
+    delay(ONEWIRE_POWER_UP_MS);
+  oneWireTemps.interval = config.frequency;
+  oneWireTemps.setNames(config.oneWireNames, config.oneWireNameCount);
+}
+
+static void oneWireLoop()
+{
+  if (oneWireSearchRequested)
+  {
+    oneWireSearchRequested = false;
+    oneWireTemps.search();
+  }
+  static unsigned powerCyclesLogged = 0;
+  oneWireTemps.tick(millis());
+  if (oneWireTemps.powerCycles != powerCyclesLogged)
+  {
+    powerCyclesLogged = oneWireTemps.powerCycles;
+    mqttSerial.println("1-Wire: no sensor answers, their supply is switched off and on");
+  }
+  if (oneWireTemps.changed)
+  {
+    oneWireTemps.changed = false;
+    mqttSerial.printf("1-Wire: %u sensor(s) on %u bus(es)\n", (unsigned)oneWireTemps.count, (unsigned)oneWireTemps.busCount);
+    haExtraSetup(); // the sensors join (or leave) the Home Assistant discovery
+    discoveryDirty = true;
+  }
+}
+
+// The DS18B20 readings as ATTR keys (mqtt.h)
+void oneWireAppendJson(char *buf, size_t size) { oneWireTemps.appendJson(buf, size); }
 
 // The unit's own energy meter as an ATTR key (mqtt.h): null while a read fails, absent on the boards not mapped
 void meterAppendJson(char *buf, size_t size)
@@ -1020,6 +1186,7 @@ void setup()
   configLoad();
   setupPins(); //relays to their inactive state first: they would float during the splash screen
   statsSetup();
+  oneWireSetup();
   setupScreen();
   MySerial.begin(9600, SERIAL_CONFIG, config.rxPin, config.txPin);
 #ifdef ARDUINO_M5Stick_C_Plus
@@ -1075,6 +1242,8 @@ void loop()
   webLoop();
   //The heat pump task does the querying, we publish its results
   extraLoop();
+  LOOP_STAGE("1-Wire");
+  oneWireLoop();
   if (cycleReady)
   {
     cycleReady = false;

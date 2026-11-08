@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include "board.h"
 #include "topics.h"
+#include "onewire_temp.h"
 #include <Preferences.h>
 // Not <ArduinoJson.h>: its "using namespace ArduinoJson" clashes with our Converter class
 #include <ArduinoJson.hpp>
@@ -91,6 +92,9 @@ struct AppConfig
   float statsPowerFactor; // applied to the inverter's part of the estimate: 1 = apparent power, a meter gives the real one
   float statsBuhKW[2]; // the backup heater's kW per step, added while a step is on
   int16_t statsTz;    // minutes east of UTC, kept up to date by the web page: the day's counters reset at local midnight
+  OneWireBusPins oneWireBuses[ONEWIRE_MAX_BUSES]; // DS18B20 buses (onewire_temp.h): data, supply and ground GPIOs
+  OneWireName oneWireNames[ONEWIRE_MAX_NAMES]; // names given to the sensors, by ROM code
+  uint8_t oneWireNameCount;
   bool ctlLimitOn;    // a limit is applied from here, re-applied after a restart of the heat pump or of ESPAltherma
   float ctlLimitValue;
   int ctlLimitOrig;   // the unit's own enable byte, put back when the limit is switched off
@@ -130,6 +134,9 @@ void configDefaults(AppConfig &c)
   c.sgActiveHigh = true;
   c.safetyPin = -1;
   c.safetyActiveHigh = true;
+  for (int i = 0; i < ONEWIRE_MAX_BUSES; i++)
+    c.oneWireBuses[i] = OneWireBusPins();
+  c.oneWireNameCount = 0;
   strlcpy(c.oneTopicPrefix, "espaltherma/OneATTR/", sizeof(c.oneTopicPrefix));
   for (int k = 0; k < 2; k++)
     c.ctlOrig[k][0] = c.ctlOrig[k][1] = -1;
@@ -221,6 +228,26 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   relays["sg_high"] = c.sgActiveHigh;
   relays["safety_pin"] = c.safetyPin;
   relays["safety_high"] = c.safetyActiveHigh;
+
+  JsonObject oneWire = doc["onewire"].to<JsonObject>();
+  JsonArray oneWireBuses = oneWire["buses"].to<JsonArray>();
+  for (const OneWireBusPins &bus : c.oneWireBuses)
+    if (bus.used())
+    {
+      JsonObject b = oneWireBuses.add<JsonObject>();
+      b["data"] = bus.data;
+      b["power"] = bus.power;
+      b["ground"] = bus.ground;
+    }
+  JsonArray oneWireNames = oneWire["names"].to<JsonArray>();
+  for (int i = 0; i < c.oneWireNameCount; i++)
+  {
+    JsonObject n = oneWireNames.add<JsonObject>();
+    n["rom"] = c.oneWireNames[i].rom;
+    n["name"] = c.oneWireNames[i].name;
+    if (c.oneWireNames[i].role[0])
+      n["role"] = c.oneWireNames[i].role;
+  }
 
   JsonObject out = doc["output"].to<JsonObject>();
   out["one_topic"] = c.oneValOneTopic;
@@ -363,6 +390,43 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(relays["sg_high"], c.sgActiveHigh);
   readNum(relays["safety_pin"], c.safetyPin);
   readNum(relays["safety_high"], c.safetyActiveHigh);
+
+  if (src["onewire"]["buses"].is<JsonArrayConst>())
+  {
+    auto gpioOrNone = [](JsonVariantConst v) -> int8_t { return v.is<int>() && v.as<int>() >= 0 && v.as<int>() < 64 ? (int8_t)v.as<int>() : -1; };
+    int n = 0;
+    for (JsonVariantConst v : src["onewire"]["buses"].as<JsonArrayConst>())
+    {
+      OneWireBusPins bus;
+      bus.data = gpioOrNone(v["data"]);
+      bus.power = gpioOrNone(v["power"]);
+      bus.ground = gpioOrNone(v["ground"]);
+      if (n < ONEWIRE_MAX_BUSES && bus.used())
+        c.oneWireBuses[n++] = bus;
+    }
+    for (; n < ONEWIRE_MAX_BUSES; n++)
+      c.oneWireBuses[n] = OneWireBusPins();
+  }
+  if (src["onewire"]["names"].is<JsonArrayConst>())
+  {
+    c.oneWireNameCount = 0;
+    for (JsonVariantConst v : src["onewire"]["names"].as<JsonArrayConst>())
+    {
+      uint8_t rom[8];
+      const char *hex = v["rom"] | "";
+      const char *name = v["name"] | "";
+      const char *role = v["role"] | "";
+      if (!oneWireValidRole(role))
+        role = "";
+      bool nothingToKeep = !name[0] && !role[0];
+      if (c.oneWireNameCount >= ONEWIRE_MAX_NAMES || !oneWireHexToRom(hex, rom) || nothingToKeep)
+        continue;
+      OneWireName &dst = c.oneWireNames[c.oneWireNameCount++];
+      oneWireRomToHex(rom, dst.rom); // upper case, whatever was sent
+      strlcpy(dst.name, name, sizeof(dst.name));
+      strlcpy(dst.role, role, sizeof(dst.role));
+    }
+  }
 
   JsonVariantConst out = src["output"];
   readNum(out["one_topic"], c.oneValOneTopic);
