@@ -906,7 +906,7 @@ void test_power_limit_restored_and_current_kind()
     TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
 
     unit.reset();
-    unit.board(unit.profileFor("20002202")); // a board without the limitation addresses
+    unit.board(unit.profileFor("19016505")); // a board without the limitation addresses (mapped for its counters only)
     LimitControl u = freshLimit();
     TEST_ASSERT_FALSE(u.identify(1000));
     TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, u.status);
@@ -939,14 +939,17 @@ void test_power_limit_on_every_mapped_board()
         unit.reset();
         unit.board(p);
         unit.ram[p.limit.ramKind] = 0; // current kind
-        unit.setFloat(p.limit.ramActive, 20.0f);
-        unit.setFloat(p.limit.ramActiveAmp ? p.limit.ramActiveAmp : p.limit.ramActive, 50.0f);
+        if (p.limit.ramActive)
+        {
+            unit.setFloat(p.limit.ramActive, 20.0f);
+            unit.setFloat(p.limit.ramActiveAmp ? p.limit.ramActiveAmp : p.limit.ramActive, 50.0f);
+        }
         LimitControl a = freshLimit();
         TEST_ASSERT_TRUE_MESSAGE(a.identify(1000), p.softwareId);
         TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
-        TEST_ASSERT_EQUAL_FLOAT(50.0f, a.active);
+        TEST_ASSERT_EQUAL_FLOAT(p.limit.ramActive ? 50.0f : -1.0f, a.active); // unknown where not mapped (20002202)
     }
-    TEST_ASSERT_EQUAL(10, mapped); // 20017701 from its dump included
+    TEST_ASSERT_EQUAL(11, mapped); // 20017701 and 20002202 from their owners' dumps and reads included
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 

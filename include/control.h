@@ -133,11 +133,14 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // 0x65 lower, and every value read back as expected (curve 55/55 and 40/30, effective = min(ceiling, reheat),
     // reported targets equal to the registers). Not yet written to on a unit. The counters sit 6 lower than
     // 20002203's and the meter 0x0C lower: the dump holds the meter as a float (42812.0) and the same count at
-    // 0x08DA, the starts (3852) as the sum of the heating and hot water starts.
+    // 0x08DA, the starts (3852) as the sum of the heating and hot water starts. The limitation words 0x5B lower
+    // (the kW floats 0x0E lower, with the converted settings), read by Senaxx while changing the installer
+    // settings: [4-08] 0/1/2 at 0x4E15, [4-09] 0 A / 1 kW at 0x4E16, [5-05] 10 -> 2 A at 0x4DF5, [5-09] 20 -> 15 kW at
+    // 0x3468. Where this software keeps the active limit is not known (nothing in 0x4180-0x41BF): not shown.
     {"20002202",
      {0x3462, 0x34A0, 366, 367, 0x4F46, 0x4F4B, 278, 0x01, 0x2EDA, 0x3152},
      {0x3464, 0x34A2, 373, 372, 0x4F55, 0x4F50, 374, 0x0C, 0x2F2E, 0},
-     {0, 0, 0, 0, 0, 0}, // no limitation words: no image, the dump alone does not show them
+     {0x4E15, 0x4E16, 0x3468, 0x4DF5, 0, 0},
      0x08DA,
      {0x36AC, 0x3690, 0x364A, 0x368C, 0x374C}},
     // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E, EA and EJ series, 9-16 kW EBLA/EDLA monoblocs and EWAA/EWYA chillers.
@@ -845,7 +848,8 @@ struct LimitControl : X10aClient
         return false;
       l = b;
     }
-    readFloat(kind == LIMIT_CURRENT && spec->ramActiveAmp ? spec->ramActiveAmp : spec->ramActive, a);
+    if (spec->ramActive) // a board whose active limit is not mapped keeps it unknown (-1)
+      readFloat(kind == LIMIT_CURRENT && spec->ramActiveAmp ? spec->ramActiveAmp : spec->ramActive, a);
     if (e != enable || l != limit || a != active)
       changed = true;
     enable = e;
