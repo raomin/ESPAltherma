@@ -91,6 +91,9 @@ AsyncEventSource webEvents("/events");
 LogRing logHistory; // recent log, for the diagnostics page
 
 AppConfig *volatile pendingConfig = nullptr; // posted configuration, applied by webLoop
+void gpioPlan();                                          // main.cpp: who uses which pin, then the kept declarations
+bool gpioSet(int pin, GpioMode mode, const char **why);  // main.cpp: declares a free GPIO
+extern GpioControl gpioControl;
 volatile bool rebootRequested = false;
 unsigned long rebootAt = 0;
 volatile bool factoryResetRequested = false;
@@ -809,6 +812,79 @@ void webBegin()
     sendOk(r);
   }, nullptr, collectBody);
 
+  // The GPIOs (gpio_control.h): each pin the chip has, free or what uses it, its mode and its live level
+  webServer.on("/api/gpio", HTTP_GET, [](AsyncWebServerRequest *r) {
+    JsonDocument doc;
+    JsonArray list = doc["pins"].to<JsonArray>();
+    for (int pin = 0; pin < GPIO_CONTROL_MAX_PINS; pin++)
+    {
+      const char *why = gpioControl.whyNot(pin);
+      if (why != nullptr && strcmp(why, GPIO_USE_NO_PIN) == 0)
+        continue;
+      JsonObject o = list.add<JsonObject>();
+      o["pin"] = pin;
+      o["use"] = why ? why : "free";
+      o["output"] = gpioControl.driver->canOutput(pin);
+      o["mode"] = gpioModeName(gpioControl.mode[pin]);
+      int level = gpioControl.level(pin);
+      if (level < 0)
+        o["level"] = nullptr;
+      else
+        o["level"] = level;
+    }
+    sendJson(r, doc);
+  });
+
+  // Declares a free GPIO: {"pin": 18, "mode": "high"} (low, input, input_pullup, input_pulldown, unused), or
+  // {"pin": 18, "level": 1}. Kept in the settings unless "keep": false (for a pin switched often). 409 with the
+  // reason when the pin is used, locked or input only.
+  webServer.on("/api/gpio", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
+    JsonDocument doc;
+    if (!parseBody(r, doc))
+      return;
+    int pin = doc["pin"] | -1;
+    GpioMode mode = GPIO_UNUSED;
+    bool known = doc["mode"].is<const char *>() ? gpioModeFromName(doc["mode"].as<const char *>(), mode) : doc["level"].is<int>();
+    if (doc["level"].is<int>() && !doc["mode"].is<const char *>())
+      mode = doc["level"].as<int>() ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+    if (!known)
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"mode: unused, input, input_pullup, input_pulldown, low or high\"}");
+      return;
+    }
+    bool keep = doc["keep"] | true;
+    if (keep && pendingConfig != nullptr)
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
+      return;
+    }
+    const char *why = nullptr;
+    if (!gpioSet(pin, mode, &why))
+    {
+      JsonDocument res;
+      res["ok"] = false;
+      res["error"] = why ? why : "busy, retry";
+      sendJson(r, res, 409);
+      return;
+    }
+    if (keep)
+    {
+      AppConfig *next = new AppConfig(config);
+      int count = gpioDeclare(next->gpioDeclared, next->gpioDeclaredCount, pin, mode);
+      if (count < 0)
+      {
+        delete next;
+        r->send(409, "application/json", "{\"ok\":false,\"error\":\"too many declared pins: set, but not kept\"}");
+        return;
+      }
+      next->gpioDeclaredCount = (uint8_t)count;
+      pendingConfig = next; // saved by webLoop
+    }
+    sendOk(r);
+  }, nullptr, collectBody);
+
   // Diagnostics: {"addr": "0x45AC", "len": 48} asks the heat pump task for a read of the hydro board's memory
   // (nothing is written); GET returns {busy, done, ok, addr, len, hex}
   webServer.on("/api/memory", HTTP_POST, [](AsyncWebServerRequest *r) {
@@ -1100,6 +1176,7 @@ void webLoop()
     delete next;
     configSave();
     mqttSerial.println("Configuration saved.");
+    gpioPlan(); // a declared pin now used or locked is released before its new owner takes it
     if (wifiChanged)
       connectWifi();
     if (mqttChanged)

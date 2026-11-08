@@ -178,6 +178,7 @@ td.r{font:12px var(--mono);color:var(--ink2);white-space:nowrap;text-align:right
 .scroll{max-height:420px;overflow:auto;margin-top:12px}
 table.events td{font-size:13px;overflow-wrap:anywhere}
 td.nowrap{white-space:nowrap;color:var(--ink2)}
+tr.dim td{color:var(--ink2)}td.lvl{font-weight:600}
 #gZones,.bz{display:none}#sch.bizone #gZones,#sch.bizone .bz{display:block}
 #sch.bizone #pSpace,#sch.bizone #pSpace+.fl,#sch.bizone #bSpace,#sch.bizone #pLoop,#sch.bizone #pLoop+.fl,#sch.bizone .sz{display:none}#sch.bizone #gGauge{transform:translate(-48px,-435px)}#sch.bizone #gPump{transform:translate(60px,0)}
 #gZones .zoff{opacity:.3}#gZones .zoff .fl{animation:none;opacity:0}
@@ -448,6 +449,12 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   <p class="sub">Reads bytes of the hydro board's memory, for the people mapping a unit: nothing is written. Paste the result in the issue that asked for it.</p>
   <div class="acts" style="margin-top:12px"><label style="display:inline-flex;align-items:center;gap:6px;margin:0">Address <input type="text" id="memAddr" value="0x45AC" size="7" translate="no"></label><label style="display:inline-flex;align-items:center;gap:6px;margin:0">Bytes <input type="number" id="memLen" value="48" min="1" max="64" style="width:5em" translate="no"></label><button id="memRead">Read</button><button id="memCopy">Copy</button><span class="msg" id="memMsg" translate="no"></span></div>
   <pre id="memOut" translate="no"></pre></div>
+ <div class="card pad"><h2>GPIOs</h2>
+  <p class="sub">Declares a free GPIO as an input (with a pull-up or pull-down) or an output (high or low), for a contact, a relay board or a LED; also over the REST API (POST /api/gpio). The level shown is the live one, input or output. Declarations are kept across restarts. Pins of the X10A port, the relays and other features cannot be declared, nor the locked ones.</p>
+  <div class="acts" style="margin-top:8px"><button id="gpioRefresh">Refresh</button><span class="msg" id="gpioMsg" translate="no"></span></div>
+  <div class="scroll"><table class="events"><tbody id="gpioTable" translate="no"></tbody></table></div>
+  <label class="f" style="margin-top:12px"><span class="k">Locked GPIOs (comma separated): by default the pins the board needs for itself (flash, PSRAM, USB, serial console, boot pins)</span><input type="text" id="gpioLocked" translate="no"></label>
+  <div class="acts"><button id="gpioLockedSave">Save the locked GPIOs</button></div></div>
  <div class="card pad"><h2>Log</h2>
   <div class="acts" style="margin-top:8px"><button id="logClear">Clear</button><label class="chk" style="margin:0"><input type="checkbox" id="logFollow" checked>Follow</label></div>
   <pre id="log"></pre></div>
@@ -1305,7 +1312,57 @@ const copied = id => () => msg(id, t('Copied.'), true);
 const copyFailed = id => () => msg(id, t('Select the text and copy it with Ctrl+C.'), false);
 $('#evRefresh').onclick = () => loadEvents().catch(() => msg('#evMsg', t('Could not read the history.'), false));
 $('#evCopy').onclick = () => copyText(eventLines.join('\n')).then(copied('#evMsg'), copyFailed('#evMsg'));
+// GPIOs: each pin with what uses it; a free one takes a mode, and every declared one shows its live level
+const GPIO_USES = [N_('free'), N_('locked'), N_('input only'), N_('X10A RX'), N_('X10A TX'), N_('thermostat relay'), N_('Smart Grid relay 1'),
+  N_('Smart Grid relay 2'), N_('safety relay'), N_('DS18B20 data'), N_('DS18B20 supply'), N_('DS18B20 ground')];
+const GPIO_MODES = [['unused', N_('not used')], ['input', N_('input')], ['input_pullup', N_('input, pull-up')], ['input_pulldown', N_('input, pull-down')],
+  ['low', N_('output low')], ['high', N_('output high')]];
+const GPIO_REFRESH_MS = 3000;
+const gpioLevelText = level => level == null ? '–' : level ? t('high') : t('low');
+function gpioModeSelect(p) {
+  const sel = el('select', {onchange: e => gpioSend(p.pin, e.target.value)},
+    ...GPIO_MODES.map(([m, label]) => el('option', {value: m, disabled: !p.output && (m === 'low' || m === 'high')}, t(label))));
+  sel.value = p.mode;
+  return sel;
+}
+async function gpioSend(pin, mode) {
+  try { await post('/api/gpio', {pin, mode}); msg('#gpioMsg', ''); }
+  catch (e) { msg('#gpioMsg', 'GPIO ' + pin + ': ' + e.message, false); }
+  await loadGpio();
+}
+async function loadGpio() {
+  let pins = [];
+  try { pins = (await api('/api/gpio')).pins; } catch (e) { msg('#gpioMsg', e.message, false); }
+  const tb = $('#gpioTable'); tb.replaceChildren();
+  tb.append(el('tr', {}, ...[t('Pin'), t('Use'), t('Mode'), t('Level')].map(h => el('th', {}, h))));
+  for (const p of pins) {
+    const free = p.use === 'free';
+    const row = el('tr', {class: free ? '' : 'dim'}, el('td', {}, 'G' + p.pin), el('td', {}, t(p.use)), el('td', {}, free ? gpioModeSelect(p) : '–'),
+      el('td', {class: 'lvl'}, gpioLevelText(p.level)));
+    row.dataset.pin = p.pin;
+    tb.append(row);
+  }
+  $('#gpioLocked').value = ((cfg.gpio && cfg.gpio.locked) || []).join(', ');
+}
+// The live levels in place, every few seconds while the page is shown (an open selection stays)
+async function refreshGpioLevels() {
+  if (!$('#diagnostics').classList.contains('on')) return;
+  let pins = [];
+  try { pins = (await api('/api/gpio')).pins; } catch (e) { return; }
+  for (const p of pins) {
+    const cell = document.querySelector('#gpioTable tr[data-pin="' + p.pin + '"] td.lvl');
+    if (cell) cell.textContent = gpioLevelText(p.level);
+  }
+}
+setInterval(refreshGpioLevels, GPIO_REFRESH_MS);
+$('#gpioRefresh').onclick = loadGpio;
+$('#gpioLockedSave').onclick = async () => {
+  const locked = $('#gpioLocked').value.split(/[\s,;]+/).map(v => parseInt(v, 10)).filter(v => v >= 0 && v < 64);
+  try { await post('/api/config', {gpio: {locked}}); cfg.gpio = Object.assign({}, cfg.gpio, {locked}); msg('#gpioMsg', t('Saved')); await sleep(1500); await loadGpio(); }
+  catch (e) { msg('#gpioMsg', e.message, false); }
+};
 async function loadDiagnostics() {
+  loadGpio();
   renderFixes();
   loadEvents().catch(() => {});
   const r = await api('/api/detect');

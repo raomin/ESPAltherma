@@ -1005,6 +1005,60 @@ void setupPins()
   }
 }
 
+// Free GPIOs declared as inputs or outputs from the web page or the REST API (gpio_control.h). The web server
+// declares them from its own task, the settings change them from the main loop: both go through this lock.
+static EspGpioDriver gpioDriver;
+GpioControl gpioControl;
+static portMUX_TYPE gpioLock = portMUX_INITIALIZER_UNLOCKED;
+
+static void gpioReserveUses()
+{
+  gpioControl.lock(config.gpioLocked, config.gpioLockedCount);
+  gpioControl.reserve(config.rxPin, "X10A RX");
+  gpioControl.reserve(config.txPin, "X10A TX");
+  gpioControl.reserve(config.thermPin, "thermostat relay");
+  gpioControl.reserve(config.sg1Pin, "Smart Grid relay 1");
+  gpioControl.reserve(config.sg2Pin, "Smart Grid relay 2");
+  gpioControl.reserve(config.safetyPin, "safety relay");
+#ifdef ONEWIRE_MAX_BUSES // the DS18B20 sensors, when built in (onewire_temp.h)
+  for (const OneWireBusPins &bus : config.oneWireBuses)
+    if (bus.used())
+    {
+      gpioControl.reserve(bus.data, "DS18B20 data");
+      gpioControl.reserve(bus.power, "DS18B20 supply");
+      gpioControl.reserve(bus.ground, "DS18B20 ground");
+    }
+#endif
+}
+
+// Who uses which pin, from the settings, then the declarations kept where their pin is free: at start and after
+// the settings changed, before the users of the pins apply them
+void gpioPlan()
+{
+  gpioControl.driver = &gpioDriver;
+  portENTER_CRITICAL(&gpioLock);
+  gpioControl.beginPlan();
+  gpioReserveUses();
+  portEXIT_CRITICAL(&gpioLock);
+  gpioControl.endPlan(); // releases the pins that changed hands: the driver is not called under the lock
+  int waiting = gpioControl.applyDeclarations(config.gpioDeclared, config.gpioDeclaredCount);
+  if (waiting > 0)
+    mqttSerial.printf("GPIO: %d declared pin(s) in use or locked, not applied\n", waiting);
+}
+
+// Declares a free GPIO; on refusal, why says why
+bool gpioSet(int pin, GpioMode mode, const char **why)
+{
+  portENTER_CRITICAL(&gpioLock);
+  *why = gpioControl.whyNot(pin, mode);
+  bool settable = *why == nullptr && !gpioControl.planning;
+  portEXIT_CRITICAL(&gpioLock);
+  if (!settable || !gpioControl.set(pin, mode))
+    return false;
+  mqttSerial.printf("GPIO %d: %s\n", pin, gpioModeName(mode));
+  return true;
+}
+
 void setup()
 {
   restartCauseLoad();
@@ -1018,6 +1072,7 @@ void setup()
   SECOND_CONSOLE.begin(115200);
 #endif
   configLoad();
+  gpioPlan(); // the pins declared as inputs or outputs, before the relays and the other users of pins
   setupPins(); //relays to their inactive state first: they would float during the splash screen
   statsSetup();
   setupScreen();

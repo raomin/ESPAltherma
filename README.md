@@ -181,6 +181,18 @@ You need two relays to open and close the SG1 and SG2 contacts of your heat pump
 
 A third relay can stop the heat pump, for instance wired to a safety contact of your installation. Set its pin in **Settings → Relays**; it appears as `Altherma Safety` in Home Assistant (topic `espaltherma/SAFETY`, `1` stops the heat pump, `0` releases it).
 
+## Free GPIOs
+
+Under **Diagnostics → GPIOs**, each pin of the board is listed with what uses it. A free one can be declared as an input (plain, with a pull-up or a pull-down) or an output (high or low); every declared pin shows its live level. The declarations are kept across restarts. The same over the REST API:
+
+```
+curl -u admin:<password> -X POST http://espaltherma.local/api/gpio -d '{"pin":18,"mode":"high"}'   # low, input, input_pullup, input_pulldown, unused
+curl -u admin:<password> -X POST http://espaltherma.local/api/gpio -d '{"pin":18,"level":0,"keep":false}'   # switched often: not saved
+curl http://espaltherma.local/api/gpio                                                            # every pin: its use, mode and level
+```
+
+Pins of the X10A port, the relays and other features (the DS18B20 sensors) are refused (`409` with the reason), and so are the **locked** pins: by default the ones the board needs for itself (flash, PSRAM, USB, serial console, boot pins), editable on the same page (`gpio.locked` in the settings). When the settings give a declared pin to another use, it is released first; its declaration applies again once the pin is free.
+
 ## Power limit (experimental)
 
 The heat pump can be capped at a power (kW) or a current (A), the kind the installer set in the unit: ESPAltherma writes the installer's "power limitation" settings in the hydro board's working memory, continuous mode and limit 1, and the unit applies them within a cycle. For solar surplus or dynamic tariffs. Tick **Power limit** under **Settings → Experimental**: the home page gets a *Power limit* card, Home Assistant a `Power limit` number entity in the unit's kind and a `Power limit on` switch; on MQTT, a value on `espaltherma/power_limit/set` and `ON`/`OFF` on `espaltherma/power_limit/on/set`. Nothing is written in the unit's memory: a restart of the heat pump brings its own settings back, and ESPAltherma applies the limit again within two minutes. Under the compressor's minimum the unit stops it instead of running below, so the value has a floor (1 kW or 4 A). The addresses are known for the same hydro board softwares as the targets below, 18002904 tested on an EAVH16 and the others from the boards' software, each awaiting a first report; 20002202 and the other boards show "not available".

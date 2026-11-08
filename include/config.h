@@ -7,6 +7,7 @@
 #include "board.h"
 #include "topics.h"
 #include <Preferences.h>
+#include "gpio_control_esp.h"
 // Not <ArduinoJson.h>: its "using namespace ArduinoJson" clashes with our Converter class
 #include <ArduinoJson.hpp>
 using ArduinoJson::DeserializationError;
@@ -99,6 +100,12 @@ struct AppConfig
   // Web interface
   char adminPwd[33]; // protects the configuration, updates and OTA when set (user "admin")
 
+  // Free GPIOs (gpio_control.h): the pins never declared from here, and the declarations kept
+  int8_t gpioLocked[GPIO_CONTROL_MAX_LOCKED];
+  uint8_t gpioLockedCount;
+  GpioDeclaration gpioDeclared[GPIO_CONTROL_MAX_DECLARED];
+  uint8_t gpioDeclaredCount;
+
   // Opt-in telemetry: sends the heat pump identification to help the auto-detection
   bool telemetry;
   bool updateCheck;   // reads the site's manifest once a day and tells the page and Home Assistant of a newer build
@@ -146,6 +153,9 @@ void configDefaults(AppConfig &c)
   c.ctlLimitValue = -1;
   c.ctlLimitOrig = -1;
   c.ctlLimitSw[0] = 0;
+  c.gpioLockedCount = sizeof(GPIO_BOARD_LOCKED);
+  memcpy(c.gpioLocked, GPIO_BOARD_LOCKED, sizeof(GPIO_BOARD_LOCKED));
+  c.gpioDeclaredCount = 0;
 }
 
 #define CONFIG_NVS_NAMESPACE "espaltherma"
@@ -252,6 +262,18 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   stats["buh2_kw"] = c.statsBuhKW[1];
   stats["tz"] = c.statsTz;
   control["limit_sw"] = c.ctlLimitSw;
+
+  JsonObject gpio = doc["gpio"].to<JsonObject>();
+  JsonArray gpioLocked = gpio["locked"].to<JsonArray>();
+  for (int i = 0; i < c.gpioLockedCount; i++)
+    gpioLocked.add(c.gpioLocked[i]);
+  JsonArray gpioDeclared = gpio["pins"].to<JsonArray>();
+  for (int i = 0; i < c.gpioDeclaredCount; i++)
+  {
+    JsonObject d = gpioDeclared.add<JsonObject>();
+    d["pin"] = c.gpioDeclared[i].pin;
+    d["mode"] = gpioModeName(c.gpioDeclared[i].mode);
+  }
 
   JsonObject admin = doc["admin"].to<JsonObject>();
   admin["has_pwd"] = c.adminPwd[0] != 0;
@@ -404,6 +426,26 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   if (c.statsAuxW < 1) // 0 W is no pump at all: the default instead (a configuration saved before beta.19 holds 0)
     c.statsAuxW = 100;
   readStr(src["control"]["limit_sw"], c.ctlLimitSw, sizeof(c.ctlLimitSw));
+
+  if (src["gpio"]["locked"].is<JsonArrayConst>())
+  {
+    c.gpioLockedCount = 0;
+    for (JsonVariantConst v : src["gpio"]["locked"].as<JsonArrayConst>())
+      if (c.gpioLockedCount < GPIO_CONTROL_MAX_LOCKED && v.is<int>() && v.as<int>() >= 0 && v.as<int>() < GPIO_CONTROL_MAX_PINS)
+        c.gpioLocked[c.gpioLockedCount++] = (int8_t)v.as<int>();
+  }
+  if (src["gpio"]["pins"].is<JsonArrayConst>())
+  {
+    c.gpioDeclaredCount = 0;
+    for (JsonVariantConst v : src["gpio"]["pins"].as<JsonArrayConst>())
+    {
+      GpioMode mode;
+      int pin = v["pin"] | -1;
+      bool valid = pin >= 0 && pin < GPIO_CONTROL_MAX_PINS && gpioModeFromName(v["mode"] | "", mode) && mode != GPIO_UNUSED;
+      if (valid && c.gpioDeclaredCount < GPIO_CONTROL_MAX_DECLARED)
+        c.gpioDeclaredCount = (uint8_t)gpioDeclare(c.gpioDeclared, c.gpioDeclaredCount, pin, mode);
+    }
+  }
 
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));
   readNum(src["telemetry"]["enabled"], c.telemetry);
