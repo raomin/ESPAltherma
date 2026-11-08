@@ -36,6 +36,8 @@
 #define CONTROL_SAVE_DELAY_MS 30000UL       // the target is saved in the unit's memory once unchanged for this long
 #define CONTROL_SAVE_INTERVAL_MS 300000UL   // and at most this often
 #define CONTROL_CHECK_INTERVAL_MS 600000UL  // the unit is identified again (mode, limits) this often
+#define CONTROL_RETRY_FIRST_MS 30000UL      // a unit not ready yet (no answer, or its limits still empty just after a
+                                            // power-up) is tried again this soon, then twice as long each time
 #define CONTROL_READ_INTERVAL_MS 120000UL   // the target is read back this often (the interface may change it)
 #define CONTROL_READ_AFTER_WRITE_MS 5000UL  // and this long after a write, once the board has recomputed
 
@@ -342,6 +344,7 @@ struct CurveControl : X10aClient
   bool restoring = false;           // the pending pair is the original curve
   bool origChanged = false;         // origA/origB changed: the caller persists them
   unsigned long wantedAt = 0, savedAt = 0, checkedAt = 0, readAt = 0;
+  unsigned long retryAfter = CONTROL_RETRY_FIRST_MS; // until the next identification while not ready
   volatile bool changed = false; // something to publish (state or availability)
   int applied = -1, appliedLo = -1; // last pair applied, for the caller's log (-1 when none since the last read)
 
@@ -367,6 +370,7 @@ struct CurveControl : X10aClient
     wanted = pendingA = pendingB = -1;
     restoring = restoreWanted = false; // origA/origB and the hold stay: they apply again once enabled
     checkedAt = 0; // identified again as soon as enabled
+    retryAfter = CONTROL_RETRY_FIRST_MS;
     changed = true;
   }
 
@@ -516,13 +520,29 @@ struct CurveControl : X10aClient
     origB = b;
   }
 
+  // The wait before the next try at a unit that is not ready: doubled each time, up to the check interval, so a
+  // unit that never gets ready is not asked more often than before
+  static unsigned long nextRetry(unsigned long wait)
+  {
+    return wait * 2 > CONTROL_CHECK_INTERVAL_MS ? CONTROL_CHECK_INTERVAL_MS : wait * 2;
+  }
+
   // Runs the pending work: identification, requests, delayed saves, periodic reads. Owner task only.
   void tick(unsigned long now)
   {
     if (status != CONTROL_READY)
     {
-      if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS || checkedAt == 0)
+      // A heat pump just powered up (with ESPAltherma, when the X10A port powers it) answers before its RAM holds
+      // its limits: tried again after half a minute, then less and less often, not only at the next check
+      if (checkedAt == 0 || now - checkedAt >= retryAfter)
+      {
+        bool retrying = checkedAt != 0;
         identify(now);
+        if (status == CONTROL_READY)
+          retryAfter = CONTROL_RETRY_FIRST_MS;
+        else if (retrying)
+          retryAfter = nextRetry(retryAfter);
+      }
       return;
     }
     if (!ramOnly && held >= 0)

@@ -272,6 +272,45 @@ void test_no_answer()
     TEST_ASSERT_EQUAL(-1, c.target);
 }
 
+// A heat pump just powered up (ESPAltherma with it, when the X10A port powers it) answers before its RAM holds the
+// limits: tried again after half a minute, then a minute later, and ready as soon as the limits are there
+void test_a_unit_just_powered_up_is_tried_again_soon()
+{
+    uint8_t limits[32];
+    memcpy(limits, unit.ram + 0x30C0, sizeof(limits));
+    memset(unit.ram + 0x30C0, 0, sizeof(limits)); // the limit records still empty
+    CurveControl c = fresh();
+    c.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+    c.tick(1000 + CONTROL_RETRY_FIRST_MS - 1);
+    TEST_ASSERT_EQUAL(1000, c.checkedAt); // not yet
+    c.tick(1000 + CONTROL_RETRY_FIRST_MS);
+    TEST_ASSERT_EQUAL(1000 + CONTROL_RETRY_FIRST_MS, c.checkedAt);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+    memcpy(unit.ram + 0x30C0, limits, sizeof(limits)); // the board has loaded them
+    c.tick(1000 + 3 * CONTROL_RETRY_FIRST_MS - 1);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status); // the second retry waits twice as long
+    c.tick(1000 + 3 * CONTROL_RETRY_FIRST_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    TEST_ASSERT_EQUAL(CONTROL_RETRY_FIRST_MS, c.retryAfter); // the next loss of the unit starts short again
+}
+
+// A unit that never gets ready is not asked more often than before: the wait grows up to the check interval
+void test_a_unit_never_ready_is_tried_at_the_check_interval_in_the_end()
+{
+    memset(unit.ram + 0x30C0, 0, 32);
+    CurveControl c = fresh();
+    unsigned long now = 1000;
+    c.tick(now);
+    for (int i = 0; i < 10; i++)
+    {
+        now += c.retryAfter;
+        c.tick(now);
+    }
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+    TEST_ASSERT_EQUAL(CONTROL_CHECK_INTERVAL_MS, c.retryAfter);
+}
+
 void test_applies_then_saves()
 {
     CurveControl c = fresh();
@@ -939,6 +978,8 @@ int main(int, char **)
     RUN_TEST(test_refuses_an_unknown_software);
     RUN_TEST(test_refuses_without_the_curve_mode);
     RUN_TEST(test_no_answer);
+    RUN_TEST(test_a_unit_just_powered_up_is_tried_again_soon);
+    RUN_TEST(test_a_unit_never_ready_is_tried_at_the_check_interval_in_the_end);
     RUN_TEST(test_applies_then_saves);
     RUN_TEST(test_reads_the_effective_target_after_a_write);
     RUN_TEST(test_saves_at_most_every_five_minutes);
