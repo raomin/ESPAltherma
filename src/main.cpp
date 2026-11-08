@@ -786,8 +786,8 @@ void oneWireSetup()
     oneWireBuses[b].begin((uint8_t)plan[b].data);
     list[b] = &oneWireBuses[b].protocol;
   }
+  bool switchedOn = oneWireTemps.phase == ONEWIRE_POWERED_OFF; // saved during a power cycle: the supplies come back
   oneWireTemps.attach(list, n);
-  bool switchedOn = false;
   for (size_t b = 0; b < ONEWIRE_MAX_BUSES; b++)
   {
     oneWireTemps.pins[b] = b < n ? plan[b].data : -1;

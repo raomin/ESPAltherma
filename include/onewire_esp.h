@@ -106,8 +106,13 @@ struct EspOneWirePower : OneWirePower
     gpio_set_level(pin, 1);
   }
 
-  // Takes over a supply GPIO that is already on, without switching it
-  void adopt(uint8_t gpio) { pin = (gpio_num_t)gpio; }
+  // Takes over a supply GPIO that is already an output, without resetting it (no glitch). On: the settings may
+  // have been saved during a power cycle, with the supply off.
+  void adopt(uint8_t gpio)
+  {
+    pin = (gpio_num_t)gpio;
+    gpio_set_level(pin, 1);
+  }
 
   void addDataPin(uint8_t gpio)
   {

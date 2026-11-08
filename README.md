@@ -203,7 +203,7 @@ The board can read DS18B20 sensors next to the heat pump (the tank layers, the f
 
 1. Wire the sensors to a free GPIO: VDD to 3.3V, GND to GND, DATA to the GPIO with a 4.7 kΩ resistor from DATA to 3.3V (one per GPIO). Several sensors can share a GPIO; up to 16 sensors on up to 4 buses. Each bus can also take its supply and ground from GPIOs instead of 3.3V and GND, so that its three wires fit one connector.
 2. Under **Settings → Temperature sensors (DS18B20)**, add a bus per data GPIO (**+ Add a bus**) and save: the sensors found are listed with their reading.
-3. Give each sensor a name (`Tank top`) and save again: it becomes `DS18B20: Tank top` in MQTT and Home Assistant.
+3. Give each sensor a name (`Tank top`) and save again: it becomes `DS18B20: Tank top` in MQTT and Home Assistant. **Placed at** shows it in the drawing of the home page as well (a tank layer, the flow or return, a refrigerant line).
 
 Wiring tips, which GPIOs to use, what happens with a missing sensor or a bad reading: [doc/onewire.md](doc/onewire.md).
 

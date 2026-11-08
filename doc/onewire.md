@@ -40,6 +40,10 @@ To put the three wires of a bus on one connector where the board has no 3.3V pin
 
 ## Names, MQTT and Home Assistant
 
-- A sensor without a name goes by its ROM code (`DS18B20: 28FF641E8216034C`). The name given on the settings page replaces it (`DS18B20: Tank top`); names are kept by ROM code, so a sensor keeps its name on another GPIO, and a sensor not found right now keeps its name for when it comes back.
+- A sensor without a name goes by its ROM code (`DS18B20: 28FF641E8216034C`). The name given on the settings page replaces it (`DS18B20: Tank top`); names are kept by ROM code, so a sensor keeps its name on another GPIO, and a sensor not found right now keeps its name for when it comes back. Two sensors given the same name stay apart: the later one (in bus order) gets the end of its ROM code added (`DS18B20: Tank 034C`).
 - The readings are keys of `espaltherma/ATTR` (`"DS18B20: Tank top": 54.31`), next to the statistics, and temperature sensors of the "Daikin Altherma via ESPAltherma" device in Home Assistant (MQTT discovery), entity IDs from the label (`sensor.espaltherma_ds18b20_tank_top`). Renaming a sensor makes a new entity.
-- `GET /api/onewire` lists the buses and the sensors with their ROM code, GPIO, name and reading; `POST /api/onewire/search` searches the buses again.
+- `GET /api/onewire` lists the buses and the sensors with their ROM code, GPIO, name, place and reading; `POST /api/onewire/search` searches the buses again.
+
+## On the home page
+
+**Placed at**, next to the name on the settings page, puts a sensor in the drawing of the home page: a tank layer from 0 (bottom) to 10 (top) shows as a tick with its reading beside the tank; the flow or return at the heat pump or at the tank coil, and the gas or liquid line at the indoor or the outdoor unit, show as a dashed tag at that place (two sensors at one place stack). A card under the drawing lists every sensor, placed or not, the tank from the top down. The place is kept with the name, by ROM code (`onewire.names[].role` in the settings: `tank0` … `tank10`, `hp_flow`, `hp_return`, `tank_flow`, `tank_return`, `iu_gas`, `iu_liquid`, `ou_gas`, `ou_liquid`); it changes nothing in MQTT or Home Assistant.

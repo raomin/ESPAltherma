@@ -207,7 +207,7 @@ void test_only_plain_places_are_kept()
 void test_names_from_the_settings_and_the_rom_code_otherwise()
 {
     OneWireTemps t = twoBuses();
-    OneWireName names[2];
+    OneWireName names[2] = {};
     oneWireRomToHex(top.rom, names[0].rom);
     strcpy(names[0].name, "Tank \"top\"");
     oneWireRomToHex(floorLoop.rom, names[1].rom);
@@ -225,6 +225,31 @@ void test_names_from_the_settings_and_the_rom_code_otherwise()
     t.appendJson(json, sizeof(json));
     TEST_ASSERT_NOT_NULL(strstr(json, "\"DS18B20: Tank  top \":54.31,"));
     TEST_ASSERT_NOT_NULL(strstr(json, "\"DS18B20: Floor loop\":-2.25,"));
+}
+
+// Two sensors given the same name stay two keys and two entities: the later one gets the end of its ROM code,
+// a long name shortened to make room for it
+void test_two_sensors_with_the_same_name_keep_apart()
+{
+    OneWireTemps t = twoBuses();
+    OneWireName names[2] = {};
+    oneWireRomToHex(top.rom, names[0].rom);
+    strcpy(names[0].name, "Tank");
+    oneWireRomToHex(bottom.rom, names[1].rom);
+    strcpy(names[1].name, "Tank");
+    t.setNames(names, 2);
+    t.tick(0);
+    char hex[17], expected[40];
+    oneWireRomToHex(bottom.rom, hex);
+    TEST_ASSERT_EQUAL_STRING("DS18B20: Tank", t.sensors[0].label);
+    snprintf(expected, sizeof(expected), "DS18B20: Tank %s", hex + 12);
+    TEST_ASSERT_EQUAL_STRING(expected, t.sensors[1].label);
+    strcpy(names[0].name, "Buffer tank upper layer"); // 23 characters, the most a name holds
+    strcpy(names[1].name, "Buffer tank upper layer");
+    t.setNames(names, 2);
+    TEST_ASSERT_EQUAL_STRING("DS18B20: Buffer tank upper layer", t.sensors[0].label);
+    snprintf(expected, sizeof(expected), "DS18B20: Buffer tank upper  %s", hex + 12);
+    TEST_ASSERT_EQUAL_STRING(expected, t.sensors[1].label);
 }
 
 void test_a_bad_crc_keeps_the_last_reading_then_null_after_three_cycles()
@@ -660,6 +685,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_finds_the_sensors_of_every_bus_and_skips_other_families);
     RUN_TEST(test_reads_after_the_conversion_without_waiting_in_the_loop);
     RUN_TEST(test_names_from_the_settings_and_the_rom_code_otherwise);
+    RUN_TEST(test_two_sensors_with_the_same_name_keep_apart);
     RUN_TEST(test_a_place_without_a_name);
     RUN_TEST(test_only_plain_places_are_kept);
     RUN_TEST(test_a_bad_crc_keeps_the_last_reading_then_null_after_three_cycles);

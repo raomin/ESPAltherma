@@ -43,7 +43,7 @@
 #define ONEWIRE_CMD_CONVERT 0x44
 #define ONEWIRE_CMD_READ_SCRATCHPAD 0xBE
 
-// What a 1-Wire bus can do (the Arduino side wraps the OneWire library)
+// What a 1-Wire bus can do (OneWireProtocol below builds it on the bit slots of onewire_esp.h; a test, on fakes)
 struct OneWireBus
 {
   virtual ~OneWireBus() {}
@@ -211,7 +211,6 @@ static inline bool oneWireIsTemperatureSensor(const uint8_t rom[8])
   return family && oneWireCrc8(rom, 7) == rom[7];
 }
 
-// A name given in the settings to a sensor, by its ROM code
 // The GPIOs of one bus: its data line, and optionally its supply and ground (-1: 3.3 V and GND)
 struct OneWireBusPins
 {
@@ -241,6 +240,7 @@ static inline bool oneWireValidRole(const char *role)
   return true;
 }
 
+// A name and a place given in the settings to a sensor, by its ROM code
 struct OneWireName
 {
   char rom[17];
@@ -304,7 +304,7 @@ struct OneWireTemps
     names = list;
     nameCount = n;
     for (size_t i = 0; i < count; i++)
-      makeLabel(sensors[i]);
+      makeLabel(i);
     changed = true;
   }
 
@@ -330,15 +330,34 @@ struct OneWireTemps
     return settings ? settings->role : "";
   }
 
-  void makeLabel(OneWireSensor &s) const
+  // The label of sensor i: "DS18B20: <name>", the ROM code without a name. A name an earlier sensor already goes
+  // by gets the end of the ROM code added: one key per sensor in MQTT, one entity in Home Assistant.
+  void makeLabel(size_t i)
   {
+    OneWireSensor &s = sensors[i];
     const char *name = nameFor(s.rom);
     char hex[17];
     oneWireRomToHex(s.rom, hex);
-    snprintf(s.label, sizeof(s.label), "%s%s", ONEWIRE_LABEL_PREFIX, name ? name : hex);
+    writeLabel(s, name ? name : hex, "");
+    if (name && labelTakenBefore(i))
+      writeLabel(s, name, hex + 12);
+  }
+
+  static void writeLabel(OneWireSensor &s, const char *text, const char *suffix)
+  {
+    int room = ONEWIRE_NAME_SIZE - 1 - (suffix[0] ? (int)strlen(suffix) + 1 : 0);
+    snprintf(s.label, sizeof(s.label), "%s%.*s%s%s", ONEWIRE_LABEL_PREFIX, room, text, suffix[0] ? " " : "", suffix);
     for (char *c = s.label; *c; c++)
       if (*c == '"' || *c == '\\' || *c == '\'' || (unsigned char)*c < 0x20)
         *c = ' '; // the label is a JSON key and sits between quotes in the Home Assistant template
+  }
+
+  bool labelTakenBefore(size_t i) const
+  {
+    for (size_t j = 0; j < i; j++)
+      if (strcmp(sensors[j].label, sensors[i].label) == 0)
+        return true;
+    return false;
   }
 
   // Finds the sensors of every bus, in bus order. A sensor already known keeps its last reading.
@@ -366,7 +385,7 @@ struct OneWireTemps
             s.valid = before[i].valid;
             s.celsius = before[i].celsius;
           }
-        makeLabel(s);
+        makeLabel(count - 1);
       }
     }
     changed = true;
