@@ -620,7 +620,8 @@ void test_ram_only_restore_releases_without_writing_the_memory()
 }
 
 // Switching RAM only off ends the hold; the next request is saved in the memory as before
-void test_ram_only_off_ends_the_hold()
+// Unticking RAM only saves the held target in the unit's memory, like a fresh request, and ends the hold
+void test_ram_only_off_saves_the_held_target()
 {
     CurveControl c = fresh();
     c.ramOnly = true;
@@ -628,20 +629,104 @@ void test_ram_only_off_ends_the_hold()
     c.request(50);
     c.tick(2000);
     TEST_ASSERT_EQUAL(50, c.held);
+    TEST_ASSERT_TRUE(c.heldChanged); // the caller persists it
+    c.heldChanged = false;
     c.ramOnly = false;
     c.tick(2500);
     TEST_ASSERT_EQUAL(-1, c.held);
-    unit.setWord(0x187A, 48 << 8); // the unit restarted
+    TEST_ASSERT_TRUE(c.heldChanged);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites); // after the usual delay
+    c.tick(2500 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL(2, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(50, c.saved);
+    TEST_ASSERT_EQUAL((50 - 35) << 2 | 0x01, unit.memory[366]);
+    TEST_ASSERT_EQUAL((50 - 45) << 2 | 0x03, unit.memory[367]);
+    unit.setWord(0x187A, 48 << 8); // a later RAM change is not chased any more
     unit.setWord(0x18B8, 52 << 8);
     int writes = unit.ramWrites;
-    c.tick(2000 + CONTROL_READ_INTERVAL_MS);
-    c.tick(2000 + CONTROL_READ_INTERVAL_MS + 10);
-    TEST_ASSERT_EQUAL(writes, unit.ramWrites); // no longer held
-    c.request(51);
-    c.tick(300000);
-    c.tick(300000 + CONTROL_SAVE_DELAY_MS);
-    TEST_ASSERT_EQUAL(2, unit.memoryWrites);
-    TEST_ASSERT_EQUAL(51, c.saved);
+    c.tick(2500 + CONTROL_SAVE_DELAY_MS + CONTROL_READ_INTERVAL_MS);
+    c.tick(2500 + CONTROL_SAVE_DELAY_MS + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// Leaving the weather-dependent mode ends the hold: back in that mode later, the old target does not return
+void test_ram_only_hold_ends_when_the_curve_mode_is_left()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50, c.held);
+    unit.memory[278] = 0x00; // absolute setpoint on the interface
+    c.tick(1000 + CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_NOT_CURVE_MODE, c.status);
+    TEST_ASSERT_EQUAL(-1, c.held);
+    unit.memory[278] = 0x01; // weather dependent again, with the unit's curve in RAM
+    unit.setWord(0x187A, 48 << 8);
+    unit.setWord(0x18B8, 52 << 8);
+    int writes = unit.ramWrites;
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + CONTROL_READ_INTERVAL_MS);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+}
+
+// No answer is what a restart of the heat pump looks like: the hold survives it and the target comes back
+void test_ram_only_hold_survives_a_unit_that_does_not_answer()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    unit.answer = false;
+    c.tick(1000 + CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, c.status);
+    TEST_ASSERT_EQUAL(50, c.held);
+    unit.answer = true; // back, with its curve from the memory
+    unit.setWord(0x187A, 48 << 8);
+    unit.setWord(0x18B8, 52 << 8);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + 10); // the lost target is seen
+    c.tick(1000 + 2 * CONTROL_CHECK_INTERVAL_MS + 20); // and written again
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
+// Another hydro board software (a board replaced, a firmware update): the held target belonged to the old one
+void test_ram_only_hold_ends_with_another_software()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    unit.board(FakeUnit::profileFor("20002203"));
+    c.tick(1000 + CONTROL_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_STRING("20002203", c.softwareId);
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_TRUE(c.heldChanged);
+}
+
+// A hold given back by the caller after an ESP restart is written again when the unit lost it
+void test_ram_only_hold_from_the_saved_configuration()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.held = 50; // as the caller does from the configuration
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS);
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
 static LimitControl freshLimit()
@@ -848,7 +933,11 @@ int main(int, char **)
     RUN_TEST(test_ram_only_never_writes_the_memory);
     RUN_TEST(test_ram_only_writes_the_target_again_after_the_unit_restarts);
     RUN_TEST(test_ram_only_restore_releases_without_writing_the_memory);
-    RUN_TEST(test_ram_only_off_ends_the_hold);
+    RUN_TEST(test_ram_only_off_saves_the_held_target);
+    RUN_TEST(test_ram_only_hold_ends_when_the_curve_mode_is_left);
+    RUN_TEST(test_ram_only_hold_survives_a_unit_that_does_not_answer);
+    RUN_TEST(test_ram_only_hold_ends_with_another_software);
+    RUN_TEST(test_ram_only_hold_from_the_saved_configuration);
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);

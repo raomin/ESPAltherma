@@ -335,6 +335,7 @@ struct CurveControl : X10aClient
   int origA = -1, origB = -1;       // the curve found before the first write from here (-1: none), restorable
   bool ramOnly = false;             // never write the unit's memory: the target is held in its RAM (set by the caller)
   int held = -1;                    // the target held in RAM only, written again when the RAM lost it (-1: none)
+  bool heldChanged = false;         // held changed: the caller persists it, so an ESP restart keeps the hold
   volatile int wanted = -1;         // requested value, -1 when none (set from other tasks)
   volatile bool restoreWanted = false; // restore the original curve (set from other tasks)
   int pendingA = -1, pendingB = -1; // the request being handled (clamped), both points
@@ -363,8 +364,8 @@ struct CurveControl : X10aClient
     status = CONTROL_OFF;
     softwareId[0] = 0;
     target = targetLo = saved = savedA = savedB = effective = ceiling = -1;
-    wanted = pendingA = pendingB = held = -1;
-    restoring = restoreWanted = false; // origA/origB stay: the curve can still be restored once enabled again
+    wanted = pendingA = pendingB = -1;
+    restoring = restoreWanted = false; // origA/origB and the hold stay: they apply again once enabled
     checkedAt = 0; // identified again as soon as enabled
     changed = true;
   }
@@ -375,12 +376,16 @@ struct CurveControl : X10aClient
     checkedAt = now;
     ControlStatus before = status;
     int minBefore = minTarget, maxBefore = maxTarget;
+    char softwareBefore[9];
+    snprintf(softwareBefore, sizeof(softwareBefore), "%s", softwareId);
     if (!readSoftwareId(softwareId))
     {
-      status = CONTROL_NO_ANSWER;
+      status = CONTROL_NO_ANSWER; // what a restart of the heat pump looks like: the hold stays
     }
     else
     {
+      if (softwareBefore[0] && strcmp(softwareBefore, softwareId) != 0)
+        setHeld(-1); // another hydro board software: the held target belongs to the previous one
       profile = nullptr;
       for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       {
@@ -405,6 +410,8 @@ struct CurveControl : X10aClient
         status = minTarget >= 5 && maxTarget <= 90 && minTarget < maxTarget ? CONTROL_READY : CONTROL_UNSUPPORTED;
       }
     }
+    if (status == CONTROL_NOT_CURVE_MODE)
+      setHeld(-1); // the setpoint left the weather-dependent mode: coming back to it must not bring the old target back
     if (status == CONTROL_READY)
     {
       readTarget(now);
@@ -481,6 +488,15 @@ struct CurveControl : X10aClient
     return writeMemory(spec->memA, (uint8_t)(rawA << 2 | (a & 3))) && writeMemory(spec->memB, (uint8_t)(rawB << 2 | (b & 3)));
   }
 
+  void setHeld(int value)
+  {
+    if (held != value)
+    {
+      held = value;
+      heldChanged = true;
+    }
+  }
+
   // Asks for a target. Applied by tick() on the task that owns the X10A link.
   void request(int value)
   {
@@ -509,14 +525,23 @@ struct CurveControl : X10aClient
         identify(now);
       return;
     }
-    if (!ramOnly)
-      held = -1;
+    if (!ramOnly && held >= 0)
+    {
+      // RAM only switched off: the held target is saved in the unit's memory like a fresh request
+      if (pendingA < 0 && wanted < 0 && !restoreWanted)
+      {
+        pendingA = pendingB = held;
+        restoring = false;
+        wantedAt = now;
+      }
+      setHeld(-1);
+    }
     // A restore takes over any request; a request cancels a restore
     if (restoreWanted)
     {
       restoreWanted = false;
       wanted = -1;
-      held = -1; // released: the unit's curve is back, in its RAM and (if it was changed) in its memory
+      setHeld(-1); // released: the unit's curve is back, in its RAM and (if it was changed) in its memory
       if (origA >= 0 && origB >= 0 && !restoring)
       {
         pendingA = origA;
@@ -559,7 +584,7 @@ struct CurveControl : X10aClient
       }
       bool done = false;
       if (ramOnly && !restoring)
-        held = pendingA;
+        setHeld(pendingA);
       if (savedA == pendingA && savedB == pendingB)
       {
         done = true; // already in the unit's memory
