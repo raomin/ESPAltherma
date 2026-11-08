@@ -84,6 +84,7 @@ struct StatsDay
   uint32_t startAt[STATS_STARTS_RING]; // the last starts (epoch seconds, or uptime seconds without a clock)
   uint8_t startCount;
   uint32_t lastRunSec, lastPauseSec;
+  uint8_t running; // a run was going on at the last reading: after a restart of the board, the same run goes on
 };
 
 class Stats
@@ -102,6 +103,8 @@ public:
   float copSmoothed = NAN;
   bool lastDefrost = false;
   bool clockSeen = false;
+  bool runBeforeRestart = false; // the RTC block says a run was going on when the board restarted
+  bool runStateKnown = false;    // a reading since the start told whether the compressor runs
 
   void begin(StatsDay *rtc)
   {
@@ -112,16 +115,19 @@ public:
       day->magic = STATS_MAGIC;
       day->day = -1;
     }
+    runBeforeRestart = day->running != 0;
   }
 
   void resetDay(int32_t d)
   {
     uint32_t lastRun = day->lastRunSec, lastPause = day->lastPauseSec;
+    uint8_t running = day->running;
     memset(day, 0, sizeof(*day));
     day->magic = STATS_MAGIC;
     day->day = d;
     day->lastRunSec = lastRun;
     day->lastPauseSec = lastPause;
+    day->running = running;
   }
 
   // Local day number from an epoch (0: clock not set)
@@ -170,15 +176,21 @@ public:
 
     // compressor runs and pauses
     bool runNow = !isnan(in.inv) && in.inv >= STATS_RUN_RPS;
+    bool sameRunAsBeforeRestart = !runStateKnown && runBeforeRestart; // the board restarted (an update) during a run
+    if (!isnan(in.inv))
+      runStateKnown = true;
     if (runNow && !inRun)
     {
       inRun = true;
       runStartedAt = now;
-      if (pauseStartedAt)
-        day->lastPauseSec = now - pauseStartedAt;
-      day->starts++;
-      day->startAt[day->startCount % STATS_STARTS_RING] = now;
-      day->startCount++;
+      if (!sameRunAsBeforeRestart)
+      {
+        if (pauseStartedAt)
+          day->lastPauseSec = now - pauseStartedAt;
+        day->starts++;
+        day->startAt[day->startCount % STATS_STARTS_RING] = now;
+        day->startCount++;
+      }
     }
     else if (!runNow && inRun)
     {
@@ -188,6 +200,8 @@ public:
       copSmoothed = NAN;
     }
     running = runNow;
+    if (runStateKnown)
+      day->running = inRun; // kept for a restart, once known (a reading without the inverter keeps the last)
     if (runNow)
       day->runSec += (uint32_t)dt;
     if (in.buh == 1)

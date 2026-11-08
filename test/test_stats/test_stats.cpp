@@ -225,7 +225,40 @@ void test_rtc_survives_restart(void)
     again.begin(&rtc);
     TEST_ASSERT_EQUAL(1, rtc.starts);
     TEST_ASSERT_TRUE(rtc.heatKWh[STATS_HEATING] > 0);
-    again.update(heating(), T0 + 700, 5); // nothing integrated across the gap, a start is counted
+    again.update(heating(), T0 + 700, 5); // nothing integrated across the gap; the run goes on, no new start
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    TEST_ASSERT_TRUE(again.running);
+}
+
+// A restart of the board (an update, a reset) while the compressor runs is not a start; a start while the board
+// restarted, the compressor stopped before and running after, is
+void test_a_restart_during_a_run_is_not_a_start(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    s.update(heating(), T0, 10);
+    s.update(heating(), T0 + 60, 70);
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    for (int restart = 0; restart < 4; restart++) // four updates in a row during the same run
+    {
+        Stats again;
+        again.begin(&rtc);
+        again.update(heating(), T0 + 120 + restart * 60, 5);
+    }
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    Stats stopped;
+    stopped.begin(&rtc);
+    stopped.update(heating(0), T0 + 600, 5); // the run ends
+    Stats restarted;
+    restarted.begin(&rtc);
+    restarted.update(heating(), T0 + 900, 5); // started while the board restarted
+    TEST_ASSERT_EQUAL(2, rtc.starts);
+    Stats unknownFirst;
+    unknownFirst.begin(&rtc);
+    StatsInput noInverter = heating();
+    noInverter.inv = NAN;
+    unknownFirst.update(noInverter, T0 + 960, 5); // a first reading without the inverter tells nothing yet
+    unknownFirst.update(heating(), T0 + 1020, 65);
     TEST_ASSERT_EQUAL(2, rtc.starts);
 }
 
@@ -241,5 +274,6 @@ int main(int argc, char **argv)
     RUN_TEST(test_sanity_caps);
     RUN_TEST(test_day_change);
     RUN_TEST(test_rtc_survives_restart);
+    RUN_TEST(test_a_restart_during_a_run_is_not_a_start);
     return UNITY_END();
 }
