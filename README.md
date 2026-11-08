@@ -211,7 +211,7 @@ strategy:
 
 The rest is in [doc/home-assistant.md](doc/home-assistant.md): the discovery details and how to clear it, a climate entity on the thermostat relay, calculating the COP, the MQTT topics, one topic per value for OpenHAB and the like, and two boards on one broker.
 
-Where the hydro board is mapped for it, the unit's own counters come along: the heat produced since the installation (`Unit meter: Heat produced (kWh)`) and, on software 20002203, the compressor and pump hours of the interface. What is known of that board's memory (the heat and the electricity of each mode, too): [doc/memory-20002203.md](doc/memory-20002203.md).
+Where the hydro board is mapped for it, the unit's own counters come along: the heat produced since the installation (`Unit meter: Heat produced (kWh)`) and, on software 20002203, the compressor and pump hours and the compressor starts of the interface, and the outdoor temperature the board works with (it keeps up while the outdoor unit idles, unlike `R1T-Outdoor air temp.`). What is known of that board's memory (the heat and the electricity of each mode, too): [doc/memory-20002203.md](doc/memory-20002203.md).
 
 # Updating
 

@@ -838,25 +838,43 @@ struct LimitControl : X10aClient
 // 16-byte read a minute. Identified from the software like the targets; no profile or no address: unsupported.
 #define METER_READ_INTERVAL_MS 60000UL
 
-// More counters the user interface shows (its operating hours: the compressor's in each mode, the pump's), where a
-// board is mapped for them: a 16-bit count in the hydro board's RAM, read with the meter. Each found on a unit
-// equal to the number on its interface.
-#define UNIT_COUNTER_MAX 8
-struct UnitCounter
+// More values the user interface shows, where a board is mapped for them, read with the meter: its operating hours
+// (the compressor's in each mode, the pump's), the compressor starts, the outdoor temperature the board works with.
+// 16 bits each in the hydro board's RAM, each found on a unit equal to the number on its interface.
+#define UNIT_VALUE_MAX 8
+
+enum UnitValueKind : uint8_t
 {
-  const char *softwareId;
-  uint16_t ram;      // 16-bit count, little-endian
-  const char *label; // the key in MQTT and the sensor's name in Home Assistant
+  UNIT_HOURS,       // a lifetime count of hours
+  UNIT_COUNT,       // a lifetime count
+  UNIT_TEMPERATURE, // a signed word in 1/256 °C
 };
 
-static const UnitCounter UNIT_COUNTERS[] = {
-    // 20002203, read on an EHBX08EF6V against the interface's Information > Operating hours on 08.11.2026
-    {"20002203", 0x36B2, "Unit meter: Compressor hours, space heating (h)"},
-    {"20002203", 0x3696, "Unit meter: Compressor hours, space cooling (h)"},
-    {"20002203", 0x3650, "Unit meter: Compressor hours, hot water (h)"},
-    {"20002203", 0x3692, "Unit meter: Pump hours (h)"},
+struct UnitValue
+{
+  const char *softwareId;
+  uint16_t ram; // little-endian
+  UnitValueKind kind;
+  const char *label; // the key in MQTT and the sensor's name in Home Assistant
+
+  bool isLifetimeCount() const { return kind != UNIT_TEMPERATURE; }
+  float celsius(uint16_t raw) const { return (int16_t)raw / 256.0f; }
 };
-#define UNIT_COUNTER_COUNT (sizeof(UNIT_COUNTERS) / sizeof(UNIT_COUNTERS[0]))
+
+static const UnitValue UNIT_VALUES[] = {
+    // 20002203, read on an EHBX08EF6V against the interface (Information > Operating hours, Sensors) in November 2026
+    {"20002203", 0x36B2, UNIT_HOURS, "Unit meter: Compressor hours, space heating (h)"},
+    {"20002203", 0x3696, UNIT_HOURS, "Unit meter: Compressor hours, space cooling (h)"},
+    {"20002203", 0x3650, UNIT_HOURS, "Unit meter: Compressor hours, hot water (h)"},
+    {"20002203", 0x3692, UNIT_HOURS, "Unit meter: Pump hours (h)"},
+    {"20002203", 0x3752, UNIT_COUNT, "Unit meter: Compressor starts"},
+    {"20002203", 0x2D96, UNIT_TEMPERATURE, "Hydro board: Outdoor air temp."}, // keeps up while the outdoor unit idles
+};
+#define UNIT_VALUE_COUNT (sizeof(UNIT_VALUES) / sizeof(UNIT_VALUES[0]))
+
+// A heat pump just powered up answers before it has loaded its counts into RAM: they read 0 for a minute or so. A
+// meter in use is never back at 0, so a count of 0 means "not ready": nothing is published (a lifetime total going
+// to 0 and back would count twice in Home Assistant's statistics), and the unit is tried again a minute later.
 struct MeterReader : X10aClient
 {
   const ControlProfile *profile = nullptr;
@@ -865,10 +883,11 @@ struct MeterReader : X10aClient
   uint32_t heatKWh = 0; // the last count read
   bool known = false;   // the last read succeeded
   unsigned long checkedAt = 0, readAt = 0;
-  const UnitCounter *counters[UNIT_COUNTER_MAX]; // the counters mapped for this software
-  size_t counterCount = 0;
-  uint16_t counterValue[UNIT_COUNTER_MAX];
-  bool counterKnown[UNIT_COUNTER_MAX] = {false};
+  const UnitValue *values[UNIT_VALUE_MAX]; // the values mapped for this software
+  size_t valueCount = 0;
+  uint16_t valueRaw[UNIT_VALUE_MAX];
+  bool valueKnown[UNIT_VALUE_MAX] = {false}; // the last read gave it
+  bool valueSeen[UNIT_VALUE_MAX] = {false};  // read once since the start: a lifetime count never goes below it
 
   void reset()
   {
@@ -878,29 +897,49 @@ struct MeterReader : X10aClient
     heatKWh = 0;
     known = false;
     checkedAt = readAt = 0;
-    counterCount = 0;
+    valueCount = 0;
   }
 
-  void findCounters()
+  void findValues()
   {
-    counterCount = 0;
-    for (size_t i = 0; i < UNIT_COUNTER_COUNT && counterCount < UNIT_COUNTER_MAX; i++)
-      if (strcmp(UNIT_COUNTERS[i].softwareId, softwareId) == 0)
+    valueCount = 0;
+    for (size_t i = 0; i < UNIT_VALUE_COUNT && valueCount < UNIT_VALUE_MAX; i++)
+      if (strcmp(UNIT_VALUES[i].softwareId, softwareId) == 0)
       {
-        counterKnown[counterCount] = false;
-        counters[counterCount++] = &UNIT_COUNTERS[i];
+        valueKnown[valueCount] = valueSeen[valueCount] = false;
+        values[valueCount++] = &UNIT_VALUES[i];
       }
   }
 
-  void readCounters()
+  // A lifetime count read lower than one already seen keeps the higher one; a temperature reads 0 until the board
+  // has one, so a first 0 is not taken
+  void takeValue(size_t i, uint16_t raw)
   {
-    for (size_t i = 0; i < counterCount; i++)
+    bool lifetime = values[i]->isLifetimeCount();
+    bool wentBack = lifetime && valueSeen[i] && raw < valueRaw[i];
+    bool notThereYet = !lifetime && !valueSeen[i] && raw == 0;
+    if (notThereYet)
+      return;
+    if (!wentBack)
+      valueRaw[i] = raw;
+    valueKnown[i] = valueSeen[i] = true;
+  }
+
+  void readValues()
+  {
+    for (size_t i = 0; i < valueCount; i++)
     {
       uint8_t b[16];
-      counterKnown[i] = readRam(counters[i]->ram, b);
-      if (counterKnown[i])
-        counterValue[i] = (uint16_t)(b[0] | b[1] << 8);
+      valueKnown[i] = false;
+      if (readRam(values[i]->ram, b))
+        takeValue(i, (uint16_t)(b[0] | b[1] << 8));
     }
+  }
+
+  void forgetValues()
+  {
+    for (size_t i = 0; i < valueCount; i++)
+      valueKnown[i] = false;
   }
 
   bool identify(unsigned long now)
@@ -915,7 +954,7 @@ struct MeterReader : X10aClient
     for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
         profile = &CONTROL_PROFILES[i];
-    findCounters();
+    findValues();
     if (profile == nullptr || profile->ramHeatKwh == 0)
     {
       status = CONTROL_UNSUPPORTED;
@@ -929,14 +968,23 @@ struct MeterReader : X10aClient
   {
     readAt = now;
     uint8_t b[16];
-    known = profile != nullptr && readRam(profile->ramHeatKwh, b);
-    if (known)
-      heatKWh = (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
-    readCounters();
+    uint32_t count = 0;
+    if (profile != nullptr && readRam(profile->ramHeatKwh, b))
+      count = (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
+    bool loaded = count > 0;
+    bool wentBack = count < heatKWh; // heatKWh is the highest count since the start
+    if (loaded && !wentBack)
+      heatKWh = count;
+    known = loaded;
+    if (loaded)
+      readValues();
+    else
+      forgetValues();
     return known;
   }
 
-  // Heat pump task only. Identifies once, again after a while when the unit did not answer; then a read a minute.
+  // Heat pump task only. Identifies once, again a minute later while the unit does not answer (or has not loaded its
+  // counts yet); then a read a minute.
   void tick(unsigned long now)
   {
     if (status == CONTROL_READY)
@@ -944,7 +992,7 @@ struct MeterReader : X10aClient
       if (now - readAt >= METER_READ_INTERVAL_MS)
         read(now);
     }
-    else if (status != CONTROL_UNSUPPORTED && (checkedAt == 0 || now - checkedAt >= CONTROL_CHECK_INTERVAL_MS))
+    else if (status != CONTROL_UNSUPPORTED && (checkedAt == 0 || now - checkedAt >= METER_READ_INTERVAL_MS))
       identify(now);
   }
 };

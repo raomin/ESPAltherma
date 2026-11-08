@@ -633,6 +633,21 @@ void statsSetup()
   haExtraSetup();
 }
 
+// The sensor type of one of the unit's other values: hours and starts are lifetime totals, the outdoor air a
+// temperature (dataType 1)
+static int unitValueSensorType(const UnitValue &v)
+{
+  switch (v.kind)
+  {
+  case UNIT_HOURS:
+    return ESP_SENSOR_HOURS;
+  case UNIT_COUNT:
+    return ESP_SENSOR_TOTAL;
+  default:
+    return 1;
+  }
+}
+
 // The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
 static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
 
@@ -653,9 +668,9 @@ void haExtraSetup()
       extra[n++] = l;
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
-  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1 + UNIT_COUNTER_MAX <= HA_EXTRA_LABELS_MAX, "room for the unit's counters");
-  for (size_t i = 0; unitMeter.status == CONTROL_READY && i < unitMeter.counterCount && n < HA_EXTRA_LABELS_MAX; i++)
-    extra[n++] = LabelDef(-1, -1, -1, -1, ESP_SENSOR_HOURS, unitMeter.counters[i]->label); // the unit's operating hours
+  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1 + UNIT_VALUE_MAX <= HA_EXTRA_LABELS_MAX, "room for the unit's values");
+  for (size_t i = 0; unitMeter.status == CONTROL_READY && i < unitMeter.valueCount && n < HA_EXTRA_LABELS_MAX; i++)
+    extra[n++] = LabelDef(-1, -1, -1, -1, unitValueSensorType(*unitMeter.values[i]), unitMeter.values[i]->label);
   haExtraCount = 0; // the main loop may be reading the list
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
@@ -679,14 +694,17 @@ void meterAppendJson(char *buf, size_t size)
     snprintf(buf + n, size - n, "\"%s\":%lu,", METER_LABEL.label, (unsigned long)unitMeter.heatKWh);
   else
     snprintf(buf + n, size - n, "\"%s\":null,", METER_LABEL.label);
-  for (size_t i = 0; i < unitMeter.counterCount; i++) // the unit's operating hours, null while a read fails
+  for (size_t i = 0; i < unitMeter.valueCount; i++) // the unit's hours, starts, outdoor temperature: null while not known
   {
     n = strlen(buf);
-    const char *label = unitMeter.counters[i]->label;
-    if (unitMeter.counterKnown[i])
-      snprintf(buf + n, size - n, "\"%s\":%u,", label, (unsigned)unitMeter.counterValue[i]);
+    const UnitValue &v = *unitMeter.values[i];
+    uint16_t raw = unitMeter.valueRaw[i];
+    if (!unitMeter.valueKnown[i])
+      snprintf(buf + n, size - n, "\"%s\":null,", v.label);
+    else if (v.kind == UNIT_TEMPERATURE)
+      snprintf(buf + n, size - n, "\"%s\":%.1f,", v.label, v.celsius(raw));
     else
-      snprintf(buf + n, size - n, "\"%s\":null,", label);
+      snprintf(buf + n, size - n, "\"%s\":%u,", v.label, (unsigned)raw);
   }
 }
 

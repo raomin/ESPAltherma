@@ -724,42 +724,109 @@ void test_the_unit_energy_meter_is_read_where_mapped()
     TEST_ASSERT_FALSE(u.known);
 }
 
-// 20002203: the heat produced (a 32-bit count) and the compressor and pump hours of the interface (16-bit counts),
-// read together once a minute. Nothing written.
-void test_the_unit_counters_are_read_with_the_meter()
+// 20002203: the heat produced (a 32-bit count), the compressor and pump hours and the compressor starts of the
+// interface (16-bit counts) and the outdoor temperature the board works with, read together once a minute. Nothing
+// written.
+static MeterReader meterOn20002203()
 {
     unit.board(FakeUnit::profileFor("20002203"));
     const uint8_t heat[4] = {0x20, 0x49, 0x00, 0x00}; // 18720
     memcpy(unit.ram + 0x08E6, heat, 4);
-    unit.ram[0x36B2] = 0xA8; // 3240 h space heating
-    unit.ram[0x36B3] = 0x0C;
-    unit.ram[0x3696] = 251;  // cooling
-    unit.ram[0x3650] = 0xB3; // 691 h hot water
-    unit.ram[0x3651] = 0x02;
-    unit.ram[0x3692] = 0xC8; // 4552 h pump
-    unit.ram[0x3693] = 0x11;
+    unit.setWord(0x36B2, 3240); // compressor hours, space heating
+    unit.setWord(0x3696, 251);  // space cooling
+    unit.setWord(0x3650, 691);  // hot water
+    unit.setWord(0x3692, 4552); // pump
+    unit.setWord(0x3752, 2751); // compressor starts
+    unit.setWord(0x2D96, (uint16_t)(int16_t)(-3.5 * 256)); // outdoor -3.5 °C
     MeterReader m;
     m.exchange = fakeExchange;
+    return m;
+}
+
+void test_the_unit_values_are_read_with_the_meter()
+{
+    MeterReader m = meterOn20002203();
     m.tick(1000);
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
     TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
-    TEST_ASSERT_EQUAL(4, m.counterCount);
-    TEST_ASSERT_EQUAL_STRING("Unit meter: Compressor hours, space heating (h)", m.counters[0]->label);
-    TEST_ASSERT_TRUE(m.counterKnown[0]);
-    TEST_ASSERT_EQUAL_UINT16(3240, m.counterValue[0]);
-    TEST_ASSERT_EQUAL_UINT16(251, m.counterValue[1]);
-    TEST_ASSERT_EQUAL_UINT16(691, m.counterValue[2]);
-    TEST_ASSERT_EQUAL_UINT16(4552, m.counterValue[3]);
+    TEST_ASSERT_EQUAL(6, m.valueCount);
+    TEST_ASSERT_EQUAL_STRING("Unit meter: Compressor hours, space heating (h)", m.values[0]->label);
+    TEST_ASSERT_TRUE(m.valueKnown[0]);
+    TEST_ASSERT_EQUAL_UINT16(3240, m.valueRaw[0]);
+    TEST_ASSERT_EQUAL_UINT16(251, m.valueRaw[1]);
+    TEST_ASSERT_EQUAL_UINT16(691, m.valueRaw[2]);
+    TEST_ASSERT_EQUAL_UINT16(4552, m.valueRaw[3]);
+    TEST_ASSERT_EQUAL_UINT16(2751, m.valueRaw[4]);
+    TEST_ASSERT_EQUAL(UNIT_COUNT, m.values[4]->kind);
+    TEST_ASSERT_EQUAL(UNIT_TEMPERATURE, m.values[5]->kind);
+    TEST_ASSERT_EQUAL_FLOAT(-3.5f, m.values[5]->celsius(m.valueRaw[5]));
     unit.answer = false;
     m.tick(62000);
-    TEST_ASSERT_FALSE(m.counterKnown[0]); // unknown until the next read
+    TEST_ASSERT_FALSE(m.valueKnown[0]); // unknown until the next read
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
-    // another board: no counters
+    // another board: no values
     unit.reset();
     MeterReader u;
     u.exchange = fakeExchange;
     u.tick(1000);
-    TEST_ASSERT_EQUAL(0, u.counterCount);
+    TEST_ASSERT_EQUAL(0, u.valueCount);
+}
+
+// A heat pump just powered up answers before it has loaded its counts: they read 0. Nothing is published (a
+// lifetime total at 0 and back would count twice in Home Assistant's statistics); the unit is tried again a minute
+// later, and ready once the counts are there.
+void test_a_unit_just_powered_up_publishes_no_zero()
+{
+    MeterReader m = meterOn20002203();
+    uint8_t heat[4];
+    memcpy(heat, unit.ram + 0x08E6, 4);
+    memset(unit.ram + 0x08E6, 0, 4);
+    unit.setWord(0x36B2, 0);
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, m.status);
+    TEST_ASSERT_FALSE(m.known);
+    TEST_ASSERT_FALSE(m.valueKnown[0]);
+    m.tick(1000 + METER_READ_INTERVAL_MS - 1);
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, m.status); // not tried yet
+    memcpy(unit.ram + 0x08E6, heat, 4); // loaded
+    unit.setWord(0x36B2, 3240);
+    m.tick(1000 + METER_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
+    TEST_ASSERT_EQUAL_UINT16(3240, m.valueRaw[0]);
+    // the unit restarts while ESPAltherma runs on: its counts read 0 again, unknown, not 0
+    memset(unit.ram + 0x08E6, 0, 4);
+    m.tick(1000 + 2 * METER_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_FALSE(m.known);
+    TEST_ASSERT_FALSE(m.valueKnown[0]);
+}
+
+// A lifetime count read lower than one already seen (a glitch) keeps the higher one; the outdoor temperature reads 0
+// until the board has one, so a first 0 is not taken, but a later one is (0 °C is a temperature too)
+void test_lifetime_counts_never_go_back_and_a_first_zero_temperature_waits()
+{
+    MeterReader m = meterOn20002203();
+    unit.setWord(0x2D96, 0);
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_FALSE(m.valueKnown[5]);
+    unit.setWord(0x2D96, 6 * 256);
+    unit.setWord(0x3752, 2750); // lower than the 2751 seen
+    const uint8_t lower[4] = {0x1F, 0x49, 0x00, 0x00}; // 18719
+    memcpy(unit.ram + 0x08E6, lower, 4);
+    m.tick(1000 + METER_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_UINT16(2751, m.valueRaw[4]);
+    TEST_ASSERT_TRUE(m.valueKnown[4]);
+    TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
+    TEST_ASSERT_TRUE(m.known);
+    TEST_ASSERT_TRUE(m.valueKnown[5]);
+    TEST_ASSERT_EQUAL_FLOAT(6.0f, m.values[5]->celsius(m.valueRaw[5]));
+    unit.setWord(0x2D96, 0);
+    unit.setWord(0x3752, 2752);
+    m.tick(1000 + 2 * METER_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, m.values[5]->celsius(m.valueRaw[5]));
+    TEST_ASSERT_EQUAL_UINT16(2752, m.valueRaw[4]);
 }
 
 int main(int, char **)
@@ -788,6 +855,8 @@ int main(int, char **)
     RUN_TEST(test_power_limit_on_every_mapped_board);
     RUN_TEST(test_a_board_without_the_L_command_is_identified_by_registry_0x60);
     RUN_TEST(test_the_unit_energy_meter_is_read_where_mapped);
-    RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
+    RUN_TEST(test_the_unit_values_are_read_with_the_meter);
+    RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);
+    RUN_TEST(test_lifetime_counts_never_go_back_and_a_first_zero_temperature_waits);
     return UNITY_END();
 }

@@ -200,6 +200,7 @@ std::string getConversion(const LabelDef &label)
         case ESP_SENSOR_COUNT:
         case ESP_SENSOR_MINUTES:
         case ESP_SENSOR_HOURS:
+        case ESP_SENSOR_TOTAL:
             return std::string(" if value_json['") + label.label + "'] is not none else None";
     }
     return "";
@@ -239,6 +240,8 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
             return "\"p\":\"sensor\",\"dev_cla\":\"duration\",\"unit_of_meas\":\"min\",\"stat_cla\":\"measurement\",";
         case ESP_SENSOR_HOURS:
             return "\"p\":\"sensor\",\"dev_cla\":\"duration\",\"unit_of_meas\":\"h\",\"stat_cla\":\"total_increasing\",";
+        case ESP_SENSOR_TOTAL:
+            return "\"p\":\"sensor\",\"icon\":\"mdi:counter\",\"stat_cla\":\"total_increasing\",";
 
         /// Built-in ones:
         // TODO: move magic numbers to consts

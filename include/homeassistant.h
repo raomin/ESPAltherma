@@ -41,6 +41,7 @@ extern size_t haExtraCount;
 #define ESP_SENSOR_COUNT 992
 #define ESP_SENSOR_MINUTES 993
 #define ESP_SENSOR_HOURS 988 // a lifetime count of operating hours
+#define ESP_SENSOR_TOTAL 987 // a lifetime count (the compressor starts)
 
 /*
  * Turns a LabelDef into a "component" JSON element for inclusion in the "cmp" array of the Device Discovery payload.
