@@ -724,8 +724,8 @@ void test_the_unit_energy_meter_is_read_where_mapped()
     TEST_ASSERT_FALSE(u.known);
 }
 
-// 20002203: the heat produced (a 32-bit count) and the operating hours of the interface (16-bit counts), read
-// together once a minute. Nothing written.
+// 20002203: the heat produced (a 32-bit count) and the compressor and pump hours of the interface (16-bit counts),
+// read together once a minute. Nothing written.
 void test_the_unit_counters_are_read_with_the_meter()
 {
     unit.board(FakeUnit::profileFor("20002203"));
@@ -734,7 +734,7 @@ void test_the_unit_counters_are_read_with_the_meter()
     unit.ram[0x36B2] = 0xA8; // 3240 h space heating
     unit.ram[0x36B3] = 0x0C;
     unit.ram[0x3696] = 251;  // cooling
-    unit.ram[0x3650] = 0xB3; // 691 h tank
+    unit.ram[0x3650] = 0xB3; // 691 h hot water
     unit.ram[0x3651] = 0x02;
     unit.ram[0x3692] = 0xC8; // 4552 h pump
     unit.ram[0x3693] = 0x11;
@@ -744,7 +744,7 @@ void test_the_unit_counters_are_read_with_the_meter()
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
     TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
     TEST_ASSERT_EQUAL(4, m.counterCount);
-    TEST_ASSERT_EQUAL_STRING("Unit meter: Space heating hours (h)", m.counters[0]->label);
+    TEST_ASSERT_EQUAL_STRING("Unit meter: Compressor hours, space heating (h)", m.counters[0]->label);
     TEST_ASSERT_TRUE(m.counterKnown[0]);
     TEST_ASSERT_EQUAL_UINT16(3240, m.counterValue[0]);
     TEST_ASSERT_EQUAL_UINT16(251, m.counterValue[1]);

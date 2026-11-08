@@ -838,8 +838,9 @@ struct LimitControl : X10aClient
 // 16-byte read a minute. Identified from the software like the targets; no profile or no address: unsupported.
 #define METER_READ_INTERVAL_MS 60000UL
 
-// More counters the user interface shows (its operating hours), where a board is mapped for them: a 16-bit count
-// in the hydro board's RAM, read with the meter. Each found on a unit equal to the number on its interface.
+// More counters the user interface shows (its operating hours: the compressor's in each mode, the pump's), where a
+// board is mapped for them: a 16-bit count in the hydro board's RAM, read with the meter. Each found on a unit
+// equal to the number on its interface.
 #define UNIT_COUNTER_MAX 8
 struct UnitCounter
 {
@@ -850,9 +851,9 @@ struct UnitCounter
 
 static const UnitCounter UNIT_COUNTERS[] = {
     // 20002203, read on an EHBX08EF6V against the interface's Information > Operating hours on 08.11.2026
-    {"20002203", 0x36B2, "Unit meter: Space heating hours (h)"},
-    {"20002203", 0x3696, "Unit meter: Space cooling hours (h)"},
-    {"20002203", 0x3650, "Unit meter: Tank hours (h)"},
+    {"20002203", 0x36B2, "Unit meter: Compressor hours, space heating (h)"},
+    {"20002203", 0x3696, "Unit meter: Compressor hours, space cooling (h)"},
+    {"20002203", 0x3650, "Unit meter: Compressor hours, hot water (h)"},
     {"20002203", 0x3692, "Unit meter: Pump hours (h)"},
 };
 #define UNIT_COUNTER_COUNT (sizeof(UNIT_COUNTERS) / sizeof(UNIT_COUNTERS[0]))
