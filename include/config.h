@@ -29,6 +29,7 @@ struct AppConfig
   bool staticIp;
   uint32_t ip, gateway, subnet, dns1, dns2;
   char hostname[33];
+  char ntpServer[65]; // time server (empty: pool.ntp.org and time.google.com), for a network without Internet
   char lang[6]; // web interface and sensor names: "" follows the browser (sensor names in English), or "fr", "de"...
 
   // MQTT
@@ -180,6 +181,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   wifi["dns1"] = ipToString(c.dns1);
   wifi["dns2"] = ipToString(c.dns2);
   doc["hostname"] = c.hostname;
+  doc["ntp"] = c.ntpServer;
   doc["lang"] = c.lang;
 
   JsonObject mqtt = doc["mqtt"].to<JsonObject>();
@@ -310,6 +312,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readIp(wifi["dns1"], c.dns1);
   readIp(wifi["dns2"], c.dns2);
   readStr(src["hostname"], c.hostname, sizeof(c.hostname));
+  readStr(src["ntp"], c.ntpServer, sizeof(c.ntpServer));
   readStr(src["lang"], c.lang, sizeof(c.lang));
 
   JsonVariantConst mqtt = src["mqtt"];

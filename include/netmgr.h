@@ -353,7 +353,10 @@ void startNetworkServices()
     ArduinoOTA.setPassword(config.adminPwd);
   ArduinoOTA.begin(); // also starts mDNS
   MDNS.addService("http", "tcp", 80);
-  configTime(0, 0, "pool.ntp.org", "time.google.com"); // UTC, dates the event history
+  if (config.ntpServer[0]) // a local time server (a network kept off the Internet)
+    configTime(0, 0, config.ntpServer);
+  else
+    configTime(0, 0, "pool.ntp.org", "time.google.com"); // UTC, dates the event history
 }
 
 void mqttLoop()
