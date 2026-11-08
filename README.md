@@ -191,7 +191,7 @@ curl -u admin:<password> -X POST http://espaltherma.local/api/gpio -d '{"pin":18
 curl http://espaltherma.local/api/gpio                                                            # every pin: its use, mode and level
 ```
 
-Pins of the X10A port, the relays and other features (the DS18B20 sensors) are refused (`409` with the reason), and so are the **locked** pins: by default the ones the board needs for itself (flash, PSRAM, USB, serial console, boot pins), editable on the same page (`gpio.locked` in the settings). When the settings give a declared pin to another use, it is released first; its declaration applies again once the pin is free.
+Pins of the X10A port, the relays and other features (the DS18B20 sensors) are refused (`409` with the reason), and so are the **locked** pins: by default the ones the board needs for itself (flash, PSRAM, USB, serial console, boot pins; on the WT32-ETH01 and the Olimex ESP32-PoE the Ethernet PHY; on the M5StickC and the M5Stack Tough all but the Grove port and the hat header; on the M5Stack Atom its LEDs and button), editable on the same page (`gpio.locked` in the settings). When the settings give a declared pin to another use, it is released first; its declaration applies again once the pin is free.
 
 ## Power limit (experimental)
 

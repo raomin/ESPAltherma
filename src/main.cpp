@@ -1011,9 +1011,10 @@ static EspGpioDriver gpioDriver;
 GpioControl gpioControl;
 static portMUX_TYPE gpioLock = portMUX_INITIALIZER_UNLOCKED;
 
+// The uses first, then the locked pins: a pin on both lists (the X10A port of a C6 on its strapping pins 4 and 5)
+// shows what really uses it
 static void gpioReserveUses()
 {
-  gpioControl.lock(config.gpioLocked, config.gpioLockedCount);
   gpioControl.reserve(config.rxPin, "X10A RX");
   gpioControl.reserve(config.txPin, "X10A TX");
   gpioControl.reserve(config.thermPin, "thermostat relay");
@@ -1029,6 +1030,7 @@ static void gpioReserveUses()
       gpioControl.reserve(bus.ground, "DS18B20 ground");
     }
 #endif
+  gpioControl.lock(config.gpioLocked, config.gpioLockedCount);
 }
 
 // Who uses which pin, from the settings, then the declarations kept where their pin is free: at start and after
