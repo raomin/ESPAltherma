@@ -619,7 +619,6 @@ void test_ram_only_restore_releases_without_writing_the_memory()
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
-// Switching RAM only off ends the hold; the next request is saved in the memory as before
 // Unticking RAM only saves the held target in the unit's memory, like a fresh request, and ends the hold
 void test_ram_only_off_saves_the_held_target()
 {
@@ -725,6 +724,28 @@ void test_ram_only_hold_from_the_saved_configuration()
     c.tick(1000 + CONTROL_READ_INTERVAL_MS + 10);
     TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
     TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A held target outside the unit's limits (narrowed since, or a hand-edited configuration) is written clamped,
+// and the hold follows the clamped value
+void test_ram_only_hold_is_written_within_the_limits()
+{
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000)); // hot water: 45..55
+    c.held = 60;
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS);
+    c.tick(1000 + CONTROL_READ_INTERVAL_MS + 10);
+    TEST_ASSERT_EQUAL(55 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(55 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(55, c.held);
+    TEST_ASSERT_TRUE(c.heldChanged); // the caller saves the clamped value
+    int writes = unit.ramWrites;
+    c.tick(1000 + 2 * CONTROL_READ_INTERVAL_MS + 10); // read back: the RAM holds it, nothing more to write
+    c.tick(1000 + 2 * CONTROL_READ_INTERVAL_MS + 20);
+    TEST_ASSERT_EQUAL(writes, unit.ramWrites);
     TEST_ASSERT_EQUAL(0, unit.memoryWrites);
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
@@ -938,6 +959,7 @@ int main(int, char **)
     RUN_TEST(test_ram_only_hold_survives_a_unit_that_does_not_answer);
     RUN_TEST(test_ram_only_hold_ends_with_another_software);
     RUN_TEST(test_ram_only_hold_from_the_saved_configuration);
+    RUN_TEST(test_ram_only_hold_is_written_within_the_limits);
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);

@@ -627,8 +627,8 @@ struct CurveControl : X10aClient
     bool ramLostTheTarget = held >= 0 && status == CONTROL_READY && target >= 0 && (target != held || targetLo != held);
     if (ramLostTheTarget)
     {
-      pendingA = pendingB = held; // a restart of the heat pump, or a save on its interface: written again next tick
-      wantedAt = now;
+      pendingA = pendingB = clamp(held); // a restart of the heat pump, or a save on its interface: written again next
+      wantedAt = now;                    // tick, within the unit's limits (an installer may have narrowed them since)
     }
   }
 };

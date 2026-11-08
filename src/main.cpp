@@ -752,7 +752,11 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   }
   if (c.exchange == nullptr)
     c.exchange = x10aExchange;
-  c.ramOnly = config.ctlRamOnly;
+  if (c.ramOnly != config.ctlRamOnly)
+  {
+    c.ramOnly = config.ctlRamOnly;
+    c.changed = true; // the MQTT attributes say it
+  }
   ControlStatus before = c.status;
   c.tick(millis());
   if (c.status != before)
