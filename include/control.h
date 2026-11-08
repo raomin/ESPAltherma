@@ -469,6 +469,15 @@ struct CurveControl : X10aClient
       {
         minTarget = minA > minB ? minA : minB;
         maxTarget = maxA < maxB ? maxA : maxB;
+        if (ramOnly && kind == CONTROL_LWT)
+        {
+          // The mild point's record stops at 45 by a rule of the interface for that setting (the same literal in
+          // every software), while the cold point's is the unit's own range [9-01]..[9-00], and the thermostat
+          // follows the curve up to [9-00] (a flat 47 gave a 50 target with a +3 K shift on an 18002904). With the
+          // memory never written, the interface never sees a value it would refuse: the cold point's range applies.
+          minTarget = minB;
+          maxTarget = maxB;
+        }
         status = minTarget >= 5 && maxTarget <= 90 && minTarget < maxTarget ? CONTROL_READY : CONTROL_UNSUPPORTED;
       }
     }
@@ -550,6 +559,17 @@ struct CurveControl : X10aClient
     return writeMemory(spec->memA, (uint8_t)(rawA << 2 | (a & 3))) && writeMemory(spec->memB, (uint8_t)(rawB << 2 | (b & 3)));
   }
 
+  // RAM only on or off (the caller's setting): the range depends on it, so a ready control is identified again
+  void setRamOnly(bool on, unsigned long now)
+  {
+    if (ramOnly == on)
+      return;
+    ramOnly = on;
+    if (status == CONTROL_READY)
+      identify(now);
+    changed = true;
+  }
+
   void setHeld(int value)
   {
     if (held != value)
@@ -608,7 +628,7 @@ struct CurveControl : X10aClient
       // RAM only switched off: the held target is saved in the unit's memory like a fresh request
       if (pendingA < 0 && wanted < 0 && !restoreWanted)
       {
-        pendingA = pendingB = held;
+        pendingA = pendingB = clamp(held); // within the range the memory allows (45 for the leaving water)
         restoring = false;
         wantedAt = now;
       }

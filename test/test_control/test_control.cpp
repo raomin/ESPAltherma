@@ -794,6 +794,40 @@ void test_ram_only_hold_is_written_within_the_limits()
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
+// RAM only: the leaving water range is the cold point's ([9-01]..[9-00], 29..55 here) instead of the mild point's
+// 45, a rule of the interface for that setting which the memory never gets; the hot water range is unchanged.
+// Unticking the box saves the held target within the memory's range.
+void test_ram_only_opens_the_leaving_water_range_to_the_units_own()
+{
+    CurveControl c = fresh(CONTROL_LWT);
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(45, c.maxTarget);
+    c.setRamOnly(true, 1500);
+    TEST_ASSERT_EQUAL(29, c.minTarget);
+    TEST_ASSERT_EQUAL(55, c.maxTarget);
+    TEST_ASSERT_TRUE(c.changed);
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187C));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18BA));
+    TEST_ASSERT_EQUAL(50, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    c.setRamOnly(false, 3000); // back to the intersection: the held 50 is saved as 45
+    TEST_ASSERT_EQUAL(45, c.maxTarget);
+    c.tick(3100);
+    c.tick(3100 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(45 << 8, unit.word(0x187C));
+    TEST_ASSERT_EQUAL(45 << 8, unit.word(0x18BA));
+    TEST_ASSERT_EQUAL(45, c.saved);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+    CurveControl d = fresh();
+    d.ramOnly = true;
+    TEST_ASSERT_TRUE(d.identify(1000)); // hot water: unchanged
+    TEST_ASSERT_EQUAL(45, d.minTarget);
+    TEST_ASSERT_EQUAL(55, d.maxTarget);
+}
+
 static LimitControl freshLimit()
 {
     LimitControl c;
@@ -1129,6 +1163,7 @@ int main(int, char **)
     RUN_TEST(test_ram_only_hold_ends_with_another_software);
     RUN_TEST(test_ram_only_hold_from_the_saved_configuration);
     RUN_TEST(test_ram_only_hold_is_written_within_the_limits);
+    RUN_TEST(test_ram_only_opens_the_leaving_water_range_to_the_units_own);
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
