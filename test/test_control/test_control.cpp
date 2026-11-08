@@ -724,6 +724,44 @@ void test_the_unit_energy_meter_is_read_where_mapped()
     TEST_ASSERT_FALSE(u.known);
 }
 
+// 20002203: the heat produced (a 32-bit count) and the operating hours of the interface (16-bit counts), read
+// together once a minute. Nothing written.
+void test_the_unit_counters_are_read_with_the_meter()
+{
+    unit.board(FakeUnit::profileFor("20002203"));
+    const uint8_t heat[4] = {0x20, 0x49, 0x00, 0x00}; // 18720
+    memcpy(unit.ram + 0x08E6, heat, 4);
+    unit.ram[0x36B2] = 0xA8; // 3240 h space heating
+    unit.ram[0x36B3] = 0x0C;
+    unit.ram[0x3696] = 251;  // cooling
+    unit.ram[0x3650] = 0xB3; // 691 h tank
+    unit.ram[0x3651] = 0x02;
+    unit.ram[0x3692] = 0xC8; // 4552 h pump
+    unit.ram[0x3693] = 0x11;
+    MeterReader m;
+    m.exchange = fakeExchange;
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
+    TEST_ASSERT_EQUAL(4, m.counterCount);
+    TEST_ASSERT_EQUAL_STRING("Unit meter: Space heating hours (h)", m.counters[0]->label);
+    TEST_ASSERT_TRUE(m.counterKnown[0]);
+    TEST_ASSERT_EQUAL_UINT16(3240, m.counterValue[0]);
+    TEST_ASSERT_EQUAL_UINT16(251, m.counterValue[1]);
+    TEST_ASSERT_EQUAL_UINT16(691, m.counterValue[2]);
+    TEST_ASSERT_EQUAL_UINT16(4552, m.counterValue[3]);
+    unit.answer = false;
+    m.tick(62000);
+    TEST_ASSERT_FALSE(m.counterKnown[0]); // unknown until the next read
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    // another board: no counters
+    unit.reset();
+    MeterReader u;
+    u.exchange = fakeExchange;
+    u.tick(1000);
+    TEST_ASSERT_EQUAL(0, u.counterCount);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -750,5 +788,6 @@ int main(int, char **)
     RUN_TEST(test_power_limit_on_every_mapped_board);
     RUN_TEST(test_a_board_without_the_L_command_is_identified_by_registry_0x60);
     RUN_TEST(test_the_unit_energy_meter_is_read_where_mapped);
+    RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
     return UNITY_END();
 }

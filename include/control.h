@@ -107,7 +107,8 @@ static const ControlProfile CONTROL_PROFILES[] = {
     {"20002203",
      {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160},
      {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0},
-     {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC}},
+     {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC},
+     0x08E6}, // energy meter read on an EHBX08EF6V: rises with the heat delivered, the same count again as a float at 0x3756
     // 11-16 kW EBBH/EBBX DF, EBVH/EBVX/EBVZ S18/S23 DJ and EBSH/EBSX(B) P30/P50 DF and DG series (Altherma 3 H F
     // and its ECH2O, on ERLA outdoor units)
     {"20007903",
@@ -836,6 +837,25 @@ struct LimitControl : X10aClient
 // shows under energy metering, where the profile knows its address in the hydro board's RAM. Read-only, one
 // 16-byte read a minute. Identified from the software like the targets; no profile or no address: unsupported.
 #define METER_READ_INTERVAL_MS 60000UL
+
+// More counters the user interface shows (its operating hours), where a board is mapped for them: a 16-bit count
+// in the hydro board's RAM, read with the meter. Each found on a unit equal to the number on its interface.
+#define UNIT_COUNTER_MAX 8
+struct UnitCounter
+{
+  const char *softwareId;
+  uint16_t ram;      // 16-bit count, little-endian
+  const char *label; // the key in MQTT and the sensor's name in Home Assistant
+};
+
+static const UnitCounter UNIT_COUNTERS[] = {
+    // 20002203, read on an EHBX08EF6V against the interface's Information > Operating hours on 08.11.2026
+    {"20002203", 0x36B2, "Unit meter: Space heating hours (h)"},
+    {"20002203", 0x3696, "Unit meter: Space cooling hours (h)"},
+    {"20002203", 0x3650, "Unit meter: Tank hours (h)"},
+    {"20002203", 0x3692, "Unit meter: Pump hours (h)"},
+};
+#define UNIT_COUNTER_COUNT (sizeof(UNIT_COUNTERS) / sizeof(UNIT_COUNTERS[0]))
 struct MeterReader : X10aClient
 {
   const ControlProfile *profile = nullptr;
@@ -844,6 +864,10 @@ struct MeterReader : X10aClient
   uint32_t heatKWh = 0; // the last count read
   bool known = false;   // the last read succeeded
   unsigned long checkedAt = 0, readAt = 0;
+  const UnitCounter *counters[UNIT_COUNTER_MAX]; // the counters mapped for this software
+  size_t counterCount = 0;
+  uint16_t counterValue[UNIT_COUNTER_MAX];
+  bool counterKnown[UNIT_COUNTER_MAX] = {false};
 
   void reset()
   {
@@ -853,6 +877,29 @@ struct MeterReader : X10aClient
     heatKWh = 0;
     known = false;
     checkedAt = readAt = 0;
+    counterCount = 0;
+  }
+
+  void findCounters()
+  {
+    counterCount = 0;
+    for (size_t i = 0; i < UNIT_COUNTER_COUNT && counterCount < UNIT_COUNTER_MAX; i++)
+      if (strcmp(UNIT_COUNTERS[i].softwareId, softwareId) == 0)
+      {
+        counterKnown[counterCount] = false;
+        counters[counterCount++] = &UNIT_COUNTERS[i];
+      }
+  }
+
+  void readCounters()
+  {
+    for (size_t i = 0; i < counterCount; i++)
+    {
+      uint8_t b[16];
+      counterKnown[i] = readRam(counters[i]->ram, b);
+      if (counterKnown[i])
+        counterValue[i] = (uint16_t)(b[0] | b[1] << 8);
+    }
   }
 
   bool identify(unsigned long now)
@@ -867,6 +914,7 @@ struct MeterReader : X10aClient
     for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
         profile = &CONTROL_PROFILES[i];
+    findCounters();
     if (profile == nullptr || profile->ramHeatKwh == 0)
     {
       status = CONTROL_UNSUPPORTED;
@@ -883,6 +931,7 @@ struct MeterReader : X10aClient
     known = profile != nullptr && readRam(profile->ramHeatKwh, b);
     if (known)
       heatKWh = (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
+    readCounters();
     return known;
   }
 

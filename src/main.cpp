@@ -636,11 +636,14 @@ void statsSetup()
 // The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
 static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
 
+// Room for every extra sensor: the statistics, the DIII values, the unit's meter and what other features add
+#define HA_EXTRA_LABELS_MAX 96
+
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
 void haExtraSetup()
 {
-  static LabelDef extra[sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1];
+  static LabelDef extra[HA_EXTRA_LABELS_MAX];
   size_t n = 0;
   if (config.statsEnabled)
     for (const LabelDef &l : STATS_LABELS)
@@ -650,6 +653,9 @@ void haExtraSetup()
       extra[n++] = l;
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
+  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1 + UNIT_COUNTER_MAX <= HA_EXTRA_LABELS_MAX, "room for the unit's counters");
+  for (size_t i = 0; unitMeter.status == CONTROL_READY && i < unitMeter.counterCount && n < HA_EXTRA_LABELS_MAX; i++)
+    extra[n++] = LabelDef(-1, -1, -1, -1, ESP_SENSOR_HOURS, unitMeter.counters[i]->label); // the unit's operating hours
   haExtraCount = 0; // the main loop may be reading the list
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
@@ -673,6 +679,15 @@ void meterAppendJson(char *buf, size_t size)
     snprintf(buf + n, size - n, "\"%s\":%lu,", METER_LABEL.label, (unsigned long)unitMeter.heatKWh);
   else
     snprintf(buf + n, size - n, "\"%s\":null,", METER_LABEL.label);
+  for (size_t i = 0; i < unitMeter.counterCount; i++) // the unit's operating hours, null while a read fails
+  {
+    n = strlen(buf);
+    const char *label = unitMeter.counters[i]->label;
+    if (unitMeter.counterKnown[i])
+      snprintf(buf + n, size - n, "\"%s\":%u,", label, (unsigned)unitMeter.counterValue[i]);
+    else
+      snprintf(buf + n, size - n, "\"%s\":null,", label);
+  }
 }
 
 static void statsUpdate()

@@ -211,6 +211,8 @@ strategy:
 
 The rest is in [doc/home-assistant.md](doc/home-assistant.md): the discovery details and how to clear it, a climate entity on the thermostat relay, calculating the COP, the MQTT topics, one topic per value for OpenHAB and the like, and two boards on one broker.
 
+Where the hydro board is mapped for it, the unit's own counters come along: the heat produced since the installation (`Unit meter: Heat produced (kWh)`) and, on software 20002203, the operating hours of the interface. What is known of that board's memory: [doc/memory-20002203.md](doc/memory-20002203.md).
+
 # Updating
 
 In **System → Firmware update**, click **Check for an update**: your browser looks for a newer release on the installer's site, downloads the file of your board and sends it to the board. The board also looks once a day on its own, reading the same file: a newer release shows as a notice on the home page and as a **Firmware** update entity in Home Assistant (Settings → Updates), which the ESPAltherma card mentions too. Nothing is installed by itself; untick the box under the button to stop the daily check. Without Internet access from the browser, upload the `-ota.bin` file of your board from the [latest release](https://github.com/raomin/ESPAltherma/releases) instead. Either way, if the new version cannot get back online, the board goes back to the previous one by itself. Running the [web installer](https://espaltherma.pages.dev/) again over USB works too, and keeps the settings.
