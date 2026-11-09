@@ -350,7 +350,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <div class="panel card pad" data-step="hp">
   <div class="k">Step 3 · Your heat pump</div>
   <div id="hpDetect" translate="no"></div>
-  <label class="share" id="tmBox" hidden><input type="checkbox" id="tmOn" checked><div><b>Help others get their heat pump recognised</b><span>Share this unit's identification codes and the readings taken during the detection when you confirm, and again after each firmware update, so the next owner of this model is recognised instantly. No network, MQTT or personal data is sent.</span> <a href="#" id="tmShow">See exactly what is sent</a> <span translate="no">·</span> <a href="https://espaltherma-telemetry.pages.dev/" target="_blank" rel="noopener">How reports are used</a></div></label>
+  <label class="share" id="tmBox" hidden><input type="checkbox" id="tmOn" checked><div><b>Help others get their heat pump recognised</b><span>Share this unit's identification codes and the readings taken during the detection when you confirm, and again after each firmware update, so the next owner of this model is recognised instantly. No network, MQTT or personal data is sent. A short heartbeat follows once a day: firmware version, board, model, and which optional features are on.</span> <a href="#" id="tmShow">See exactly what is sent</a> <span translate="no">·</span> <a href="https://espaltherma-telemetry.pages.dev/" target="_blank" rel="noopener">How reports are used</a></div></label>
   <pre id="tmPreview" hidden></pre>
   <div class="acts"><button class="p" id="hpConfirm" hidden>Confirm this model</button><button id="hpRedetect">Detect again</button><span class="msg" id="hpMsg" translate="no"></span></div>
   <details class="manual" id="hpManual"><summary>Not this one? Choose my model from the list</summary>
@@ -1162,7 +1162,7 @@ async function useModel(name) {
 $('#hpConfirm').onclick = () => { const c = hpChoice || (document.querySelector('input[name=cand]:checked') || {}).value; if (c) useModel(c); };
 $('#hpPick').onclick = () => useModel($('#hpModel').value);
 $('#hpRedetect').onclick = async () => { msg('#hpMsg', t('Detecting…')); await post('/api/detect'); await sleep(1500); await refreshStatus(); setupHp(); msg('#hpMsg', ''); };
-$('#tmShow').onclick = async e => { e.preventDefault(); const p = $('#tmPreview'); p.hidden = !p.hidden; if (!p.hidden) p.textContent = JSON.stringify(await api('/api/telemetry'), null, 2); };
+$('#tmShow').onclick = async e => { e.preventDefault(); const p = $('#tmPreview'); p.hidden = !p.hidden; if (!p.hidden) p.textContent = JSON.stringify({report: await api('/api/telemetry'), daily_heartbeat: await api('/api/heartbeat')}, null, 2); };
 
 // ---- setup: done
 function setupDone() {

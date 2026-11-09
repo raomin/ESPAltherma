@@ -21,6 +21,8 @@
 // Defined in main.cpp
 extern Survey survey;
 extern MeterReader unitMeter; // main.cpp: the unit's meter and its model name (control.h)
+extern DiiiComm diii;         // main.cpp: the HT outdoor unit's frame reader (diii_comm.h)
+String heartbeatPayload();    // the daily heartbeat of the opt-in telemetry, below
 extern char surveyJson[];
 extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
@@ -745,6 +747,9 @@ void webBegin()
     r->send(resp);
   });
 
+  webServer.on("/api/heartbeat", HTTP_GET, [](AsyncWebServerRequest *r) {
+    r->send(200, "application/json", heartbeatPayload()); // the daily heartbeat, as it would be sent now
+  });
   webServer.on("/api/telemetry", HTTP_GET, [](AsyncWebServerRequest *r) {
     r->send(200, "application/json", telemetryPayload());
   });
@@ -997,6 +1002,75 @@ static void sendTelemetry()
   }
 }
 
+// The daily heartbeat of the opt-in telemetry, under the same box as the report: which boards are alive, on which
+// firmware and board, with which model, and which optional features are on and working. No readings, no settings.
+// Posted to the report's site once a day, the first time ten minutes after the start (the controls have identified
+// by then), again an hour later when it failed. One row per board and day on the site.
+#define HEARTBEAT_FIRST_MS (10UL * 60UL * 1000UL)
+#define HEARTBEAT_EVERY_MS (24UL * 3600UL * 1000UL)
+#define HEARTBEAT_RETRY_MS (60UL * 60UL * 1000UL)
+
+String heartbeatPayload()
+{
+  JsonDocument doc;
+  doc["v"] = 1;
+  doc["install_id"] = config.installId;
+  doc["fw"] = ESPALTHERMA_VERSION;
+  doc["board"] = BOARD_NAME;
+  doc["model"] = config.model;
+  char protocol[2] = {survey.protocol ? survey.protocol : config.protocol, 0};
+  doc["protocol"] = protocol;
+  doc["uptime_s"] = (uint32_t)(millis() / 1000);
+  if (survey.hasSwId)
+  {
+    char id[9];
+    snprintf(id, sizeof(id), "%02X%02X%02X%02X", survey.swId[3], survey.swId[2], survey.swId[1], survey.swId[0]);
+    doc["iu_sw_id"] = id;
+  }
+  const char *unit = unitMeter.model[0] ? unitMeter.model : survey.unitModel;
+  if (unit[0])
+    doc["iu_model"] = unit;
+  JsonObject f = doc["features"].to<JsonObject>();
+  f["dhw_target"] = config.dhwTarget ? controlStatusName(dhwControl.status) : "off";
+  f["lwt_target"] = config.lwtTarget ? controlStatusName(lwtControl.status) : "off";
+  f["power_limit"] = config.powerLimit ? controlStatusName(limitControl.status) : "off";
+  f["meter"] = controlStatusName(unitMeter.status);
+  f["diii"] = diiiStatusName(diii.status);
+  f["stats"] = config.statsEnabled;
+  String out;
+  serializeJson(doc, out);
+  return out;
+}
+
+static void heartbeatLoop()
+{
+  static unsigned long lastAttempt = 0;
+  static bool attempted = false, sent = false;
+  if (!config.telemetry || !config.modelConfirmed || !TELEMETRY_AVAILABLE || !netOnline() || surveyInProgress)
+    return;
+  unsigned long now = millis();
+  if (!attempted ? now < HEARTBEAT_FIRST_MS : now - lastAttempt < (sent ? HEARTBEAT_EVERY_MS : HEARTBEAT_RETRY_MS))
+    return;
+  attempted = true;
+  lastAttempt = now;
+  if (ESP.getFreeHeap() < 70000) // the TLS connection needs the room: next hour
+    return;
+  LOOP_STAGE("heartbeat");
+  String url = TELEMETRY_URL;
+  url.replace("/api/report", "/api/heartbeat");
+  WiFiClientSecure tls;
+  tls.setInsecure();
+  HTTPClient http;
+  http.setTimeout(8000);
+  if (!http.begin(tls, url))
+    return;
+  http.addHeader("Content-Type", "application/json");
+  int code = http.POST(heartbeatPayload());
+  http.end();
+  sent = code >= 200 && code < 300;
+  mqttSerial.printf("Heartbeat %s (%d)\n", sent ? "sent" : "not sent", code);
+}
+
 // Once a day, reads the manifest of this board on the ESPAltherma site and notes whether a newer build exists: the
 // home page says so and Home Assistant gets it through the update entity (publishUpdateEntity). Nothing is
 // downloaded. First 3 minutes after boot, again an hour after a failed attempt. Main loop only.
@@ -1134,6 +1208,7 @@ void webLoop()
     sendTelemetry();
   telemetryLoop();
   updateCheckLoop();
+  heartbeatLoop();
 
   if (factoryResetRequested)
   {

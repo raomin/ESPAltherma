@@ -19,3 +19,21 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 CREATE INDEX IF NOT EXISTS reports_key ON reports (key);
 CREATE INDEX IF NOT EXISTS reports_day ON reports (last_seen);
+
+-- Daily heartbeats (functions/api/heartbeat.js), from 2.0.0-beta.27: one row per board and day, the last one of the
+-- day kept. Tells which boards are alive, on which firmware, and which optional features they run; no readings.
+CREATE TABLE IF NOT EXISTS heartbeats (
+  install_id TEXT NOT NULL,     -- the board's random id, the same as in reports
+  day TEXT NOT NULL,            -- the day (UTC)
+  fw TEXT,                      -- ESPAltherma version
+  board TEXT,                   -- ESP32 board
+  model TEXT,                   -- definition in use
+  protocol TEXT,                -- I or S
+  sw_id TEXT,                   -- hydro board software, when known
+  unit_model TEXT,              -- the unit's name plate model, when the board holds it
+  uptime INTEGER,               -- seconds since the board's start
+  features TEXT,                -- the optional features' status (JSON: dhw_target, lwt_target, power_limit, meter, diii, stats)
+  country TEXT,                 -- as Cloudflare locates the sender (the IP is not stored)
+  PRIMARY KEY (install_id, day)
+);
+CREATE INDEX IF NOT EXISTS heartbeats_day ON heartbeats (day);
