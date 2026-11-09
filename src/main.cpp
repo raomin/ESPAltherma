@@ -456,6 +456,28 @@ static void surveyReadSoftwareId(Survey &s)
     memcpy(s.swId, reply + 1, 4);
 }
 
+// The unit's model name at the start of the hydro board's settings memory (the 'I' command, one byte each), where
+// the board's software keeps it there: the 2020 softwares do (EHBX08EF6V on 20002203), the 2017-2018 ones read
+// zeros (an EAVH16 on 18002904). Boards without the command answer NAK or nothing: no name then.
+static void surveyReadUnitModel(Survey &s)
+{
+  s.unitModel[0] = 0;
+  char name[UNIT_MODEL_MAX + 1] = {0};
+  for (uint16_t i = 0; i < UNIT_MODEL_MAX; i++)
+  {
+    uint8_t data[2] = {(uint8_t)i, (uint8_t)(i >> 8)}, frame[8], reply[8];
+    size_t len = x10aFrame(0x49, data, 2, frame);
+    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
+    if (got != 3 || reply[0] != 0x49 || (uint8_t)~(uint8_t)(reply[0] + reply[1]) != reply[2])
+      return;
+    if (reply[1] == 0)
+      break;
+    name[i] = (char)reply[1];
+  }
+  if (unitModelLooksValid(name))
+    strlcpy(s.unitModel, name, sizeof(s.unitModel));
+}
+
 // Reads every known registry once and builds the detection report. Runs where the registries are polled.
 void runSurvey()
 {
@@ -465,7 +487,10 @@ void runSurvey()
   surveyInProgress = true;
   surveyRun(survey, surveyQuery);
   if (survey.protocol == 'I')
+  {
     surveyReadSoftwareId(survey);
+    surveyReadUnitModel(survey);
+  }
   surveyInProgress = false;
   static char detectJson[1024];
   detectModel(survey, detection);

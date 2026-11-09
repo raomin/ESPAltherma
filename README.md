@@ -203,7 +203,7 @@ Once the MQTT broker is set ([Step 3](#step-3-finishing-in-the-web-interface)), 
 
 ![](doc/images/mqtt-devices.png)
 
-The unit's own model name, as on its name plate (`EHBX08EF6V`), is read from the start of the hydro board's memory on any board that answers the memory read: it shows in the header of the web page, as the model of the Home Assistant device, and as the diagnostic `Unit model` (an MQTT attribute of the same name).
+The unit's own model name, as on its name plate (`EHBX08EF6V`), is read from the start of the hydro board's memory where its software keeps it there (the 2020 softwares do; the 2017-2018 ones hold zeros at that place): it shows in the header of the web page, as the model of the Home Assistant device, and as the diagnostic `Unit model` (an MQTT attribute of the same name). The survey carries it too, and when a board's AS number lists the definitions of several capacities, the capacity in the name picks the definition.
 
 The [ESPAltherma card](https://github.com/raomin/espaltherma-card) brings the live drawing of the web page to Home Assistant, and builds a whole dashboard with the drawing, your thermostat, the key values and their history. Install it with HACS (custom repository `https://github.com/raomin/espaltherma-card`, type *Dashboard*), then create a dashboard whose configuration is just:
 

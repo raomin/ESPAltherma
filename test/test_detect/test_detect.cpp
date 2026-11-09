@@ -514,6 +514,44 @@ void test_detect_ht_outdoor_by_its_shape(void)
     TEST_ASSERT_EQUAL_STRING("Altherma(HT EKHBRD-ERRQ series 11-16kW)", CATALOG_MODELS[r.model].name);
 }
 
+// A generic AS number (AS1705393-1 C, the LT CA boards) lists the 4-8 kW and the 11-16 kW definitions: the unit's own
+// name, when the board's memory holds it, picks the one of its capacity; a name without a capacity in the ranges
+// changes nothing; the report carries the name
+void test_detect_unit_name_picks_the_capacity(void)
+{
+    int big = catalogFindModel("Altherma(LT_CA_CB_11-16kW)"), small = catalogFindModel("Altherma(LT_CA_CB_04-08kW)");
+    TEST_ASSERT_TRUE(big >= 0 && small >= 0);
+    Survey s;
+    syntheticSurvey(big, s);
+    const uint8_t as[6] = {0x01, 0x70, 0x53, 0x93, 0x01, 0x03};
+    setAsBytes(s, as);
+    DetectResult r;
+    detectModel(s, r);
+    TEST_ASSERT_EQUAL(2, detectPopcount(r.asCandidates));
+    TEST_ASSERT_FALSE(r.byName);
+    TEST_ASSERT_EQUAL_STRING("as_number+rules", detectMethod(r));
+    strcpy(s.unitModel, "EHBH16CA3V");
+    detectModel(s, r);
+    TEST_ASSERT_TRUE(r.byName);
+    TEST_ASSERT_EQUAL(1, detectPopcount(r.asCandidates));
+    TEST_ASSERT_EQUAL(big, r.model);
+    TEST_ASSERT_EQUAL(DETECT_HIGH, r.confidence);
+    TEST_ASSERT_EQUAL_STRING("as_number+unit_name", detectMethod(r));
+    strcpy(s.unitModel, "EHBH04CA3V");
+    detectModel(s, r);
+    TEST_ASSERT_EQUAL(small, r.model);
+    TEST_ASSERT_EQUAL(DETECT_HIGH, r.confidence);
+    strcpy(s.unitModel, "CKHWS180BJV3"); // a tank: no definition covers 180 kW, nothing changes
+    detectModel(s, r);
+    TEST_ASSERT_FALSE(r.byName);
+    TEST_ASSERT_EQUAL(2, detectPopcount(r.asCandidates));
+    TEST_ASSERT_EQUAL(16, detectUnitKw("EKHBRD016ACV1"));
+    TEST_ASSERT_EQUAL(0, detectUnitKw(""));
+    char out[2048];
+    surveyToJson(s, out, sizeof(out), "test", "native", nullptr);
+    TEST_ASSERT_NOT_NULL(strstr(out, "\"iu_model\":\"CKHWS180BJV3\""));
+}
+
 void test_detect_json(void)
 {
     Survey s;
@@ -542,6 +580,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_detect_real_epga);
     RUN_TEST(test_detect_hydrobox_by_its_shape);
     RUN_TEST(test_detect_ht_outdoor_by_its_shape);
+    RUN_TEST(test_detect_unit_name_picks_the_capacity);
     RUN_TEST(test_detect_json);
     UNITY_END();
     return 0;

@@ -36,6 +36,7 @@ struct DetectResult
   int model; // best model, -1 when none
   DetectConfidence confidence;
   bool fingerprint;       // identified by a known fingerprint
+  bool byName;            // the unit's model name narrowed the AS number's candidates to its capacity
   uint64_t asCandidates;  // models of the AS number, 0 when unknown
   int margin;             // score gap to the best non-equivalent model
   int candidates[DETECT_CANDIDATES];
@@ -289,6 +290,23 @@ uint64_t detectAsCandidates(const Survey &s)
   return full ? full : (first ? first : body);
 }
 
+// The capacity in the unit's model name: its first number (EHBH08CA3V 8, EAVH16S18DA6V 16, EKHBRD016ACV1 16), 0
+// when the name has none
+static int detectUnitKw(const char *name)
+{
+  const char *p = name;
+  while (*p && (*p < '0' || *p > '9'))
+    p++;
+  int kw = 0, digits = 0;
+  while (*p >= '0' && *p <= '9' && digits < 3)
+  {
+    kw = kw * 10 + (*p - '0');
+    p++;
+    digits++;
+  }
+  return digits ? kw : 0;
+}
+
 void detectModel(const Survey &s, DetectResult &r)
 {
   memset(&r, 0, sizeof(r));
@@ -354,6 +372,23 @@ void detectModel(const Survey &s, DetectResult &r)
   // 2. AS number: the candidates. The survey only ranks them.
   r.asCandidates = detectAsCandidates(s);
 
+  // 2b. The unit's own name, where the hydro board's memory holds it: a generic or spare-part AS number lists the
+  // definitions of several capacities of a series (the 4-8 kW and the 11-16 kW); the capacity digits of the name
+  // keep the ones whose range covers it
+  int kw = detectUnitKw(s.unitModel);
+  if (kw > 0 && r.asCandidates)
+  {
+    uint64_t keep = 0;
+    for (int i = 0; i < CATALOG_MODEL_COUNT; i++)
+      if (((r.asCandidates >> i) & 1) && CATALOG_MODELS[i].capMin > 0 && kw >= CATALOG_MODELS[i].capMin && kw <= CATALOG_MODELS[i].capMax)
+        keep |= 1ULL << i;
+    if (keep && keep != r.asCandidates)
+    {
+      r.asCandidates = keep;
+      r.byName = true;
+    }
+  }
+
   // 3. Scoring: keep the best candidates
   int *scores = r.allScores;
   for (int i = 0; i < CATALOG_MODEL_COUNT; i++)
@@ -410,6 +445,8 @@ static const char *detectMethod(const DetectResult &r)
 {
   if (r.fingerprint)
     return "fingerprint";
+  if (r.asCandidates && r.byName)
+    return detectPopcount(r.asCandidates) == 1 ? "as_number+unit_name" : "as_number+unit_name+rules";
   if (r.asCandidates)
     return detectPopcount(r.asCandidates) == 1 ? "as_number" : "as_number+rules";
   return "rules";

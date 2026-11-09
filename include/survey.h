@@ -33,6 +33,7 @@ struct Survey
   SurveyReg regs[SURVEY_MAX_REGS];
   bool hasSwId;    // the hydro board's software, as the 'L' command answers it (protocol I; not every board has it)
   uint8_t swId[4]; // the version's digits reversed: 04 29 00 18 is 18002904
+  char unitModel[17]; // the unit's model name at the start of the hydro board's settings memory ("": not there)
 
   const SurveyReg *find(uint8_t id) const
   {
@@ -412,6 +413,8 @@ size_t surveyToJson(const Survey &s, char *out, size_t size, const char *fw, con
     surveyAppendHexField(s, "iu_sw", 0x60, 14, 2, out, size, pos);
     if (s.hasSwId) // the version the target control keys on (control.h), to know which boards are in use
       surveyAppend(out, size, pos, "\"iu_sw_id\":\"%02X%02X%02X%02X\",", s.swId[3], s.swId[2], s.swId[1], s.swId[0]);
+    if (s.unitModel[0]) // the name plate's model, where the board's memory holds it
+      surveyAppend(out, size, pos, "\"iu_model\":\"%s\",", s.unitModel);
     surveyAppendByteField(s, "iu_cap", 0x60, 6, out, size, pos);
     surveyAppendByteField(s, "iu_opt", 0x60, 13, out, size, pos);
     surveyAppendByteField(s, "iu_eeprom_ver", 0x60, 16, out, size, pos);
