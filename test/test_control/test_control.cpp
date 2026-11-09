@@ -1093,7 +1093,7 @@ void test_every_mapped_software_reads_its_meter_and_counters()
         }
         TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
     }
-    TEST_ASSERT_EQUAL(13, mapped);
+    TEST_ASSERT_EQUAL(14, mapped); // the Hybrid 5190 included
 }
 
 // 20002203: the heat produced, the compressor and pump hours and the compressor starts of the interface, 32-bit
