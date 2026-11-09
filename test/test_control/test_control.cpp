@@ -1041,8 +1041,10 @@ void test_every_mapped_software_reads_its_meter_and_counters()
             TEST_ASSERT_EQUAL_MESSAGE(unitCounterAddress(p.counters, k) != 0, m.counterMapped(k), p.softwareId);
             if (m.counterMapped(k))
             {
+                uint32_t raw = 65536 * (k + 1) + i, expected = 0;
+                TEST_ASSERT_TRUE(unitCounterDecode(UNIT_COUNTER_DEFS[k].kind, (const uint8_t *)&raw, expected));
                 TEST_ASSERT_TRUE_MESSAGE(m.counterKnown[k], p.softwareId);
-                TEST_ASSERT_EQUAL_UINT32(65536 * (k + 1) + i, m.counter[k]);
+                TEST_ASSERT_EQUAL_UINT32(expected, m.counter[k]);
             }
             else
                 TEST_ASSERT_FALSE(m.counterKnown[k]);
@@ -1063,6 +1065,14 @@ static MeterReader meterOn20002203()
     unit.setU32(0x3650, 691);  // hot water
     unit.setU32(0x3692, 4552); // pump
     unit.setU32(0x3752, 2751); // compressor starts
+    unit.setFloat(0x36C2, 12940.6f); // heat produced, space heating (kWh)
+    unit.setFloat(0x3664, 4881.8f);  // hot water
+    unit.setFloat(0x36A6, 915.0f);   // cooling
+    unit.setU32(0x08E2, 4272);       // electricity used, all modes (kWh)
+    unit.setU32(0x3722, 2708262);    // space heating (Wh)
+    unit.setU32(0x3702, 1362763);    // hot water
+    unit.setU32(0x36FA, 153516);     // cooling
+    unit.setU32(0x371A, 47093);      // backup heater
     MeterReader m;
     m.exchange = fakeExchange;
     return m;
@@ -1135,6 +1145,43 @@ void test_lifetime_counts_never_go_back()
     TEST_ASSERT_EQUAL_UINT32(2752, m.counter[4]);
 }
 
+// 20002203: the heat and the electricity of each mode, read with the meter and kept in Wh: the heat floats to the
+// Wh, the electricity counts as they are, the total in whole kWh. Lifetime totals like the others.
+void test_the_energy_of_each_mode_is_read_on_20002203()
+{
+    MeterReader m = meterOn20002203();
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    for (size_t i = 5; i < UNIT_COUNTER_COUNT; i++)
+    {
+        TEST_ASSERT_TRUE(m.counterMapped(i) && m.counterKnown[i]);
+        TEST_ASSERT_TRUE(unitCounterIsEnergy(UNIT_COUNTER_DEFS[i].kind));
+    }
+    TEST_ASSERT_UINT32_WITHIN(1, 12940600, m.counter[5]);
+    TEST_ASSERT_UINT32_WITHIN(1, 4881800, m.counter[6]);
+    TEST_ASSERT_EQUAL_UINT32(915000, m.counter[7]);
+    TEST_ASSERT_EQUAL_UINT32(4272000, m.counter[8]);
+    TEST_ASSERT_EQUAL_UINT32(2708262, m.counter[9]);
+    TEST_ASSERT_EQUAL_UINT32(1362763, m.counter[10]);
+    TEST_ASSERT_EQUAL_UINT32(153516, m.counter[11]);
+    TEST_ASSERT_EQUAL_UINT32(47093, m.counter[12]);
+    TEST_ASSERT_EQUAL_STRING("Unit meter: Electricity used, backup heater (kWh)", UNIT_COUNTER_DEFS[12].label);
+    // a float that is not a count: unknown, the last value kept
+    unit.setU32(0x3664, 0x7FC00000); // NaN
+    unit.setFloat(0x36A6, -1.0f);
+    m.tick(1000 + METER_READ_INTERVAL_MS);
+    TEST_ASSERT_FALSE(m.counterKnown[6]);
+    TEST_ASSERT_FALSE(m.counterKnown[7]);
+    TEST_ASSERT_EQUAL_UINT32(915000, m.counter[7]);
+    TEST_ASSERT_TRUE(m.counterKnown[5]);
+    // the other softwares: not mapped
+    for (size_t p = 0; p < CONTROL_PROFILE_COUNT; p++)
+        if (strcmp(CONTROL_PROFILES[p].softwareId, "20002203") != 0)
+            for (size_t i = 5; i < UNIT_COUNTER_COUNT; i++)
+                TEST_ASSERT_EQUAL_UINT16(0, unitCounterAddress(CONTROL_PROFILES[p].counters, i));
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -1177,5 +1224,6 @@ int main(int, char **)
     RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
     RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);
     RUN_TEST(test_lifetime_counts_never_go_back);
+    RUN_TEST(test_the_energy_of_each_mode_is_read_on_20002203);
     return UNITY_END();
 }
