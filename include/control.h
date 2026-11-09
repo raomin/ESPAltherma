@@ -216,6 +216,11 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // E series on their 2019 software, and the 2026 ground-source EGSAH/EGSAX boards.
     {"19016505", {}, {}, {}, 0x08E2, {0x37BE, 0x37A2, 0x375C, 0x379E, 0x385E}},
     {"23015103", {}, {}, {}, 0x0986, {0x4070, 0x4054, 0x401A, 0x4050, 0x4104}},
+    // Altherma Hybrid (AS1706433 boards, software word 5190 of registry 0x60, no 'L' command like the CB boards):
+    // the meter and the counters read on an owner's unit against its interface (marcoatwork80, #647): 32520 kWh,
+    // 8164 h heating, 0 cooling (no hot water by the compressor: the boiler makes it), 8713 h pump, 7899 starts
+    // (= 7896 + 3 of the two per-mode counts). The hours sit 0x54 above the 76F2 profile's, the meter 0x10 above.
+    {"5190", {}, {}, {}, 0x085E, {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
