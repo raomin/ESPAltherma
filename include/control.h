@@ -1027,6 +1027,27 @@ inline uint16_t unitCounterAddress(const UnitCounters &c, size_t i)
   }
 }
 
+// The unit's model name, as on its name plate (EHBX08EF6V): the first bytes of the hydro board's memory, the
+// installer settings' block the targets are read from (the same 'I' command), ended by a 0. Found at the start of
+// that block's image in the RAM of 20002203 (0x0968, the settings at 0x0968 + their offset); the block's layout is
+// the same on every software, so the name is read there on any board, and kept only when it looks like one.
+#define UNIT_MODEL_MAX 16
+#define UNIT_MODEL_TRIES 3 // a unit just powered up may not have loaded it yet: tried again with the meter, then left
+
+inline bool unitModelLooksValid(const char *name)
+{
+  size_t n = strlen(name);
+  if (n < 4 || !(name[0] >= 'A' && name[0] <= 'Z'))
+    return false;
+  for (size_t i = 0; i < n; i++)
+  {
+    char c = name[i];
+    if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '/'))
+      return false;
+  }
+  return true;
+}
+
 // A heat pump just powered up answers before it has loaded its counts into RAM: they read 0 for a minute or so. A
 // meter in use is never back at 0, so a count of 0 means "not ready": nothing is published (a lifetime total going
 // to 0 and back would count twice in Home Assistant's statistics), and the unit is tried again a minute later.
@@ -1035,6 +1056,8 @@ struct MeterReader : X10aClient
   const ControlProfile *profile = nullptr;
   ControlStatus status = CONTROL_OFF;
   char softwareId[9] = "";
+  char model[UNIT_MODEL_MAX + 1] = ""; // the unit's model name ("": not read, or not one)
+  uint8_t modelTries = 0;
   uint32_t heatKWh = 0; // the last count read
   bool known = false;   // the last read succeeded
   unsigned long checkedAt = 0, readAt = 0;
@@ -1046,6 +1069,8 @@ struct MeterReader : X10aClient
     profile = nullptr;
     status = CONTROL_OFF;
     softwareId[0] = 0;
+    model[0] = 0;
+    modelTries = 0;
     heatKWh = 0;
     known = false;
     checkedAt = readAt = 0;
@@ -1077,6 +1102,31 @@ struct MeterReader : X10aClient
       counterKnown[i] = false;
   }
 
+  // Reads the model name until one is found, at most UNIT_MODEL_TRIES times. true: a name was found now.
+  bool readModel()
+  {
+    if (model[0] != 0 || modelTries >= UNIT_MODEL_TRIES)
+      return false;
+    modelTries++;
+    char name[UNIT_MODEL_MAX + 1] = {0};
+    for (uint16_t i = 0; i < UNIT_MODEL_MAX; i++)
+    {
+      uint8_t c;
+      if (!readMemory(i, c))
+      {
+        modelTries--; // no answer: not a try
+        return false;
+      }
+      if (c == 0)
+        break;
+      name[i] = (char)c;
+    }
+    if (!unitModelLooksValid(name))
+      return false;
+    strcpy(model, name);
+    return true;
+  }
+
   bool identify(unsigned long now)
   {
     checkedAt = now;
@@ -1085,6 +1135,7 @@ struct MeterReader : X10aClient
       status = CONTROL_NO_ANSWER;
       return false;
     }
+    readModel();
     profile = nullptr;
     for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
@@ -1124,10 +1175,18 @@ struct MeterReader : X10aClient
     if (status == CONTROL_READY)
     {
       if (now - readAt >= METER_READ_INTERVAL_MS)
+      {
         read(now);
+        readModel();
+      }
     }
     else if (status != CONTROL_UNSUPPORTED && (checkedAt == 0 || now - checkedAt >= METER_READ_INTERVAL_MS))
       identify(now);
+    else if (status == CONTROL_UNSUPPORTED && model[0] == 0 && now - checkedAt >= METER_READ_INTERVAL_MS)
+    {
+      checkedAt = now; // no meter on this board: the name alone, a minute apart
+      readModel();
+    }
   }
 };
 

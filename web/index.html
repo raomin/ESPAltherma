@@ -862,7 +862,7 @@ for (const u of Object.values(CONTROLS)) {
 }
 function renderStatus() {
   const hp = status.hp;
-  $('#hdrModel').textContent = hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : '';
+  $('#hdrModel').textContent = [hp.unit, hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : ''].filter(Boolean).join(' · ');
   renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl(); renderToday();
   // Values appeared (model just detected or chosen), or the board polled since the last push reached us (a dropped
   // event stream, a missed message): fetch them rather than draw a reading that is minutes or hours old

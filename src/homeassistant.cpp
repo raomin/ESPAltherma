@@ -8,12 +8,13 @@
 const char *haIdPrefix = "espaltherma";
 const char *haDeviceId = "espaltherma-mqtt-discovery";
 const char *haDeviceName = "Daikin Altherma via ESPAltherma";
+const char *haDeviceModel = "Altherma";
 const char *haAttrTopic = "espaltherma/ATTR";
 
 static std::string discoveryStart()
 {
     return std::string("{\"dev\":{\"ids\":\"") + haDeviceId + "\",\"name\":\"" + haDeviceName +
-           "\",\"mf\":\"Daikin\",\"mdl\":\"Altherma\"},\"o\":{\"name\":\"" + haDeviceId +
+           "\",\"mf\":\"Daikin\",\"mdl\":\"" + haDeviceModel + "\"},\"o\":{\"name\":\"" + haDeviceId +
            "\",\"sw\":\"0.1\",\"url\":\"https://github.com/raomin/ESPAltherma/\"},\"cmps\":{";
 }
 
@@ -242,6 +243,8 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
             return "\"p\":\"sensor\",\"dev_cla\":\"duration\",\"unit_of_meas\":\"h\",\"stat_cla\":\"total_increasing\",";
         case ESP_SENSOR_TOTAL:
             return "\"p\":\"sensor\",\"icon\":\"mdi:counter\",\"stat_cla\":\"total_increasing\",";
+        case ESP_SENSOR_TEXT:
+            return "\"p\":\"sensor\",\"icon\":\"mdi:heat-pump\",\"ent_cat\":\"diagnostic\",";
 
         /// Built-in ones:
         // TODO: move magic numbers to consts

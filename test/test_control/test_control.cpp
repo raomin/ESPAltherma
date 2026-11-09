@@ -1013,6 +1013,50 @@ void test_the_unit_energy_meter_is_read_where_mapped()
     TEST_ASSERT_FALSE(u.known);
 }
 
+// The unit's model name: the first bytes of the hydro board's memory up to a 0, read with the meter's
+// identification on any board (a meter mapped or not); kept only when it looks like a name, given up after a few
+// tries. Nothing written.
+void test_the_unit_model_name_is_read_from_the_memory()
+{
+    unit.board(FakeUnit::profileFor("20002203"));
+    unit.setU32(0x08E6, 18720);
+    memcpy(unit.memory, "EHBX08EF6V", 10);
+    MeterReader m;
+    m.exchange = fakeExchange;
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_EQUAL_STRING("EHBX08EF6V", m.model);
+    // a board without a meter: the name all the same
+    unit.reset();
+    unit.board(FakeUnit::profileFor("20017701"));
+    memcpy(unit.memory, "EHSXB08P50EF", 12);
+    MeterReader u;
+    u.exchange = fakeExchange;
+    u.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, u.status);
+    TEST_ASSERT_EQUAL_STRING("EHSXB08P50EF", u.model);
+    // not loaded yet (zeros), then garbage: tried a few times, then left
+    unit.reset();
+    unit.board(FakeUnit::profileFor("20017701"));
+    MeterReader g;
+    g.exchange = fakeExchange;
+    g.tick(1000);
+    TEST_ASSERT_EQUAL_STRING("", g.model);
+    unit.memory[0] = 0x12;
+    unit.memory[1] = 0xFF;
+    for (unsigned long t = 1000 + METER_READ_INTERVAL_MS; t < 1000 + 10 * METER_READ_INTERVAL_MS; t += METER_READ_INTERVAL_MS)
+        g.tick(t);
+    TEST_ASSERT_EQUAL_STRING("", g.model);
+    TEST_ASSERT_EQUAL(UNIT_MODEL_TRIES, g.modelTries);
+    memcpy(unit.memory, "EHVX08S23E", 10);
+    g.tick(1000 + 11 * METER_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_STRING("", g.model); // given up
+    TEST_ASSERT_FALSE(unitModelLooksValid("ab12"));
+    TEST_ASSERT_FALSE(unitModelLooksValid("EHB"));
+    TEST_ASSERT_TRUE(unitModelLooksValid("EHVZ16S23DA9W"));
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+}
+
 // Every software mapped for the meter reads it and its counters at its own addresses, 32 bits each; a software
 // mapped for the meter only has no counters
 void test_every_mapped_software_reads_its_meter_and_counters()
@@ -1173,6 +1217,7 @@ int main(int, char **)
     RUN_TEST(test_power_limit_on_every_mapped_board);
     RUN_TEST(test_a_board_without_the_L_command_is_identified_by_registry_0x60);
     RUN_TEST(test_the_unit_energy_meter_is_read_where_mapped);
+    RUN_TEST(test_the_unit_model_name_is_read_from_the_memory);
     RUN_TEST(test_every_mapped_software_reads_its_meter_and_counters);
     RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
     RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);
