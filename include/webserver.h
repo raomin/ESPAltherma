@@ -333,6 +333,18 @@ static void statusJson(JsonDocument &doc)
     st["running"] = stats.running;
     st["mode"] = stats.mode == STATS_DHW ? "dhw" : stats.mode == STATS_COOLING ? "cooling" : "heating";
     st["current_min"] = stats.currentSec(epoch, up) / 60;
+    // The unit's own counters (control.h MeterReader), where the hydro board gives them: lifetime totals
+    if (unitMeter.status == CONTROL_READY && unitMeter.known)
+    {
+      JsonObject mt = st["meter"].to<JsonObject>();
+      mt["heat_kwh"] = unitMeter.heatKWh;
+      const char *keys[UNIT_COUNTER_COUNT] = {"hours_heating", "hours_cooling", "hours_dhw", "hours_pump", "starts",
+                                              "heat_heating_kwh", "heat_dhw_kwh", "heat_cooling_kwh", "elec_kwh",
+                                              "elec_heating_kwh", "elec_dhw_kwh", "elec_cooling_kwh", "elec_buh_kwh"};
+      for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
+        if (unitMeter.counterMapped(i) && unitMeter.counterKnown[i])
+          mt[keys[i]] = unitCounterIsEnergy(UNIT_COUNTER_DEFS[i].kind) ? unitMeter.counter[i] / 1000 : unitMeter.counter[i];
+    }
     JsonObject today = st["today"].to<JsonObject>();
     const char *modes[] = {"heating", "dhw", "cooling"};
     for (int m = 0; m < 3; m++)

@@ -157,7 +157,8 @@ class Device:
                                      "cooling": {"heat_kwh": 0, "elec_kwh": 0, "cop": None},
                                      "starts": 7, "starts_hour": 1, "defrosts": 2, "run_min": 318, "buh_min": 0,
                                      "last_run_min": 52, "last_pause_min": 23},
-                           "clock": True, "tz": c["stats"].get("tz", 60), "voltage_read": False}
+                           "clock": True, "tz": c["stats"].get("tz", 60), "voltage_read": False,
+                           "meter": {"heat_kwh": 22725, "hours_heating": 953, "hours_cooling": 0, "hours_dhw": 398, "hours_pump": 6993, "starts": 2151, "elec_kwh": 13809}}
         return st
 
     def events(self):

@@ -696,6 +696,15 @@ function renderToday() {
   figs.push(fig(t('Compressor starts'), String(d.starts), '', t('{n} in the last hour · running {t} today', {n: d.starts_hour, t: mins(d.run_min)})));
   figs.push(fig(t('Last cycle'), d.last_run_min ? mins(d.last_run_min) : '—', '', d.last_pause_min ? t('then {t} off', {t: mins(d.last_pause_min)}) : ''));
   if (d.defrosts || d.buh_min) figs.push(fig(t('Defrosts'), String(d.defrosts), '', d.buh_min ? t('backup heater {t}', {t: mins(d.buh_min)}) : ''));
+  // the unit's own counters since its installation, where the hydro board gives them
+  if (st.meter && st.meter.heat_kwh != null) {
+    const m = st.meter, parts = [];
+    if (m.hours_heating != null) parts.push(t('compressor {h} h', {h: (m.hours_heating || 0) + (m.hours_cooling || 0) + (m.hours_dhw || 0)}));
+    if (m.hours_pump != null) parts.push(t('pump {h} h', {h: m.hours_pump}));
+    if (m.starts != null) parts.push(t('{n} starts', {n: m.starts}));
+    if (m.elec_kwh != null) parts.push(t('{e} kWh electricity', {e: m.elec_kwh}));
+    figs.push(fig(t('Since installation'), String(m.heat_kwh), 'kWh', parts.join(' · ')));
+  }
   $('#today').replaceChildren(...figs);
   $('#todaySub').textContent = st.clock ? t('Since midnight. Heat from the flow and the water temperatures, electricity estimated from the inverter current.') : t('Since the last restart: the board has no clock yet, the figures reset at the next restart.');
   const sv = cfg.stats || {};
