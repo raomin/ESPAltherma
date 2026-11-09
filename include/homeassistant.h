@@ -10,6 +10,7 @@ extern bool haBinaryAsNumber;
 extern const char *haIdPrefix;   // entity ids and unique ids start with it ("espaltherma")
 extern const char *haDeviceId;   // identifier of the device in Home Assistant
 extern const char *haDeviceName; // its name
+extern const char *haDeviceModel; // its model: the unit's own name once read, "Altherma" until then
 extern const char *haAttrTopic;  // the topic of the readings
 
 /*
@@ -42,6 +43,7 @@ extern size_t haExtraCount;
 #define ESP_SENSOR_MINUTES 993
 #define ESP_SENSOR_HOURS 988 // a lifetime count of operating hours
 #define ESP_SENSOR_TOTAL 987 // a lifetime count (the compressor starts)
+#define ESP_SENSOR_TEXT 986  // a text, for diagnostics (the unit's model name)
 
 /*
  * Turns a LabelDef into a "component" JSON element for inclusion in the "cmp" array of the Device Discovery payload.

@@ -644,6 +644,9 @@ static int unitCounterSensorType(const UnitCounterDef &d)
 // The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
 static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
 
+// The unit's model name (control.h MeterReader::model), a diagnostic text once read
+static const LabelDef UNIT_MODEL_LABEL = {-1, -1, -1, -1, ESP_SENSOR_TEXT, "Unit model"};
+
 // Room for every extra sensor: the statistics, the DIII values, the unit's meter and what other features add
 #define HA_EXTRA_LABELS_MAX 96
 
@@ -661,7 +664,9 @@ void haExtraSetup()
       extra[n++] = l;
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
-  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 1 + UNIT_COUNTER_COUNT <= HA_EXTRA_LABELS_MAX, "room for the unit's counters");
+  if (unitMeter.model[0])
+    extra[n++] = UNIT_MODEL_LABEL;
+  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT <= HA_EXTRA_LABELS_MAX, "room for the unit's counters");
   for (size_t i = 0; unitMeter.status == CONTROL_READY && i < UNIT_COUNTER_COUNT; i++)
     if (unitMeter.counterMapped(i))
       extra[n++] = LabelDef(-1, -1, -1, -1, unitCounterSensorType(UNIT_COUNTER_DEFS[i]), UNIT_COUNTER_DEFS[i].label);
@@ -681,9 +686,12 @@ void diiiAppendJson(char *buf, size_t size)
 // The unit's own energy meter as an ATTR key (mqtt.h): null while a read fails, absent on the boards not mapped
 void meterAppendJson(char *buf, size_t size)
 {
+  size_t n = strlen(buf);
+  if (unitMeter.model[0])
+    snprintf(buf + n, size - n, "\"%s\":\"%s\",", UNIT_MODEL_LABEL.label, unitMeter.model);
   if (unitMeter.status != CONTROL_READY)
     return;
-  size_t n = strlen(buf);
+  n = strlen(buf);
   if (unitMeter.known)
     snprintf(buf + n, size - n, "\"%s\":%lu,", METER_LABEL.label, (unsigned long)unitMeter.heatKWh);
   else
@@ -875,7 +883,10 @@ static void meterTick()
   if (config.protocol != 'I' || strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr)
   {
     if (m.status != CONTROL_OFF)
+    {
       m.reset();
+      haDeviceModel = "Altherma";
+    }
     return;
   }
   if (busy)
@@ -883,7 +894,15 @@ static void meterTick()
   if (m.exchange == nullptr)
     m.exchange = x10aExchange;
   ControlStatus before = m.status;
+  bool hadModel = m.model[0] != 0;
   m.tick(millis());
+  if (!hadModel && m.model[0])
+  {
+    mqttSerial.printf("Unit model: %s\n", m.model);
+    haDeviceModel = m.model; // the Home Assistant device shows it, with its own sensor
+    haExtraSetup();
+    discoveryDirty = true;
+  }
   if (m.status == before)
     return;
   if (m.status == CONTROL_READY)

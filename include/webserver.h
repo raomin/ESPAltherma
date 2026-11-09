@@ -20,6 +20,7 @@
 
 // Defined in main.cpp
 extern Survey survey;
+extern MeterReader unitMeter; // main.cpp: the unit's meter and its model name (control.h)
 extern char surveyJson[];
 extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
@@ -287,6 +288,8 @@ static void statusJson(JsonDocument &doc)
   hp["protocol"] = String(config.protocol);
   hp["model"] = config.model;
   hp["confirmed"] = config.modelConfirmed;
+  if (unitMeter.model[0])
+    hp["unit"] = (const char *)unitMeter.model; // the unit's own model name, as on its name plate
   hp["values"] = converter.activeCount;
   hp["last_poll"] = lastPollMs ? (long)((millis() - lastPollMs) / 1000) : -1;
   hp["survey_running"] = surveyRequested || surveyInProgress;
