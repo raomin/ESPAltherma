@@ -27,7 +27,7 @@
 
 #define STATS_RUN_RPS 3.0f
 #define STATS_TRANSIENT_S 120
-#define STATS_MAX_HEAT_KW 14.0f
+#define STATS_MAX_HEAT_KW 30.0f // the heat a sample may show without the unit's capacity (settings.maxHeatKW narrows it)
 #define STATS_MAX_COP 11.0f
 #define STATS_CARNOT_FACTOR 0.55f
 #define STATS_MIN_SAMPLES 3
@@ -67,6 +67,7 @@ struct StatsSettings
   float auxW = 0; // the configuration gives 100 W by default (config.h); 0 here keeps the tests' arithmetic plain
   float powerFactor = 1; // cos phi of the inverter's draw: 1 keeps the VA, a meter on the unit gives the real one (0.6 to 0.9 at low load)
   int tzMinutes = 0;
+  float maxHeatKW = STATS_MAX_HEAT_KW; // above it a sample is a sensor glitch, not heat: 1.6 x the unit's nominal capacity when known
 };
 
 // What survives a restart (RTC memory): the day's accumulators
@@ -222,7 +223,7 @@ public:
       float kw = in.flow / 60.0f * 4.18f * delta;
       if (kw < 0)
         kw = 0;
-      heatKW = kw > STATS_MAX_HEAT_KW ? NAN : kw;
+      heatKW = kw > settings.maxHeatKW ? NAN : kw; // a 16 kW unit makes 15 kW water-side on a cold start: the cap is the unit's
     }
     elecKW = NAN;
     if (!isnan(in.amp))

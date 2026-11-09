@@ -655,6 +655,10 @@ void statsSetup()
   stats.settings.buhKW[0] = config.statsBuhKW[0];
   stats.settings.buhKW[1] = config.statsBuhKW[1];
   stats.settings.tzMinutes = config.statsTz;
+  // A heat sample above the unit's reach is a sensor glitch: 1.6 x the nominal capacity of the definition's series
+  // (a 16 kW unit makes 15 kW water-side at the start of a run; the old fixed 14 kW cap dropped most of its samples)
+  int model = config.model[0] ? catalogFindModel(config.model) : -1;
+  stats.settings.maxHeatKW = model >= 0 && CATALOG_MODELS[model].capMax > 0 ? 1.6f * CATALOG_MODELS[model].capMax : STATS_MAX_HEAT_KW;
   haExtraSetup();
 }
 

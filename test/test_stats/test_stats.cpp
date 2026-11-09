@@ -169,9 +169,21 @@ void test_sanity_caps(void)
     Stats s = fresh(rtc);
     StatsInput in = heating();
     in.flow = 40;
-    in.lw = 60; // 40/60 x 4.18 x 30 = 83 kW
+    in.lw = 60; // 40/60 x 4.18 x 30 = 83 kW: a glitch at any capacity
     s.update(in, T0, 10);
     TEST_ASSERT_TRUE(isnan(s.heatKW));
+    // the cap follows the unit: 15 kW is heat on a 16 kW unit (cap 25.6), a glitch on a 6 kW one (cap 9.6)
+    in = heating();
+    in.flow = 28.7f;
+    in.lw = 40;
+    in.inlet = 32.5f; // 28.7/60 x 4.18 x 7.5 = 15.0 kW
+    s.settings.maxHeatKW = 1.6f * 16;
+    s.update(in, T0 + 20, 30);
+    TEST_ASSERT_FLOAT_WITHIN(0.1, 15.0f, s.heatKW);
+    s.settings.maxHeatKW = 1.6f * 6;
+    s.update(in, T0 + 30, 40);
+    TEST_ASSERT_TRUE(isnan(s.heatKW));
+    s.settings.maxHeatKW = STATS_MAX_HEAT_KW;
     in = heating();
     in.amp = 0.5f; // 4.18 kW for 115 W: COP 36
     for (int i = 0; i < 4; i++)
