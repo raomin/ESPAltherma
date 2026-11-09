@@ -1174,11 +1174,20 @@ void test_the_energy_of_each_mode_is_read_on_20002203()
     TEST_ASSERT_FALSE(m.counterKnown[7]);
     TEST_ASSERT_EQUAL_UINT32(915000, m.counter[7]);
     TEST_ASSERT_TRUE(m.counterKnown[5]);
-    // the other softwares: not mapped
+    // the other softwares: the heat of each mode and the electricity total where the meter is mapped (the Hybrid has
+    // the total only), the electricity of each mode nowhere else
     for (size_t p = 0; p < CONTROL_PROFILE_COUNT; p++)
-        if (strcmp(CONTROL_PROFILES[p].softwareId, "20002203") != 0)
-            for (size_t i = 5; i < UNIT_COUNTER_COUNT; i++)
-                TEST_ASSERT_EQUAL_UINT16(0, unitCounterAddress(CONTROL_PROFILES[p].counters, i));
+    {
+        const ControlProfile &q = CONTROL_PROFILES[p];
+        if (strcmp(q.softwareId, "20002203") == 0)
+            continue;
+        bool hybrid = strcmp(q.softwareId, "5190") == 0;
+        for (size_t i = 5; i < 8; i++)
+            TEST_ASSERT_EQUAL_MESSAGE(q.ramHeatKwh != 0 && !hybrid, unitCounterAddress(q.counters, i) != 0, q.softwareId);
+        TEST_ASSERT_EQUAL_MESSAGE(q.ramHeatKwh != 0, unitCounterAddress(q.counters, 8) != 0, q.softwareId);
+        for (size_t i = 9; i < UNIT_COUNTER_COUNT; i++)
+            TEST_ASSERT_EQUAL_UINT16(0, unitCounterAddress(q.counters, i));
+    }
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
 }
 

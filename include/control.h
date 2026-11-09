@@ -74,7 +74,12 @@ struct LimitSpec
 // Then the energy of each mode: the heat produced in space heating, hot water and cooling (floats in kWh, their sum
 // is the meter), the electricity used by all modes (a 32-bit count in kWh) and by space heating, hot water, cooling
 // and the backup heater in space heating (32-bit counts in Wh, the same numbers in whole kWh add up to the first).
-// Mapped on 20002203 only, where each moved in its own mode only and the interface's energy data read the same.
+// 20002203 was read against its interface (each moved in its own mode only, the interface's energy data read the
+// same). The three heat floats sit at the same persistent-block slots in every software (their sum is the meter:
+// checked on 18002904 and on a 20002202 dump), and the electricity total is the store before the meter's in the
+// function that fills the kWh block (13809 on an 18002904 = its Wh slots to the kWh); so those four come with the
+// meter everywhere. The electricity of each mode stays on 20002203: on 18002904 the slot that is empty on 20002203
+// holds the largest count (8712 of 13809 kWh), so the slots do not mean the same on every software.
 struct UnitCounters
 {
   uint16_t hoursHeating, hoursCooling, hoursDhw, hoursPump, starts;
@@ -105,7 +110,7 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x187C, 0x18BA, 373, 372, 0x30CF, 0x30CA, 374, 0x0C, 0x136A, 0},
      {0x2FE8, 0x2FE9, 0x1880, 0x2FC8, 0x19F4, 0}, // power limitation tested live on the same unit
      0x08C2,
-     {0x1A90, 0x1A74, 0x1A22, 0x1A70, 0x1B44}},
+     {0x1A90, 0x1A74, 0x1A22, 0x1A70, 0x1B44, 0x1AA0, 0x1A36, 0x1A84, 0x08BE}},
     // 14-18 kW ETVH/ETVX/ETVZ/ETBH/ETBX 16 E/EJ and ETSH/ETSX 16 series (Altherma 3 H HT): from the software, the
     // leaving water target confirmed on an ETBH16EF9W9 (#648). identify() only accepts it when the modes and limits
     // read back make sense.
@@ -114,7 +119,7 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x37AA, 0x37E8, 373, 372, 0x5418, 0x5413, 374, 0x0C, 0x31BA, 0},
      {0x5299, 0x529A, 0x37AE, 0x5279, 0x45E0, 0x45E4},
      0x0946,
-     {0x39D6, 0x39BA, 0x3980, 0x39B6, 0x3A6A}},
+     {0x39D6, 0x39BA, 0x3980, 0x39B6, 0x3A6A, 0x39E6, 0x3994, 0x39CA, 0x0942}},
     // The profiles below come from the board's software too (same memory layout at every byte the control
     // uses, same 15 cross-checks as 20017705), none confirmed on a unit yet. Their power limitation words come
     // from the same code shape as the reference's (the kW path, the A path, the chooser and the converter all
@@ -125,14 +130,14 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x1768, 0x17A6, 373, 372, 0x2EC4, 0x2EBF, 374, 0x0C, 0x1256, 0},
      {0x2DE4, 0x2DE5, 0x176C, 0x2DC4, 0x18E0, 0},
      0x08A6,
-     {0x197C, 0x1960, 0x190E, 0x195C, 0x1A30}},
+     {0x197C, 0x1960, 0x190E, 0x195C, 0x1A30, 0x198C, 0x1922, 0x1970, 0x08A2}},
     // 4-8 kW EHSH/EHSX P30/P50 D series (Altherma 3 R ECH2O)
     {"17019A04",
      {0x162A, 0x1668, 366, 367, 0x2EBE, 0x2EC3, 278, 0x01, 0x10B6, 0x1302},
      {0x162C, 0x166A, 373, 372, 0x2ECD, 0x2EC8, 374, 0x0C, 0x111A, 0},
      {0x2DF2, 0x2DF3, 0x1630, 0x2DD2, 0x17A4, 0},
      0x08A4,
-     {0x1840, 0x1824, 0x17D2, 0x1820, 0x18F4}},
+     {0x1840, 0x1824, 0x17D2, 0x1820, 0x18F4, 0x1850, 0x17E6, 0x1834, 0x08A0}},
     // 9-16 kW EBLA/EDLA D monoblocs (and the 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E series) on the software before
     // 20002203: no image of it, the addresses come from a memory dump of an EDLA14DAW1 (Senaxx, #599) matched
     // against 20002203's layout: the converted settings and the targets sit 0x0E lower, the limit records
@@ -148,7 +153,7 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x3464, 0x34A2, 373, 372, 0x4F55, 0x4F50, 374, 0x0C, 0x2F2E, 0},
      {0x4E15, 0x4E16, 0x3468, 0x4DF5, 0, 0},
      0x08DA,
-     {0x36AC, 0x3690, 0x364A, 0x368C, 0x374C}},
+     {0x36AC, 0x3690, 0x364A, 0x368C, 0x374C, 0x36BC, 0x365E, 0x36A0, 0x08D6}},
     // 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX E, EA and EJ series, 9-16 kW EBLA/EDLA monoblocs and EWAA/EWYA chillers.
     // The leaving water target confirmed on two units; the meter and the counters read on an EHBX08EF6V against
     // its interface (ppuetsch, #647): the meter rises with the heat delivered, the same count again as a float at
@@ -166,21 +171,21 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x378E, 0x37CC, 373, 372, 0x5381, 0x537C, 374, 0x0C, 0x319E, 0},
      {0x5207, 0x5208, 0x3792, 0x51E7, 0x4578, 0x457C},
      0x093A,
-     {0x39BA, 0x399E, 0x3964, 0x399A, 0x3A4E}},
+     {0x39BA, 0x399E, 0x3964, 0x399A, 0x3A4E, 0x39CA, 0x3978, 0x39AE, 0x0936}},
     // 12 kW ETVH/ETVX/ETVZ/ETBH/ETBX EA, EJ and EF series and ETSH/ETSX 12 P30/P50 (Altherma 3 H HT 8-12 kW)
     {"20007904",
      {0x3794, 0x37D2, 366, 367, 0x53C2, 0x53C7, 278, 0x01, 0x3152, 0x34AE},
      {0x3796, 0x37D4, 373, 372, 0x53D1, 0x53CC, 374, 0x0C, 0x31A6, 0},
      {0x5253, 0x5254, 0x379A, 0x5233, 0x4580, 0x4584},
      0x0942,
-     {0x39C2, 0x39A6, 0x396C, 0x39A2, 0x3A56}},
+     {0x39C2, 0x39A6, 0x396C, 0x39A2, 0x3A56, 0x39D2, 0x3980, 0x39B6, 0x093E}},
     // 4-8 kW EHSH/EHSX P30/P50 EF and EG series (Altherma 3 R ECH2O), 4-8 kW EBLA/EDLA E monoblocs and EWAA/EWYA
     {"20017704",
      {0x37A0, 0x37DE, 366, 367, 0x53E3, 0x53E8, 278, 0x01, 0x315E, 0x34BA},
      {0x37A2, 0x37E0, 373, 372, 0x53F2, 0x53ED, 374, 0x0C, 0x31B2, 0},
      {0x5273, 0x5274, 0x37A6, 0x5253, 0x45D8, 0x45DC},
      0x093E,
-     {0x39CE, 0x39B2, 0x3978, 0x39AE, 0x3A62}},
+     {0x39CE, 0x39B2, 0x3978, 0x39AE, 0x3A62, 0x39DE, 0x398C, 0x39C2, 0x093A}},
     // The same ECH2O boards on their earlier software: no image of it, the addresses come from a memory dump of an
     // EHSXB08P50EF (forTT78, #642) matched against 20017704's layout: the converted settings and the targets sit
     // 0x18 lower (the curve, the limits at 20.0 kW, the reported targets and the ceiling all read as the unit
@@ -199,7 +204,7 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x37B2, 0x37F0, 373, 372, 0x5437, 0x5432, 374, 0x0C, 0x31C2, 0},
      {0x52B5, 0x52B6, 0x37B6, 0x5295, 0x45E2, 0x45E6},
      0x094A,
-     {0x39DE, 0x39C2, 0x3988, 0x39BE, 0x3A72}},
+     {0x39DE, 0x39C2, 0x3988, 0x39BE, 0x3A72, 0x39EE, 0x399C, 0x39D2, 0x0946}},
     // 4-16 kW EHVH/EHVX/EHBH/EHBX CB series (Altherma LT of 2014-2017, AS1706432 boards). These boards have no 'L'
     // command: the software is the word of registry 0x60. Same memory bytes and mode bits as the others, the
     // four limitation converters found, a single active limit for both kinds. Read on an EHVX11S26CB9 (MvdB1982,
@@ -211,16 +216,16 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x15A6, 0x15E4, 373, 372, 0x2C00, 0x2BFB, 374, 0x0C, 0x10A0, 0},
      {0x2B61, 0x2B62, 0x15AA, 0x2B41, 0x1706, 0},
      0x084E,
-     {0x17A2, 0x1786, 0x1734, 0x1782, 0x1856}},
+     {0x17A2, 0x1786, 0x1734, 0x1782, 0x1856, 0x17B2, 0x1748, 0x1796, 0x084A}},
     // Two softwares mapped for the meter and the counters only (no targets yet): the 4-8 kW EHVH/EHVX/EHVZ/EHBH/EHBX
     // E series on their 2019 software, and the 2026 ground-source EGSAH/EGSAX boards.
-    {"19016505", {}, {}, {}, 0x08E2, {0x37BE, 0x37A2, 0x375C, 0x379E, 0x385E}},
-    {"23015103", {}, {}, {}, 0x0986, {0x4070, 0x4054, 0x401A, 0x4050, 0x4104}},
+    {"19016505", {}, {}, {}, 0x08E2, {0x37BE, 0x37A2, 0x375C, 0x379E, 0x385E, 0x37CE, 0x3770, 0x37B2, 0x08DE}},
+    {"23015103", {}, {}, {}, 0x0986, {0x4070, 0x4054, 0x401A, 0x4050, 0x4104, 0x4080, 0x402E, 0x4064, 0x0982}},
     // Altherma Hybrid (AS1706433 boards, software word 5190 of registry 0x60, no 'L' command like the CB boards):
     // the meter and the counters read on an owner's unit against its interface (marcoatwork80, #647): 32520 kWh,
     // 8164 h heating, 0 cooling (no hot water by the compressor: the boiler makes it), 8713 h pump, 7899 starts
     // (= 7896 + 3 of the two per-mode counts). The hours sit 0x54 above the 76F2 profile's, the meter 0x10 above.
-    {"5190", {}, {}, {}, 0x085E, {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA}},
+    {"5190", {}, {}, {}, 0x085E, {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0, 0, 0, 0x085A}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
