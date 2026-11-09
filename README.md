@@ -197,6 +197,8 @@ When a setpoint is *weather dependent*, the hydro board of the heat pump compute
 
 The addresses written depend on the software of the hydro board, read from the unit at start: only the versions whose addresses are known are accepted, nothing is written on any other. Known so far: 18002904 (tested on a unit), 20002203, 20007902 and 20017705 (the leaving water target confirmed by their owners), and 17014006, 17019A04, 20002202, 20007903, 20007904, 20017701, 20017704 and 22009C02 (from the boards' software, or an owner's memory dump for 20002202 and 20017701, awaiting a first report each), and 76F2 (the EHVH/EHVX/EHBH/EHBX CB series of 2014-2017, its addresses read back on an owner's unit). If the card says "not available", please open an issue with the software version it shows. What the thermostat really aims for, the hysteresis, and the other things to know are in [the details](doc/control.md#hot-water-and-leaving-water-targets).
 
+On 20002203 the installer's field settings with a temperature (the hot water, heating and cooling curves, `[4-02]` and the leaving water ranges `[9-00]`–`[9-03]`) are read too, every ten minutes and never written, as diagnostic sensors `Setting [1-02]: Heating curve, cold end (C)` and so on: what the installer set, without a settings export.
+
 # Home Assistant
 
 Once the MQTT broker is set ([Step 3](#step-3-finishing-in-the-web-interface)), Home Assistant creates a device "Daikin Altherma via ESPAltherma" with the values you selected, and an "ESPAltherma" device with the relays and the raw `sensor.althermasensors`. The entity IDs are built from the English labels (`sensor.espaltherma_discharge_pipe_tempr2t`), whatever the language of the names.
