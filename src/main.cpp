@@ -633,9 +633,11 @@ void statsSetup()
   haExtraSetup();
 }
 
-// The sensor type of one of the unit's counters: hours and starts are lifetime totals
+// The sensor type of one of the unit's counters: hours, starts and energy are lifetime totals
 static int unitCounterSensorType(const UnitCounterDef &d)
 {
+  if (unitCounterIsEnergy(d.kind))
+    return ESP_SENSOR_ENERGY_KWH;
   return d.kind == UNIT_HOURS ? ESP_SENSOR_HOURS : ESP_SENSOR_TOTAL;
 }
 
@@ -686,15 +688,18 @@ void meterAppendJson(char *buf, size_t size)
     snprintf(buf + n, size - n, "\"%s\":%lu,", METER_LABEL.label, (unsigned long)unitMeter.heatKWh);
   else
     snprintf(buf + n, size - n, "\"%s\":null,", METER_LABEL.label);
-  for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++) // the unit's hours and starts where mapped: null while not known
+  for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++) // the unit's hours, starts and energy where mapped: null while not known
   {
     if (!unitMeter.counterMapped(i))
       continue;
     n = strlen(buf);
-    if (unitMeter.counterKnown[i])
-      snprintf(buf + n, size - n, "\"%s\":%lu,", UNIT_COUNTER_DEFS[i].label, (unsigned long)unitMeter.counter[i]);
-    else
+    unsigned long v = unitMeter.counter[i];
+    if (!unitMeter.counterKnown[i])
       snprintf(buf + n, size - n, "\"%s\":null,", UNIT_COUNTER_DEFS[i].label);
+    else if (unitCounterIsEnergy(UNIT_COUNTER_DEFS[i].kind)) // kept in Wh, published in kWh
+      snprintf(buf + n, size - n, "\"%s\":%lu.%03lu,", UNIT_COUNTER_DEFS[i].label, v / 1000, v % 1000);
+    else
+      snprintf(buf + n, size - n, "\"%s\":%lu,", UNIT_COUNTER_DEFS[i].label, v);
   }
 }
 

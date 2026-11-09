@@ -66,14 +66,20 @@ struct LimitSpec
   uint16_t ramActiveAmp;                                 // the active limit in A where the board keeps a second float (0: ramActive)
 };
 
-// The unit's lifetime counters, 32-bit counts in the hydro board's RAM (0: not mapped): the compressor's hours in
-// each mode, the pump's hours and the compressor starts, all modes. The board loads them from its persistent block
+// The unit's lifetime counters in the hydro board's RAM (0: not mapped): the compressor's hours in each mode, the
+// pump's hours and the compressor starts, all modes, 32-bit counts. The board loads them from its persistent block
 // at start, each from its own slot of that block, which is how the same counter was found in every software; the
 // starts are the sum of three per-mode counts in every software, the same check. 20002203 was read against its
 // interface (Information > Operating hours), 18002904 on a unit.
+// Then the energy of each mode: the heat produced in space heating, hot water and cooling (floats in kWh, their sum
+// is the meter), the electricity used by all modes (a 32-bit count in kWh) and by space heating, hot water, cooling
+// and the backup heater in space heating (32-bit counts in Wh, the same numbers in whole kWh add up to the first).
+// Mapped on 20002203 only, where each moved in its own mode only and the interface's energy data read the same.
 struct UnitCounters
 {
   uint16_t hoursHeating, hoursCooling, hoursDhw, hoursPump, starts;
+  uint16_t heatHeating, heatDhw, heatCooling;
+  uint16_t elecAll, elecHeating, elecDhw, elecCooling, elecBackup;
 };
 
 struct ControlProfile
@@ -152,7 +158,7 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0},
      {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC},
      0x08E6,
-     {0x36B2, 0x3696, 0x3650, 0x3692, 0x3752}},
+     {0x36B2, 0x3696, 0x3650, 0x3692, 0x3752, 0x36C2, 0x3664, 0x36A6, 0x08E2, 0x3722, 0x3702, 0x36FA, 0x371A}},
     // 11-16 kW EBBH/EBBX DF, EBVH/EBVX/EBVZ S18/S23 DJ and EBSH/EBSX(B) P30/P50 DF and DG series (Altherma 3 H F
     // and its ECH2O, on ERLA outdoor units)
     {"20007903",
@@ -986,14 +992,17 @@ struct LimitControl : X10aClient
 // 16-byte read a minute. Identified from the software like the targets; no profile or no address: unsupported.
 #define METER_READ_INTERVAL_MS 60000UL
 
-// The unit's lifetime counters read with the meter, where the profile maps them: 32-bit counts, lifetime totals
-// in Home Assistant, in the order of UnitCounters
-#define UNIT_COUNTER_COUNT 5
+// The unit's lifetime counters read with the meter, where the profile maps them: lifetime totals in Home
+// Assistant, in the order of UnitCounters
+#define UNIT_COUNTER_COUNT 13
 
 enum UnitCounterKind : uint8_t
 {
-  UNIT_HOURS, // a lifetime count of hours
-  UNIT_COUNT, // a lifetime count
+  UNIT_HOURS,     // a lifetime count of hours
+  UNIT_COUNT,     // a lifetime count
+  UNIT_KWH_FLOAT, // energy, a float in kWh (kept in Wh)
+  UNIT_KWH_COUNT, // energy, a 32-bit count in kWh (kept in Wh)
+  UNIT_WH_COUNT,  // energy, a 32-bit count in Wh
 };
 
 struct UnitCounterDef
@@ -1008,7 +1017,44 @@ static const UnitCounterDef UNIT_COUNTER_DEFS[UNIT_COUNTER_COUNT] = {
     {UNIT_HOURS, "Unit meter: Compressor hours, hot water (h)"},
     {UNIT_HOURS, "Unit meter: Pump hours (h)"},
     {UNIT_COUNT, "Unit meter: Compressor starts"},
+    {UNIT_KWH_FLOAT, "Unit meter: Heat produced, space heating (kWh)"},
+    {UNIT_KWH_FLOAT, "Unit meter: Heat produced, hot water (kWh)"},
+    {UNIT_KWH_FLOAT, "Unit meter: Heat produced, cooling (kWh)"},
+    {UNIT_KWH_COUNT, "Unit meter: Electricity used (kWh)"},
+    {UNIT_WH_COUNT, "Unit meter: Electricity used, space heating (kWh)"},
+    {UNIT_WH_COUNT, "Unit meter: Electricity used, hot water (kWh)"},
+    {UNIT_WH_COUNT, "Unit meter: Electricity used, cooling (kWh)"},
+    {UNIT_WH_COUNT, "Unit meter: Electricity used, backup heater (kWh)"},
 };
+
+inline bool unitCounterIsEnergy(UnitCounterKind k) { return k == UNIT_KWH_FLOAT || k == UNIT_KWH_COUNT || k == UNIT_WH_COUNT; }
+
+// The value kept of a counter from its 4 bytes: hours and counts as read, energy in Wh. false: not a count (a float
+// that is not a number, negative or beyond 32 bits of Wh).
+inline bool unitCounterDecode(UnitCounterKind k, const uint8_t *b, uint32_t &value)
+{
+  uint32_t raw = (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
+  switch (k)
+  {
+  case UNIT_KWH_FLOAT:
+  {
+    float kWh;
+    memcpy(&kWh, &raw, sizeof(kWh));
+    if (!(kWh >= 0.0f && kWh < 4.0e6f)) // also NaN
+      return false;
+    value = (uint32_t)(kWh * 1000.0f + 0.5f);
+    return true;
+  }
+  case UNIT_KWH_COUNT:
+    if (raw > 4000000UL)
+      return false;
+    value = raw * 1000UL;
+    return true;
+  default:
+    value = raw;
+    return true;
+  }
+}
 
 inline uint16_t unitCounterAddress(const UnitCounters &c, size_t i)
 {
@@ -1022,8 +1068,24 @@ inline uint16_t unitCounterAddress(const UnitCounters &c, size_t i)
     return c.hoursDhw;
   case 3:
     return c.hoursPump;
-  default:
+  case 4:
     return c.starts;
+  case 5:
+    return c.heatHeating;
+  case 6:
+    return c.heatDhw;
+  case 7:
+    return c.heatCooling;
+  case 8:
+    return c.elecAll;
+  case 9:
+    return c.elecHeating;
+  case 10:
+    return c.elecDhw;
+  case 11:
+    return c.elecCooling;
+  default:
+    return c.elecBackup;
   }
 }
 
@@ -1038,7 +1100,7 @@ struct MeterReader : X10aClient
   uint32_t heatKWh = 0; // the last count read
   bool known = false;   // the last read succeeded
   unsigned long checkedAt = 0, readAt = 0;
-  uint32_t counter[UNIT_COUNTER_COUNT] = {0};     // the highest count read of each mapped counter since the start
+  uint32_t counter[UNIT_COUNTER_COUNT] = {0};     // the highest count read of each mapped counter since the start (energy in Wh)
   bool counterKnown[UNIT_COUNTER_COUNT] = {false}; // the last read gave it
 
   void reset()
@@ -1061,10 +1123,10 @@ struct MeterReader : X10aClient
     for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
     {
       uint8_t b[16];
+      uint32_t v;
       counterKnown[i] = false;
-      if (!counterMapped(i) || !readRam(unitCounterAddress(profile->counters, i), b))
+      if (!counterMapped(i) || !readRam(unitCounterAddress(profile->counters, i), b) || !unitCounterDecode(UNIT_COUNTER_DEFS[i].kind, b, v))
         continue;
-      uint32_t v = (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
       if (v >= counter[i])
         counter[i] = v;
       counterKnown[i] = true;
