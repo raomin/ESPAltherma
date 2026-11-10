@@ -172,6 +172,19 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x5207, 0x5208, 0x3792, 0x51E7, 0x4578, 0x457C},
      0x093A,
      {0x39BA, 0x399E, 0x3964, 0x399A, 0x3A4E, 0x39CA, 0x3978, 0x39AE, 0x0936}},
+    // The same 11-16 kW boards on their earlier software: no image of it, the addresses come from a memory dump of an
+    // EBVH16S23DJ9W (griezla, #658) matched against 20007903's layout: the converted settings and the targets sit
+    // 0x12 lower (the curve 28 at 15 °C and 42 at -20 °C, the four 20.0 kW limits and the 33.08 °C leaving water
+    // target all read as the unit showed them), the limit records 0x62 lower (18..50 and 18..45 for the leaving
+    // water), the limitation bytes 0x56 lower, the counters 0x0A lower and the meter 0x10 lower: the meter (115715)
+    // equals the sum of the mode floats, the starts (36449) the sum of the per-mode counts. Where this software
+    // keeps the active limit is not known. Not yet written to on a unit.
+    {"20007902",
+     {0x377A, 0x37B8, 366, 367, 0x5310, 0x5315, 278, 0x01, 0x3138, 0x3494},
+     {0x377C, 0x37BA, 373, 372, 0x531F, 0x531A, 374, 0x0C, 0x318C, 0},
+     {0x51B1, 0x51B2, 0x3780, 0x5191, 0, 0},
+     0x092A,
+     {0x39B0, 0x3994, 0x395A, 0x3990, 0x3A44, 0x39C0, 0x396E, 0x39A4, 0x0926}},
     // 12 kW ETVH/ETVX/ETVZ/ETBH/ETBX EA, EJ and EF series and ETSH/ETSX 12 P30/P50 (Altherma 3 H HT 8-12 kW)
     {"20007904",
      {0x3794, 0x37D2, 366, 367, 0x53C2, 0x53C7, 278, 0x01, 0x3152, 0x34AE},

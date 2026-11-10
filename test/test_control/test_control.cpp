@@ -949,7 +949,7 @@ void test_power_limit_on_every_mapped_board()
         TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
         TEST_ASSERT_EQUAL_FLOAT(p.limit.ramActive ? 50.0f : -1.0f, a.active); // unknown where not mapped (20002202)
     }
-    TEST_ASSERT_EQUAL(11, mapped); // 20017701 and 20002202 from their owners' dumps and reads included
+    TEST_ASSERT_EQUAL(12, mapped); // 20017701, 20002202 and 20007902 from their owners' dumps and reads included
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
@@ -1095,7 +1095,7 @@ void test_every_mapped_software_reads_its_meter_and_counters()
         }
         TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
     }
-    TEST_ASSERT_EQUAL(14, mapped); // the Hybrid 5190 included
+    TEST_ASSERT_EQUAL(15, mapped); // the Hybrid 5190 and 20007902 included
 }
 
 // 20002203: the heat produced, the compressor and pump hours and the compressor starts of the interface, 32-bit
