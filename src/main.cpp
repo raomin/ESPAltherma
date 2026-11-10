@@ -758,6 +758,7 @@ static void statsUpdate()
   if (!config.statsEnabled)
     return;
   stats.settings.maxHeatKW = statsHeatCap(); // the model may have been detected or changed since the start
+  stats.settings.heaterInTank = strstr(config.model, "ECH2O") != nullptr; // every ECH2O definition carries it in its name
   StatsInput in;
   in.inv = statsValue({"INV frequency", "INV Comp. Frequency"});
   in.flow = statsValue({"Flow sensor"});

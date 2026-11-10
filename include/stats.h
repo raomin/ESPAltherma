@@ -5,6 +5,9 @@
 //  - heat output: flow x (leaving water - return water) x 4.18 kJ/kg.K. The leaving water is the sensor after the backup
 //    heater (R2T) when the unit has one and it reads, the one before it (R1T) otherwise: the water the house gets, and
 //    the heater's heat counted with its electricity. Hot water uses the same return sensor, never the tank's.
+//    On the ECH2O the heater sits in the tank, and the sensor after it on the tank coil's return while the unit makes
+//    hot water (47 C out of the exchanger, 40 C there, 40 C return): these units take R1T in every mode, and the
+//    heater's kW is added to the heat while a step is on, as the unit's own counters do.
 //  - electrical input, estimated: the inverter's current x the phase voltage (a setting, 230 V by default, or the
 //    unit's own reading when it has one), x 3 on a three-phase unit (the reported current is one phase's), plus a
 //    fixed auxiliary power (pump, electronics) while the compressor or the pump runs, plus the backup heater's kW per step while
@@ -68,6 +71,7 @@ struct StatsSettings
   float powerFactor = 1; // cos phi of the inverter's draw: 1 keeps the VA, a meter on the unit gives the real one (0.6 to 0.9 at low load)
   int tzMinutes = 0;
   float maxHeatKW = STATS_MAX_HEAT_KW; // above it a sample is a sensor glitch, not heat: 1.6 x the unit's nominal capacity when known
+  bool heaterInTank = false; // ECH2O: the backup heater heats the tank, not the water that passes the sensors
 };
 
 // What survives a restart (RTC memory): the day's accumulators
@@ -213,9 +217,12 @@ public:
     lastDefrost = defrost;
 
     // powers. The leaving water is the sensor after the backup heater (R2T) when the unit has one and it reads (0 when
-    // it is not fitted): the water the house gets, and the heater's heat counts along with its electricity
+    // it is not fitted): the water the house gets, and the heater's heat counts along with its electricity. With the
+    // heater in the tank that sensor is on the tank coil's return in hot water mode: the one before it is taken in
+    // every mode (no switch between two sensors at each change of mode), the other only when it is the only one
     bool buhOn = in.buh == 1 || in.buh2 == 1;
-    float lwOut = !isnan(in.lwAfter) && in.lwAfter > 0 ? in.lwAfter : in.lw;
+    bool afterReads = !isnan(in.lwAfter) && in.lwAfter > 0;
+    float lwOut = afterReads && !(settings.heaterInTank && (!isnan(in.lw) || mode == STATS_DHW)) ? in.lwAfter : in.lw;
     heatKW = NAN;
     if ((runNow || buhOn) && !isnan(in.flow) && in.flow > 0.5f && !isnan(lwOut) && !isnan(in.inlet))
     {
@@ -224,6 +231,12 @@ public:
       if (kw < 0)
         kw = 0;
       heatKW = kw > settings.maxHeatKW ? NAN : kw; // a 16 kW unit makes 15 kW water-side on a cold start: the cap is the unit's
+    }
+    if (settings.heaterInTank && buhOn)
+    {
+      // The water does not carry this heater's heat: counted as on the electricity side, with or without flow
+      float heater = (in.buh == 1 ? settings.buhKW[0] : 0) + (in.buh2 == 1 ? settings.buhKW[1] : 0);
+      heatKW = (isnan(heatKW) ? 0 : heatKW) + heater;
     }
     elecKW = NAN;
     if (!isnan(in.amp))

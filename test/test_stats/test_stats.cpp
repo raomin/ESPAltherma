@@ -162,7 +162,79 @@ void test_defrost_and_buh(void)
     TEST_ASSERT_FALSE(isnan(s.cop));
 }
 
-// Implausible readings are dropped: more than 14 kW, a COP over 11 or over Carnot x 0.55
+// An ECH2O making hot water (#659): 47 C out of the exchanger, 40 C after the tank coil, 39.7 C return. The sensor
+// after the heater would give 0.3 kW for 8; with the heater in the tank the one before it is taken, in every mode
+void test_heater_in_tank_takes_the_exchanger_outlet(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    StatsInput in = heating();
+    in.flow = 16.4f;
+    in.lw = 46.8f;
+    in.lwAfter = 40.0f;
+    in.inlet = 39.7f;
+    in.v3 = 1;
+    s.update(in, T0, 10);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 16.4f / 60 * 4.18f * 0.3f, s.heatKW); // any other unit: the water after the heater
+    s.settings.heaterInTank = true;
+    s.update(in, T0 + 30, 40);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 16.4f / 60 * 4.18f * 7.1f, s.heatKW); // 8.1 kW
+    TEST_ASSERT_EQUAL(STATS_DHW, s.mode);
+    in.v3 = 0; // heating: the same sensor, no jump of the two sensors' gap at the change of mode
+    in.lw = 35.4f;
+    in.lwAfter = 35.0f;
+    in.inlet = 30;
+    s.update(in, T0 + 60, 70);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 16.4f / 60 * 4.18f * 5.4f, s.heatKW);
+    // without the sensor before the heater: the other one in heating, nothing in hot water (it is on the coil's return)
+    in.lw = NAN;
+    s.update(in, T0 + 90, 100);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 16.4f / 60 * 4.18f * 5.0f, s.heatKW);
+    in.v3 = 1;
+    s.update(in, T0 + 120, 130);
+    TEST_ASSERT_TRUE(isnan(s.heatKW));
+}
+
+// The heater in the tank: its kW is heat as it is electricity, the water does not carry it, flow or not
+void test_heater_in_tank_counts_its_heat(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    s.settings.heaterInTank = true;
+    s.settings.buhKW[0] = 3;
+    s.settings.buhKW[1] = 6;
+    StatsInput in = heating();
+    in.buh = 1;
+    s.update(in, T0, 10);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.18f + 3, s.heatKW);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 1.38f + 3, s.elecKW);
+    in.buh2 = 1;
+    s.update(in, T0 + 30, 40);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.18f + 9, s.heatKW);
+    // the heater alone, compressor and pump stopped: its heat still counts, into the day's figures too
+    StatsInput alone;
+    alone.inv = 0;
+    alone.flow = 0;
+    alone.lw = 30;
+    alone.inlet = 30;
+    alone.amp = 0;
+    alone.v3 = 1;
+    alone.buh = 1;
+    s.update(alone, T0 + 60, 70);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 3, s.heatKW);
+    float before = rtc.heatKWh[STATS_DHW];
+    s.update(alone, T0 + 3660, 3670); // more than ten minutes later: a gap, nothing integrated
+    s.update(alone, T0 + 3960, 3970);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, before + 3 * 300 / 3600.0f, rtc.heatKWh[STATS_DHW]);
+    // any other unit: the heater's heat is in the water after it, not added
+    s.settings.heaterInTank = false;
+    in.buh2 = 0;
+    in.lwAfter = 38;
+    s.update(in, T0 + 4000, 4010);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 12 / 60.0f * 4.18f * 8, s.heatKW);
+}
+
+// Implausible readings are dropped: more than the unit's cap, a COP over 11 or over Carnot x 0.55
 void test_sanity_caps(void)
 {
     StatsDay rtc;
@@ -283,6 +355,8 @@ int main(int argc, char **argv)
     RUN_TEST(test_day_energy_per_mode);
     RUN_TEST(test_cycles);
     RUN_TEST(test_defrost_and_buh);
+    RUN_TEST(test_heater_in_tank_takes_the_exchanger_outlet);
+    RUN_TEST(test_heater_in_tank_counts_its_heat);
     RUN_TEST(test_sanity_caps);
     RUN_TEST(test_day_change);
     RUN_TEST(test_rtc_survives_restart);
