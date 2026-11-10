@@ -1001,6 +1001,137 @@ static void memoryTick()
   memReqPending = false;
 }
 
+// Diagnostics: a dump of a whole range of the hydro board's memory, for the people mapping a software without an
+// image (R command, 16 bytes a frame, nothing written). Asked from the web page, read by the heat pump task a few
+// frames at a time between its polls, kept until the next dump, served by /api/memory/dump as text lines
+// "3000: 00 11 ... FF" (a frame that never answered reads "??"), with one header line naming the unit.
+#define MEMORY_DUMP_MAX 16384          // bytes in one dump: the kWh block 0x0800-0x0FFF, or 0x3000-0x5FFF (12 KB)
+#define MEMORY_DUMP_FRAMES_PER_TICK 16 // about 0.6 s of the heat pump task per tick
+#define MEMORY_DUMP_TRIES 3
+#define MEMORY_DUMP_KEEP_MS (30UL * 60UL * 1000UL) // the buffer is freed this long after the dump
+#define MEMORY_DUMP_LINE 54                         // "XXXX: " + 16 x "XX " with the last space a newline
+static uint8_t *dumpBuf = nullptr, *dumpMiss = nullptr; // the bytes, and one bit per frame that did not answer
+static volatile uint16_t dumpFrom = 0, dumpLen = 0, dumpPos = 0, dumpMissing = 0;
+static volatile bool dumpActive = false, dumpDone = false;
+static uint8_t dumpTries = 0;
+static unsigned long dumpDoneAt = 0;
+static char dumpHeader[160];
+
+static void memoryDumpFree()
+{
+  free(dumpBuf);
+  free(dumpMiss);
+  dumpBuf = dumpMiss = nullptr;
+  dumpDone = false;
+  dumpLen = 0;
+}
+
+bool memoryDumpRequest(uint16_t from, uint16_t to)
+{
+  if (dumpActive || memReqPending || to < from)
+    return false;
+  uint32_t len = ((uint32_t)to - from + 16) / 16 * 16; // whole frames
+  if (len > MEMORY_DUMP_MAX || (uint32_t)from + len > 0x10000)
+    return false;
+  memoryDumpFree();
+  dumpBuf = (uint8_t *)malloc(len);
+  dumpMiss = (uint8_t *)calloc(len / 16 / 8 + 1, 1);
+  if (dumpBuf == nullptr || dumpMiss == nullptr)
+  {
+    memoryDumpFree();
+    return false;
+  }
+  snprintf(dumpHeader, sizeof(dumpHeader), "# ESPAltherma %s, %s, software %s, %s, 0x%04X-0x%04X\n", ESPALTHERMA_VERSION,
+           unitMeter.model[0] ? unitMeter.model : (survey.unitModel[0] ? survey.unitModel : "unit ?"),
+           unitMeter.softwareId[0] ? unitMeter.softwareId : "?", config.model[0] ? config.model : "no model", from, (unsigned)(from + len - 1));
+  dumpFrom = from;
+  dumpLen = (uint16_t)len;
+  dumpPos = 0;
+  dumpMissing = 0;
+  dumpTries = 0;
+  dumpActive = true;
+  return true;
+}
+
+void memoryDumpStatus(JsonDocument &doc)
+{
+  doc["active"] = dumpActive;
+  doc["done"] = dumpDone;
+  doc["from"] = dumpFrom;
+  doc["len"] = dumpLen;
+  doc["pos"] = dumpPos;
+  doc["missing"] = dumpMissing;
+}
+
+bool memoryDumpReady() { return dumpDone && dumpBuf != nullptr; }
+
+// The dump as text, from byte index on, for a chunked response: the header line, then one fixed-length line per frame
+size_t memoryDumpText(size_t index, uint8_t *out, size_t maxLen)
+{
+  if (!memoryDumpReady())
+    return 0;
+  size_t hdr = strlen(dumpHeader), frames = dumpLen / 16, total = hdr + frames * MEMORY_DUMP_LINE, n = 0;
+  while (index < total && n < maxLen)
+  {
+    if (index < hdr)
+    {
+      out[n++] = dumpHeader[index++];
+      continue;
+    }
+    size_t f = (index - hdr) / MEMORY_DUMP_LINE, o = (index - hdr) % MEMORY_DUMP_LINE;
+    char line[MEMORY_DUMP_LINE + 1];
+    bool miss = dumpMiss[f / 8] >> (f % 8) & 1;
+    int p = snprintf(line, sizeof(line), "%04X: ", (unsigned)(dumpFrom + f * 16));
+    for (int i = 0; i < 16; i++)
+      p += miss ? snprintf(line + p, sizeof(line) - p, "?? ") : snprintf(line + p, sizeof(line) - p, "%02X ", dumpBuf[f * 16 + i]);
+    line[MEMORY_DUMP_LINE - 1] = '\n';
+    while (o < MEMORY_DUMP_LINE && n < maxLen)
+    {
+      out[n++] = line[o++];
+      index++;
+    }
+  }
+  return n;
+}
+
+static void memoryDumpTick()
+{
+  if (dumpBuf != nullptr && dumpDone && !dumpActive && millis() - dumpDoneAt > MEMORY_DUMP_KEEP_MS)
+    memoryDumpFree(); // the heap back, half an hour after the download was possible
+  if (!dumpActive || dumpBuf == nullptr)
+    return;
+  for (int n = 0; n < MEMORY_DUMP_FRAMES_PER_TICK && dumpPos < dumpLen; n++)
+  {
+    uint16_t at = dumpFrom + dumpPos;
+    uint8_t a[2] = {(uint8_t)at, (uint8_t)(at >> 8)}, frame[8], reply[24];
+    size_t len = x10aFrame(0x52, a, 2, frame);
+    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
+    uint8_t sum = 0;
+    for (size_t i = 0; i < 17 && i < got; i++)
+      sum += reply[i];
+    bool ok = got >= 18 && reply[0] == 0x52 && (uint8_t)~sum == reply[17];
+    if (ok)
+      memcpy(dumpBuf + dumpPos, reply + 1, 16);
+    else if (++dumpTries < MEMORY_DUMP_TRIES)
+      return; // the same frame again at the next tick, the poll in between
+    else
+    {
+      memset(dumpBuf + dumpPos, 0, 16);
+      dumpMiss[(dumpPos / 16) / 8] |= 1 << ((dumpPos / 16) % 8);
+      dumpMissing++;
+    }
+    dumpTries = 0;
+    dumpPos += 16;
+  }
+  if (dumpPos >= dumpLen)
+  {
+    dumpActive = false;
+    dumpDone = true;
+    dumpDoneAt = millis();
+    mqttSerial.printf("Memory dump 0x%04X-0x%04X done, %u frames unanswered\n", dumpFrom, (unsigned)(dumpFrom + dumpLen - 1), dumpMissing);
+  }
+}
+
 void controlLoop()
 {
   controlTick(dhwControl, config.dhwTarget, "Hot water");
@@ -1008,6 +1139,7 @@ void controlLoop()
   limitTick();
   meterTick();
   memoryTick();
+  memoryDumpTick();
   // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
   bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;
   DiiiStatus before = diii.status;

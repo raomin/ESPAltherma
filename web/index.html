@@ -450,7 +450,9 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <div class="card pad"><h2>Memory read</h2>
   <p class="sub">Reads bytes of the hydro board's memory, for the people mapping a unit: nothing is written. Paste the result in the issue that asked for it.</p>
   <div class="acts" style="margin-top:12px"><label style="display:inline-flex;align-items:center;gap:6px;margin:0">Address <input type="text" id="memAddr" value="0x45AC" size="7" translate="no"></label><label style="display:inline-flex;align-items:center;gap:6px;margin:0">Bytes <input type="number" id="memLen" value="48" min="1" max="64" style="width:5em" translate="no"></label><button id="memRead">Read</button><button id="memCopy">Copy</button><span class="msg" id="memMsg" translate="no"></span></div>
-  <pre id="memOut" translate="no"></pre></div>
+  <pre id="memOut" translate="no"></pre>
+  <p class="sub" style="margin-top:14px">A whole range at once, as a file to attach to the issue: a few hundred frames, a minute or two. 16 KB at most, 0x3000-0x5FFF holds the settings and the counters of most softwares, 0x0800-0x0FFF the meters.</p>
+  <div class="acts"><label style="display:inline-flex;align-items:center;gap:6px;margin:0">From <input type="text" id="dumpFrom" value="0x3000" size="7" translate="no"></label><label style="display:inline-flex;align-items:center;gap:6px;margin:0">To <input type="text" id="dumpTo" value="0x5FFF" size="7" translate="no"></label><button id="dumpStart">Dump</button><button id="dumpGet" hidden>Download</button><span class="msg" id="dumpMsg" translate="no"></span></div></div>
  <div class="card pad"><h2>Log</h2>
   <div class="acts" style="margin-top:8px"><button id="logClear">Clear</button><label class="chk" style="margin:0"><input type="checkbox" id="logFollow" checked>Follow</label></div>
   <pre id="log"></pre></div>
@@ -1369,6 +1371,20 @@ $('#memRead').onclick = async () => {
   msg('#memMsg', t('Done.'), true);
 };
 $('#memCopy').onclick = () => copyText($('#memOut').textContent).then(copied('#memMsg'), copyFailed('#memMsg'));
+// Memory dump: a whole range read by the heat pump task frame by frame, then downloaded as a text file
+$('#dumpStart').onclick = async () => {
+  const from = parseInt($('#dumpFrom').value, 16), to = parseInt($('#dumpTo').value, 16);
+  if (isNaN(from) || isNaN(to) || from < 0 || to > 0xFFFF || to < from || to - from >= 16384) { msg('#dumpMsg', t('Range: hexadecimal, 16 KB at most.')); return; }
+  $('#dumpGet').hidden = true;
+  try { await post('/api/memory/dump', {from: '0x' + from.toString(16), to: '0x' + to.toString(16)}); } catch (e) { msg('#dumpMsg', /busy/.test(e.message) ? t('The board is busy, try again.') : /available/.test(e.message) ? t('Not available on this unit.') : e.message); return; }
+  for (;;) {
+    await sleep(1000);
+    const s = await api('/api/memory/dump/status');
+    if (s.done) { msg('#dumpMsg', s.missing ? t('Done, {m} frames did not answer.', {m: s.missing}) : t('Done.'), !s.missing); $('#dumpGet').hidden = false; break; }
+    msg('#dumpMsg', t('{n} of {t} frames read', {n: s.pos / 16, t: s.len / 16}));
+  }
+};
+$('#dumpGet').onclick = () => { location.href = '/api/memory/dump'; };
 $('#logClear').onclick = () => $('#log').textContent = '';
 
 // ---- system

@@ -33,6 +33,10 @@ extern volatile bool surveyInProgress;
 extern Stats stats;
 bool memoryRequest(uint16_t addr, uint8_t len); // main.cpp: the heat pump task reads the hydro board's memory
 void memoryResult(JsonDocument &doc);
+bool memoryDumpRequest(uint16_t from, uint16_t to); // main.cpp: a whole range, read by the heat pump task frame by frame
+void memoryDumpStatus(JsonDocument &doc);
+bool memoryDumpReady();
+size_t memoryDumpText(size_t index, uint8_t *out, size_t maxLen);
 void statsSetup(); // main.cpp: applies the stats settings
 extern volatile bool discoveryDirty;
 float statsVoltageRead(); // main.cpp: the unit's own voltage reading, NAN when it has none
@@ -857,6 +861,46 @@ void webBegin()
     JsonDocument doc;
     memoryResult(doc);
     sendJson(r, doc);
+  });
+
+  // A dump of a whole range (Diagnostics): asked, read by the heat pump task, then downloaded as a text file
+  webServer.on("/api/memory/dump", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
+    JsonDocument doc;
+    if (!parseBody(r, doc))
+      return;
+    long from = strtol(doc["from"] | "", nullptr, 0), to = strtol(doc["to"] | "", nullptr, 0);
+    if (from < 0 || to > 0xFFFF || to < from || to - from >= 16384 || config.protocol != 'I')
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"Not available on this unit.\"}");
+      return;
+    }
+    if (!memoryDumpRequest((uint16_t)from, (uint16_t)to))
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
+      return;
+    }
+    sendOk(r);
+  }, nullptr, collectBody);
+
+  webServer.on("/api/memory/dump/status", HTTP_GET, [](AsyncWebServerRequest *r) {
+    JsonDocument doc;
+    memoryDumpStatus(doc);
+    sendJson(r, doc);
+  });
+
+  webServer.on("/api/memory/dump", HTTP_GET, [](AsyncWebServerRequest *r) {
+    if (!memoryDumpReady())
+    {
+      r->send(404, "application/json", "{\"ok\":false,\"error\":\"no dump\"}");
+      return;
+    }
+    AsyncWebServerResponse *resp = r->beginChunkedResponse("text/plain", [](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+      return memoryDumpText(index, buf, maxLen);
+    });
+    resp->addHeader("Content-Disposition", "attachment; filename=\"espaltherma-memory-dump.txt\"");
+    r->send(resp);
   });
 
   webServer.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *r) {

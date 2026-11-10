@@ -440,5 +440,13 @@
  "compressor {h} h": "Verdichter {h} h",
  "pump {h} h": "Pumpe {h} h",
  "{n} starts": "{n} Starts",
- "{e} kWh electricity": "{e} kWh Strom"
+ "{e} kWh electricity": "{e} kWh Strom",
+ "A whole range at once, as a file to attach to the issue: a few hundred frames, a minute or two. 16 KB at most, 0x3000-0x5FFF holds the settings and the counters of most softwares, 0x0800-0x0FFF the meters.": "Ein ganzer Bereich auf einmal, als Datei für das Issue: ein paar hundert Frames, ein bis zwei Minuten. Höchstens 16 KB; 0x3000-0x5FFF enthält bei den meisten Softwares die Einstellungen und Zähler, 0x0800-0x0FFF die Energiezähler.",
+ "From": "Von",
+ "To": "Bis",
+ "Dump": "Auslesen",
+ "Download": "Herunterladen",
+ "Range: hexadecimal, 16 KB at most.": "Bereich: hexadezimal, höchstens 16 KB.",
+ "{n} of {t} frames read": "{n} von {t} Frames gelesen",
+ "Done, {m} frames did not answer.": "Fertig, {m} Frames ohne Antwort."
 }
