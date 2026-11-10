@@ -178,7 +178,9 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // target all read as the unit showed them), the limit records 0x62 lower (18..50 and 18..45 for the leaving
     // water), the limitation bytes 0x56 lower, the counters 0x0A lower and the meter 0x10 lower: the meter (115715)
     // equals the sum of the mode floats, the starts (36449) the sum of the per-mode counts. Where this software
-    // keeps the active limit is not known. Not yet written to on a unit.
+    // keeps the active limit is not known. On that unit the hours, the energy and the meter equal the interface's,
+    // and the leaving water target was written both ways (held in the working memory, saved in the settings),
+    // then the curve restored: 42 at -20 °C and 28 at 15 °C on the interface again.
     {"20007902",
      {0x377A, 0x37B8, 366, 367, 0x5310, 0x5315, 278, 0x01, 0x3138, 0x3494},
      {0x377C, 0x37BA, 373, 372, 0x531F, 0x531A, 374, 0x0C, 0x318C, 0},
