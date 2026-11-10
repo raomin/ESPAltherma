@@ -490,8 +490,14 @@ void netLoop()
   unsigned long now = millis();
   bool wifiUp = WiFi.status() == WL_CONNECTED;
   bool online = wifiUp || ethUp;
-  if (wifiUp)
+  // The signal strength at most every 5 s: read on every pass of the loop it kept the radio out of its power save
+  // (a C3 Super Mini drew 80 mA instead of 20-30, ZakKemble #599)
+  static unsigned long rssiAt = 0;
+  if (wifiUp && (rssiAt == 0 || now - rssiAt >= 5000))
+  {
+    rssiAt = now;
     wifiRssi = WiFi.RSSI();
+  }
   if (online != netWasOnline)
   {
     netWasOnline = online;
