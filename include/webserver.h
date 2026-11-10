@@ -841,35 +841,10 @@ void webBegin()
     sendOk(r);
   }, nullptr, collectBody);
 
-  // Diagnostics: {"addr": "0x45AC", "len": 48} asks the heat pump task for a read of the hydro board's memory
-  // (nothing is written); GET returns {busy, done, ok, addr, len, hex}
-  webServer.on("/api/memory", HTTP_POST, [](AsyncWebServerRequest *r) {
-    if (!authorized(r))
-      return;
-    JsonDocument doc;
-    if (!parseBody(r, doc))
-      return;
-    long addr = strtol(doc["addr"] | "", nullptr, 0), len = doc["len"] | 16;
-    if (addr < 0 || addr > 0xFFFF || len < 1 || len > 64 || config.protocol != 'I')
-    {
-      r->send(400, "application/json", "{\"ok\":false,\"error\":\"Not available on this unit.\"}");
-      return;
-    }
-    if (!memoryRequest((uint16_t)addr, (uint8_t)len))
-    {
-      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
-      return;
-    }
-    sendOk(r);
-  }, nullptr, collectBody);
-
-  webServer.on("/api/memory", HTTP_GET, [](AsyncWebServerRequest *r) {
-    JsonDocument doc;
-    memoryResult(doc);
-    sendJson(r, doc);
-  });
-
-  // A dump of a whole range (Diagnostics): asked, read by the heat pump task, then downloaded as a text file
+  // A dump of a whole range (Diagnostics): asked, read by the heat pump task, then downloaded as a text file.
+  // These routes come before /api/memory, and the status before the download: the server hands a request to the
+  // first route whose path it equals or continues ("/api/memory" also takes "/api/memory/dump"): registered after
+  // it, the dump would be answered by the single read below (scripts/check_routes.py checks the order)
   webServer.on("/api/memory/dump", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
@@ -907,6 +882,34 @@ void webBegin()
     });
     resp->addHeader("Content-Disposition", "attachment; filename=\"espaltherma-memory-dump.txt\"");
     r->send(resp);
+  });
+
+  // Diagnostics: {"addr": "0x45AC", "len": 48} asks the heat pump task for a read of the hydro board's memory
+  // (nothing is written); GET returns {busy, done, ok, addr, len, hex}
+  webServer.on("/api/memory", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
+    JsonDocument doc;
+    if (!parseBody(r, doc))
+      return;
+    long addr = strtol(doc["addr"] | "", nullptr, 0), len = doc["len"] | 16;
+    if (addr < 0 || addr > 0xFFFF || len < 1 || len > 64 || config.protocol != 'I')
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"Not available on this unit.\"}");
+      return;
+    }
+    if (!memoryRequest((uint16_t)addr, (uint8_t)len))
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
+      return;
+    }
+    sendOk(r);
+  }, nullptr, collectBody);
+
+  webServer.on("/api/memory", HTTP_GET, [](AsyncWebServerRequest *r) {
+    JsonDocument doc;
+    memoryResult(doc);
+    sendJson(r, doc);
   });
 
   webServer.on("/api/reboot", HTTP_POST, [](AsyncWebServerRequest *r) {
