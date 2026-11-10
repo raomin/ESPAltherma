@@ -351,15 +351,15 @@ void callbackTherm(byte *payload, unsigned int length)
   {
     mqttSerial.println("No thermostat relay configured, ignoring");
   }
-  else if (payload[1] == 'F')
-  { //turn off
+  else if (length >= 2 && payload[1] == 'F') // length: an empty payload (a retained message being cleared) leaves the
+  { //turn off                                 // previous message's second letter in the buffer
     digitalWrite(config.thermPin, !thermActiveState());
     saveEEPROM(!thermActiveState());
     thermostatOn = false;
     client.publish(mqttTopics.state, "OFF", true);
     mqttSerial.println("Turned OFF");
   }
-  else if (payload[1] == 'N')
+  else if (length >= 2 && payload[1] == 'N')
   { //turn on
     digitalWrite(config.thermPin, thermActiveState());
     saveEEPROM(thermActiveState());
