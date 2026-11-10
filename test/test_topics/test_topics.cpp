@@ -110,6 +110,43 @@ void test_client_id(void)
     TEST_ASSERT_EQUAL_STRING("my-board", t.clientId);
 }
 
+// The longest base topic (32 characters): no topic, identifier or discovery topic is cut, and the topics the board
+// listens to differ from the ones it publishes on (cut at 48 characters, power_limit/on/set and .../on/state were
+// the same topic: the board answered its own state)
+#define NOT_CUT(field) TEST_ASSERT_TRUE_MESSAGE(strlen(t.field) < sizeof(t.field) - 1, #field)
+void test_longest_base_cuts_nothing(void)
+{
+    const char *base = "heatpump/ground-floor/altherma-3"; // 32 characters
+    TEST_ASSERT_EQUAL(TOPICS_BASE_MAX, strlen(base));
+    MqttTopics t;
+    t.init(base);
+    TEST_ASSERT_EQUAL_STRING(base, t.base);
+    NOT_CUT(attr); NOT_CUT(lwt); NOT_CUT(log); NOT_CUT(detect); NOT_CUT(detectRun); NOT_CUT(power); NOT_CUT(state);
+    NOT_CUT(sgSet); NOT_CUT(sgState); NOT_CUT(safety); NOT_CUT(safetyState); NOT_CUT(serialTx); NOT_CUT(serialRx);
+    for (int k = 0; k < 2; k++)
+    {
+        NOT_CUT(ctlSet[k]); NOT_CUT(ctlState[k]); NOT_CUT(ctlAttrs[k]); NOT_CUT(cfgCtl[k]); NOT_CUT(cfgRestore[k]);
+        NOT_CUT(ctlUniq[k]); NOT_CUT(ctlEntity[k]); NOT_CUT(restoreUniq[k]); NOT_CUT(restoreEntity[k]);
+    }
+    NOT_CUT(limitSet); NOT_CUT(limitState); NOT_CUT(limitAttrs); NOT_CUT(limitOnSet); NOT_CUT(limitOnState);
+    NOT_CUT(cfgSensor); NOT_CUT(cfgSwitch); NOT_CUT(cfgSg); NOT_CUT(cfgSafety); NOT_CUT(cfgDevice); NOT_CUT(cfgLimit);
+    NOT_CUT(cfgLimitOn); NOT_CUT(cfgUpdate); NOT_CUT(deviceId); NOT_CUT(deviceName); NOT_CUT(relayDeviceId);
+    NOT_CUT(relayDeviceName); NOT_CUT(limitUniq); NOT_CUT(limitEntity); NOT_CUT(limitOnUniq); NOT_CUT(limitOnEntity);
+    NOT_CUT(updateTopic); NOT_CUT(updateUniq); NOT_CUT(updateEntity); NOT_CUT(clientId);
+    TEST_ASSERT_EQUAL_STRING("heatpump/ground-floor/altherma-3/power_limit/attributes", t.limitAttrs);
+    TEST_ASSERT_EQUAL_STRING("heatpump/ground-floor/altherma-3/power_limit/on/set", t.limitOnSet);
+    TEST_ASSERT_EQUAL_STRING("heatpump/ground-floor/altherma-3/power_limit/on/state", t.limitOnState);
+    TEST_ASSERT_EQUAL_STRING("button.heatpump_ground_floor_altherma_3_leaving_water_curve_restore", t.restoreEntity[1]);
+    TEST_ASSERT_EQUAL_STRING("Daikin Altherma via ESPAltherma (heatpump/ground-floor/altherma-3)", t.deviceName);
+    // what the board subscribes to is never what it publishes on
+    const char *listens[] = {t.power, t.detectRun, t.sgSet, t.safety, t.serialTx, t.ctlSet[0], t.ctlSet[1], t.limitSet, t.limitOnSet};
+    const char *says[] = {t.attr, t.lwt, t.log, t.detect, t.state, t.sgState, t.safetyState, t.serialRx, t.ctlState[0], t.ctlState[1],
+                          t.ctlAttrs[0], t.ctlAttrs[1], t.limitState, t.limitAttrs, t.limitOnState, t.updateTopic};
+    for (const char *l : listens)
+        for (const char *p : says)
+            TEST_ASSERT_TRUE_MESSAGE(strcmp(l, p) != 0, l);
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -118,5 +155,6 @@ int main(int, char **)
     RUN_TEST(test_identifier_from_any_base);
     RUN_TEST(test_sanitise_base);
     RUN_TEST(test_client_id);
+    RUN_TEST(test_longest_base_cuts_nothing);
     return UNITY_END();
 }

@@ -448,5 +448,6 @@
  "Download": "Descargar",
  "Range: hexadecimal, 16 KB at most.": "Rango: hexadecimal, 16 KB como máximo.",
  "{n} of {t} frames read": "{n} de {t} tramas leídas",
- "Done, {m} frames did not answer.": "Hecho, {m} tramas sin respuesta."
+ "Done, {m} frames did not answer.": "Hecho, {m} tramas sin respuesta.",
+ "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta."
 }

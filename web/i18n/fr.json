@@ -448,5 +448,6 @@
  "Download": "Télécharger",
  "Range: hexadecimal, 16 KB at most.": "Plage : hexadécimale, 16 Ko au plus.",
  "{n} of {t} frames read": "{n} trames sur {t} lues",
- "Done, {m} frames did not answer.": "Terminé, {m} trames sans réponse."
+ "Done, {m} frames did not answer.": "Terminé, {m} trames sans réponse.",
+ "Give the unit its own curve back? The target set from here is dropped.": "Rendre à l'unité sa propre courbe ? La consigne fixée ici est abandonnée."
 }

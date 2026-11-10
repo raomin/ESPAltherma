@@ -38,6 +38,7 @@ void memoryDumpStatus(JsonDocument &doc);
 bool memoryDumpReady();
 size_t memoryDumpText(size_t index, uint8_t *out, size_t maxLen);
 void statsSetup(); // main.cpp: applies the stats settings
+void heldForget();  // main.cpp: drops what the controls hold in RTC memory (a factory reset)
 extern volatile bool discoveryDirty;
 float statsVoltageRead(); // main.cpp: the unit's own voltage reading, NAN when it has none
 extern unsigned long lastPollMs;
@@ -322,7 +323,7 @@ static void statusJson(JsonDocument &doc)
     relays["thermostat"] = thermostatOn;
   if (config.safetyPin >= 0)
     relays["safety"] = safetyActive;
-  if (config.sg1Pin >= 0)
+  if (smartGridConfigured())
     relays["smart_grid"] = sgMode;
   // Energy and cycle figures (stats.h)
   if (config.statsEnabled)
@@ -801,8 +802,11 @@ void webBegin()
       sendOk(r);
       return;
     }
-    bool dhw = doc["dhw_target"].is<int>() || doc["dhw_restore"].is<bool>();
-    bool lwt = doc["lwt_target"].is<int>() || doc["lwt_restore"].is<bool>();
+    // A restore is asked with true: "lwt_restore": false used to restore as well
+    bool dhwRestore = doc["dhw_restore"].is<bool>() && doc["dhw_restore"].as<bool>();
+    bool lwtRestore = doc["lwt_restore"].is<bool>() && doc["lwt_restore"].as<bool>();
+    bool dhw = doc["dhw_target"].is<int>() || dhwRestore;
+    bool lwt = doc["lwt_target"].is<int>() || lwtRestore;
     if (!dhw && !lwt)
     {
       r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target or lwt_target missing\"}");
@@ -814,13 +818,15 @@ void webBegin()
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"not ready\"}");
       return;
     }
-    if (doc[lwt ? "lwt_restore" : "dhw_restore"].is<bool>())
+    if (lwt ? lwtRestore : dhwRestore)
     {
       if (c.origA < 0)
       {
         r->send(409, "application/json", "{\"ok\":false,\"error\":\"no curve to restore\"}");
         return;
       }
+      eventAddf("%s: the unit's curve asked back from the web page (%s)", lwt ? "Leaving water target" : "Hot water target",
+                r->client()->remoteIP().toString().c_str());
       c.requestRestore();
       sendOk(r);
       return;
@@ -1269,6 +1275,7 @@ void webLoop()
   if (factoryResetRequested)
   {
     configReset();
+    heldForget();
     rebootCause = "Factory reset from the web interface";
     rebootRequested = true;
     factoryResetRequested = false;

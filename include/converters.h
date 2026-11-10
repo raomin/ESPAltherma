@@ -252,16 +252,11 @@ public:
             convertTable204(data, def->asString);
             return;
         case 211:
-            if (data == 0)
-            {
-                strcat(def->asString, "OFF");
-                return;
-            }
-            else
-            {
-                dblData = (uint)(double)data[0];
-                break;
-            }
+            // The fan steps and the like. The source of the definitions prints OFF for 0, and a test for it stood
+            // here, but on the pointer, so never true: every unit has published the number (0 for a stopped fan)
+            // for years and Home Assistant graphs it. The number stays.
+            dblData = (uint)(double)data[0];
+            break;
 
         case 213:
         {
@@ -460,7 +455,7 @@ public:
             sprintf(def->asString, "Conv %d not avail.", convId);
             return;
         }
-        if (dblData != NAN)
+        if (!isnan(dblData)) // a conversion that left its own text and no number keeps the text
         {
             sprintf(def->asString, "%g", dblData);
         }

@@ -12,6 +12,12 @@
 #include <ctype.h>
 
 #define TOPICS_DEFAULT_BASE "espaltherma"
+// Sizes from the longest base topic (32 characters): nothing may be cut, a cut topic is another topic (two of the
+// power limit's became the same one) and a cut identifier another entity
+#define TOPICS_BASE_MAX 32
+#define TOPIC_SIZE (TOPICS_BASE_MAX + 32)     // base + "/power_limit/attributes" (23)
+#define TOPIC_ID_SIZE (TOPICS_BASE_MAX + 40)  // "button." + id + "_leaving_water_curve_restore" (35), the device name (34)
+#define TOPIC_CFG_SIZE (TOPICS_BASE_MAX + 64) // "homeassistant/button/" + id + "/lwt_target_restore/config" (47)
 #define TOPICS_DEFAULT_CLIENT_ID "ESPAltherma-dev"
 
 // Cleans a base topic typed by the user: no spaces, no MQTT wildcards, no control characters, no leading or
@@ -43,24 +49,24 @@ inline bool topicsSanitizeBase(char *base, size_t size)
 
 struct MqttTopics
 {
-  char base[33];           // the base topic as configured
-  char id[33];             // the base as an identifier: lower case, letters, digits and underscores
+  char base[TOPICS_BASE_MAX + 1];           // the base topic as configured
+  char id[TOPICS_BASE_MAX + 1];             // the base as an identifier: lower case, letters, digits and underscores
   bool legacy;             // the default base: the exact strings of earlier versions
   // topics
-  char attr[48], lwt[48], log[48], detect[48], detectRun[48], power[48], state[48];
-  char sgSet[48], sgState[48], safety[48], safetyState[48], serialTx[48], serialRx[48];
-  char ctlSet[2][48], ctlState[2][48], ctlAttrs[2][48];
-  char limitSet[48], limitState[48], limitAttrs[48], limitOnSet[48], limitOnState[48]; // the power limit
+  char attr[TOPIC_SIZE], lwt[TOPIC_SIZE], log[TOPIC_SIZE], detect[TOPIC_SIZE], detectRun[TOPIC_SIZE], power[TOPIC_SIZE], state[TOPIC_SIZE];
+  char sgSet[TOPIC_SIZE], sgState[TOPIC_SIZE], safety[TOPIC_SIZE], safetyState[TOPIC_SIZE], serialTx[TOPIC_SIZE], serialRx[TOPIC_SIZE];
+  char ctlSet[2][TOPIC_SIZE], ctlState[2][TOPIC_SIZE], ctlAttrs[2][TOPIC_SIZE];
+  char limitSet[TOPIC_SIZE], limitState[TOPIC_SIZE], limitAttrs[TOPIC_SIZE], limitOnSet[TOPIC_SIZE], limitOnState[TOPIC_SIZE]; // the power limit
   // Home Assistant discovery topics and identifiers
-  char cfgSensor[80], cfgSwitch[80], cfgSg[80], cfgSafety[80], cfgCtl[2][80], cfgRestore[2][80], cfgDevice[80];
-  char cfgLimit[80], cfgLimitOn[80];
-  char deviceId[48], deviceName[64];   // the device of the readings (device-based discovery)
-  char relayDeviceId[48], relayDeviceName[48]; // the device of the relays (the legacy entities)
-  char ctlUniq[2][48], ctlEntity[2][64];
-  char restoreUniq[2][48], restoreEntity[2][64]; // the "restore the unit's curve" buttons
-  char limitUniq[48], limitEntity[64], limitOnUniq[48], limitOnEntity[64];
-  char updateTopic[48], cfgUpdate[80], updateUniq[48], updateEntity[64]; // the firmware update entity
-  char clientId[48];       // the MQTT client id: the broker drops a connection when another one takes its id
+  char cfgSensor[TOPIC_CFG_SIZE], cfgSwitch[TOPIC_CFG_SIZE], cfgSg[TOPIC_CFG_SIZE], cfgSafety[TOPIC_CFG_SIZE], cfgCtl[2][TOPIC_CFG_SIZE], cfgRestore[2][TOPIC_CFG_SIZE], cfgDevice[TOPIC_CFG_SIZE];
+  char cfgLimit[TOPIC_CFG_SIZE], cfgLimitOn[TOPIC_CFG_SIZE];
+  char deviceId[TOPIC_SIZE], deviceName[TOPIC_ID_SIZE];   // the device of the readings (device-based discovery)
+  char relayDeviceId[TOPIC_SIZE], relayDeviceName[TOPIC_SIZE]; // the device of the relays (the legacy entities)
+  char ctlUniq[2][TOPIC_SIZE], ctlEntity[2][TOPIC_ID_SIZE];
+  char restoreUniq[2][TOPIC_SIZE], restoreEntity[2][TOPIC_ID_SIZE]; // the "restore the unit's curve" buttons
+  char limitUniq[TOPIC_SIZE], limitEntity[TOPIC_ID_SIZE], limitOnUniq[TOPIC_SIZE], limitOnEntity[TOPIC_ID_SIZE];
+  char updateTopic[TOPIC_SIZE], cfgUpdate[TOPIC_CFG_SIZE], updateUniq[TOPIC_SIZE], updateEntity[TOPIC_ID_SIZE]; // the firmware update entity
+  char clientId[TOPIC_SIZE];       // the MQTT client id: the broker drops a connection when another one takes its id
 
   void init(const char *baseTopic, const char *configuredClientId = TOPICS_DEFAULT_CLIENT_ID)
   {

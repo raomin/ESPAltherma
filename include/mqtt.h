@@ -112,6 +112,28 @@ bool safetyActive = false; // the heat pump is stopped by the safety relay
 int sgMode = 0;
 
 int thermActiveState() { return config.thermActiveHigh ? HIGH : LOW; }
+
+// When the board last subscribed: a retained command reaches it within moments of that, at every connection
+static unsigned long mqttSubscribedAt = 0;
+#define MQTT_RESTART_QUIET_MS 10000UL
+
+static bool mqttRestartCommand(const char *p)
+{
+  return strcasecmp(p, "R") == 0 || strcasecmp(p, "RESET") == 0 || strcasecmp(p, "REBOOT") == 0 || strcasecmp(p, "RESTART") == 0;
+}
+
+void eventAddf(const char *format, ...); // eventlog.h
+
+// A discovery payload that did not fit its buffer is not sent: cut short it is invalid JSON, which Home Assistant
+// drops without a word
+static bool discoveryFits(int written, size_t size, const char *what)
+{
+  if (written >= 0 && (size_t)written < size)
+    return true;
+  mqttSerial.printf("Discovery of %s not sent: %d bytes for a buffer of %u\n", what, written, (unsigned)size);
+  return false;
+}
+
 int sgActiveState() { return config.sgActiveHigh ? HIGH : LOW; }
 int sgInactiveState() { return config.sgActiveHigh ? LOW : HIGH; }
 int safetyActiveState() { return config.safetyActiveHigh ? HIGH : LOW; }
@@ -214,7 +236,7 @@ bool mqttConnectOnce()
     if (client.connect(mqttTopics.clientId, config.mqttUser, config.mqttPwd, mqttTopics.lwt, 0, true, "Offline"))
     {
       mqttSerial.println("connected!");
-      static char json[1100]; // the discovery payloads, built from the base topic
+      static char json[1400]; // the discovery payloads, built from the base topic (the Smart Grid one: 839 bytes with the default base, 991 with the longest)
       snprintf(json, sizeof(json),
                "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
                "\"uniq_id\":\"%s\",\"device\":{\"identifiers\":[\"%s\"]}, \"~\":\"%s\",\"json_attr_t\":\"~/ATTR\"}",
@@ -242,11 +264,12 @@ bool mqttConnectOnce()
 
       // Subscribe
       client.subscribe(mqttTopics.power);
+      mqttSubscribedAt = millis();
       client.subscribe(mqttTopics.detectRun);
-      if (config.sg1Pin >= 0)
+      if (smartGridConfigured())
       {
       // Smart Grid
-      snprintf(json, sizeof(json),
+      int sgLen = snprintf(json, sizeof(json),
                "{\"availability\":[{\"topic\":\"%s\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\","
                "\"unique_id\":\"%s_sg\",\"device\":{\"identifiers\":[\"%s\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"%s\"},"
                "\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"%s\","
@@ -254,7 +277,8 @@ bool mqttConnectOnce()
                "\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"%s\","
                "\"value_template\":\"{%% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %%} {%% set word = mapper[value] %%} {{ word }}\"}",
                mqttTopics.lwt, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName, mqttTopics.sgSet, mqttTopics.sgState);
-      client.publish(mqttTopics.cfgSg, json, true);
+      if (discoveryFits(sgLen, sizeof(json), "the Smart Grid select"))
+        client.publish(mqttTopics.cfgSg, json, true);
       client.subscribe(mqttTopics.sgSet);
       publishSgState();
       }
@@ -343,11 +367,18 @@ void callbackTherm(byte *payload, unsigned int length)
     client.publish(mqttTopics.state, "ON", true);
     mqttSerial.println("Turned ON");
   }
-  else if (payload[0] == 'R')//R(eset/eboot)
+  else if (mqttRestartCommand((const char *)payload)) // R, RESET, REBOOT or RESTART, nothing that merely starts with R
   {
-    mqttSerial.println("Rebooting");
-    delay(100);
-    restart_board("Restart requested over MQTT");
+    // A retained command would come back at every connection and restart the board for ever: one that arrives
+    // within moments of subscribing is the broker's copy, not a request
+    if (millis() - mqttSubscribedAt < MQTT_RESTART_QUIET_MS)
+      mqttSerial.println("Restart command ignored: it is retained on the broker, clear it there");
+    else
+    {
+      mqttSerial.println("Rebooting");
+      delay(100);
+      restart_board("Restart requested over MQTT");
+    }
   }
   else
   {
@@ -516,7 +547,10 @@ void callbackControl(CurveControl &c, byte *payload, unsigned int length)
     else if (c.origA < 0)
       mqttSerial.printf("%s: no curve to restore\n", name);
     else
+    {
+      eventAddf("%s: the unit's curve asked back over MQTT", name);
       c.requestRestore();
+    }
     return;
   }
   char *end = nullptr;
@@ -545,15 +579,16 @@ void publishControl(CurveControl &c)
   {
     // Same device as the readings (homeassistant.cpp): its identifier and its name, which Home Assistant
     // requires in every entity that shares a device. def_ent_id fixes the entity id, like the readings do.
-    char json[640];
-    snprintf(json, sizeof(json),
+    static char json[960]; // 515 bytes with the default base topic, 697 with the longest (640 cut it from 25 characters on)
+    int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
              "\"min\":%d,\"max\":%d,\"step\":1,\"unit_of_meas\":\"°C\",\"dev_cla\":\"temperature\",\"mode\":\"box\","
              "\"icon\":\"%s\",\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
              CONTROL_NAMES[k].name, mqttTopics.ctlUniq[k], mqttTopics.ctlEntity[k], mqttTopics.ctlSet[k], mqttTopics.ctlState[k], mqttTopics.ctlAttrs[k],
              mqttTopics.lwt, c.minTarget, c.maxTarget, CONTROL_NAMES[k].icon, mqttTopics.deviceId, mqttTopics.deviceName);
-    mqttPublish(mqttTopics.cfgCtl[k], json, true);
+    if (discoveryFits(jsonLen, sizeof(json), CONTROL_NAMES[k].name))
+      mqttPublish(mqttTopics.cfgCtl[k], json, true);
     on = true;
     controlDiscoveryMin[c.kind] = c.minTarget;
     controlDiscoveryMax[c.kind] = c.maxTarget;
@@ -579,14 +614,15 @@ void publishControl(CurveControl &c)
   bool restorable = ready && c.origA >= 0;
   if (restorable && !restoreOn[k])
   {
-    char json[480];
-    snprintf(json, sizeof(json),
+    static char json[720]; // 400 to 540 bytes
+    int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"pl_prs\":\"restore\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"icon\":\"mdi:backup-restore\","
              "\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
              RESTORE_NAMES[k], mqttTopics.restoreUniq[k], mqttTopics.restoreEntity[k], mqttTopics.ctlSet[k],
              mqttTopics.lwt, mqttTopics.deviceId, mqttTopics.deviceName);
-    mqttPublish(mqttTopics.cfgRestore[k], json, true);
+    if (discoveryFits(jsonLen, sizeof(json), RESTORE_NAMES[k]))
+      mqttPublish(mqttTopics.cfgRestore[k], json, true);
     restoreOn[k] = true;
   }
   else if (!restorable && restoreOn[k])
@@ -613,15 +649,15 @@ void publishUpdateEntity()
   }
   if (!fwUpdate.checked)
     return;
-  char json[560];
+  static char json[720]; // 406 to 546 bytes
   if (!updateDiscoveryOn)
   {
-    snprintf(json, sizeof(json),
+    int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"Firmware\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"stat_t\":\"%s\",\"dev_cla\":\"firmware\",\"ent_cat\":\"config\","
              "\"title\":\"ESPAltherma\",\"release_url\":\"https://github.com/raomin/ESPAltherma/releases\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
              mqttTopics.updateUniq, mqttTopics.updateEntity, mqttTopics.updateTopic, mqttTopics.lwt, mqttTopics.deviceId, mqttTopics.deviceName);
-    if (!mqttPublish(mqttTopics.cfgUpdate, json, true))
+    if (!discoveryFits(jsonLen, sizeof(json), "the firmware update") || !mqttPublish(mqttTopics.cfgUpdate, json, true))
       return;
     updateDiscoveryOn = true;
   }
@@ -639,22 +675,24 @@ void publishLimit()
   const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
   if (ready && (!limitDiscoveryOn || limitDiscoveryKind != c.kind))
   {
-    char json[640];
-    snprintf(json, sizeof(json),
+    static char json[960]; // 485 to 667 bytes
+    int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"Power limit\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
              "\"min\":%.1f,\"max\":%.1f,\"step\":%s,\"unit_of_meas\":\"%s\",\"mode\":\"box\",\"icon\":\"mdi:speedometer-slow\","
              "\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
              mqttTopics.limitUniq, mqttTopics.limitEntity, mqttTopics.limitSet, mqttTopics.limitState, mqttTopics.limitAttrs,
              mqttTopics.lwt, c.minLimit, c.maxLimit, c.kind == LIMIT_POWER ? "0.5" : "1", unit, mqttTopics.deviceId, mqttTopics.deviceName);
-    mqttPublish(mqttTopics.cfgLimit, json, true);
-    snprintf(json, sizeof(json),
+    if (discoveryFits(jsonLen, sizeof(json), "the power limit"))
+      mqttPublish(mqttTopics.cfgLimit, json, true);
+    jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"Power limit on\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"icon\":\"mdi:speedometer-slow\","
              "\"dev\":{\"ids\":\"%s\",\"name\":\"%s\"}}",
              mqttTopics.limitOnUniq, mqttTopics.limitOnEntity, mqttTopics.limitOnSet, mqttTopics.limitOnState,
              mqttTopics.lwt, mqttTopics.deviceId, mqttTopics.deviceName);
-    mqttPublish(mqttTopics.cfgLimitOn, json, true);
+    if (discoveryFits(jsonLen, sizeof(json), "the power limit switch"))
+      mqttPublish(mqttTopics.cfgLimitOn, json, true);
     limitDiscoveryOn = true;
     limitDiscoveryKind = c.kind;
   }
@@ -691,7 +729,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     mqttSerial.println("Heat pump survey requested");
     requestSurvey();
   }
-  else if (config.sg1Pin >= 0 && strcmp(topic, mqttTopics.sgSet) == 0)
+  else if (smartGridConfigured() && strcmp(topic, mqttTopics.sgSet) == 0)
   {
     callbackSg(payload, length);
   }

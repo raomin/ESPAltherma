@@ -997,6 +997,76 @@ struct LimitControl : X10aClient
   }
 };
 
+// What the controls hold (a target kept in RAM only, the power limit) changes as often as an automation asks. The
+// board keeps it for its next start, but not by saving its whole configuration in its flash at every change: once
+// the value has been unchanged for a while, an hour at most after the first unsaved change, and at once when asked
+// (a hold that ends must not come back after a restart). The caller keeps the latest in RTC memory meanwhile.
+#define CONTROL_HOLD_SAVE_STABLE_MS 600000UL // unchanged for 10 minutes
+#define CONTROL_HOLD_SAVE_MAX_MS 3600000UL   // an hour after the first unsaved change
+
+struct DeferredSave
+{
+  bool pending = false, urgent = false;
+  unsigned long changedAt = 0, firstAt = 0;
+
+  void touch(unsigned long now, bool atOnce)
+  {
+    if (!pending)
+      firstAt = now;
+    pending = true;
+    changedAt = now;
+    urgent = urgent || atOnce;
+  }
+
+  // True once, when the save is due
+  bool due(unsigned long now)
+  {
+    if (!pending || !(urgent || now - changedAt >= CONTROL_HOLD_SAVE_STABLE_MS || now - firstAt >= CONTROL_HOLD_SAVE_MAX_MS))
+      return false;
+    pending = urgent = false;
+    return true;
+  }
+};
+
+// The same values in the event history: a change is recorded at once when the last recorded one is older than ten
+// minutes; the ones in between are counted and told in one line when the ten minutes are over. An automation moving
+// a target every few minutes no longer pushes the starts, network and update events out of the history.
+#define CONTROL_EVENT_EVERY_MS 600000UL
+
+struct ChangeLog
+{
+  bool any = false;
+  unsigned long eventAt = 0;
+  unsigned skipped = 0;
+  float last = 0;
+
+  // True: record this change now
+  bool changed(float value, unsigned long now)
+  {
+    last = value;
+    if (any && now - eventAt < CONTROL_EVENT_EVERY_MS)
+    {
+      skipped++;
+      return false;
+    }
+    any = true;
+    eventAt = now;
+    skipped = 0;
+    return true;
+  }
+
+  // True once after counted changes: record where the value stands (last) and how many changes went uncounted
+  bool flush(unsigned long now, unsigned &count)
+  {
+    if (skipped == 0 || now - eventAt < CONTROL_EVENT_EVERY_MS)
+      return false;
+    count = skipped;
+    skipped = 0;
+    eventAt = now;
+    return true;
+  }
+};
+
 // The unit's own energy meter: the heat produced since its installation in kWh, the number the user interface
 // shows under energy metering, where the profile knows its address in the hydro board's RAM. Read-only, one
 // 16-byte read a minute. Identified from the software like the targets; no profile or no address: unsupported.

@@ -645,6 +645,22 @@ float statsVoltageRead() { return statsValue({"Voltage (N-phase)"}); }
 
 void haExtraSetup();
 
+// A heat sample above the unit's reach is a sensor glitch: 1.6 x the nominal capacity of the definition's series (a
+// 16 kW unit makes 15 kW water-side at the start of a run; the old fixed 14 kW cap dropped most of its samples).
+// Follows the model: set at start, and again when a detection or the owner changes it.
+static float statsHeatCap()
+{
+  static char forModel[sizeof(config.model)] = "\x01";
+  static float cap = STATS_MAX_HEAT_KW;
+  if (strcmp(forModel, config.model) != 0)
+  {
+    strlcpy(forModel, config.model, sizeof(forModel));
+    int model = config.model[0] ? catalogFindModel(config.model) : -1;
+    cap = model >= 0 && CATALOG_MODELS[model].capMax > 0 ? 1.6f * CATALOG_MODELS[model].capMax : STATS_MAX_HEAT_KW;
+  }
+  return cap;
+}
+
 void statsSetup()
 {
   stats.begin(&statsDay);
@@ -655,10 +671,7 @@ void statsSetup()
   stats.settings.buhKW[0] = config.statsBuhKW[0];
   stats.settings.buhKW[1] = config.statsBuhKW[1];
   stats.settings.tzMinutes = config.statsTz;
-  // A heat sample above the unit's reach is a sensor glitch: 1.6 x the nominal capacity of the definition's series
-  // (a 16 kW unit makes 15 kW water-side at the start of a run; the old fixed 14 kW cap dropped most of its samples)
-  int model = config.model[0] ? catalogFindModel(config.model) : -1;
-  stats.settings.maxHeatKW = model >= 0 && CATALOG_MODELS[model].capMax > 0 ? 1.6f * CATALOG_MODELS[model].capMax : STATS_MAX_HEAT_KW;
+  stats.settings.maxHeatKW = statsHeatCap();
   haExtraSetup();
 }
 
@@ -744,6 +757,7 @@ static void statsUpdate()
 {
   if (!config.statsEnabled)
     return;
+  stats.settings.maxHeatKW = statsHeatCap(); // the model may have been detected or changed since the start
   StatsInput in;
   in.inv = statsValue({"INV frequency", "INV Comp. Frequency"});
   in.flow = statsValue({"Flow sensor"});
@@ -806,6 +820,86 @@ void hpDelay(unsigned long ms)
   delay(ms);
 }
 
+// What the controls hold (the targets kept in RAM only, the power limit) lives in the configuration in RAM. Saving
+// that configuration in the board's flash at every change wore it for nothing when an automation moves a target
+// every few minutes: the values go to RTC memory at once (it survives a restart or an update of the board), and to
+// the flash late and seldom (control.h DeferredSave). After a power cut the flash's copy is the one found.
+#define HELD_RTC_MAGIC 0x48454C44u // "HELD"
+struct HeldRtc
+{
+  uint32_t magic;
+  uint8_t unsaved; // newer than the configuration in flash
+  int16_t held[2];
+  char origSw[9];
+  uint8_t limitOn;
+  float limitValue;
+  int16_t limitOrig;
+  char limitSw[9];
+  uint32_t sum;
+};
+RTC_NOINIT_ATTR HeldRtc heldRtc;
+static DeferredSave heldSave;
+static ChangeLog targetLog[2], limitLog;
+
+static uint32_t heldRtcSum()
+{
+  uint32_t h = 2166136261u;
+  const uint8_t *p = (const uint8_t *)&heldRtc;
+  for (size_t i = 0; i < offsetof(HeldRtc, sum); i++)
+    h = (h ^ p[i]) * 16777619u;
+  return h;
+}
+
+static void heldRtcStore(bool unsaved)
+{
+  memset(&heldRtc, 0, sizeof(heldRtc));
+  heldRtc.magic = HELD_RTC_MAGIC;
+  heldRtc.unsaved = unsaved;
+  for (int k = 0; k < 2; k++)
+    heldRtc.held[k] = (int16_t)config.ctlHeld[k];
+  strlcpy(heldRtc.origSw, config.ctlOrigSw, sizeof(heldRtc.origSw));
+  heldRtc.limitOn = config.ctlLimitOn;
+  heldRtc.limitValue = config.ctlLimitValue;
+  heldRtc.limitOrig = (int16_t)config.ctlLimitOrig;
+  strlcpy(heldRtc.limitSw, config.ctlLimitSw, sizeof(heldRtc.limitSw));
+  heldRtc.sum = heldRtcSum();
+}
+
+// A held value changed (the configuration in RAM has it): RTC memory now, the flash when due
+static void heldStateChanged(bool atOnce)
+{
+  heldRtcStore(true);
+  heldSave.touch(millis(), atOnce);
+}
+
+// At start, after the configuration is read: what RTC memory holds and the flash had not got yet
+void heldRestoreAtBoot()
+{
+  if (heldRtc.magic != HELD_RTC_MAGIC || heldRtc.sum != heldRtcSum() || !heldRtc.unsaved)
+    return;
+  for (int k = 0; k < 2; k++)
+    config.ctlHeld[k] = heldRtc.held[k];
+  strlcpy(config.ctlOrigSw, heldRtc.origSw, sizeof(config.ctlOrigSw));
+  config.ctlLimitOn = heldRtc.limitOn;
+  config.ctlLimitValue = heldRtc.limitValue;
+  config.ctlLimitOrig = heldRtc.limitOrig;
+  strlcpy(config.ctlLimitSw, heldRtc.limitSw, sizeof(config.ctlLimitSw));
+  heldSave.touch(millis(), false);
+}
+
+void heldForget()
+{
+  heldRtc.magic = 0;
+}
+
+static void heldSaveTick()
+{
+  if (!heldSave.due(millis()))
+    return;
+  configSave();
+  heldRtcStore(false);
+}
+
 // One target control: identification, requests, saves. Heat pump task only (it owns the X10A link).
 static void controlTick(CurveControl &c, bool enabled, const char *what)
 {
@@ -839,10 +933,14 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
     else
     {
       mqttSerial.printf("%s target set to %d\n", what, c.applied);
-      eventAddf("%s target set to %d", what, c.applied);
+      if (targetLog[k].changed(c.applied, millis())) // at once when the last one is old, counted otherwise
+        eventAddf("%s target set to %d", what, c.applied);
     }
     c.applied = c.appliedLo = -1;
   }
+  unsigned uncounted = 0;
+  if (targetLog[k].flush(millis(), uncounted))
+    eventAddf("%s target at %d after %u more changes", what, (int)targetLog[k].last, uncounted);
   if (c.origChanged)
   {
     c.origChanged = false;
@@ -858,7 +956,7 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
     config.ctlHeld[k] = c.held;
     if (c.held >= 0)
       strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
-    configSave();
+    heldStateChanged(c.held < 0); // a hold that ends is saved at once: it must not come back after a power cut
   }
 }
 
@@ -884,9 +982,13 @@ static void limitTick()
   if (c.applied >= 0)
   {
     mqttSerial.printf("Power limit set to %.1f %s\n", c.applied, unit);
-    eventAddf("Power limit set to %.1f %s", c.applied, unit);
+    if (limitLog.changed(c.applied, millis()))
+      eventAddf("Power limit set to %.1f %s", c.applied, unit);
     c.applied = -1;
   }
+  unsigned uncounted = 0;
+  if (limitLog.flush(millis(), uncounted))
+    eventAddf("Power limit at %.1f %s after %u more changes", limitLog.last, unit, uncounted);
   if (c.released)
   {
     mqttSerial.println("Power limit switched off");
@@ -896,11 +998,12 @@ static void limitTick()
   if (c.stateChanged)
   {
     c.stateChanged = false;
+    bool switched = config.ctlLimitOn != c.on; // on or off is saved at once, a new value when due
     config.ctlLimitOn = c.on;
     config.ctlLimitValue = c.value;
     config.ctlLimitOrig = c.origEnable;
     strlcpy(config.ctlLimitSw, c.softwareId, sizeof(config.ctlLimitSw));
-    configSave();
+    heldStateChanged(switched);
   }
 }
 
@@ -1140,6 +1243,7 @@ void controlLoop()
   meterTick();
   memoryTick();
   memoryDumpTick();
+  heldSaveTick();
   // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
   bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;
   DiiiStatus before = diii.status;
@@ -1205,6 +1309,8 @@ void setupPins()
 {
   if (config.thermPin >= 0)
   {
+    // Its level was set by readEEPROM() just before (the state kept across restarts): an output starts low, which
+    // closed an active-low relay until that state was restored, two seconds later on the boards with a screen
     pinMode(config.thermPin, OUTPUT);
   }
 
@@ -1238,6 +1344,9 @@ void setup()
   SECOND_CONSOLE.begin(115200);
 #endif
   configLoad();
+  heldRestoreAtBoot();
+  EEPROM.begin(10);
+  readEEPROM(); //the thermostat relay's kept state, as a level, before its pin becomes an output
   setupPins(); //relays to their inactive state first: they would float during the splash screen
   statsSetup();
   setupScreen();
@@ -1247,8 +1356,6 @@ void setup()
   gpio_pullup_dis(GPIO_NUM_25);
 #endif
 
-  EEPROM.begin(10);
-  readEEPROM();//Restore previous state
   ArduinoOTA.onStart([]() {
     busy = true;
     watchdogPaused = true; // the upload runs inside ArduinoOTA.handle()

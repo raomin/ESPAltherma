@@ -111,6 +111,9 @@ struct AppConfig
 
 AppConfig config;
 
+// The Smart Grid contacts need both relays: with one pin only nothing is set up, published or switched
+inline bool smartGridConfigured() { return config.sg1Pin >= 0 && config.sg2Pin >= 0; }
+
 // Defaults of a freshly installed board.
 void configDefaults(AppConfig &c)
 {

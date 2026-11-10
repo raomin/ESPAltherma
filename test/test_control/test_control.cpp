@@ -1235,6 +1235,49 @@ void test_the_energy_of_each_mode_is_read_on_20002203()
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
 }
 
+// What the controls hold is saved in the board's flash once unchanged for ten minutes, an hour at most after the
+// first unsaved change while it keeps moving, and at once when asked (a hold that ends)
+void test_held_values_are_saved_late_and_seldom()
+{
+    DeferredSave d;
+    TEST_ASSERT_FALSE(d.due(0));
+    d.touch(1000, false);
+    TEST_ASSERT_FALSE(d.due(1000 + CONTROL_HOLD_SAVE_STABLE_MS - 1));
+    TEST_ASSERT_TRUE(d.due(1000 + CONTROL_HOLD_SAVE_STABLE_MS));
+    TEST_ASSERT_FALSE(d.due(1000 + 2 * CONTROL_HOLD_SAVE_STABLE_MS)); // once
+    // an automation changing it every five minutes: one save an hour, not twelve
+    int saves = 0;
+    for (unsigned long t = 0; t < 4 * 3600000UL; t += 60000UL)
+    {
+        if (t % 300000UL == 0)
+            d.touch(t, false);
+        if (d.due(t))
+            saves++;
+    }
+    TEST_ASSERT_EQUAL(3, saves); // at 1 h, 2 h 05 and 3 h 10: an hour after the first unsaved change each time
+    d.touch(5 * 3600000UL, true);
+    TEST_ASSERT_TRUE(d.due(5 * 3600000UL)); // a hold that ends: at once
+}
+
+// The event history takes a change at once when the last recorded one is older than ten minutes, counts the ones
+// in between and tells them in one line afterwards
+void test_frequent_changes_make_few_events()
+{
+    ChangeLog l;
+    unsigned n = 0;
+    TEST_ASSERT_TRUE(l.changed(30, 1000));
+    TEST_ASSERT_FALSE(l.flush(2000, n));
+    TEST_ASSERT_FALSE(l.changed(31, 120000));
+    TEST_ASSERT_FALSE(l.changed(33, 240000));
+    TEST_ASSERT_FALSE(l.flush(1000 + CONTROL_EVENT_EVERY_MS - 1, n));
+    TEST_ASSERT_TRUE(l.flush(1000 + CONTROL_EVENT_EVERY_MS, n));
+    TEST_ASSERT_EQUAL(2, n);
+    TEST_ASSERT_EQUAL_FLOAT(33, l.last);
+    TEST_ASSERT_FALSE(l.flush(1000 + 2 * CONTROL_EVENT_EVERY_MS, n)); // nothing counted since
+    TEST_ASSERT_FALSE(l.changed(34, 1000 + CONTROL_EVENT_EVERY_MS + 5000)); // within ten minutes of the summary line
+    TEST_ASSERT_TRUE(l.changed(35, 1000 + 3 * CONTROL_EVENT_EVERY_MS));    // a change by hand, long after: at once
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -1279,5 +1322,7 @@ int main(int, char **)
     RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);
     RUN_TEST(test_lifetime_counts_never_go_back);
     RUN_TEST(test_the_energy_of_each_mode_is_read_on_20002203);
+    RUN_TEST(test_held_values_are_saved_late_and_seldom);
+    RUN_TEST(test_frequent_changes_make_few_events);
     return UNITY_END();
 }

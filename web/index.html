@@ -867,6 +867,7 @@ for (const u of Object.values(CONTROLS)) {
     catch (e) { msg(m, e.message, false); }
   };
   $('#' + u.id + 'Restore').onclick = async () => {
+    if (!confirm(t('Give the unit its own curve back? The target set from here is dropped.'))) return;
     try { await post('/api/control', {[u.id + '_restore']: true}); delete val.dataset.touched; msg(m, t('Sent. The curve of the unit comes back within a few seconds.'), true); setTimeout(refreshStatus, 3000); setTimeout(refreshStatus, 8000); }
     catch (e) { msg(m, e.message, false); }
   };
