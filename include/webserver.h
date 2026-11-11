@@ -776,6 +776,35 @@ void webBegin()
   webServer.on("/api/telemetry", HTTP_GET, [](AsyncWebServerRequest *r) {
     r->send(200, "application/json", telemetryPayload());
   });
+  // Where the memory is: the data heap (what malloc can use) with its count of pieces, and for every task the
+  // part of its stack it never touched (bytes). A stack with thousands of bytes untouched after days is too big.
+  webServer.on("/api/heap", HTTP_GET, [](AsyncWebServerRequest *r) {
+    JsonDocument doc;
+    multi_heap_info_t info;
+    heap_caps_get_info(&info, MALLOC_CAP_8BIT);
+    doc["total"] = heap_caps_get_total_size(MALLOC_CAP_8BIT);
+    doc["free"] = info.total_free_bytes;
+    doc["min"] = info.minimum_free_bytes;
+    doc["block"] = info.largest_free_block;
+    doc["used_pieces"] = info.allocated_blocks;
+    doc["free_pieces"] = info.free_blocks;
+    doc["code_only_free"] = heap_caps_get_free_size(MALLOC_CAP_INTERNAL) - info.total_free_bytes; // counted in "heap"
+    UBaseType_t count = uxTaskGetNumberOfTasks() + 4;
+    std::unique_ptr<TaskStatus_t[]> tasks(new (std::nothrow) TaskStatus_t[count]);
+    if (tasks)
+    {
+      count = uxTaskGetSystemState(tasks.get(), count, nullptr);
+      JsonArray list = doc["tasks"].to<JsonArray>();
+      for (UBaseType_t i = 0; i < count; i++)
+      {
+        JsonObject t = list.add<JsonObject>();
+        t["name"] = String(tasks[i].pcTaskName); // a copy: the task can end before the answer is written
+        t["stack_unused"] = tasks[i].usStackHighWaterMark;
+        t["priority"] = tasks[i].uxCurrentPriority;
+      }
+    }
+    sendJson(r, doc);
+  });
 
   // Target controls (experimental): {"dhw_target": 50} or {"lwt_target": 35}, applied by the heat pump task;
   // {"dhw_restore": true} or {"lwt_restore": true} puts the unit's own curve back
