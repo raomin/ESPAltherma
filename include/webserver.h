@@ -864,6 +864,7 @@ void webBegin()
     doc["used_pieces"] = info.allocated_blocks;
     doc["free_pieces"] = info.free_blocks;
     doc["code_only_free"] = heap_caps_get_free_size(MALLOC_CAP_INTERNAL) - info.total_free_bytes; // counted in "heap"
+#if configUSE_TRACE_FACILITY // the list of tasks: not in every build of FreeRTOS (Arduino core 2 has none)
     UBaseType_t count = uxTaskGetNumberOfTasks() + 4;
     std::unique_ptr<TaskStatus_t[]> tasks(new (std::nothrow) TaskStatus_t[count]);
     if (tasks)
@@ -878,6 +879,7 @@ void webBegin()
         t["priority"] = tasks[i].uxCurrentPriority;
       }
     }
+#endif
     JsonObject tls = doc["https"].to<JsonObject>(); // the last HTTPS call (update check, heartbeat, report)
     tls["calls"] = tlsUse.calls;
     tls["free_before"] = tlsUse.before;

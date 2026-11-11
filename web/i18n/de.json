@@ -419,6 +419,8 @@
  "Update failed: {reason}": "Update fehlgeschlagen: {reason}",
  "the upload was cut off": "die Übertragung wurde abgebrochen",
  "Uploading…": "Wird hochgeladen…",
+ "Restarting the board before the update…": "Das Board wird vor dem Update neu gestartet…",
+ "The board did not come back after its restart.": "Das Board hat sich nach dem Neustart nicht zurückgemeldet.",
  "Choose a firmware file.": "Wähle eine Firmwaredatei.",
  "Checking…": "Suche…",
  "Up to date ({v}).": "Aktuell ({v}).",

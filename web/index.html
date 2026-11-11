@@ -1396,10 +1396,31 @@ $('#logClear').onclick = () => $('#log').textContent = '';
 
 // ---- system
 let uploading = false; // one upload at a time: a second one would start the update again on the board
-function uploadFirmware(file) {
+// A board that has run for a while takes an upload three times slower than one fresh from a restart, and with
+// less memory in one piece: it is restarted first, then given a few seconds to get back on the network. Not when
+// it started less than 5 minutes ago, nor on its setup access point (this browser would lose it).
+async function restartBeforeUpload() {
+  const online = status.net ? status.net.link !== 'none' : status.wifi && status.wifi.connected;
+  if (!(status.uptime >= 300) || !online || (status.wifi && status.wifi.ap)) return true;
+  msg('#fwMsg', t('Restarting the board before the update…'));
+  try { await post('/api/reboot'); } catch (e) { return true; } // refused: the upload tells why
+  await sleep(4000);
+  for (let i = 0; i < 40; i++) {
+    try {
+      const c = new AbortController(), timer = setTimeout(() => c.abort(), 2500);
+      const r = await fetch('/api/status', {signal: c.signal});
+      clearTimeout(timer);
+      if (r.ok) { const s = await r.json(); if (s.uptime >= 15 && s.uptime < 300) return true; }
+    } catch (e) {}
+    await sleep(2000);
+  }
+  return false;
+}
+async function uploadFirmware(file) {
   if (uploading) return;
   const busy = on => { uploading = on; $('#fwBtn').disabled = $('#upBtn').disabled = on; };
   busy(true);
+  if (!await restartBeforeUpload()) { busy(false); return msg('#fwMsg', t('The board did not come back after its restart.'), false); }
   const fd = new FormData(); fd.append('firmware', file);
   const x = new XMLHttpRequest(), p = $('#fwProg');
   p.hidden = false; p.value = 0; x.upload.onprogress = e => p.value = e.loaded / e.total * 100;

@@ -419,6 +419,8 @@
  "Update failed: {reason}": "Update mislukt: {reason}",
  "the upload was cut off": "de upload werd afgebroken",
  "Uploading…": "Uploaden…",
+ "Restarting the board before the update…": "Het board wordt herstart vóór de update…",
+ "The board did not come back after its restart.": "Het board kwam niet terug na de herstart.",
  "Choose a firmware file.": "Kies een firmwarebestand.",
  "Checking…": "Zoeken…",
  "Up to date ({v}).": "Up-to-date ({v}).",

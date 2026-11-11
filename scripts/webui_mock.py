@@ -350,7 +350,13 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/mqtt/test":
             d.mqtt_test_until = time.time() + 2
             return self.send(200, {"ok": True})
-        if p in ("/api/reboot", "/api/factory-reset", "/update"):
+        if p == "/api/reboot":
+            d.start = time.time() + 6  # back in 6 s: the page waits for it before an update
+            return self.send(200, {"ok": True})
+        if p == "/update":
+            self.rfile.read(int(self.headers.get("Content-Length") or 0))
+            return self.send(200, {"ok": True})
+        if p == "/api/factory-reset":
             return self.send(200, {"ok": True})
         self.send(404, {"ok": False, "error": "not found"})
 
@@ -364,12 +370,14 @@ def main():
     ap.add_argument("--nodhw", action="store_true", help="no hot water tank: its values are not selected")
     ap.add_argument("--noroom", action="store_true", help="no room thermostat: its values are not selected")
     ap.add_argument("--limit", action="store_true", help="the power limit option on")
+    ap.add_argument("--uptime", type=int, default=0, help="seconds the board has been running (an update restarts it first from 300)")
     args = ap.parse_args()
     global LIMIT_ON
     LIMIT_ON = args.limit
     leave_out = ({"DHW tank temp. (R5T)", "DHW setpoint"} if args.nodhw else set()) | \
         ({"Indoor ambient temp. (R1T)", "RT setpoint"} if args.noroom else set())
     Handler.device = Device(args.fresh, args.ethernet, args.bizone, leave_out)
+    Handler.device.start -= args.uptime
     print("Mock ESPAltherma on http://localhost:%d" % args.port)
     ThreadingHTTPServer(("", args.port), Handler).serve_forever()
 

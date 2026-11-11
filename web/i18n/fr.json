@@ -419,6 +419,8 @@
  "Update failed: {reason}": "Échec de la mise à jour : {reason}",
  "the upload was cut off": "l'envoi a été interrompu",
  "Uploading…": "Envoi…",
+ "Restarting the board before the update…": "Redémarrage de la carte avant la mise à jour…",
+ "The board did not come back after its restart.": "La carte n'est pas revenue après son redémarrage.",
  "Choose a firmware file.": "Choisissez un fichier firmware.",
  "Checking…": "Recherche…",
  "Up to date ({v}).": "À jour ({v}).",
