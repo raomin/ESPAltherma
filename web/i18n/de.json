@@ -176,6 +176,7 @@
  "unknown model": "unbekanntes Modell",
  "busy, retry": "beschäftigt, bitte erneut versuchen",
  "update failed": "Update fehlgeschlagen",
+ "an update is already running": "ein Update läuft bereits",
  "broker unreachable": "Broker nicht erreichbar",
  "wrong user or password": "falscher Benutzer oder falsches Passwort",
  "connection refused": "Verbindung abgelehnt",

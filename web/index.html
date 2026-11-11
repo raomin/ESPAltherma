@@ -540,7 +540,7 @@ sponsorLines();
 
 const FAMILY_CODES = ['G', 'L', 'S', 'R'];
 const family = f => ({G: t('Newer units (R32 · D/E series)'), L: t('Older units (LT · Hybrid · GEO2)'), S: t('Protocol S'), R: t('Protocol S (ROTEX)')})[f];
-const API_ERRORS = [N_('invalid JSON'), N_('unknown model'), N_('busy, retry'), N_('update failed')];
+const API_ERRORS = [N_('invalid JSON'), N_('unknown model'), N_('busy, retry'), N_('update failed'), N_('an update is already running')];
 const MQTT_ERRORS = [N_('broker unreachable'), N_('wrong user or password'), N_('connection refused')];
 const SUPPLIES = [N_('5V pin'), N_('USB')];
 const HP_WORDS = [N_('Fan Only'), N_('Heating'), N_('Cooling'), N_('Auto'), N_('Stop'), N_('DHW'), N_('Heating + DHW'), N_('Cooling + DHW'), N_('Normal')];
@@ -887,7 +887,7 @@ function renderStatus() {
   if (hp.values > 0 && hp.last_poll >= 0 && (!lastValues.length || Date.now() - valuesAt > (hp.last_poll + 20) * 1000)) api('/api/values').then(renderValues).catch(() => {});
   if (events && events.readyState === EventSource.CLOSED) connectEvents();
 }
-async function refreshStatus() { try { status = await api('/api/status'); statusAt = Date.now(); renderStatus(); } catch (e) {} }
+async function refreshStatus() { if (uploading) return; try { status = await api('/api/status'); statusAt = Date.now(); renderStatus(); } catch (e) {} }
 setInterval(renderAge, 1000);
 
 // ---- dashboard: the drawing shows the readings it finds among the selected values (other models: "—")
@@ -1395,21 +1395,27 @@ $('#dumpGet').onclick = () => { location.href = '/api/memory/dump'; };
 $('#logClear').onclick = () => $('#log').textContent = '';
 
 // ---- system
+let uploading = false; // one upload at a time: a second one would start the update again on the board
 function uploadFirmware(file) {
+  if (uploading) return;
+  const busy = on => { uploading = on; $('#fwBtn').disabled = $('#upBtn').disabled = on; };
+  busy(true);
   const fd = new FormData(); fd.append('firmware', file);
   const x = new XMLHttpRequest(), p = $('#fwProg');
   p.hidden = false; p.value = 0; x.upload.onprogress = e => p.value = e.loaded / e.total * 100;
   x.onload = () => {
-    if (x.status === 200) return msg('#fwMsg', t('Updated. Restarting…'), true);
+    if (x.status === 200) return msg('#fwMsg', t('Updated. Restarting…'), true); // the buttons stay off: the board restarts
+    busy(false);
     // the board's own reason when it gives one, else what the HTTP status tells (a proxy's size limit: 413)
     let why = x.status === 401 ? t('the admin password was refused') : 'HTTP ' + x.status;
     try { const e = JSON.parse(x.responseText).error; if (e) why = e; } catch (e) {}
     msg('#fwMsg', t('Update failed: {reason}', {reason: why}), false);
   };
-  x.onerror = () => msg('#fwMsg', t('Update failed: {reason}', {reason: t('the upload was cut off')}), false);
+  x.onerror = () => { busy(false); msg('#fwMsg', t('Update failed: {reason}', {reason: t('the upload was cut off')}), false); };
   x.open('POST', '/update'); x.send(fd); msg('#fwMsg', t('Uploading…'));
 }
 $('#fwBtn').onclick = () => {
+  if (uploading) return;
   const f = $('#fwFile').files[0];
   if (!f) return msg('#fwMsg', t('Choose a firmware file.'), false);
   uploadFirmware(f);
@@ -1453,7 +1459,7 @@ $('#upCheck').onclick = async () => {
 };
 $('#upBtn').onclick = async () => {
   const v = upLatest;
-  if (!v) return;
+  if (!v || uploading) return;
   $('#upBtn').disabled = true;
   msg('#fwMsg', t('Downloading {v}…', {v}));
   try {
@@ -1461,9 +1467,8 @@ $('#upBtn').onclick = async () => {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const b = await r.blob(), head = new Uint8Array(await b.slice(0, 1).arrayBuffer());
     if (b.size < 100000 || head[0] !== 0xE9) throw new Error('not a firmware image'); // an ESP32 image starts with E9
-    uploadFirmware(new File([b], status.board + '-ota.bin'));
-  } catch (e) { msg('#fwMsg', t('Download failed.'), false); }
-  $('#upBtn').disabled = false;
+    uploadFirmware(new File([b], status.board + '-ota.bin')); // keeps the button off until the upload ends
+  } catch (e) { msg('#fwMsg', t('Download failed.'), false); $('#upBtn').disabled = false; }
 };
 $('#sysTm').onchange = e => post('/api/config', {telemetry: {enabled: e.target.checked}});
 $('#upDaily').onchange = e => post('/api/config', {update: {check: e.target.checked}});

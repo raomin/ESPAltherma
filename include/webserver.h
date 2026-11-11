@@ -113,17 +113,74 @@ volatile bool telemetryPending = false;
 bool updateFailed = false;
 bool updateDone = false;      // the last upload was written and checked
 char updateError[64] = "";    // why it failed: answered to the web page and kept in the events
+// One upload at a time: the request whose firmware is being written. A second one (the button pressed twice)
+// would restart the update and mix its blocks with the first's.
+AsyncWebServerRequest *updateOwner = nullptr;
+size_t updateBytes = 0;          // received so far
+unsigned long updateStarted = 0;
+uint32_t updateLowHeap = 0;      // lowest free data heap seen while it was written
 
-// An HTTPS connection takes about 51 KB of the data heap while it is made: the TLS library's two 17 KB buffers,
-// then the handshake (measured on an M5StickC, /api/heap). Without that room it fails, and leaves the web server
-// and MQTT nothing meanwhile. The callers skip their turn then and come back later.
-// ESP.getFreeHeap() does not tell: it also counts 30 to 40 KB that only code can use.
-#define TLS_HEAP_NEEDED 56000
+// An HTTPS connection takes 54 KB of the data heap while it is made: the TLS library's two 17 KB buffers, then
+// the handshake (sampled on an M5StickC: 62 KB free before, 8.6 KB at the lowest; /api/heap gives the last one).
+// Without that room it fails, and leaves the web server and MQTT nothing meanwhile. The callers skip their turn
+// then and come back later. ESP.getFreeHeap() does not tell: it also counts 30 to 40 KB that only code can use.
+#define TLS_HEAP_NEEDED 58000
 #define TLS_BLOCK_NEEDED 17500
 static bool tlsHasRoom()
 {
   return heap_caps_get_free_size(MALLOC_CAP_8BIT) >= TLS_HEAP_NEEDED && heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) >= TLS_BLOCK_NEEDED;
 }
+
+// What an HTTPS call really takes: the free data heap sampled every 10 ms while it runs, for /api/heap. (The
+// heap's own minimum adds the lowest point of each of its regions, reached at different times: it reads lower.)
+struct TlsUse
+{
+  uint32_t calls;
+  uint32_t before;   // free data heap when the last call started
+  uint32_t low;      // lowest sample during it
+  uint32_t lowBlock; // smallest "largest free piece" during it
+};
+TlsUse tlsUse = {0, 0, 0, 0};
+static volatile uint32_t tlsLow, tlsLowBlock;
+
+static void tlsSample(void *)
+{
+  uint32_t f = heap_caps_get_free_size(MALLOC_CAP_8BIT), b = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+  if (f < tlsLow)
+    tlsLow = f;
+  if (b < tlsLowBlock)
+    tlsLowBlock = b;
+}
+
+// Around an HTTPS call (main loop): starts the sampling, and notes the result when it goes out of scope
+struct TlsWatch
+{
+  esp_timer_handle_t timer = nullptr;
+  uint32_t before;
+  TlsWatch()
+  {
+    before = tlsLow = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    tlsLowBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+    esp_timer_create_args_t args = {};
+    args.callback = tlsSample;
+    args.name = "tlswatch";
+    if (esp_timer_create(&args, &timer) == ESP_OK)
+      esp_timer_start_periodic(timer, 10 * 1000);
+  }
+  ~TlsWatch()
+  {
+    if (timer != nullptr)
+    {
+      esp_timer_stop(timer);
+      esp_timer_delete(timer);
+    }
+    tlsSample(nullptr);
+    tlsUse.calls++;
+    tlsUse.before = before;
+    tlsUse.low = tlsLow;
+    tlsUse.lowBlock = tlsLowBlock;
+  }
+};
 
 static void updateFail(const char *why)
 {
@@ -821,6 +878,11 @@ void webBegin()
         t["priority"] = tasks[i].uxCurrentPriority;
       }
     }
+    JsonObject tls = doc["https"].to<JsonObject>(); // the last HTTPS call (update check, heartbeat, report)
+    tls["calls"] = tlsUse.calls;
+    tls["free_before"] = tlsUse.before;
+    tls["lowest"] = tlsUse.low;
+    tls["smallest_block"] = tlsUse.lowBlock;
     JsonArray marks = doc["start"].to<JsonArray>(); // heapmark.h: the free data heap as the firmware started
     for (uint8_t i = 0; i < heapMarkCount; i++)
     {
@@ -993,12 +1055,17 @@ void webBegin()
   webServer.on("/update", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
-    bool ok = updateDone && !updateFailed;
+    if (updateOwner != nullptr && updateOwner != r)
+    { // its blocks were left aside (below): the first upload goes on
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"an update is already running\"}");
+      return;
+    }
+    bool ok = updateOwner == r && updateDone && !updateFailed;
     if (!ok)
     {
       JsonDocument doc;
       doc["ok"] = false;
-      doc["error"] = updateError[0] ? updateError : "no firmware received";
+      doc["error"] = updateOwner == r && updateError[0] ? updateError : "no firmware received";
       sendJson(r, doc, 500);
       return;
     }
@@ -1010,18 +1077,43 @@ void webBegin()
       return;
     if (index == 0)
     {
+      if (updateOwner != nullptr && updateOwner != r)
+        return; // another upload is being written: this one is refused when its request ends (above)
       // An upload cut off midway leaves the update running, and Update.begin() would refuse every new one until
       // a restart ("already running"): drop it.
       if (Update.isRunning())
         Update.abort();
+      updateOwner = r;
       updateFailed = false;
       updateDone = false;
       updateError[0] = 0;
+      updateBytes = 0;
+      updateStarted = millis();
+      updateLowHeap = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+      // The browser left or the connection was cut: said in the events with how far it got, and the update is
+      // dropped (its buffer freed) instead of staying half done until the next one
+      r->onDisconnect([r]() {
+        if (updateOwner != r)
+          return;
+        updateOwner = nullptr;
+        if (updateDone || updateFailed)
+          return;
+        char why[sizeof(updateError)];
+        snprintf(why, sizeof(why), "cut at %u KB after %lu s, memory down to %u KB", (unsigned)(updateBytes / 1024),
+                 (millis() - updateStarted) / 1000, (unsigned)(updateLowHeap / 1024));
+        updateFail(why);
+      });
       mqttSerial.printf("Firmware update started (%s)\n", filename.c_str());
       eventAddf("Firmware update from the web interface: %s", filename.c_str());
       if (!Update.begin(UPDATE_SIZE_UNKNOWN))
         updateFail(Update.errorString());
     }
+    if (updateOwner != r)
+      return;
+    updateBytes = index + len;
+    uint32_t freeNow = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    if (freeNow < updateLowHeap)
+      updateLowHeap = freeNow;
     if (!updateFailed && Update.write(data, len) != len)
       updateFail(Update.errorString());
     if (final && !updateFailed)
@@ -1114,6 +1206,7 @@ static void sendTelemetry()
     return;
   if (!tlsHasRoom()) // telemetryLoop() comes back to it
     return;
+  TlsWatch watch;
   WiFiClientSecure tls;
   tls.setInsecure();
   HTTPClient http;
@@ -1188,6 +1281,7 @@ static void heartbeatLoop()
   if (!tlsHasRoom()) // next hour
     return;
   LOOP_STAGE("heartbeat");
+  TlsWatch watch;
   String url = TELEMETRY_URL;
   url.replace("/api/report", "/api/heartbeat");
   WiFiClientSecure tls;
@@ -1220,6 +1314,7 @@ static void updateCheckLoop()
   if (!tlsHasRoom()) // next hour
     return;
   LOOP_STAGE("update check");
+  TlsWatch watch;
   WiFiClientSecure tls;
   tls.setInsecure();
   HTTPClient http;

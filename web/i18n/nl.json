@@ -176,6 +176,7 @@
  "unknown model": "onbekend model",
  "busy, retry": "bezig, probeer opnieuw",
  "update failed": "update mislukt",
+ "an update is already running": "er loopt al een update",
  "broker unreachable": "broker niet bereikbaar",
  "wrong user or password": "verkeerde gebruiker of verkeerd wachtwoord",
  "connection refused": "verbinding geweigerd",
