@@ -494,7 +494,13 @@ const el = (tag, attrs = {}, ...kids) => {
 
 // ---- translations: web/i18n/<lang>.json, embedded by scripts/build_web.py. English is the source text: the page's
 // static text is translated where it stands, script strings go through t(). scripts/check_i18n.py lists the strings.
-const I18N = /*I18N*/{};
+// Embedded as {k: [English texts], v: {lang: [translations in the same order, '' = not translated]}}
+const I18N_PACKED = /*I18N*/{};
+const I18N = {}; // lang -> {English text: translation}
+for (const l in I18N_PACKED.v || {}) {
+  const d = I18N[l] = {};
+  I18N_PACKED.v[l].forEach((s, i) => { if (s) d[I18N_PACKED.k[i]] = s; });
+}
 const LANGS = {en: 'English', fr: 'Français', de: 'Deutsch', it: 'Italiano', es: 'Español', nl: 'Nederlands'};
 const norm = s => s.replace(/\s+/g, ' ').trim();
 let lang = 'en';
