@@ -342,6 +342,54 @@ static void otaConfirmLoop(unsigned long now, bool online)
   }
 }
 
+// mDNS guard, Arduino core 2 only. The mDNS responder of ESP-IDF 4.4.7 (prebuilt in core 2.0.17) reads a NULL
+// pointer when the known answers of a truncated query empty the answer it had scheduled for it and one more
+// arrives: the board restarts, every few days on some networks (#639). It only treats a scheduled answer that
+// way when the query came with the TC flag alone (0x0200). So that flag is cleared on every mDNS packet before
+// the responder reads it: such a query is answered like any other, without waiting for the rest of the asker's
+// list. Fixed upstream in mDNS 1.10, which core 3 has.
+// The responder makes its socket again when a network comes back: the guard is put back every 2 seconds.
+#if ESP_ARDUINO_VERSION_MAJOR < 3
+#include <lwip/udp.h>
+#include <lwip/priv/tcpip_priv.h>
+#define MDNS_GUARD_EVERY_MS 2000UL
+static udp_recv_fn mdnsReceive = nullptr; // the responder's own receive function
+
+static void mdnsGuardedReceive(void *arg, struct udp_pcb *pcb, struct pbuf *pb, const ip_addr_t *addr, u16_t port)
+{
+  for (struct pbuf *p = pb; p != nullptr; p = p->next) // the responder reads every buffer of the chain as a packet
+  {
+    uint8_t *header = (uint8_t *)p->payload;
+    if (p->len >= 4 && header[2] == 0x02 && header[3] == 0x00)
+      header[2] = 0x00;
+  }
+  mdnsReceive(arg, pcb, pb, addr, port);
+}
+
+// In the TCP/IP task, which owns the list of sockets
+static err_t mdnsGuardInstall(struct tcpip_api_call_data *)
+{
+  for (struct udp_pcb *pcb = udp_pcbs; pcb != nullptr; pcb = pcb->next)
+  {
+    if (pcb->local_port != 5353 || pcb->recv == nullptr || pcb->recv == mdnsGuardedReceive)
+      continue;
+    if (mdnsReceive != nullptr && pcb->recv != mdnsReceive)
+      continue; // another listener on that port: not ours to wrap
+    mdnsReceive = pcb->recv;
+    pcb->recv = mdnsGuardedReceive;
+  }
+  return ERR_OK;
+}
+
+void mdnsGuard()
+{
+  struct tcpip_api_call_data call;
+  tcpip_api_call(mdnsGuardInstall, &call);
+}
+#else
+void mdnsGuard() {}
+#endif
+
 // OTA and mDNS, started when the device first gets online.
 void startNetworkServices()
 {
@@ -353,6 +401,7 @@ void startNetworkServices()
   if (config.adminPwd[0])
     ArduinoOTA.setPassword(config.adminPwd);
   ArduinoOTA.begin(); // also starts mDNS
+  mdnsGuard();
   MDNS.addService("http", "tcp", 80);
   if (config.ntpServer[0]) // a local time server (a network kept off the Internet)
     configTime(0, 0, config.ntpServer);
@@ -551,6 +600,14 @@ void netLoop()
   roamScanLoop();
 
   otaConfirmLoop(now, online);
+#ifdef MDNS_GUARD_EVERY_MS
+  static unsigned long mdnsGuardAt = 0;
+  if (networkServicesStarted && now - mdnsGuardAt >= MDNS_GUARD_EVERY_MS)
+  {
+    mdnsGuardAt = now;
+    mdnsGuard();
+  }
+#endif
   if (apActive)
     dnsServer.processNextRequest();
   if (online)
