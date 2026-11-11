@@ -76,8 +76,9 @@ def main():
         if flags:
             env["PLATFORMIO_BUILD_FLAGS"] = " ".join(flags)
         # One pio run per platform, the default one first, each in a build directory of its own: a board on another
-        # platform (the C6 on pioarduino) brings its own esptool, which replaces the package the others use in the
-        # same run, and PlatformIO cleans the build directory when the platform of a run changes.
+        # platform (an environment with a `platform` line of its own) brings its own esptool, which replaces the
+        # package the others use in the same run, and PlatformIO cleans the build directory when the platform of a
+        # run changes. All boards share one platform today, so this is one run.
         for i, envs in enumerate(env_groups([b["env"] for b in boards])):
             if i > 0:
                 env["PLATFORMIO_BUILD_DIR"] = os.path.join(os.environ.get("PLATFORMIO_BUILD_DIR") or os.path.join(ROOT, ".pio", "build"), "platform-%d" % i)
