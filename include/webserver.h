@@ -114,6 +114,17 @@ bool updateFailed = false;
 bool updateDone = false;      // the last upload was written and checked
 char updateError[64] = "";    // why it failed: answered to the web page and kept in the events
 
+// An HTTPS connection takes about 51 KB of the data heap while it is made: the TLS library's two 17 KB buffers,
+// then the handshake (measured on an M5StickC, /api/heap). Without that room it fails, and leaves the web server
+// and MQTT nothing meanwhile. The callers skip their turn then and come back later.
+// ESP.getFreeHeap() does not tell: it also counts 30 to 40 KB that only code can use.
+#define TLS_HEAP_NEEDED 56000
+#define TLS_BLOCK_NEEDED 17500
+static bool tlsHasRoom()
+{
+  return heap_caps_get_free_size(MALLOC_CAP_8BIT) >= TLS_HEAP_NEEDED && heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) >= TLS_BLOCK_NEEDED;
+}
+
 static void updateFail(const char *why)
 {
   updateFailed = true;
@@ -661,7 +672,14 @@ void webBegin()
 
   // Event history (eventlog.h), newest first
   webServer.on("/api/events", HTTP_GET, [](AsyncWebServerRequest *r) {
-    static EventRing copy; // too big for the stack; requests are served one at a time
+    // Too big for the stack, and 2 KB kept for good as a static: on the heap for the time of the request
+    std::unique_ptr<EventRing> held(new (std::nothrow) EventRing);
+    if (!held)
+    {
+      r->send(503, "application/json", "{\"error\":\"busy, retry\"}");
+      return;
+    }
+    EventRing &copy = *held;
     eventCopy(copy);
     JsonDocument doc;
     doc["boot"] = eventBoot;
@@ -1094,6 +1112,8 @@ static void sendTelemetry()
   // Already reported: changing the selected values or the language re-confirms the model, but sends nothing new
   if (subject == config.telemetrySent)
     return;
+  if (!tlsHasRoom()) // telemetryLoop() comes back to it
+    return;
   WiFiClientSecure tls;
   tls.setInsecure();
   HTTPClient http;
@@ -1102,7 +1122,10 @@ static void sendTelemetry()
   http.addHeader("Content-Type", "application/json");
   int code = http.POST(telemetryPayload());
   http.end();
-  mqttSerial.printf("Telemetry sent (%d). Thank you!\n", code);
+  if (code >= 200 && code < 300)
+    mqttSerial.println("Report sent. Thank you!");
+  else
+    mqttSerial.printf("Report not sent (%d)\n", code);
   // Done when accepted, or refused for good (4xx but 429): retried later otherwise
   if ((code >= 200 && code < 300) || (code >= 400 && code < 500 && code != 429))
   {
@@ -1162,7 +1185,7 @@ static void heartbeatLoop()
     return;
   attempted = true;
   lastAttempt = now;
-  if (ESP.getFreeHeap() < 70000) // the TLS connection needs the room: next hour
+  if (!tlsHasRoom()) // next hour
     return;
   LOOP_STAGE("heartbeat");
   String url = TELEMETRY_URL;
@@ -1194,7 +1217,7 @@ static void updateCheckLoop()
     return;
   attempted = true;
   lastAttempt = now;
-  if (ESP.getFreeHeap() < 70000) // the TLS connection needs the room: next hour
+  if (!tlsHasRoom()) // next hour
     return;
   LOOP_STAGE("update check");
   WiFiClientSecure tls;

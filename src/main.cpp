@@ -496,12 +496,18 @@ void runSurvey()
   static char detectJson[1024];
   detectModel(survey, detection);
   detectToJson(detection, detectJson, sizeof(detectJson));
-  //Rendered aside then swapped in: the web interface may be reading the previous report
-  static char report[sizeof(surveyJson)];
-  surveyToJson(survey, report, sizeof(report), ESPALTHERMA_VERSION, BOARD_NAME, detectJson);
+  //Rendered aside then swapped in: the web interface may be reading the previous report. On the heap for that
+  //time (3 KB kept for good as a static); without the room, rendered in place under the lock.
+  std::unique_ptr<char[]> report(new (std::nothrow) char[sizeof(surveyJson)]);
+  if (report)
+    surveyToJson(survey, report.get(), sizeof(surveyJson), ESPALTHERMA_VERSION, BOARD_NAME, detectJson);
   valuesLock();
-  memcpy(surveyJson, report, sizeof(surveyJson));
+  if (report)
+    memcpy(surveyJson, report.get(), sizeof(surveyJson));
+  else
+    surveyToJson(survey, surveyJson, sizeof(surveyJson), ESPALTHERMA_VERSION, BOARD_NAME, detectJson);
   valuesUnlock();
+  report.reset();
   mqttSerial.printf("Survey done: protocol %c, %d registries.\n", survey.protocol ? survey.protocol : '-', survey.count);
   applyDetection();
   if (config.model[0] && survey.protocol == 'I')
@@ -1393,7 +1399,7 @@ void setup()
   diii.log = diiiLog;
   diii.lock = valuesLock;
   diii.unlock = valuesUnlock;
-  xTaskCreate(hpTask, "heatpump", 8192, nullptr, 1, nullptr);
+  xTaskCreate(hpTask, "heatpump", 6144, nullptr, 1, nullptr); // it uses 2.5 KB (/api/heap): the rest is heap the HTTPS connections need
   watchdogBegin();
   heapMark("heat pump task");
   mqttSerial.print("ESPAltherma started!");
