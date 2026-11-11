@@ -14,6 +14,7 @@
 #include "labeldef.h"
 
 #include "board.h"
+#include "heapmark.h"
 #include "version.h"
 #include "config.h"
 #include "mqttserial.h"
@@ -1334,6 +1335,7 @@ void setupPins()
 
 void setup()
 {
+  heapMark("start");
   restartCauseLoad();
   eventBegin();
   eventAddf("Boot #%u: %s, firmware %s", eventBoot, resetReasonName(), ESPALTHERMA_VERSION);
@@ -1344,14 +1346,18 @@ void setup()
 #ifdef SECOND_CONSOLE
   SECOND_CONSOLE.begin(115200);
 #endif
+  heapMark("serial");
   configLoad();
   heldRestoreAtBoot();
   EEPROM.begin(10);
   readEEPROM(); //the thermostat relay's kept state, as a level, before its pin becomes an output
   setupPins(); //relays to their inactive state first: they would float during the splash screen
   statsSetup();
+  heapMark("config, pins, statistics");
   setupScreen();
+  heapMark("screen");
   MySerial.begin(9600, SERIAL_CONFIG, config.rxPin, config.txPin);
+  heapMark("heat pump serial port");
 #ifdef ARDUINO_M5Stick_C_Plus
   gpio_pulldown_dis(GPIO_NUM_25);
   gpio_pullup_dis(GPIO_NUM_25);
@@ -1369,14 +1375,18 @@ void setup()
 
   setupMqttClient(); // also points the log stream at <base>/log
   client.setCallback(callback);
+  heapMark("MQTT client");
 
   //Nothing blocks: WiFi, the setup access point and MQTT are handled by netLoop()
   netBegin();
+  heapMark("network started");
   webBegin();
+  heapMark("web server");
 
   initLabels();
   initRegistries();
   requestSurvey();
+  heapMark("values list");
   lwtControl.kind = CONTROL_LWT;
   diii.exchange = x10aExchange;
   diii.clock = millis;
@@ -1385,6 +1395,7 @@ void setup()
   diii.unlock = valuesUnlock;
   xTaskCreate(hpTask, "heatpump", 8192, nullptr, 1, nullptr);
   watchdogBegin();
+  heapMark("heat pump task");
   mqttSerial.print("ESPAltherma started!");
   mqttSerial.printf(" Last reset: %s%s%s\n", resetReasonName(), restartCause[0] ? ": " : "", restartCause);
 }
@@ -1408,17 +1419,20 @@ void loop()
     cycleReady = false;
     LOOP_STAGE("publish values");
     publishValues();
+    heapMark("first values published");
   }
   if (surveyReady && client.connected())
   {
     LOOP_STAGE("publish survey");
     publishSurvey();
+    heapMark("survey published");
   }
   if (discoveryDirty && client.connected())
   {
     discoveryDirty = false;
     LOOP_STAGE("HA discovery");
     publishHomeAssistantDeviceDiscovery();
+    heapMark("Home Assistant discovery");
   }
   if (fwUpdate.dirty && client.connected())
   {

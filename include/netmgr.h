@@ -348,6 +348,7 @@ void startNetworkServices()
   if (networkServicesStarted)
     return;
   networkServicesStarted = true;
+  heapMark("online");
   ArduinoOTA.setHostname(config.hostname);
   if (config.adminPwd[0])
     ArduinoOTA.setPassword(config.adminPwd);
@@ -357,6 +358,7 @@ void startNetworkServices()
     configTime(0, 0, config.ntpServer);
   else
     configTime(0, 0, "pool.ntp.org", "time.google.com"); // UTC, dates the event history
+  heapMark("mDNS, ArduinoOTA, time");
 }
 
 void mqttLoop()
@@ -378,6 +380,8 @@ void mqttLoop()
   mqttLastAttempt = now;
   LOOP_STAGE("MQTT connect");
   mqttConnectOnce(); // netPolicy reboots when the broker stays unreachable
+  if (client.connected())
+    heapMark("MQTT connected");
 }
 
 // MQTT state changes for the event history, at most one every 5 minutes (a flapping broker would flood it)

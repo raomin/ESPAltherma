@@ -803,6 +803,15 @@ void webBegin()
         t["priority"] = tasks[i].uxCurrentPriority;
       }
     }
+    JsonArray marks = doc["start"].to<JsonArray>(); // heapmark.h: the free data heap as the firmware started
+    for (uint8_t i = 0; i < heapMarkCount; i++)
+    {
+      JsonObject m = marks.add<JsonObject>();
+      m["at"] = heapMarks[i].name;
+      m["ms"] = heapMarks[i].ms;
+      m["free"] = heapMarks[i].freeBytes;
+      m["block"] = heapMarks[i].block;
+    }
     sendJson(r, doc);
   });
 
