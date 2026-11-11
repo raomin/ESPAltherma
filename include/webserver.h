@@ -10,6 +10,7 @@
 #include <Update.h>
 #include "webui_data.h"
 #include <HTTPClient.h>
+#include <esp_heap_caps.h>
 
 #ifndef TELEMETRY_URL
 #define TELEMETRY_URL "" // Collection endpoint of the opt-in telemetry; nothing is sent while empty
@@ -249,6 +250,11 @@ static void statusJson(JsonDocument &doc)
   doc["uptime"] = millis() / 1000;
   doc["heap"] = ESP.getFreeHeap();
   doc["heap_min"] = ESP.getMinFreeHeap();
+  // "heap" also counts what is left of the instruction RAM, which only holds code (30 to 40 KB on an ESP32).
+  // What malloc can hand out, and its largest piece: a TLS connection wants two buffers of 17 KB, each in one piece.
+  doc["heap_data"] = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+  doc["heap_data_min"] = heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT);
+  doc["heap_block"] = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
   doc["hostname"] = config.hostname;
 
   JsonObject net = doc["net"].to<JsonObject>();
