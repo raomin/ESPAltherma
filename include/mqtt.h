@@ -45,16 +45,25 @@ bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (
 int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
 static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
 
-// Publishes, and flags a write the broker did not take (stage.h). A message larger than the buffer is not one.
+// The MQTT client's own buffer: the incoming commands and the short messages. It is taken from the heap for as
+// long as the firmware runs, so it is kept small: a longer message is written straight to the connection.
+#define MQTT_BUFFER_SIZE 2048
+
+// Publishes, and flags a write the broker did not take (stage.h).
 bool mqttPublish(const char *topic, const char *payload, bool retained = false)
 {
   if (mqttWriteFailed || !client.connected())
     return false;
   size_t len = strlen(payload);
-  if (MQTT_MAX_HEADER_SIZE + 2 + strlen(topic) + len > client.getBufferSize())
-    return false;
-  if (client.publish(topic, (const uint8_t *)payload, len, retained))
+  if (MQTT_MAX_HEADER_SIZE + 2 + strlen(topic) + len <= client.getBufferSize())
+  {
+    if (client.publish(topic, (const uint8_t *)payload, len, retained))
+      return true;
+  }
+  else if (client.beginPublish(topic, len, retained) && client.write((const uint8_t *)payload, len) == len && client.endPublish())
+  { // larger than the buffer (the values): the header through the buffer, the payload as it is
     return true;
+  }
   mqttWriteFailed = true;
   return false;
 }
@@ -99,7 +108,7 @@ void setupMqttClient()
     Serial.printf("Wifi client timeout: %d\n", plainClient.getTimeout());
   }
   resetJson();
-  client.setBufferSize(MAX_MSG_SIZE); //to support large json message
+  client.setBufferSize(MQTT_BUFFER_SIZE);
   client.setServer(config.mqttServer, config.mqttPort);
   // 60 s instead of the library's 15: a main loop busy for a few seconds (a long publish on a slow link, a web
   // request) no longer costs the connection
