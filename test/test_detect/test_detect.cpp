@@ -165,6 +165,23 @@ void test_catalog_build_selection(void)
     TEST_ASSERT_EQUAL_size_t(25, labels.size());
 }
 
+// The refrigerant line of a definition is not a value: it selects the pressure -> temperature curve. R134a (805) on
+// both Altherma HT hydrobox definitions, whose "(T)" values would follow the R32 curve otherwise (issue #95)
+void test_catalog_refrigerant_of_the_ht_hydrobox(void)
+{
+    std::vector<LabelDef> labels;
+    TEST_ASSERT_EQUAL_INT(805, catalogBuildLabels(catalogFindModel("Altherma(HT EKHBRD-ERRQ series 11-16kW)"), nullptr, 0, labels));
+    TEST_ASSERT_TRUE(labels.size() > 0);
+    for (auto &l : labels)
+        TEST_ASSERT_TRUE(l.convid < 800 || l.convid > 805);
+    TEST_ASSERT_EQUAL_INT(805, catalogBuildLabels(catalogFindModel("Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S)"), nullptr, 0, labels));
+    TEST_ASSERT_EQUAL_INT(801, catalogBuildLabels(catalogFindModel("Altherma(HT ERRQ-ERSQ outdoor unit 11-16kW)"), nullptr, 0, labels));
+    // No refrigerant line of any model is left among the values
+    for (int i = 0; i < CATALOG_ENTRY_COUNT; i++)
+        if (CATALOG_ENTRIES[i].size == 0 && CATALOG_ENTRIES[i].conv >= 800 && CATALOG_ENTRIES[i].conv < 900)
+            TEST_ASSERT_TRUE(CATALOG_ENTRIES[i].flags & CATALOG_FLAG_ALWAYS);
+}
+
 void test_catalog_keys_are_stable(void)
 {
     // Same key for the same slot whatever the model: selections survive a model change within a family
@@ -570,6 +587,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_catalog_models);
     RUN_TEST(test_catalog_build_recommended);
     RUN_TEST(test_catalog_build_selection);
+    RUN_TEST(test_catalog_refrigerant_of_the_ht_hydrobox);
     RUN_TEST(test_catalog_keys_are_stable);
     RUN_TEST(test_detect_no_answer);
     RUN_TEST(test_detect_synthetic_surveys);

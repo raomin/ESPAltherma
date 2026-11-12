@@ -315,7 +315,7 @@ def build():
             e[0] |= 1 << index
             if recommended:
                 e[1] |= FLAG_RECOMMENDED
-            if size == 0 and 800 <= conv <= 804:
+            if size == 0 and 800 <= conv <= 805:
                 e[1] |= FLAG_ALWAYS
 
     # Registry, then offset order; definition file order within a slot (keeps the ON/OFF bits order)
