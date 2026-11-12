@@ -235,6 +235,8 @@ static bool parseBody(AsyncWebServerRequest *r, JsonDocument &doc)
   return true;
 }
 
+#include "expertweb.h"
+
 // Called from mqttSerial.drain() (main loop) for each log chunk.
 void webLogChunk(const char *chunk, size_t len)
 {
@@ -632,6 +634,7 @@ void webBegin()
     r->send(resp);
   });
 
+  expertSetupRoutes();
   webServer.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *r) {
     JsonDocument doc;
     statusJson(doc);

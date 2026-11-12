@@ -20,6 +20,7 @@
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"
+#include "expertio.h"
 #include "control.h"
 #include "diii_comm.h"
 #include "stats.h"
@@ -1245,6 +1246,7 @@ static void memoryDumpTick()
 
 void controlLoop()
 {
+  if (!busy) expertTick();
   controlTick(dhwControl, config.dhwTarget, "Hot water");
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
   limitTick();

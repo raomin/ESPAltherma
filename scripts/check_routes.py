@@ -36,7 +36,10 @@ def shadowed(found):
 
 
 def main():
-    found = routes(SOURCE.read_text(encoding="utf-8"))
+    text = SOURCE.read_text(encoding="utf-8")
+    # The expert routes are registered at this call site, before the regular API.
+    text = text.replace("expertSetupRoutes();", (ROOT / "include" / "expertweb.h").read_text(encoding="utf-8"))
+    found = routes(text)
     if len(found) < 10:
         print("check_routes: only %d routes found in %s, the pattern no longer matches" % (len(found), SOURCE.name))
         return 1
