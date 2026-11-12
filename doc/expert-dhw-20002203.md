@@ -26,7 +26,6 @@ Conclusion: direct writes to the effective fixed target are accepted and observa
 consistent with the controller-owned fixed setpoint. These traces alone cannot distinguish an incoming
 controller message from periodic recomputation inside the hydro board. Other RAM locations were not tested.
 
-[Full raw transactions and timestamps](experiments/2026-11-12-dhw-fixed.json).
 The generic expert API used to collect these traces is proposed separately.
 
 Validation: 151 native tests passed, including five expert-state/parser tests. ESP32-S3 build passed
