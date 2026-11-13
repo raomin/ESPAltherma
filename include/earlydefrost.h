@@ -82,7 +82,7 @@ public:
   EarlyDefrostEvent saved;
 private:
   uint32_t lastGoodMs = 0, lastZeroMs = 0, defrostEndedMs = 0;
-  uint16_t uncertaintySeconds = 0;
+  uint16_t uncertaintyMillis = 0;
   bool haveInput = false, zeroSeen = false, previousRunning = false, previousDefrost = false;
   bool knownStart = false, restartAfterDefrost = false, haveEvent = false;
 public:
@@ -126,8 +126,8 @@ public:
       if (restartAfterDefrost) restartAfterDefrost = false;
       else if (zeroSeen && !cooling)
       {
-        uint32_t uncertainty = (uint32_t)(now-lastZeroMs) / 1000;
-        uncertaintySeconds = uncertainty > UINT16_MAX ? UINT16_MAX : (uint16_t)uncertainty;
+        uint32_t uncertainty = (uint32_t)(now-lastZeroMs);
+        uncertaintyMillis = uncertainty > UINT16_MAX ? UINT16_MAX : (uint16_t)uncertainty;
         working.begin(now); knownStart = true;
       }
       else if (cooling) knownStart = false;
@@ -137,14 +137,14 @@ public:
     if (knownStart) working.append(now,in);
     bool early = defrost && !previousDefrost && !cooling && knownStart &&
                  (uint32_t)(now-working.startMs) <= DEFROST_WINDOW_MS &&
-                 (uint32_t)(now-working.startMs)/1000 + uncertaintySeconds <= DEFROST_WINDOW_MS/1000;
+                 (uint32_t)(now-working.startMs) + uncertaintyMillis <= DEFROST_WINDOW_MS;
     if (early)
     {
       saved.trace = working;
       saved.id = saved.detectedMs = now;
       saved.epoch = epoch;
       saved.elapsedSeconds = (uint16_t)((uint32_t)(now-working.startMs)/1000);
-      saved.startUncertaintySeconds = uncertaintySeconds;
+      saved.startUncertaintySeconds = (uncertaintyMillis+999u)/1000u;
       saved.outdoorTenths=DefrostTrace::half(in.outdoorTenths)==INT8_MIN?INT16_MIN:in.outdoorTenths;
       saved.coilTenths=DefrostTrace::half(in.coilTenths)==INT8_MIN?INT16_MIN:in.coilTenths;
       saved.observation = ICE_NOT_CHECKED; saved.reported = false;

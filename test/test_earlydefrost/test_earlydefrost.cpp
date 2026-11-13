@@ -1,4 +1,5 @@
 #include <unity.h>
+#include <initializer_list>
 #include "earlydefrost.h"
 #include "erga_20261113.h"
 
@@ -117,6 +118,18 @@ void test_trace_capacity_and_unknown_temperature_encoding()
     TEST_ASSERT_EQUAL(1,t.count);
 }
 
+void test_subsecond_start_uncertainty_cannot_extend_the_15_minute_window()
+{
+    for(uint32_t detected : {uint32_t(901001),uint32_t(901000)})
+    {
+        EarlyDefrostRecorder r;r.observe(input(0),1000,0);r.observe(input(),1501,0);
+        runUntil(r,1501,179);
+        bool early=r.observe(input(48,DF_STATUS|DF_DEFROST),detected,0);
+        TEST_ASSERT_EQUAL(detected==901000,early);
+        if(early) TEST_ASSERT_EQUAL(1,r.saved.startUncertaintySeconds);
+    }
+}
+
 void test_recorded_ice_free_start_is_detected_without_claiming_ice_absence()
 {
     EarlyDefrostRecorder r;
@@ -151,6 +164,7 @@ int main(int,char **)
     RUN_TEST(test_lost_feedback_breaks_start_history_and_marks_gap);
     RUN_TEST(test_uncertainty_and_clock_wrap_are_handled_conservatively);
     RUN_TEST(test_trace_capacity_and_unknown_temperature_encoding);
+    RUN_TEST(test_subsecond_start_uncertainty_cannot_extend_the_15_minute_window);
     RUN_TEST(test_recorded_ice_free_start_is_detected_without_claiming_ice_absence);
     RUN_TEST(test_timestamp_quantisation_does_not_accumulate_jitter_error);
     return UNITY_END();
