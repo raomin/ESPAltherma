@@ -22,6 +22,11 @@ jobs:
         run: python scripts/check_routes.py --check
       - name: Unit tests
         run: pio test -e native
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Explicit defrost report validation
+        run: node --test telemetry/test/*.test.js
 
   firmware:
     runs-on: ubuntu-latest

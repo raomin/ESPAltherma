@@ -36,7 +36,10 @@ def shadowed(found):
 
 
 def main():
-    found = routes(SOURCE.read_text(encoding="utf-8"))
+    # registerDefrostRoutes() is called before the routes registered directly in webBegin().
+    module = ROOT / "include" / "defrostweb.h"
+    found = routes(module.read_text(encoding="utf-8")) if module.exists() else []
+    found += routes(SOURCE.read_text(encoding="utf-8"))
     if len(found) < 10:
         print("check_routes: only %d routes found in %s, the pattern no longer matches" % (len(found), SOURCE.name))
         return 1

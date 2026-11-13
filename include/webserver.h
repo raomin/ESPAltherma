@@ -30,6 +30,11 @@ extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
+bool defrostSnapshot(EarlyDefrostEvent &out);
+bool defrostAnnotate(uint32_t id,IceObservation observation);
+bool defrostMarkReported(uint32_t id,IceObservation observation);
+void defrostStatusJson(JsonObject out);
+static void defrostWebStatus(JsonObject out);
 ValueQuality sensorQuality(const LabelDef &l, uint32_t now);
 int32_t sensorAge(const LabelDef &l, uint32_t now);
 
@@ -420,6 +425,7 @@ static void statusJson(JsonDocument &doc)
   hp["last_poll"] = lastPollMs ? (long)((millis() - lastPollMs) / 1000) : -1;
   hp["survey_running"] = surveyRequested || surveyInProgress;
   hp["survey_done"] = surveyJson[0] != 0;
+  defrostWebStatus(doc["early_defrost"].to<JsonObject>());
   JsonArray fixes = hp["layout_fixes"].to<JsonArray>();
   for (uint8_t f = 0; f < config.fixCount; f++)
   {
@@ -667,8 +673,11 @@ static void handleCatalog(AsyncWebServerRequest *r)
   });
 }
 
+#include "defrostweb.h"
+
 void webBegin()
 {
+  registerDefrostRoutes();
   mqttSerial.onChunk = webLogChunk;
 
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *r) {
@@ -1485,6 +1494,8 @@ void webLoop()
     runMqttTest();
   if (telemetryPending)
     sendTelemetry();
+  if (defrostReportPending)
+    sendDefrostReport();
   telemetryLoop();
   updateCheckLoop();
   heartbeatLoop();

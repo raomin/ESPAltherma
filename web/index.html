@@ -206,6 +206,19 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
 
 <section id="dashboard" class="on">
  <div id="banners"></div>
+ <div id="defrostNotice" class="card pad" hidden style="margin-bottom:16px;border:2px solid var(--warm)">
+  <h2>Early defrost detected</h2>
+  <p>Possible unnecessary defrost during startup. Temperatures alone cannot prove this.</p>
+  <p>At the next occurrence, check whether the outdoor heat exchanger is ice-free BEFORE defrost starts.</p>
+  <p id="defrostDetails" translate="no"></p>
+  <p class="muted">This case remains available for 24 hours. A restart clears it.</p>
+  <label for="defrostObservation">What did you observe before this defrost?</label>
+  <select id="defrostObservation"><option value="not_checked">Not checked</option><option value="ice_free">Ice-free observed</option><option value="iced">Ice observed</option></select>
+  <div class="acts" style="margin-top:12px"><a class="btn" href="/api/defrost/download">Download JSON</a><a class="btn" href="/api/defrost/download?format=csv">Download CSV</a></div>
+  <p class="muted">You can voluntarily send this case to the project telemetry: readings, device identifiers and your observation. Sending requires the button below.</p>
+  <button id="defrostReport">Send this case to project telemetry</button>
+  <p id="defrostReportState" translate="no"></p><p id="defrostMsg" class="msg" translate="no"></p>
+ </div>
  <div class="dash" data-block="dash">
   <div class="schem card">
    <svg id="sch" viewBox="0 0 800 560" role="img" aria-label="Diagram of the heating installation">
@@ -889,10 +902,35 @@ for (const u of Object.values(CONTROLS)) {
     catch (e) { msg(m, e.message, false); }
   };
 }
+function renderDefrostNotice() {
+  const d = status.early_defrost || {}, box = $('#defrostNotice'), select = $('#defrostObservation');
+  box.hidden = !d.active;
+  if (!d.active) return;
+  const changed = select.dataset.id !== String(d.id);
+  select.dataset.id = String(d.id);
+  if (changed || document.activeElement !== select) select.value = d.observation || 'not_checked';
+  if (changed) msg('#defrostMsg', '');
+  $('#defrostDetails').textContent = t('Defrost {n} min after observed compressor start.', {n: f1(d.elapsed_s / 60)}) + ' ' +
+    t('Outdoor: {out} °C; minimum coil: {coil} °C.', {out: d.outdoor_c == null ? '—' : f1(d.outdoor_c), coil: d.minimum_coil_c == null ? '—' : f1(d.minimum_coil_c)}) + ' ' +
+    (d.truncated ? t('The trace contains gaps.') : '') + ' ' + (d.recording ? t('The 15-minute trace is still being recorded.') : '');
+  const busy = ['queued', 'sending'].includes(d.report_state);
+  $('#defrostReport').disabled = !d.report_available || busy || d.reported;
+  $('#defrostReportState').textContent = !d.report_available ? t('Project telemetry is not configured in this build.') : busy ? t('Sending report…') : d.reported ? t('Report sent.') : d.report_state === 'failed' ? t('Report failed. Download the case or try again.') : '';
+}
+$('#defrostObservation').onchange = async e => {
+  try { await post('/api/defrost/observation', {id: Number(e.target.dataset.id), observation: e.target.value}); await refreshStatus(); }
+  catch (err) { msg('#defrostMsg', err.message, false); }
+};
+$('#defrostReport').onclick = async () => {
+  const select = $('#defrostObservation');
+  $('#defrostReport').disabled = true;
+  try { await post('/api/defrost/report', {id: Number(select.dataset.id), observation: select.value, user_consent: true}); await refreshStatus(); }
+  catch (err) { msg('#defrostMsg', err.message, false); $('#defrostReport').disabled = false; }
+};
 function renderStatus() {
   const hp = status.hp;
   $('#hdrModel').textContent = [hp.unit, hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : ''].filter(Boolean).join(' · ');
-  renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl(); renderToday();
+  renderChips(); renderTiles(); renderBanners(); renderDefrostNotice(); renderSystem(); renderControl(); renderToday();
   // Values appeared (model just detected or chosen), or the board polled since the last push reached us (a dropped
   // event stream, a missed message): fetch them rather than draw a reading that is minutes or hours old
   if (hp.values > 0 && hp.last_poll >= 0 && (!lastValues.length || Date.now() - valuesAt > (hp.last_poll + 20) * 1000)) api('/api/values').then(renderValues).catch(() => {});

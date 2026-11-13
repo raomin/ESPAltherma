@@ -27,6 +27,8 @@
 #include "stats.h"
 #include "survey.h"
 #include "catalog.h"
+#include "earlydefrost.h"
+#include "defrostlayout.h"
 #include "detect.h"
 #include "layoutfix.h"
 #include "homeassistant.h"
@@ -82,6 +84,12 @@ SemaphoreHandle_t valuesMutex = xSemaphoreCreateMutex();
 void valuesLock() { xSemaphoreTake(valuesMutex, portMAX_DELAY); }
 void valuesUnlock() { xSemaphoreGive(valuesMutex); }
 volatile bool cycleReady = false;
+std::unique_ptr<EarlyDefrostRecorder> earlyDefrost;
+DefrostLayout defrostLayout;
+int defrostModel = -1;
+uint32_t defrostLastSample = 0;
+void defrostConfigure(int model, const CatalogFix *fixes = nullptr, size_t count = 0);
+void defrostPoll(bool normalCycle);
 
 #if defined(ARDUINO_M5Stick_C_Plus2) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stack_Tough)
 #define HAS_M5_SCREEN
@@ -242,6 +250,7 @@ void initLabels(){
   int model = catalogFindModel(config.model);
   if (model < 0)
   {
+    defrostConfigure(-1);
     catalogLabels.clear();
     converter.setLabels(nullptr, 0);
     return;
@@ -272,6 +281,7 @@ void initLabels(){
   int refrigerant = catalogBuildLabels(model, config.labels, config.labelCount, catalogLabels, fixes, fixCount, catalogLanguage(config.lang));
   converter.RType = refrigerant ? refrigerant : 802;
   converter.setLabels(catalogLabels.data(), catalogLabels.size());
+  defrostConfigure(model, fixes, fixCount);
   mqttSerial.printf("Model: %s (%s), %d values\n", config.model, config.modelConfirmed ? "confirmed" : "to be confirmed", (int)catalogLabels.size());
 }
 
@@ -580,6 +590,7 @@ void pollRegistries()
     }
   }
   layoutCheck();
+  defrostPoll(true);
 }
 
 // Sends the values of the last query cycle in mqtt. Main loop only.
@@ -673,6 +684,104 @@ static uint32_t statsEpoch()
 {
   time_t t = time(nullptr);
   return t > 1600000000 ? (uint32_t)t : 0;
+}
+
+void defrostConfigure(int model, const CatalogFix *fixes, size_t count)
+{
+  bool supported = defrostLayout.configure(model,fixes,count);
+  if (!supported || defrostModel != model) earlyDefrost.reset();
+  if (supported && !earlyDefrost) earlyDefrost.reset(new (std::nothrow) EarlyDefrostRecorder());
+  defrostModel = supported ? model : -1;
+}
+
+bool defrostSnapshot(EarlyDefrostEvent &out)
+{
+  valuesLock();
+  bool available=earlyDefrost && earlyDefrost->visible(millis());
+  if (available) out=earlyDefrost->saved;
+  valuesUnlock();
+  return available;
+}
+
+bool defrostAnnotate(uint32_t id,IceObservation observation)
+{
+  valuesLock();
+  bool ok=earlyDefrost && earlyDefrost->annotate(id,observation,millis());
+  valuesUnlock();
+  return ok;
+}
+
+bool defrostMarkReported(uint32_t id,IceObservation observation)
+{
+  valuesLock();
+  bool ok=earlyDefrost && earlyDefrost->visible(millis()) && earlyDefrost->saved.id==id && earlyDefrost->saved.observation==observation;
+  if (ok) earlyDefrost->saved.reported=true;
+  valuesUnlock();
+  return ok;
+}
+
+void defrostStatusJson(JsonObject out)
+{
+  valuesLock();
+  out["available"]=bool(earlyDefrost);
+  bool active=earlyDefrost && earlyDefrost->visible(millis());
+  out["active"]=active;
+  out["recording"]=earlyDefrost && earlyDefrost->fast(millis());
+  if (active)
+  {
+    const EarlyDefrostEvent &e=earlyDefrost->saved;
+    out["id"]=e.id; out["epoch"]=e.epoch;
+    out["age_s"]=(uint32_t)(millis()-e.detectedMs)/1000;
+    out["elapsed_s"]=e.elapsedSeconds; out["start_uncertainty_s"]=e.startUncertaintySeconds;
+    int16_t minimum=e.trace.minimumCoilTenths();
+    if (minimum==INT16_MIN) out["minimum_coil_c"]=nullptr;
+    else out["minimum_coil_c"]=minimum/10.0;
+    out["samples"]=e.trace.count;out["truncated"]=e.trace.truncated;
+    if (e.outdoorTenths==INT16_MIN) out["outdoor_c"]=nullptr;else out["outdoor_c"]=e.outdoorTenths/10.0;
+    out["observation"]=iceObservationName(e.observation);out["reported"]=e.reported;
+  }
+  valuesUnlock();
+}
+
+// Owner heat-pump task only. Reuse the normal cycle's validated replies; during the observed start
+// window, request only the three known register pages at about 5 seconds, without retries.
+void defrostPoll(bool normalCycle)
+{
+  if (!earlyDefrost || surveyInProgress || busy) return;
+  uint32_t now=millis();
+  if (!normalCycle && (!earlyDefrost->fast(now) || (uint32_t)(now-defrostLastSample)<DEFROST_SAMPLE_MS)) return;
+  if ((uint32_t)(now-defrostLastSample)<DEFROST_SAMPLE_MS) return;
+  defrostLastSample=now;
+  DefrostInput in;
+  for (uint8_t reg : {uint8_t(0x10),uint8_t(0x20),uint8_t(0x30)})
+  {
+    watchdogHp();
+    uint8_t buffer[REPLY_BUFFER_SIZE]; size_t offset=0,length=0;
+    bool cached=false;
+    if (normalCycle)
+    {
+      valuesLock();
+      if (valueQualityTracker.quality(reg,true,millis(),config.frequency)==VALUE_OK)
+      {
+        uint8_t len=0; const uint8_t *p=nullptr;
+        for (uint8_t i=0;i<replyCache.count;i++)
+          if (replyCache.reg[i]==reg) { p=replyCache.data[i]; len=replyCache.len[i]; break; }
+        if (p) { length=len<sizeof(buffer)?len:sizeof(buffer); memcpy(buffer,p,length); cached=true; }
+      }
+      valuesUnlock();
+    }
+    if (!cached)
+    {
+      if (!queryRegistry((char)reg,buffer,'I') || !registryFramePayload(buffer,(size_t)buffer[2]+2,'I',offset,length)) continue;
+    }
+    defrostLayout.decode(reg,buffer+offset,length,in);
+  }
+  valuesLock();
+  int dhw=statsFlag({"3way valve", "Priority to domestic water"});
+  if (dhw>=0) { in.flags|=DF_DHW_KNOWN; if (dhw) in.flags|=DF_DHW; }
+  bool detected=earlyDefrost->observe(in,millis(),statsEpoch());
+  valuesUnlock();
+  if (detected) eventAddf("Early defrost detected; ice presence not verified (download on Home)");
 }
 
 float statsVoltageRead() { return statsValue({"Voltage (N-phase)"}); }
@@ -1353,6 +1462,7 @@ void hpTask(void *)
       watchdogHp();
       HP_STAGE("hot water target");
       controlLoop();
+      defrostPoll(false);
       HP_STAGE("wait");
       delay(diii.idleMs()); // 100 ms, 10 ms while a DIII frame is being learnt or is due
     }
@@ -1435,8 +1545,10 @@ void setup()
   webBegin();
   heapMark("web server");
 
+  valuesLock();
   initLabels();
   initRegistries();
+  valuesUnlock();
   requestSurvey();
   heapMark("values list");
   lwtControl.kind = CONTROL_LWT;

@@ -100,6 +100,7 @@ class Device:
         self.discover_until = 0
         self.mqtt_test_until = 0
         self.log = "ESPAltherma mock started\n"
+        self.defrost = {"available": True, "active": False, "recording": False}
 
     def status(self):
         c = self.config
@@ -118,6 +119,7 @@ class Device:
                    "survey_running": time.time() < self.survey_until, "survey_done": time.time() >= self.survey_until},
             "detect": {"model": MODELS[0][0], "family": "G", "confidence": "low"},
             "telemetry_available": True,
+            "early_defrost": self.defrost,
             "reset_reason": "restart by the firmware", "restart_cause": "Settings changed from the web interface",
         }
         if self.ethernet:
@@ -241,6 +243,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, webpage.render(ROOT).encode("utf-8"), "text/html")
         if p == "/api/status":
             return self.send(200, d.status())
+        if p == "/api/defrost/download":
+            if not d.defrost["active"]:
+                return self.send(404, {"ok": False, "error": "no current case"})
+            if parse_qs(url.query).get("format") == ["csv"]:
+                return self.send(200, "seconds_since_observed_start,outdoor_c,coil_c,rps\n0,2.0,-10.5,40\n", "text/csv")
+            return self.send(200, {"v": 1, "event": d.defrost, "samples": [[0, 4, -21, 40, 18]]})
         if p == "/api/config":
             return self.send(200, d.config)
         if p == "/api/detect":
@@ -298,6 +306,18 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         d = self.device
         p = urlparse(self.path).path
+        if p in ("/api/defrost/observation", "/api/defrost/report"):
+            data = self.body()
+            if not d.defrost["active"] or data.get("id") != d.defrost.get("id"):
+                return self.send(409, {"ok": False, "error": "case expired or replaced"})
+            if data.get("observation") not in ("not_checked", "ice_free", "iced"):
+                return self.send(400, {"ok": False, "error": "observation"})
+            if p.endswith("/report") and data.get("user_consent") is not True:
+                return self.send(400, {"ok": False, "error": "explicit consent required"})
+            d.defrost["observation"] = data["observation"]
+            d.defrost["reported"] = p.endswith("/report")
+            d.defrost["report_state"] = "sent" if d.defrost["reported"] else "idle"
+            return self.send(200, {"ok": True})
         if p == "/api/memory":
             data = self.body()
             addr, n = int(str(data.get("addr", "0")), 0), int(data.get("len", 16))
@@ -370,6 +390,7 @@ def main():
     ap.add_argument("--nodhw", action="store_true", help="no hot water tank: its values are not selected")
     ap.add_argument("--noroom", action="store_true", help="no room thermostat: its values are not selected")
     ap.add_argument("--limit", action="store_true", help="the power limit option on")
+    ap.add_argument("--early-defrost", action="store_true", help="show a synthetic early-defrost case; reports stay in this mock")
     ap.add_argument("--uptime", type=int, default=0, help="seconds the board has been running (an update restarts it first from 300)")
     args = ap.parse_args()
     global LIMIT_ON
@@ -377,6 +398,11 @@ def main():
     leave_out = ({"DHW tank temp. (R5T)", "DHW setpoint"} if args.nodhw else set()) | \
         ({"Indoor ambient temp. (R1T)", "RT setpoint"} if args.noroom else set())
     Handler.device = Device(args.fresh, args.ethernet, args.bizone, leave_out)
+    if args.early_defrost:
+        Handler.device.defrost.update({"active": True, "id": 123, "epoch": int(time.time()), "age_s": 60,
+            "elapsed_s": 410, "start_uncertainty_s": 30, "outdoor_c": 2, "minimum_coil_c": -10.5,
+            "samples": 121, "truncated": False, "observation": "not_checked", "reported": False,
+            "report_available": True, "report_state": "idle"})
     Handler.device.start -= args.uptime
     print("Mock ESPAltherma on http://localhost:%d" % args.port)
     ThreadingHTTPServer(("", args.port), Handler).serve_forever()

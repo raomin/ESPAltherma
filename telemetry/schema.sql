@@ -37,3 +37,17 @@ CREATE TABLE IF NOT EXISTS heartbeats (
   PRIMARY KEY (install_id, day)
 );
 CREATE INDEX IF NOT EXISTS heartbeats_day ON heartbeats (day);
+
+-- Explicitly submitted startup-defrost cases. No IP, location, credentials or automatic case uploads.
+CREATE TABLE IF NOT EXISTS defrost_cases (
+  install_id TEXT NOT NULL,
+  boot_id INTEGER NOT NULL,
+  event_id INTEGER NOT NULL,
+  model TEXT NOT NULL,
+  observation TEXT NOT NULL,
+  report TEXT NOT NULL,
+  first_seen TEXT NOT NULL,
+  last_seen TEXT NOT NULL,
+  PRIMARY KEY (install_id, boot_id, event_id)
+);
+CREATE INDEX IF NOT EXISTS defrost_cases_day ON defrost_cases (last_seen);
