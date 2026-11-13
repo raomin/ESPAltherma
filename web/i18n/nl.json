@@ -452,5 +452,8 @@
  "Range: hexadecimal, 16 KB at most.": "Bereik: hexadecimaal, hoogstens 16 KB.",
  "{n} of {t} frames read": "{n} van {t} frames gelezen",
  "Done, {m} frames did not answer.": "Klaar, {m} frames zonder antwoord.",
- "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt."
+ "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt.",
+ "Statistics UTC offset (minutes)": "UTC-afwijking voor statistieken (minuten)",
+ "Use this browser's offset": "Afwijking van deze browser gebruiken",
+ "Fixed UTC offset for daily statistics. Update it when daylight saving time changes, then save settings.": "Vaste UTC-afwijking voor dagstatistieken. Pas deze aan bij zomer- of wintertijd en sla de instellingen op."
 }

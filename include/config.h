@@ -93,7 +93,7 @@ struct AppConfig
   float statsAuxW;    // pump and electronics, added while the compressor runs
   float statsPowerFactor; // applied to the inverter's part of the estimate: 1 = apparent power, a meter gives the real one
   float statsBuhKW[2]; // the backup heater's kW per step, added while a step is on
-  int16_t statsTz;    // minutes east of UTC, kept up to date by the web page: the day's counters reset at local midnight
+  int16_t statsTz;    // fixed minutes east of UTC, explicitly saved in Settings; page views never change it
   bool ctlLimitOn;    // a limit is applied from here, re-applied after a restart of the heat pump or of ESPAltherma
   float ctlLimitValue;
   int ctlLimitOrig;   // the unit's own enable byte, put back when the limit is switched off
