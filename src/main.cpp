@@ -20,6 +20,7 @@
 #include "mqttserial.h"
 #include "converters.h"
 #include "comm.h"
+#include "registrypoll.h"
 #include "control.h"
 #include "diii_comm.h"
 #include "stats.h"
@@ -538,14 +539,9 @@ void pollRegistries()
     watchdogHp();
     diii.hold(1500, diiiSleep); // a registry query must not land in a DIII E0 window
     unsigned char buff[REPLY_BUFFER_SIZE] = {0};
-    int tries = 0;
-    while (!queryRegistry(registryIDs[i], buff, config.protocol) && tries++ < 3)
-    {
-      mqttSerial.println("Retrying...");
-      hpDelay(1000);
-    }
-    unsigned char receivedRegistryID = config.protocol == 'S' ? buff[0] : buff[1];
-    registryOk[i] = (uint8_t)registryIDs[i] == receivedRegistryID; //if replied registerID is coherent with the command
+    registryOk[i] = registryPoll((uint8_t)registryIDs[i], buff, sizeof(buff), config.protocol,
+      [&]() { return queryRegistry(registryIDs[i], buff, config.protocol); },
+      []() { mqttSerial.println("Retrying..."); hpDelay(1000); });
     if (registryOk[i])
     {
       valuesLock();
