@@ -257,7 +257,8 @@ bool surveyAsNumber(const Survey &s, AsNumber &as)
 }
 
 // Outdoor unit P-number from registry 0x11, same order: 1P705348-1x reads 01 70 53 48 01 .. at offsets 0-5.
-// Report only: it is not in the AS number table (outdoor board part number).
+// Report only: it is not in the AS number table (outdoor board part number). A part number starts with 1 to 9:
+// an outdoor unit that answers with zeros (asleep) has none, where "0P000000-0" was reported.
 static bool surveyPNumber(const Survey &s, char *out, size_t size)
 {
   int p1 = s.byteAt(0x11, 0);
@@ -265,7 +266,7 @@ static bool surveyPNumber(const Survey &s, char *out, size_t size)
   int b = surveyBcd(s.byteAt(0x11, 2));
   int c = surveyBcd(s.byteAt(0x11, 3));
   int q = s.byteAt(0x11, 4);
-  if (p1 < 0 || p1 > 9 || a < 0 || b < 0 || c < 0 || q < 0 || (q & 0xF) > 9)
+  if (p1 < 1 || p1 > 9 || a < 0 || b < 0 || c < 0 || q < 0 || (q & 0xF) > 9)
     return false;
   snprintf(out, size, "%dP%02d%02d%02d-%d", p1, a, b, c, q & 0xF);
   return true;

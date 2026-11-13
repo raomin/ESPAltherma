@@ -180,6 +180,21 @@ void test_survey_json(void)
     TEST_ASSERT_EQUAL_STRING(",\"detect\":{\"family\":\"L\"}}", j.substr(j.size() - 25).c_str());
 }
 
+// Registry 0x11 answered with zeros (an outdoor unit asleep): no part number, the bytes stay in the report
+void test_survey_zero_reply_gives_no_part_number(void)
+{
+    useFake('I', L_UNIT, sizeof(L_UNIT) / sizeof(FakeReg));
+    Survey s;
+    surveyRun(s, fakeQuery);
+    SurveyReg *r = const_cast<SurveyReg *>(s.find(0x11));
+    TEST_ASSERT_NOT_NULL(r);
+    memset(r->payload, 0, r->len);
+    char json[2048];
+    TEST_ASSERT_TRUE(surveyToJson(s, json, sizeof(json), "1.2.3", "esp32", nullptr) > 0);
+    TEST_ASSERT_TRUE(strstr(json, "ou_pn") == nullptr);
+    TEST_ASSERT_TRUE(strstr(json, "\"11\":\"000000000000\"") != nullptr);
+}
+
 void test_survey_protocol_s(void)
 {
     useFake('S', ROTEX_UNIT, sizeof(ROTEX_UNIT) / sizeof(FakeReg));
@@ -347,6 +362,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_survey_hydrobox_without_indoor_registries);
     RUN_TEST(test_survey_ht_outdoor_unit);
     RUN_TEST(test_survey_json_never_overflows);
+    RUN_TEST(test_survey_zero_reply_gives_no_part_number);
     RUN_TEST(test_survey_key_same_unit);
     UNITY_END();
     return 0;
