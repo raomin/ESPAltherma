@@ -752,6 +752,7 @@ void defrostPoll(bool normalCycle)
   if (!normalCycle && (!earlyDefrost->fast(now) || (uint32_t)(now-defrostLastSample)<DEFROST_SAMPLE_MS)) return;
   if ((uint32_t)(now-defrostLastSample)<DEFROST_SAMPLE_MS) return;
   defrostLastSample=now;
+  HP_STAGE("startup defrost sample");
   DefrostInput in;
   for (uint8_t reg : {uint8_t(0x10),uint8_t(0x20),uint8_t(0x30)})
   {
