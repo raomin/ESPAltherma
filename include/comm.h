@@ -2,8 +2,10 @@
 #define COMM_H
 #include <string.h>
 
+#ifndef ESPALTHERMA_COMM_NATIVE_TEST
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#endif
 HardwareSerial MySerial(1);
 #define SERIAL_CONFIG (SERIAL_8E1)
 #define SERIAL_FLUSH_TX_ONLY false

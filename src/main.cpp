@@ -12,6 +12,7 @@
 
 // No compile time settings: everything is configured at runtime (web interface, stored in NVS).
 #include "labeldef.h"
+#include "valuequality.h"
 
 #include "board.h"
 #include "heapmark.h"
@@ -40,6 +41,15 @@
 ::Converter converter; // qualified: ArduinoJson (via ESPAsyncWebServer) also has a Converter
 char registryIDs[32]; //Holds the registries to query
 bool registryOk[32]; //Registries successfully read during the last query cycle
+ValueQualityTracker valueQualityTracker;
+ValueQuality sensorQuality(const LabelDef &l, uint32_t now)
+{
+  return valueQualityTracker.quality((uint8_t)l.registryID, l.valid, now, config.frequency);
+}
+int32_t sensorAge(const LabelDef &l, uint32_t now)
+{
+  return valueQualityTracker.ageSeconds((uint8_t)l.registryID, now);
+}
 bool busy = false;
 
 Survey survey;
@@ -96,7 +106,7 @@ void updateValues(char regID)
   converter.getLabels(regID, labels, num);
   for (int i = 0; i < num; i++)
   {
-    if (!labels[i]->valid)
+    if (sensorQuality(*labels[i], millis()) != VALUE_OK)
       continue;
     // ON/OFF as 1/0 when set (EmonCMS...). Only on MQTT: the web interface reads asString.
     const char *v = labels[i]->asString;
@@ -353,6 +363,7 @@ void reloadLabels()
   initLabels();
   initRegistries();
   memset(registryOk, 0, sizeof(registryOk));
+  valueQualityTracker.reset();
   valuesUnlock();
   discoveryDirty = true;
 }
@@ -551,9 +562,19 @@ void pollRegistries()
         replyCache.update(buff[1], buff + 3, buff[2] >= 2 ? buff[2] - 2 : 0);
       else if (registryOk[i])
         replyCache.update(buff[0], buff + 1, get_reply_len(buff[0], 'S') - 2);
+      valueQualityTracker.note((uint8_t)registryIDs[i], registryOk[i], millis());
       valuesUnlock();
       if (registryOk[i] && config.protocol == 'I' && buff[2] >= 2)
         layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
+    }
+    if (!registryOk[i])
+    {
+      valuesLock();
+      valueQualityTracker.note((uint8_t)registryIDs[i], false, millis());
+      for (size_t l = 0; l < converter.activeCount; l++)
+        if ((uint8_t)converter.activeLabels[l].registryID == (uint8_t)registryIDs[i])
+          converter.activeLabels[l].valid = false;
+      valuesUnlock();
     }
   }
   layoutCheck();
@@ -615,7 +636,7 @@ static float statsValue(std::initializer_list<const char *> prefixes, bool *foun
     for (size_t i = 0; i < converter.activeCount; i++)
     {
       const LabelDef &l = converter.activeLabels[i];
-      if (!l.valid)
+      if (sensorQuality(l, millis()) != VALUE_OK)
         continue;
       if (strncasecmp(l.label, p, strlen(p)) != 0)
         continue;
@@ -637,7 +658,7 @@ static int statsFlag(std::initializer_list<const char *> prefixes)
     for (size_t i = 0; i < converter.activeCount; i++)
     {
       const LabelDef &l = converter.activeLabels[i];
-      if (!l.valid)
+      if (sensorQuality(l, millis()) != VALUE_OK)
         continue;
       if (strncasecmp(l.label, p, strlen(p)) == 0)
         return strcasecmp(l.asString, "ON") == 0 || strcmp(l.asString, "1") == 0 ? 1 : 0;
@@ -784,7 +805,7 @@ static void statsUpdate()
   in.buh = statsFlag({"BUH Step1"});
   in.buh2 = statsFlag({"BUH Step2"});
   for (size_t i = 0; i < converter.activeCount; i++)
-    if (strcasecmp(converter.activeLabels[i].label, "Operation Mode") == 0)
+    if (sensorQuality(converter.activeLabels[i], millis()) == VALUE_OK && strcasecmp(converter.activeLabels[i].label, "Operation Mode") == 0)
       in.cooling = strcasestr(converter.activeLabels[i].asString, "cool") != nullptr;
   stats.update(in, statsEpoch(), millis() / 1000);
 }
@@ -825,6 +846,25 @@ void publishValues()
   valuesUnlock();
   sendValues();//Send the full json message
   webSendValues();
+}
+
+// A stalled polling task must not leave successful-looking values in Web/MQTT forever.
+void expireValues()
+{
+  static uint32_t checked = 0;
+  uint32_t now = millis();
+  if ((uint32_t)(now - checked) < 1000) return;
+  checked = now;
+  bool changed = false;
+  valuesLock();
+  for (size_t i = 0; i < converter.activeCount; i++)
+    if (converter.activeLabels[i].valid && sensorQuality(converter.activeLabels[i], now) != VALUE_OK)
+    {
+      converter.activeLabels[i].valid = false;
+      changed = true;
+    }
+  valuesUnlock();
+  if (changed) publishValues();
 }
 
 void hpDelay(unsigned long ms)
@@ -1424,6 +1464,7 @@ void loop()
   webLoop();
   //The heat pump task does the querying, we publish its results
   extraLoop();
+  expireValues();
   if (cycleReady)
   {
     cycleReady = false;

@@ -12,6 +12,8 @@ extern const char *haDeviceId;   // identifier of the device in Home Assistant
 extern const char *haDeviceName; // its name
 extern const char *haDeviceModel; // its model: the unit's own name once read, "Altherma" until then
 extern const char *haAttrTopic;  // the topic of the readings
+extern const char *haLwtTopic;
+extern unsigned long haValueExpirySeconds;
 
 /*
  * Sink callback used to stream the Device Discovery payload one chunk at a time.

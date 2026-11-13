@@ -452,5 +452,10 @@
  "Range: hexadecimal, 16 KB at most.": "Bereich: hexadezimal, höchstens 16 KB.",
  "{n} of {t} frames read": "{n} von {t} Frames gelesen",
  "Done, {m} frames did not answer.": "Fertig, {m} Frames ohne Antwort.",
- "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen."
+ "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen.",
+ "Reading unavailable: {reason}; last valid reply {age} s ago": "Messwert nicht verfügbar: {reason}; letzte gültige Antwort vor {age} s",
+ "Not read yet": "Noch nicht gelesen",
+ "Read failed": "Lesefehler",
+ "Field missing": "Feld fehlt",
+ "Reading too old": "Messwert veraltet"
 }

@@ -452,5 +452,10 @@
  "Range: hexadecimal, 16 KB at most.": "Rango: hexadecimal, 16 KB como máximo.",
  "{n} of {t} frames read": "{n} de {t} tramas leídas",
  "Done, {m} frames did not answer.": "Hecho, {m} tramas sin respuesta.",
- "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta."
+ "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta.",
+ "Reading unavailable: {reason}; last valid reply {age} s ago": "Lectura no disponible: {reason}; última respuesta válida hace {age} s",
+ "Not read yet": "Aún no leído",
+ "Read failed": "Error de lectura",
+ "Field missing": "Campo ausente",
+ "Reading too old": "Lectura antigua"
 }

@@ -171,6 +171,15 @@ public:
     lastSampleAt = now;
     haveSample = true;
 
+    // Missing inverter feedback is not a compressor stop. Break integration across the gap and
+    // preserve the run/counter state until a real reading returns.
+    if (isnan(in.inv))
+    {
+      haveSample = false;
+      heatKW = elecKW = cop = copSmoothed = NAN;
+      return;
+    }
+
     // mode
     if (in.v3 == 1)
       mode = STATS_DHW;
@@ -212,9 +221,9 @@ public:
     if (in.buh == 1)
       day->buhSec += (uint32_t)dt;
     bool defrost = in.defrost == 1;
-    if (defrost && !lastDefrost)
+    if (in.defrost >= 0 && defrost && !lastDefrost)
       day->defrosts++;
-    lastDefrost = defrost;
+    if (in.defrost >= 0) lastDefrost = defrost;
 
     // powers. The leaving water is the sensor after the backup heater (R2T) when the unit has one and it reads (0 when
     // it is not fitted): the water the house gets, and the heater's heat counts along with its electricity. With the

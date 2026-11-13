@@ -346,6 +346,34 @@ void test_a_restart_during_a_run_is_not_a_start(void)
     TEST_ASSERT_EQUAL(2, rtc.starts);
 }
 
+void test_lost_inverter_reply_is_not_a_stop_or_a_new_start()
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    s.update(heating(), T0, 10);
+    s.update(heating(), T0 + 60, 70);
+    float energy = rtc.heatKWh[STATS_HEATING];
+    s.update(heating(NAN), T0 + 120, 130);
+    TEST_ASSERT_TRUE(isnan(s.heatKW));
+    TEST_ASSERT_TRUE(isnan(s.cop));
+    s.update(heating(), T0 + 180, 190);
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    TEST_ASSERT_EQUAL(0, rtc.lastRunSec);
+    TEST_ASSERT_FLOAT_WITHIN(0.00001, energy, rtc.heatKWh[STATS_HEATING]);
+    TEST_ASSERT_EQUAL(60, rtc.runSec);
+}
+
+void test_unknown_defrost_bit_does_not_recount_same_defrost()
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    StatsInput in = heating(); in.defrost = 1;
+    s.update(in, T0, 10);
+    in.defrost = -1; s.update(in, T0 + 30, 40);
+    in.defrost = 1; s.update(in, T0 + 60, 70);
+    TEST_ASSERT_EQUAL(1, rtc.defrosts);
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
@@ -361,5 +389,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_day_change);
     RUN_TEST(test_rtc_survives_restart);
     RUN_TEST(test_a_restart_during_a_run_is_not_a_start);
+    RUN_TEST(test_lost_inverter_reply_is_not_a_stop_or_a_new_start);
+    RUN_TEST(test_unknown_defrost_bit_does_not_recount_same_defrost);
     return UNITY_END();
 }

@@ -29,6 +29,19 @@ extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
+ValueQuality sensorQuality(const LabelDef &l, uint32_t now);
+int32_t sensorAge(const LabelDef &l, uint32_t now);
+
+static void webValueJson(JsonObject item, const LabelDef &l, uint32_t now)
+{
+  ValueQuality q = sensorQuality(l, now);
+  item["l"] = l.label;
+  if (q == VALUE_OK) item["v"] = l.asString;
+  else item["v"] = nullptr;
+  item["r"] = l.registryID;
+  item["q"] = valueQualityName(q);
+  item["age_s"] = sensorAge(l, now);
+}
 #include "stats.h"
 #include "fwupdate.h"
 extern Stats stats;
@@ -255,9 +268,7 @@ void webSendValues()
   {
     const LabelDef &l = converter.activeLabels[i];
     JsonObject item = values.add<JsonObject>();
-    item["l"] = l.label;
-    item["v"] = l.asString;
-    item["r"] = l.registryID;
+    webValueJson(item, l, millis());
   }
   valuesUnlock();
   String s;
@@ -715,9 +726,7 @@ void webBegin()
     {
       const LabelDef &l = converter.activeLabels[i];
       JsonDocument item;
-      item["l"] = l.label;
-      item["v"] = l.asString;
-      item["r"] = l.registryID;
+      webValueJson(item.to<JsonObject>(), l, millis());
       if (i)
         resp->print(",");
       serializeJson(item, *resp);

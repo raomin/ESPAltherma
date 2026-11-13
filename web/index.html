@@ -911,7 +911,7 @@ const KEYS = {out: /outdoor air temp/i, lw1: /^(leaving water temp\. before BUH|
   aux: /^auxiliary sensor \(R6T\)/i};
 function reading(list) {
   const r = {};
-  for (const [k, re] of Object.entries(KEYS)) { const v = list.find(x => re.test(x.l)); if (v && String(v.v).trim() !== '') r[k] = String(v.v).trim(); }
+  for (const [k, re] of Object.entries(KEYS)) { const v = list.find(x => re.test(x.l)); if (v && v.v != null && (!v.q || v.q === 'ok') && String(v.v).trim() !== '') r[k] = String(v.v).trim(); }
   if (r.r3t == null && r.r6t != null) r.r3t = r.r6t; // the Altherma 4 has its refrigerant liquid side in the outdoor unit
   // The outdoor temperature from the external sensor when Settings say so: with [C-08] on "outdoor sensor" the unit runs
   // its curve from that one, not from the outdoor unit's (#629)
@@ -1025,12 +1025,17 @@ function paint() {
     ...(set(r.thermoOff) ? [el('span', {}, t('Thermo off {code}', {code: r.thermoOff}))] : []));
 }
 function renderValues(list) { lastValues = list || []; valuesAt = Date.now(); paint(); renderReadings(); }
+function readingQuality(v) {
+  const names = {never: t('Not read yet'), read_failed: t('Read failed'), missing: t('Field missing'), stale: t('Reading too old')};
+  if (!v.q || v.q === 'ok') return '';
+  return v.age_s >= 0 ? t('Reading unavailable: {reason}; last valid reply {age} s ago', {reason: names[v.q] || v.q, age: v.age_s}) : names[v.q] || v.q;
+}
 let allToggled = false;
 $('#allBox').addEventListener('toggle', () => allToggled = true);
 function renderReadings() {
   const tb = $('#dValues'); tb.replaceChildren();
   if (!lastValues.length) tb.append(el('tr', {}, el('td', {class: 'sub'}, status.hp && !status.hp.model ? t('No values yet: the heat pump model is not known.') : t('Waiting for the first readings…'))));
-  for (const v of lastValues) tb.append(el('tr', {}, el('td', {}, nm(v.l)), el('td', {class: 'n'}, v.v === '' ? '—' : v.v)));
+  for (const v of lastValues) tb.append(el('tr', {}, el('td', {}, nm(v.l)), el('td', {class: 'n', title: readingQuality(v)}, v.v == null || v.v === '' ? '—' : v.v, v.q && v.q !== 'ok' ? el('small', {class: 'sub'}, ' ' + readingQuality(v)) : '')));
   $('#valAge').textContent = lastValues.length ? t('{n} readings, updated {time}', {n: lastValues.length, time: new Date().toLocaleTimeString(lang)}) : '';
   // The drawing fits the Altherma units; for the others, the list is what matters
   if (!allToggled) $('#allBox').open = lastValues.length > 0 && Object.keys(reading(lastValues)).length < 6;
@@ -1238,7 +1243,7 @@ function renderCatalog() {
     tb.append(el('tr', {},
       el('td', {}, el('input', {type: 'checkbox', id, checked: selected.has(v.k), onchange: e => { e.target.checked ? selected.add(v.k) : selected.delete(v.k); countSel(); }})),
       el('td', {}, el('label', {for: id}, v.n || v.l), ' ', v.rec ? el('span', {class: 'tagx rec'}, t('recommended')) : null, el('i', {class: 'rm'}, hex(v.r) + ' / ' + v.o)),
-      el('td', {class: 'n'}, v.v == null ? '' : v.v === '' ? '—' : v.v),
+      el('td', {class: 'n'}, v.v == null ? '' : v.v == null || v.v === '' ? '—' : v.v),
       el('td', {class: 'r'}, hex(v.r) + ' / ' + v.o)));
   }
   if (!shown && !dev.length) tb.append(el('tr', {}, el('td', {colspan: 4, class: 'sub'}, t('No value matches.'))));

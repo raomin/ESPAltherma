@@ -1,7 +1,6 @@
 #include <string>
 #include <cstring>
 #include <cctype>
-#include <HardwareSerial.h>
 #include <homeassistant.h>
 
 // The device and the topics come from the configurable base topic (topics.h); set by setupMqttClient()
@@ -10,6 +9,8 @@ const char *haDeviceId = "espaltherma-mqtt-discovery";
 const char *haDeviceName = "Daikin Altherma via ESPAltherma";
 const char *haDeviceModel = "Altherma";
 const char *haAttrTopic = "espaltherma/ATTR";
+const char *haLwtTopic = "espaltherma/LWT";
+unsigned long haValueExpirySeconds = 90;
 
 static std::string discoveryStart()
 {
@@ -155,9 +156,9 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
     {
         json += "\"stat_cla\":\"measurement\",";
     }
-    json += "\"val_tpl\":\"{{value_json['";
+    json += label.registryID >= 0 ? "\"val_tpl\":\"{{value_json.get('" : "\"val_tpl\":\"{{value_json['";
     json += label.label;
-    json += "']";
+    json += label.registryID >= 0 ? "', none)" : "']";
     json += getConversion(label);
     json += "}}\",";
     json += "\"uniq_id\":\"" + uid + "\",";
@@ -167,6 +168,14 @@ std::string makeSensorJson(const LabelDef &label, bool isDiagnostic)
     json += "\"name\":\"";
     json += jsonEscape(label.name != nullptr ? label.name : label.label); // in the chosen language; the ids stay English
     json += "\"";
+
+    if (label.registryID >= 0) // physical readings: absent values and lost polling make the entity unavailable
+    {
+        json += ",\"avty_mode\":\"all\",\"avty\":[{\"t\":\"" + std::string(haLwtTopic) +
+                "\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\"},{\"t\":\"" + std::string(haAttrTopic) +
+                "\",\"val_tpl\":\"{{ 'online' if '" + jsonEscape(label.label) + "' in value_json else 'offline' }}\"}]";
+        json += ",\"exp_aft\":" + std::to_string(haValueExpirySeconds);
+    }
 
     // "an entity that exposes some configuration parameter or diagnostics of a device but does not allow changing it, for example, a sensor showing RSSI or MAC address"
     if (isDiagnostic)

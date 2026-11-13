@@ -6,6 +6,7 @@
 #include "comm.h"
 
 #include "topics.h"
+#include "mqttframe.h"
 
 // Every topic and every Home Assistant id, from the configurable base topic (Settings > MQTT output)
 MqttTopics mqttTopics;
@@ -90,6 +91,7 @@ void setupMqttClient()
   haDeviceId = mqttTopics.deviceId;
   haDeviceName = mqttTopics.deviceName;
   haAttrTopic = mqttTopics.attr;
+  haLwtTopic = mqttTopics.lwt;
   mqttSerial.begin(&client, mqttTopics.log);
   if (config.mqttTls)
   {
@@ -786,6 +788,7 @@ HaAnnounced haAnnounced; // the components of the last device discovery sent (ha
 void publishHomeAssistantDeviceDiscovery()
 {
   valuesLock(); // the heat pump task may be changing the values
+  haValueExpirySeconds = ValueQualityTracker::maxAge(config.frequency) / 1000;
   const LabelDef *labels = converter.activeLabels;
   const size_t count = converter.activeCount;
   const char *topic = mqttTopics.cfgDevice;
@@ -802,8 +805,10 @@ void publishHomeAssistantDeviceDiscovery()
   // Stream the payload directly to the socket. PubSubClient::write() writes straight to the
   // TCP/TLS client, so the MQTT buffer only needs to hold the topic+header. This avoids the large
   // contiguous setBufferSize() allocation that previously ran out of heap on bigger definitions.
-  if (!client.beginPublish(topic, payloadLen, true))
+  if (!mqttBeginStream(client, topic, payloadLen, true))
   {
+    mqttWriteFailed = true;
+    mqttNet->stop();
     valuesUnlock();
     mqttSerial.println("Error starting device discovery publish!");
     return;
@@ -813,5 +818,7 @@ void publishHomeAssistantDeviceDiscovery()
 
   if (client.endPublish() && !mqttWriteFailed)
     haAnnounced.sent(components); // the next discovery leaves the removed ones out
+  else
+    mqttNet->stop();
   valuesUnlock();
 }

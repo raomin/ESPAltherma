@@ -452,5 +452,10 @@
  "Range: hexadecimal, 16 KB at most.": "Intervallo: esadecimale, 16 KB al massimo.",
  "{n} of {t} frames read": "{n} frame su {t} letti",
  "Done, {m} frames did not answer.": "Fatto, {m} frame senza risposta.",
- "Give the unit its own curve back? The target set from here is dropped.": "Restituire all'unità la sua curva? Il setpoint impostato qui viene abbandonato."
+ "Give the unit its own curve back? The target set from here is dropped.": "Restituire all'unità la sua curva? Il setpoint impostato qui viene abbandonato.",
+ "Reading unavailable: {reason}; last valid reply {age} s ago": "Valore non disponibile: {reason}; ultima risposta valida {age} s fa",
+ "Not read yet": "Non ancora letto",
+ "Read failed": "Lettura fallita",
+ "Field missing": "Campo assente",
+ "Reading too old": "Valore obsoleto"
 }

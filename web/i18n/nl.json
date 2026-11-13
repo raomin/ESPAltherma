@@ -452,5 +452,10 @@
  "Range: hexadecimal, 16 KB at most.": "Bereik: hexadecimaal, hoogstens 16 KB.",
  "{n} of {t} frames read": "{n} van {t} frames gelezen",
  "Done, {m} frames did not answer.": "Klaar, {m} frames zonder antwoord.",
- "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt."
+ "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt.",
+ "Reading unavailable: {reason}; last valid reply {age} s ago": "Meting niet beschikbaar: {reason}; laatste geldige antwoord {age} s geleden",
+ "Not read yet": "Nog niet gelezen",
+ "Read failed": "Lezen mislukt",
+ "Field missing": "Veld ontbreekt",
+ "Reading too old": "Meting verouderd"
 }
