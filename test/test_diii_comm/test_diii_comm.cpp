@@ -3,6 +3,8 @@
 #include <unity.h>
 
 #include "diii_comm.h"
+#include "mqttjson.h"
+#include <string>
 
 // Fake outdoor controller: a RAM image whose DIII slots fill on a timeline like the real unit's.
 //  - hydro E0 page 0x80 in the rx slot (0x0C85) at second 22 of every minute, for 800 ms
@@ -347,6 +349,36 @@ void test_window_hold_keeps_polls_off()
   TEST_ASSERT_TRUE(fakeClock() - reader.v.hydroAt < 5000);
 }
 
+void test_streamed_json_preserves_fields_and_freezes_staleness()
+{
+  runFor(15 * 60000UL);
+  char original[2048] = "";
+  reader.appendJson(original, sizeof(original));
+  unsigned long at = reader.now();
+  DiiiComm::JsonOptions options = reader.jsonOptions();
+  auto render = [&](MqttJson &json) {
+    json.begin(false);
+    reader.writeJson(json, at, options);
+    json.end(false);
+  };
+  MqttJson count;
+  render(count);
+  // Clock and feature flags may move while TCP blocks. The timestamp/options of this publish stay fixed.
+  fakeNow += DIII_63_STALE_MS;
+  reader.readE0 = reader.read63 = reader.readCurrent = false;
+  std::string result;
+  MqttJson output([](void *ctx, const char *s, size_t n) {
+    static_cast<std::string *>(ctx)->append(s, n);
+    return true;
+  }, &result);
+  render(output);
+  TEST_ASSERT_TRUE(output.flush());
+  TEST_ASSERT_EQUAL_size_t(count.size(), output.size());
+  std::string expected = "{" + std::string(original);
+  expected.back() = '}'; // replace the legacy trailing comma
+  TEST_ASSERT_EQUAL_STRING(expected.c_str(), result.c_str());
+}
+
 int main(int, char **)
 {
   UNITY_BEGIN();
@@ -365,5 +397,6 @@ int main(int, char **)
   RUN_TEST(test_no_tank_sensor);
   RUN_TEST(test_values_go_null_when_frames_stop);
   RUN_TEST(test_window_hold_keeps_polls_off);
+  RUN_TEST(test_streamed_json_preserves_fields_and_freezes_staleness);
   return UNITY_END();
 }

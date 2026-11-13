@@ -682,14 +682,20 @@ struct DiiiComm
     }
   }
 
-  // The values as ATTR keys (null when not caught recently). Call under the caller's values lock.
-  void appendJson(char *buf, size_t size)
+  struct JsonOptions
   {
-    if (status != DIII_READY)
+    bool ready, e0, f63, current;
+  };
+
+  JsonOptions jsonOptions() const { return {status == DIII_READY, readE0, read63, readCurrent}; }
+
+  // The values as ATTR keys (null when not caught recently). Call under the caller's values lock.
+  template <typename Put>
+  void jsonFields(unsigned long t, JsonOptions options, Put put)
+  {
+    if (!options.ready)
       return;
-    unsigned long t = now();
     auto fresh = [t](unsigned long at, unsigned long maxAge) { return at != 0 && t - at < maxAge; };
-    size_t n;
     bool h = fresh(v.hydroAt, DIII_E0_STALE_MS), w = fresh(v.waterAt, DIII_E0_STALE_MS),
          o = fresh(v.invAt, DIII_E0_STALE_MS), f = fresh(v.f63At, DIII_63_STALE_MS), c = fresh(v.curAt, 3 * DIII_CURRENT_INTERVAL_MS),
          k = fresh(v.tankAt, DIII_E0_STALE_MS);
@@ -701,10 +707,9 @@ struct DiiiComm
       snprintf(s, sizeof(s), fmt, val);                \
     else                                               \
       strcpy(s, "null");                               \
-    n = strlen(buf);                                   \
-    snprintf(buf + n, size - n, "\"%s\":%s,", key, s); \
+    put(key, s);                                       \
   } while (0)
-    if (readE0)
+    if (options.e0)
     {
       DIII_PUT("E0: Leaving water (C)", h, "%d", v.lwt);
       DIII_PUT("E0: Return water (C)", w, "%d", v.rwt);
@@ -719,20 +724,36 @@ struct DiiiComm
       DIII_PUT("E0: INV fin temp (C)", o, "%u", v.invFin);
       DIII_PUT("E0: Sync", true, "%d", (hydro.locked ? 1 : 0) | (outdoor.locked ? 2 : 0));
     }
-    if (read63)
+    if (options.f63)
     {
       DIII_PUT("63: Leaving water (C)", f, "%.2f", v.lwt63);
       DIII_PUT("63: Return water (C)", f, "%.2f", v.rwt63);
       DIII_PUT("63: R410A liquid (C)", f, "%.2f", v.liq63);
       DIII_PUT("63: BRC1 room temp (C)", f && v.room63Ok, "%.2f", v.room63);
     }
-    if (readCurrent)
+    if (options.current)
     {
       DIII_PUT("RAM: Outdoor input current (A)", c, "%.2f", v.current);
       DIII_PUT("RAM: Outdoor rated current (A)", c && v.rated > 0, "%.1f", v.rated);
       DIII_PUT("RAM: Outdoor load (%)", c, "%u", v.load * 100 / 256);
     }
 #undef DIII_PUT
+  }
+
+  // The timestamp is supplied once for both MQTT passes, so a value cannot become stale between them.
+  template <typename Writer>
+  void writeJson(Writer &json, unsigned long at, JsonOptions options)
+  {
+    jsonFields(at, options, [&json](const char *key, const char *value) { json.number(key, value); });
+  }
+
+  void appendJson(char *buf, size_t size)
+  {
+    jsonFields(now(), jsonOptions(), [buf, size](const char *key, const char *value) {
+      size_t n = strlen(buf);
+      if (n < size)
+        snprintf(buf + n, size - n, "\"%s\":%s,", key, value);
+    });
   }
 };
 
