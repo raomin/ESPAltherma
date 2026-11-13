@@ -466,5 +466,18 @@
  "Target write failed.": "Error al escribir el objetivo.",
  "Target read-back is too old.": "La lectura del objetivo es antigua.",
  "Target not read yet.": "Objetivo aún no leído.",
- "Last complete read-back {n} s ago.": "Última lectura completa hace {n} s."
+ "Last complete read-back {n} s ago.": "Última lectura completa hace {n} s.",
+ "Reported device identity": "Identidad comunicada del equipo",
+ "Read from the last heat pump survey. An EEPROM identifier is not a model name or firmware version.": "Leído en la última consulta. Un identificador EEPROM no es un modelo ni una versión de firmware.",
+ "Download identity": "Descargar identidad",
+ "Selected definition": "Definición seleccionada",
+ "Reported indoor model": "Modelo interior comunicado",
+ "Hydro board software": "Software de la placa hidráulica",
+ "Outdoor EEPROM": "EEPROM exterior",
+ "EEPROM revision byte": "Byte de revisión EEPROM",
+ "Outdoor MPU identifier": "Identificador MPU exterior",
+ "Outdoor model": "Modelo exterior",
+ "Outdoor firmware": "Firmware exterior",
+ "Mapped control profile": "Perfil de control asignado",
+ "Unknown": "Desconocido"
 }

@@ -500,7 +500,9 @@ void runSurvey()
   surveyRequested = false;
   lastSurvey = millis();
   mqttSerial.println("Starting heat pump survey...");
+  valuesLock();
   surveyInProgress = true;
+  valuesUnlock();
   surveyRun(survey, surveyQuery);
   if (survey.protocol == 'I')
   {

@@ -466,5 +466,18 @@
  "Target write failed.": "Schrijven van doel mislukt.",
  "Target read-back is too old.": "Teruglezing van doel is verouderd.",
  "Target not read yet.": "Doel nog niet gelezen.",
- "Last complete read-back {n} s ago.": "Laatste volledige teruglezing {n} s geleden."
+ "Last complete read-back {n} s ago.": "Laatste volledige teruglezing {n} s geleden.",
+ "Reported device identity": "Gemelde apparaatidentiteit",
+ "Read from the last heat pump survey. An EEPROM identifier is not a model name or firmware version.": "Uit de laatste warmtepompmeting. Een EEPROM-code is geen modelnaam of firmwareversie.",
+ "Download identity": "Identiteit downloaden",
+ "Selected definition": "Geselecteerde definitie",
+ "Reported indoor model": "Gemeld binnenmodel",
+ "Hydro board software": "Software hydroprint",
+ "Outdoor EEPROM": "EEPROM buitenunit",
+ "EEPROM revision byte": "EEPROM-revisiebyte",
+ "Outdoor MPU identifier": "MPU-code buitenunit",
+ "Outdoor model": "Model buitenunit",
+ "Outdoor firmware": "Firmware buitenunit",
+ "Mapped control profile": "Gekoppeld regelprofiel",
+ "Unknown": "Onbekend"
 }

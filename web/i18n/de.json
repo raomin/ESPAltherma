@@ -466,5 +466,18 @@
  "Target write failed.": "Schreiben des Sollwerts fehlgeschlagen.",
  "Target read-back is too old.": "Rücklesung des Sollwerts ist veraltet.",
  "Target not read yet.": "Sollwert noch nicht gelesen.",
- "Last complete read-back {n} s ago.": "Letzte vollständige Rücklesung vor {n} s."
+ "Last complete read-back {n} s ago.": "Letzte vollständige Rücklesung vor {n} s.",
+ "Reported device identity": "Gemeldete Gerätekennung",
+ "Read from the last heat pump survey. An EEPROM identifier is not a model name or firmware version.": "Aus der letzten Wärmepumpenabfrage. Eine EEPROM-Kennung ist kein Modellname und keine Firmwareversion.",
+ "Download identity": "Kennungen herunterladen",
+ "Selected definition": "Ausgewählte Definition",
+ "Reported indoor model": "Gemeldetes Innengerätemodell",
+ "Hydro board software": "Software der Hydroplatine",
+ "Outdoor EEPROM": "Außengeräte-EEPROM",
+ "EEPROM revision byte": "EEPROM-Revisionsbyte",
+ "Outdoor MPU identifier": "MPU-Kennung des Außengeräts",
+ "Outdoor model": "Modell des Außengeräts",
+ "Outdoor firmware": "Firmware des Außengeräts",
+ "Mapped control profile": "Zugeordnetes Steuerprofil",
+ "Unknown": "Unbekannt"
 }
