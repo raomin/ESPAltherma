@@ -7,6 +7,8 @@
 
 #include "topics.h"
 #include "sgdiscovery.h"
+#include "mqttjsonbuffer.h"
+#include <atomic>
 
 // Every topic and every Home Assistant id, from the configurable base topic (Settings > MQTT output)
 MqttTopics mqttTopics;
@@ -20,6 +22,8 @@ IPAddress netIP(); // netmgr.h, included later
 #endif
 
 char jsonbuff[MAX_MSG_SIZE] = "{\0";
+bool mqttValuesOverflow=false;
+std::atomic<bool> mqttValuesTooLarge{false};
 
 #include <WiFiClientSecure.h>
 WiFiClient plainClient;
@@ -79,6 +83,7 @@ void meterAppendJson(char *buf, size_t size); // main.cpp: the unit's own energy
 
 void resetJson()
 {
+  mqttValuesOverflow=false;
   strcpy(jsonbuff, config.jsonTable ? "[{" : "{");
 }
 
@@ -180,11 +185,16 @@ void sendValues()
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
-  jsonbuff[strlen(jsonbuff) - 1] = '}';
-  if (config.jsonTable)
+  if (!mqttJsonFinish(jsonbuff,MAX_MSG_SIZE,config.jsonTable,mqttValuesOverflow))
   {
-    strcat(jsonbuff,"]");
+    if (!mqttValuesTooLarge.exchange(true))
+    {
+      mqttSerial.println("MQTT values exceed the payload buffer; incomplete JSON discarded.");
+      eventAddf("MQTT values too large; reduce selection or use individual topics");
+    }
+    resetJson();return;
   }
+  mqttValuesTooLarge=false;
   mqttPublish(mqttTopics.attr, jsonbuff);
   resetJson();
 }
