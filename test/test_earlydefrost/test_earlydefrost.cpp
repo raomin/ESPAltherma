@@ -24,6 +24,7 @@ void test_detects_early_defrost_with_bounded_trace_and_24h_notice()
 {
     EarlyDefrostRecorder r;event(r);
     TEST_ASSERT_TRUE(r.visible(426000));
+    TEST_ASSERT_TRUE(r.savedRecording(426000));
     TEST_ASSERT_EQUAL(420,r.saved.elapsedSeconds);
     TEST_ASSERT_EQUAL(5,r.saved.startUncertaintySeconds);
     TEST_ASSERT_EQUAL(-105,r.saved.trace.minimumCoilTenths());
@@ -78,6 +79,8 @@ void test_saved_case_survives_recording_the_next_start()
     r.observe(input(0),1246000,0);
     DefrostInput newer=input();newer.coilTenths=-25;
     r.observe(newer,1251000,0);
+    TEST_ASSERT_TRUE(r.fast(1251000));
+    TEST_ASSERT_FALSE(r.savedRecording(1251000)); // monitoring the next start must not relabel the saved case
     TEST_ASSERT_EQUAL_UINT32(id,r.saved.id);
     TEST_ASSERT_EQUAL(-105,r.saved.trace.minimumCoilTenths());
     TEST_ASSERT_EQUAL(-25,r.working.minimumCoilTenths());

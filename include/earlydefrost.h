@@ -87,6 +87,7 @@ private:
   bool knownStart = false, restartAfterDefrost = false, haveEvent = false;
 public:
   bool visible(uint32_t now) const { return haveEvent && (uint32_t)(now-saved.detectedMs) < DEFROST_NOTICE_MS; }
+  bool savedRecording(uint32_t now) const { return visible(now) && (uint32_t)(now-saved.trace.startMs) <= DEFROST_WINDOW_MS; }
   bool fast(uint32_t now) const
   {
     return (knownStart && (uint32_t)(now-working.startMs) <= DEFROST_WINDOW_MS) ||

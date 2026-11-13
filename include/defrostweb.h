@@ -55,6 +55,9 @@ struct DefrostDownload
       pending+="# seconds_after_first_observed_run,"+String(event.elapsedSeconds)+"\n";
       pending+="# start_uncertainty_seconds,"+String(event.startUncertaintySeconds)+"\n";
       pending+="# observation,"+String(iceObservationName(event.observation))+"\n";
+      pending+="# truncated,";pending+=event.trace.truncated?"true\n":"false\n";
+      pending+="# recording_complete,";
+      pending+=(uint32_t)(millis()-event.trace.startMs)>DEFROST_WINDOW_MS?"true\n":"false\n";
       pending+="# temperatures_quantised_to_0.5_C; read times do not establish the outdoor sampling time\n";
       pending+="seconds_since_observed_start,outdoor_c,coil_c,rps,startup,defrost,dhw,cooling\n";
       return pending.endsWith("\n");

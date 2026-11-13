@@ -726,7 +726,7 @@ void defrostStatusJson(JsonObject out)
   out["available"]=bool(earlyDefrost);
   bool active=earlyDefrost && earlyDefrost->visible(millis());
   out["active"]=active;
-  out["recording"]=earlyDefrost && earlyDefrost->fast(millis());
+  out["recording"]=earlyDefrost && earlyDefrost->savedRecording(millis());
   if (active)
   {
     const EarlyDefrostEvent &e=earlyDefrost->saved;
