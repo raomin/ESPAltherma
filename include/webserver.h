@@ -556,12 +556,12 @@ struct CatalogStream
       uint8_t len = 0;
       valuesLock();
       const uint8_t *payload = replyCache.find(e.reg, len, survey);
-      if (payload != nullptr && e.offset + e.size <= len)
+      if (payload != nullptr)
       {
         LabelDef value(e.reg, e.offset, e.conv, e.size, e.type, catalogLabel(e));
         memset(value.asString, 0, sizeof(value.asString));
-        decoder.convert(&value, const_cast<uint8_t *>(payload + e.offset)); // read only, bounds checked above
-        item["v"] = String(value.asString);
+        if (decoder.convertBounded(&value, const_cast<uint8_t *>(payload), len))
+          item["v"] = String(value.asString);
       }
       valuesUnlock();
       String json;

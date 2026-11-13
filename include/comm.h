@@ -2,8 +2,10 @@
 #define COMM_H
 #include <string.h>
 
+#ifndef ESPALTHERMA_COMM_NATIVE_TEST
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#endif
 HardwareSerial MySerial(1);
 #define SERIAL_CONFIG (SERIAL_8E1)
 #define SERIAL_FLUSH_TX_ONLY false
@@ -143,6 +145,7 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
   int len = 0;
   int replyLen = get_reply_len(regID, protocol);
   bool echoSkipped = false;
+  bool headerRead = false;
 
   while ((len < replyLen) && (millis() < (start + SER_TIMEOUT)))
   {
@@ -158,18 +161,27 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
       return false;
     }
     buffer[len++] = MySerial.read();
-    if (!echoSkipped && len == queryLength && memcmp(buffer, prep, queryLength) == 0)
+    if (!echoSkipped && len <= queryLength && memcmp(buffer, prep, len) == 0)
     {
-      // A bidirectional level shifter hands our own query back before the reply (#585): drop it
-      echoSkipped = true;
-      len = 0;
-      replyLen = get_reply_len(regID, protocol);
+      // Wait until a possible query echo is complete before interpreting its third byte as a reply length.
+      if (len == queryLength)
+      {
+        echoSkipped = true;
+        len = 0;
+        replyLen = get_reply_len(regID, protocol);
+      }
       continue;
     }
-    if (protocol == 'I' && len == 3)
+    if (protocol == 'I' && len >= 3 && !headerRead)
     {
       // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
       replyLen = buffer[2] + 2;
+      if (buffer[0] != 0x40 || buffer[1] != (uint8_t)regID || buffer[2] < 2 || replyLen > REPLY_BUFFER_SIZE)
+      {
+        mqttSerial.printf("ERR: Invalid frame header for register 0x%02x\n", (uint8_t)regID);
+        return false;
+      }
+      headerRead = true;
     }
     // Error reply common to both protocols
     if (len == 2 && buffer[0] == 0x15 && buffer[1] == 0xea)
