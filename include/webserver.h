@@ -11,6 +11,7 @@
 #include "webui_data.h"
 #include <HTTPClient.h>
 #include <esp_heap_caps.h>
+#include "reportedidentity.h"
 
 #ifndef TELEMETRY_URL
 #define TELEMETRY_URL "" // Collection endpoint of the opt-in telemetry; nothing is sent while empty
@@ -29,6 +30,33 @@ extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
+extern unsigned long lastSurvey;
+
+static void reportedIdentityJson(JsonObject out)
+{
+  ReportedIdentity id;
+  valuesLock();
+  bool pending = surveyInProgress;
+  if (!pending) id.read(survey);
+  if (!pending && survey.unitModel[0]) out["reported_indoor_model"] = survey.unitModel;
+  else out["reported_indoor_model"] = nullptr;
+  valuesUnlock();
+  out["selected_definition"] = config.model;
+  out["survey_in_progress"] = pending;
+  out["survey_age_s"] = lastSurvey ? (int32_t)((millis() - lastSurvey) / 1000) : -1;
+  out["hydro_software"] = id.hydroSoftware[0] ? id.hydroSoftware : nullptr;
+  out["hydro_software_source"] = id.hydroSource;
+  out["outdoor_eeprom"] = id.outdoorPart[0] ? id.outdoorPart : nullptr;
+  if (id.outdoorRevision >= 0) out["outdoor_eeprom_revision_raw"] = id.outdoorRevision;
+  else out["outdoor_eeprom_revision_raw"] = nullptr;
+  out["outdoor_mpu_id"] = id.outdoorMpu[0] ? id.outdoorMpu : nullptr;
+  out["outdoor_model"] = nullptr;
+  out["outdoor_firmware"] = nullptr;
+  const char *profile = nullptr;
+  for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+    if (strcmp(id.hydroSoftware, CONTROL_PROFILES[i].softwareId) == 0) profile = CONTROL_PROFILES[i].softwareId;
+  out["control_profile"] = profile;
+}
 #include "stats.h"
 #include "fwupdate.h"
 extern Stats stats;
@@ -635,6 +663,12 @@ void webBegin()
   webServer.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *r) {
     JsonDocument doc;
     statusJson(doc);
+    sendJson(r, doc);
+  });
+
+  webServer.on("/api/identity", HTTP_GET, [](AsyncWebServerRequest *r) {
+    JsonDocument doc;
+    reportedIdentityJson(doc.to<JsonObject>());
     sendJson(r, doc);
   });
 

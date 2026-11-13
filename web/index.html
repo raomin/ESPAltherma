@@ -434,6 +434,10 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
 
 <section id="diagnostics">
  <h1>Diagnostics</h1>
+ <div class="card pad"><h2>Reported device identity</h2>
+  <p class="sub">Read from the last heat pump survey. An EEPROM identifier is not a model name or firmware version.</p>
+  <div id="identityFields" translate="no"></div>
+  <div class="acts" style="margin-top:12px"><button id="identityDownload">Download identity</button></div></div>
  <div class="card pad"><h2>Definition corrections</h2>
   <p class="sub">Some definitions do not match every unit: a value is then read across two neighbours and shows absurd, jumping numbers. ESPAltherma checks the replies and reads such a registry with the layout of the definition that fits.</p>
   <div id="fixList" translate="no"></div>
@@ -1330,11 +1334,27 @@ $('#evCopy').onclick = () => copyText(eventLines.join('\n')).then(copied('#evMsg
 async function loadDiagnostics() {
   renderFixes();
   loadEvents().catch(() => {});
+  loadIdentity().catch(() => {});
   const r = await api('/api/detect');
   $('#svReport').textContent = r.regs ? JSON.stringify(r, null, 2) : t('No survey yet.');
   if (!$('#log').textContent) $('#log').textContent = await api('/api/log');
   scrollLog();
 }
+async function loadIdentity() {
+  const data = await api('/api/identity'), box = $('#identityFields'); box.replaceChildren();
+  const fields = [
+    [t('Selected definition'), 'selected_definition'], [t('Reported indoor model'), 'reported_indoor_model'],
+    [t('Hydro board software'), 'hydro_software'], [t('Outdoor EEPROM'), 'outdoor_eeprom'],
+    [t('EEPROM revision byte'), 'outdoor_eeprom_revision_raw'], [t('Outdoor MPU identifier'), 'outdoor_mpu_id'],
+    [t('Outdoor model'), 'outdoor_model'], [t('Outdoor firmware'), 'outdoor_firmware'], [t('Mapped control profile'), 'control_profile']];
+  for (const [label, key] of fields) box.append(el('p', {}, el('b', {}, label + ': '), data[key] == null || data[key] === '' ? t('Unknown') : String(data[key])));
+}
+$('#identityDownload').onclick = async () => {
+  const data = await api('/api/identity');
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}));
+  const a = el('a', {href: url, download: 'espaltherma-identity.json'}); a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 function scrollLog() { if ($('#logFollow').checked) $('#log').scrollTop = 1e9; }
 function renderFixes() {
   const fixes = (status.hp && status.hp.layout_fixes) || [];

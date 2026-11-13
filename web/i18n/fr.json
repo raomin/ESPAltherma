@@ -452,5 +452,18 @@
  "Range: hexadecimal, 16 KB at most.": "Plage : hexadécimale, 16 Ko au plus.",
  "{n} of {t} frames read": "{n} trames sur {t} lues",
  "Done, {m} frames did not answer.": "Terminé, {m} trames sans réponse.",
- "Give the unit its own curve back? The target set from here is dropped.": "Rendre à l'unité sa propre courbe ? La consigne fixée ici est abandonnée."
+ "Give the unit its own curve back? The target set from here is dropped.": "Rendre à l'unité sa propre courbe ? La consigne fixée ici est abandonnée.",
+ "Reported device identity": "Identité déclarée de l’appareil",
+ "Read from the last heat pump survey. An EEPROM identifier is not a model name or firmware version.": "Lu lors du dernier relevé. Un identifiant EEPROM n’est ni un modèle ni une version du logiciel.",
+ "Download identity": "Télécharger les identifiants",
+ "Selected definition": "Définition choisie",
+ "Reported indoor model": "Modèle intérieur déclaré",
+ "Hydro board software": "Logiciel de la carte hydraulique",
+ "Outdoor EEPROM": "EEPROM extérieure",
+ "EEPROM revision byte": "Octet de révision EEPROM",
+ "Outdoor MPU identifier": "Identifiant MPU extérieur",
+ "Outdoor model": "Modèle extérieur",
+ "Outdoor firmware": "Logiciel extérieur",
+ "Mapped control profile": "Profil de commande associé",
+ "Unknown": "Inconnu"
 }

@@ -452,5 +452,18 @@
  "Range: hexadecimal, 16 KB at most.": "Bereik: hexadecimaal, hoogstens 16 KB.",
  "{n} of {t} frames read": "{n} van {t} frames gelezen",
  "Done, {m} frames did not answer.": "Klaar, {m} frames zonder antwoord.",
- "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt."
+ "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt.",
+ "Reported device identity": "Gemelde apparaatidentiteit",
+ "Read from the last heat pump survey. An EEPROM identifier is not a model name or firmware version.": "Uit de laatste warmtepompmeting. Een EEPROM-code is geen modelnaam of firmwareversie.",
+ "Download identity": "Identiteit downloaden",
+ "Selected definition": "Geselecteerde definitie",
+ "Reported indoor model": "Gemeld binnenmodel",
+ "Hydro board software": "Software hydroprint",
+ "Outdoor EEPROM": "EEPROM buitenunit",
+ "EEPROM revision byte": "EEPROM-revisiebyte",
+ "Outdoor MPU identifier": "MPU-code buitenunit",
+ "Outdoor model": "Model buitenunit",
+ "Outdoor firmware": "Firmware buitenunit",
+ "Mapped control profile": "Gekoppeld regelprofiel",
+ "Unknown": "Onbekend"
 }

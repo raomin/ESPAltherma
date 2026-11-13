@@ -263,7 +263,7 @@ static bool surveyPNumber(const Survey &s, char *out, size_t size)
   int b = surveyBcd(s.byteAt(0x11, 2));
   int c = surveyBcd(s.byteAt(0x11, 3));
   int q = s.byteAt(0x11, 4);
-  if (p1 < 0 || p1 > 9 || a < 0 || b < 0 || c < 0 || q < 0 || (q & 0xF) > 9)
+  if (p1 < 1 || p1 > 9 || a < 0 || b < 0 || c < 0 || q < 0 || (q & 0xF) > 9)
     return false;
   snprintf(out, size, "%dP%02d%02d%02d-%d", p1, a, b, c, q & 0xF);
   return true;

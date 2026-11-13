@@ -452,5 +452,18 @@
  "Range: hexadecimal, 16 KB at most.": "Bereich: hexadezimal, höchstens 16 KB.",
  "{n} of {t} frames read": "{n} von {t} Frames gelesen",
  "Done, {m} frames did not answer.": "Fertig, {m} Frames ohne Antwort.",
- "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen."
+ "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen.",
+ "Reported device identity": "Gemeldete Gerätekennung",
+ "Read from the last heat pump survey. An EEPROM identifier is not a model name or firmware version.": "Aus der letzten Wärmepumpenabfrage. Eine EEPROM-Kennung ist kein Modellname und keine Firmwareversion.",
+ "Download identity": "Kennungen herunterladen",
+ "Selected definition": "Ausgewählte Definition",
+ "Reported indoor model": "Gemeldetes Innengerätemodell",
+ "Hydro board software": "Software der Hydroplatine",
+ "Outdoor EEPROM": "Außengeräte-EEPROM",
+ "EEPROM revision byte": "EEPROM-Revisionsbyte",
+ "Outdoor MPU identifier": "MPU-Kennung des Außengeräts",
+ "Outdoor model": "Modell des Außengeräts",
+ "Outdoor firmware": "Firmware des Außengeräts",
+ "Mapped control profile": "Zugeordnetes Steuerprofil",
+ "Unknown": "Unbekannt"
 }
