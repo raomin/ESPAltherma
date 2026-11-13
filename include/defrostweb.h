@@ -1,9 +1,11 @@
 #ifndef ESPALTHERMA_DEFROSTWEB_H
 #define ESPALTHERMA_DEFROSTWEB_H
 #include "defrostexport.h"
+#include <atomic>
 
 // Included after the web helpers. Only explicit user actions download/annotate/report a case.
-static volatile bool defrostReportPending=false, defrostReportSending=false;
+static std::atomic<bool> defrostReportPending{false}; // web handler -> main-loop handoff
+static bool defrostReportSending=false; // protected by valuesLock
 static uint32_t defrostReportId=0;
 static int defrostReportCode=0;
 
