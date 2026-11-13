@@ -3,10 +3,12 @@
 
 // Runtime configuration, persisted in NVS (as JSON) and changed from the web interface.
 
+#ifndef ESPALTHERMA_CONFIG_NATIVE_TEST
 #include <Arduino.h>
 #include "board.h"
-#include "topics.h"
 #include <Preferences.h>
+#endif
+#include "topics.h"
 // Not <ArduinoJson.h>: its "using namespace ArduinoJson" clashes with our Converter class
 #include <ArduinoJson.hpp>
 using ArduinoJson::DeserializationError;
@@ -199,7 +201,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   mqtt["base_topic"] = c.mqttBase;
 
   JsonObject hp = doc["hp"].to<JsonObject>();
-  hp["protocol"] = String(c.protocol);
+  hp["protocol"] = c.protocol == 'S' ? "S" : "I";
   hp["frequency"] = c.frequency;
   hp["rx"] = c.rxPin;
   hp["tx"] = c.txPin;
@@ -427,6 +429,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(src["telemetry"]["sent"], c.telemetrySent);
 }
 
+#ifndef ESPALTHERMA_CONFIG_NATIVE_TEST
 void configSave()
 {
   JsonDocument doc;
@@ -472,5 +475,6 @@ void configReset()
   prefs.clear();
   prefs.end();
 }
+#endif
 
 #endif

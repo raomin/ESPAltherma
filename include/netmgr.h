@@ -19,6 +19,7 @@
 #include <esp_ota_ops.h>
 #include "netpolicy.h"
 #include "restart.h"
+#include "configservices.h"
 
 #define AP_PASSWORD "espaltherma" // WPA2 key of the setup access point (documented, shown on screen/serial)
 #define MQTT_RETRY_MS 5000UL
@@ -390,6 +391,13 @@ void mdnsGuard()
 void mdnsGuard() {}
 #endif
 
+void configureNetworkClock()
+{
+  configureTimeServers(config.ntpServer,[](long offset,int daylight,const char *a,const char *b,const char *c){
+    configTime(offset,daylight,a,b,c);
+  });
+}
+
 // OTA and mDNS, started when the device first gets online.
 void startNetworkServices()
 {
@@ -403,10 +411,7 @@ void startNetworkServices()
   ArduinoOTA.begin(); // also starts mDNS
   mdnsGuard();
   MDNS.addService("http", "tcp", 80);
-  if (config.ntpServer[0]) // a local time server (a network kept off the Internet)
-    configTime(0, 0, config.ntpServer);
-  else
-    configTime(0, 0, "pool.ntp.org", "time.google.com"); // UTC, dates the event history
+  configureNetworkClock(); // UTC, dates the event history; reused when the owner saves a new server
   heapMark("mDNS, ArduinoOTA, time");
 }
 

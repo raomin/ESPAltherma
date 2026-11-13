@@ -1380,12 +1380,7 @@ void webLoop()
                        next->staticIp != config.staticIp || next->ip != config.ip || next->gateway != config.gateway ||
                        next->subnet != config.subnet || next->dns1 != config.dns1 || next->dns2 != config.dns2;
     bool baseChanged = strcmp(next->mqttBase, config.mqttBase) != 0;
-    bool mqttChanged = baseChanged || strcmp(next->mqttServer, config.mqttServer) != 0 || next->mqttPort != config.mqttPort ||
-                       strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
-                       next->mqttTls != config.mqttTls || next->mqttOff != config.mqttOff || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
-                       next->jsonTable != config.jsonTable || next->binaryAsNumber != config.binaryAsNumber ||
-                       next->dhwTarget != config.dhwTarget || next->lwtTarget != config.lwtTarget ||
-                       next->powerLimit != config.powerLimit; // subscriptions and entities follow
+    ConfigServiceChanges services=configServiceChanges(config,*next);
     bool labelsChanged = strcmp(next->model, config.model) != 0 || next->labelCount != config.labelCount ||
                          memcmp(next->labels, config.labels, sizeof(uint32_t) * next->labelCount) != 0 ||
                          next->fixCount != config.fixCount || next->layoutCheck != config.layoutCheck;
@@ -1410,8 +1405,10 @@ void webLoop()
     mqttSerial.println("Configuration saved.");
     if (wifiChanged)
       connectWifi();
-    if (mqttChanged)
+    if (services.mqtt)
       mqttReconnectNow();
+    if (services.clock && networkServicesStarted)
+      configureNetworkClock();
     if (labelsChanged)
       labelsDirty = true;
     if (confirmedNow || telemetryEnabled)
