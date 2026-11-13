@@ -457,5 +457,14 @@
  "Not read yet": "Nog niet gelezen",
  "Read failed": "Lezen mislukt",
  "Field missing": "Veld ontbreekt",
- "Reading too old": "Meting verouderd"
+ "Reading too old": "Meting verouderd",
+ "Request queued.": "Verzoek wacht.",
+ "Written; waiting for read-back.": "Geschreven; wacht op teruglezing.",
+ "Curve read-back confirmed.": "Curve bevestigd door teruglezing.",
+ "Read-back differs from the requested curve.": "Teruggelezen curve wijkt af van het verzoek.",
+ "Read-back failed; effective target is unknown.": "Teruglezing mislukt; effectief doel onbekend.",
+ "Target write failed.": "Schrijven van doel mislukt.",
+ "Target read-back is too old.": "Teruglezing van doel is verouderd.",
+ "Target not read yet.": "Doel nog niet gelezen.",
+ "Last complete read-back {n} s ago.": "Laatste volledige teruglezing {n} s geleden."
 }

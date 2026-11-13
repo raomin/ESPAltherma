@@ -457,5 +457,14 @@
  "Not read yet": "Pas encore lu",
  "Read failed": "Échec de lecture",
  "Field missing": "Champ absent",
- "Reading too old": "Mesure trop ancienne"
+ "Reading too old": "Mesure trop ancienne",
+ "Request queued.": "Demande en attente.",
+ "Written; waiting for read-back.": "Écrit ; attente de relecture.",
+ "Curve read-back confirmed.": "Courbe confirmée par relecture.",
+ "Read-back differs from the requested curve.": "La courbe relue diffère de la demande.",
+ "Read-back failed; effective target is unknown.": "Échec de relecture ; consigne effective inconnue.",
+ "Target write failed.": "Échec d’écriture de la consigne.",
+ "Target read-back is too old.": "La relecture de consigne est trop ancienne.",
+ "Target not read yet.": "Consigne pas encore lue.",
+ "Last complete read-back {n} s ago.": "Dernière relecture complète il y a {n} s."
 }

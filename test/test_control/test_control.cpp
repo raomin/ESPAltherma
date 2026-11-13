@@ -18,6 +18,7 @@ struct FakeUnit
     uint8_t memory[1024]; // the board's memory, by offset
     uint8_t ram[0x6000];  // RAM, by address
     bool answer = true;
+    uint16_t failReadAddress = 0xFFFF;
     int ramWrites = 0, memoryWrites = 0, badWrites = 0;
 
     void reset()
@@ -29,6 +30,7 @@ struct FakeUnit
         memset(memory, 0, sizeof(memory));
         memset(ram, 0, sizeof(ram));
         answer = true;
+        failReadAddress = 0xFFFF;
         ramWrites = memoryWrites = badWrites = 0;
         // hot water: weather-dependent tank mode, curve 52 (low outdoor temperature) to 48 (high),
         // limits 35+21 / 45+11 -> 45..55, effective 48 capped by a ceiling of 51
@@ -159,6 +161,7 @@ struct FakeUnit
         }
         else if (cmd == 0x52 && n == 2)
         {
+            if ((uint16_t)(data[0] | data[1] << 8) == failReadAddress) return 0;
             memcpy(reply + out, ram + (data[0] | data[1] << 8), 16);
             out += 16;
         }
@@ -1278,6 +1281,59 @@ void test_frequent_changes_make_few_events()
     TEST_ASSERT_TRUE(l.changed(35, 1000 + 3 * CONTROL_EVENT_EVERY_MS));    // a change by hand, long after: at once
 }
 
+void test_write_acknowledgement_is_not_readback_confirmation()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    TEST_ASSERT_EQUAL_STRING("queued", c.confirmation.name(2000, 360000));
+    c.tick(2000);
+    TEST_ASSERT_EQUAL_STRING("written", c.confirmation.name(2000, 360000));
+    TEST_ASSERT_FALSE(c.confirmation.fresh(2000, 360000));
+    c.tick(2000 + CONTROL_READ_AFTER_WRITE_MS);
+    TEST_ASSERT_EQUAL_STRING("confirmed", c.confirmation.name(7000, 360000));
+    TEST_ASSERT_TRUE(c.confirmation.fresh(7000, 360000));
+    TEST_ASSERT_EQUAL(48, c.effective); // effective temperature need not equal the two curve points
+    TEST_ASSERT_EQUAL(0, c.confirmation.ageSeconds(7000));
+}
+
+void test_optional_target_read_failure_is_not_a_fresh_confirmation()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50); c.tick(2000);
+    unit.failReadAddress = c.spec->ramEffective;
+    TEST_ASSERT_TRUE(c.readTarget(7000)); // curve can be read, effective target cannot
+    TEST_ASSERT_EQUAL_STRING("read_failed", c.confirmation.name(7000, 360000));
+    TEST_ASSERT_FALSE(c.confirmation.fresh(7000, 360000));
+    TEST_ASSERT_EQUAL(-1, c.effective);
+    TEST_ASSERT_EQUAL(6, c.confirmation.ageSeconds(7000));
+    unit.failReadAddress = 0xFFFF;
+    TEST_ASSERT_TRUE(c.readTarget(8000));
+    TEST_ASSERT_EQUAL_STRING("confirmed", c.confirmation.name(8000, 360000));
+}
+
+void test_overridden_curve_and_readback_age_are_visible()
+{
+    CurveControl c = fresh(); c.identify(1000);
+    c.request(50); c.tick(2000);
+    unit.setWord(c.spec->ramA, 49 << 8);
+    TEST_ASSERT_TRUE(c.readTarget(7000));
+    TEST_ASSERT_EQUAL_STRING("different", c.confirmation.name(7000, 360000));
+    TEST_ASSERT_EQUAL_STRING("stale", c.confirmation.name(367000, 360000));
+    TEST_ASSERT_FALSE(c.confirmation.fresh(367000, 360000));
+}
+
+void test_redundant_request_is_verified_without_an_extra_write()
+{
+    CurveControl c = fresh(); c.identify(1000);
+    unit.setWord(c.spec->ramB, c.target << 8); c.readTarget(1500);
+    c.ramOnly = true;
+    c.request(c.target); c.tick(2000);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites);
+    TEST_ASSERT_EQUAL_STRING("confirmed", c.confirmation.name(2000, 360000));
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -1324,5 +1380,9 @@ int main(int, char **)
     RUN_TEST(test_the_energy_of_each_mode_is_read_on_20002203);
     RUN_TEST(test_held_values_are_saved_late_and_seldom);
     RUN_TEST(test_frequent_changes_make_few_events);
+    RUN_TEST(test_write_acknowledgement_is_not_readback_confirmation);
+    RUN_TEST(test_optional_target_read_failure_is_not_a_fresh_confirmation);
+    RUN_TEST(test_overridden_curve_and_readback_age_are_visible);
+    RUN_TEST(test_redundant_request_is_verified_without_an_extra_write);
     return UNITY_END();
 }

@@ -457,5 +457,14 @@
  "Not read yet": "Noch nicht gelesen",
  "Read failed": "Lesefehler",
  "Field missing": "Feld fehlt",
- "Reading too old": "Messwert veraltet"
+ "Reading too old": "Messwert veraltet",
+ "Request queued.": "Anforderung vorgemerkt.",
+ "Written; waiting for read-back.": "Geschrieben; Rücklesung steht aus.",
+ "Curve read-back confirmed.": "Kurvenpunkte durch Rücklesung bestätigt.",
+ "Read-back differs from the requested curve.": "Zurückgelesene Kurve weicht von der Anforderung ab.",
+ "Read-back failed; effective target is unknown.": "Rücklesung fehlgeschlagen; wirksamer Sollwert unbekannt.",
+ "Target write failed.": "Schreiben des Sollwerts fehlgeschlagen.",
+ "Target read-back is too old.": "Rücklesung des Sollwerts ist veraltet.",
+ "Target not read yet.": "Sollwert noch nicht gelesen.",
+ "Last complete read-back {n} s ago.": "Letzte vollständige Rücklesung vor {n} s."
 }

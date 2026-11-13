@@ -808,7 +808,7 @@ function renderOneControl(u, c) {
     const flat = c.target_lo === c.target;
     sub.append(flat ? t('Target {n} °C, allowed from {min} to {max}.', {n: c.target, min: c.min, max: c.max})
       : t('The unit follows its own curve, {lo} °C to {hi} °C. Applying a value fixes the target.', {lo: c.target_lo, hi: c.target}));
-    if (c.effective >= 0) {
+    if (c.effective >= 0 && c.read_fresh !== false) {
       const capped = c.ceiling >= 0 && c.effective < Math.min(c.target, c.target_lo) && c.effective === c.ceiling;
       const tip = u.id === 'dhw'
         ? (capped ? t('What the thermostat really aims for: at this outdoor temperature the heat pump reaches {n} °C on its own, the rest would need the booster heater.', {n: c.ceiling})
@@ -818,6 +818,13 @@ function renderOneControl(u, c) {
     }
     if (flat) sub.append(' ' + (c.saved === c.target ? t('Saved in the unit.') : t('Applied, saved in the unit in a moment.')));
     if (c.orig_hi >= 0) sub.append(' ' + t('Before ESPAltherma, the curve of the unit was {lo} °C to {hi} °C.', {lo: c.orig_lo, hi: c.orig_hi}));
+  }
+  if (c.confirmation) {
+    const notes = {queued: t('Request queued.'), written: t('Written; waiting for read-back.'), confirmed: t('Curve read-back confirmed.'),
+      different: t('Read-back differs from the requested curve.'), read_failed: t('Read-back failed; effective target is unknown.'),
+      write_failed: t('Target write failed.'), stale: t('Target read-back is too old.'), not_read: t('Target not read yet.')};
+    if (notes[c.confirmation]) sub.append(' ', notes[c.confirmation]);
+    if (c.read_age_s >= 0) sub.append(' ', t('Last complete read-back {n} s ago.', {n: c.read_age_s}));
   }
   const v = $('#' + u.id + 'Val');
   v.disabled = $('#' + u.id + 'Set').disabled = !ready;

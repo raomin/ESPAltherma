@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "targetconfirmation.h"
 
 #define CONTROL_FRAME_MAX 24
 #define CONTROL_SAVE_DELAY_MS 30000UL       // the target is saved in the unit's memory once unchanged for this long
@@ -439,6 +440,7 @@ struct CurveControl : X10aClient
   unsigned long retryAfter = CONTROL_RETRY_FIRST_MS; // until the next identification while not ready
   volatile bool changed = false; // something to publish (state or availability)
   int applied = -1, appliedLo = -1; // last pair applied, for the caller's log (-1 when none since the last read)
+  TargetConfirmation confirmation; // write acknowledgement is distinct from a successful read-back
 
   // Allowed range of a curve setting from its limit record: [minimum, minimum + span - 1]
   bool readSlot(uint16_t slot, int &min, int &max)
@@ -463,6 +465,7 @@ struct CurveControl : X10aClient
     restoring = restoreWanted = false; // origA/origB and the hold stay: they apply again once enabled
     checkedAt = 0; // identified again as soon as enabled
     retryAfter = CONTROL_RETRY_FIRST_MS;
+    confirmation = TargetConfirmation();
     changed = true;
   }
 
@@ -548,11 +551,17 @@ struct CurveControl : X10aClient
     readAt = now;
     int a, b, e = -1, c = -1;
     if (spec == nullptr || !readWord(spec->ramA, a) || !readWord(spec->ramB, b))
+    {
+      confirmation.readFailed();
+      target = targetLo = effective = ceiling = -1;
+      changed = true;
       return false;
-    if (spec->ramEffective)
-      readWord(spec->ramEffective, e);
-    if (spec->ramCeiling)
-      readWord(spec->ramCeiling, c);
+    }
+    bool complete = true;
+    if (spec->ramEffective && !readWord(spec->ramEffective, e)) complete = false;
+    if (spec->ramCeiling && !readWord(spec->ramCeiling, c)) complete = false;
+    confirmation.observe(a, b, complete, now);
+    changed = true; // the read age/confirmation changed even if the temperatures did not
     if (a != target || b != targetLo || e != effective || c != ceiling)
       changed = true;
     target = a;
@@ -571,7 +580,12 @@ struct CurveControl : X10aClient
   bool apply(int a, int b, unsigned long now)
   {
     if (spec == nullptr || !writeRamWord(spec->ramA, (uint16_t)(a << 8)) || !writeRamWord(spec->ramB, (uint16_t)(b << 8)))
+    {
+      confirmation.writeFailed();
+      changed = true;
       return false;
+    }
+    confirmation.written(a, b);
     target = a;
     targetLo = b;
     applied = a;
@@ -616,12 +630,16 @@ struct CurveControl : X10aClient
   // Asks for a target. Applied by tick() on the task that owns the X10A link.
   void request(int value)
   {
+    confirmation.queue(value);
+    changed = true;
     wanted = value;
   }
 
   // Asks for the curve found before the first write to be put back. Nothing happens when none is known.
   void requestRestore()
   {
+    confirmation.queue(-1);
+    changed = true;
     restoreWanted = true;
   }
 
@@ -713,6 +731,12 @@ struct CurveControl : X10aClient
           origB = beforeB;
           origChanged = true;
         }
+      }
+      else if (confirmation.flags & TargetConfirmation::PENDING)
+      {
+        // A redundant request needs a fresh read, not another write or a claim based on cached values.
+        confirmation.expect(pendingA, pendingB);
+        readTarget(now);
       }
       bool done = false;
       if (ramOnly && !restoring)

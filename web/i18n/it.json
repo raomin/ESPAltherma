@@ -457,5 +457,14 @@
  "Not read yet": "Non ancora letto",
  "Read failed": "Lettura fallita",
  "Field missing": "Campo assente",
- "Reading too old": "Valore obsoleto"
+ "Reading too old": "Valore obsoleto",
+ "Request queued.": "Richiesta in attesa.",
+ "Written; waiting for read-back.": "Scritto; in attesa di rilettura.",
+ "Curve read-back confirmed.": "Curva confermata dalla rilettura.",
+ "Read-back differs from the requested curve.": "La curva riletta differisce dalla richiesta.",
+ "Read-back failed; effective target is unknown.": "Rilettura fallita; obiettivo effettivo sconosciuto.",
+ "Target write failed.": "Scrittura dell’obiettivo fallita.",
+ "Target read-back is too old.": "La rilettura dell’obiettivo è obsoleta.",
+ "Target not read yet.": "Obiettivo non ancora letto.",
+ "Last complete read-back {n} s ago.": "Ultima rilettura completa {n} s fa."
 }
