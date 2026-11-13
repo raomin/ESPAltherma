@@ -9,6 +9,7 @@
 
 #include <PubSubClient.h>
 #include <ArduinoOTA.h>
+#include <atomic>
 
 // No compile time settings: everything is configured at runtime (web interface, stored in NVS).
 #include "labeldef.h"
@@ -39,7 +40,7 @@
 ::Converter converter; // qualified: ArduinoJson (via ESPAsyncWebServer) also has a Converter
 char registryIDs[32]; //Holds the registries to query
 bool registryOk[32]; //Registries successfully read during the last query cycle
-bool busy = false;
+std::atomic<bool> busy{false}; // OTA/main task publishes the gate; the heat-pump task observes it
 
 Survey survey;
 char surveyJson[3072];
