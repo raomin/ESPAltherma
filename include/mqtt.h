@@ -86,6 +86,7 @@ void resetJson()
 // Home Assistant id from the base topic.
 void setupMqttClient()
 {
+  haHostname=config.hostname;
   mqttTopics.init(config.mqttBase, config.mqttClientId);
   haIdPrefix = mqttTopics.id;
   haDeviceId = mqttTopics.deviceId;
