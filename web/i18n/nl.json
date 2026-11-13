@@ -452,5 +452,14 @@
  "Range: hexadecimal, 16 KB at most.": "Bereik: hexadecimaal, hoogstens 16 KB.",
  "{n} of {t} frames read": "{n} van {t} frames gelezen",
  "Done, {m} frames did not answer.": "Klaar, {m} frames zonder antwoord.",
- "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt."
+ "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt.",
+ "Request queued.": "Verzoek wacht.",
+ "Written; waiting for read-back.": "Geschreven; wacht op teruglezing.",
+ "Curve read-back confirmed.": "Curve bevestigd door teruglezing.",
+ "Read-back differs from the requested curve.": "Teruggelezen curve wijkt af van het verzoek.",
+ "Read-back failed; effective target is unknown.": "Teruglezing mislukt; effectief doel onbekend.",
+ "Target write failed.": "Schrijven van doel mislukt.",
+ "Target read-back is too old.": "Teruglezing van doel is verouderd.",
+ "Target not read yet.": "Doel nog niet gelezen.",
+ "Last complete read-back {n} s ago.": "Laatste volledige teruglezing {n} s geleden."
 }

@@ -270,14 +270,19 @@ static void controlJson(JsonObject c, const CurveControl &k)
 {
   c["status"] = controlStatusName(k.status);
   c["id"] = k.softwareId;
+  bool fresh = k.confirmation.fresh(millis(), 3 * CONTROL_READ_INTERVAL_MS);
+  c["confirmation"] = k.confirmation.name(millis(), 3 * CONTROL_READ_INTERVAL_MS);
+  c["read_age_s"] = k.confirmation.ageSeconds(millis());
+  c["read_fresh"] = fresh;
+  c["requested"] = k.confirmation.requested;
   if (k.status == CONTROL_READY)
   {
     c["min"] = k.minTarget;
     c["max"] = k.maxTarget;
     c["target"] = k.target;
     c["target_lo"] = k.targetLo;
-    c["effective"] = k.effective;
-    c["ceiling"] = k.ceiling;
+    c["effective"] = fresh ? k.effective : -1;
+    c["ceiling"] = fresh ? k.ceiling : -1;
     c["saved"] = k.saved;
     c["pending"] = (int)k.wanted;
     c["restoring"] = k.restoring;

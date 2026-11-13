@@ -452,5 +452,14 @@
  "Range: hexadecimal, 16 KB at most.": "Rango: hexadecimal, 16 KB como máximo.",
  "{n} of {t} frames read": "{n} de {t} tramas leídas",
  "Done, {m} frames did not answer.": "Hecho, {m} tramas sin respuesta.",
- "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta."
+ "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta.",
+ "Request queued.": "Solicitud pendiente.",
+ "Written; waiting for read-back.": "Escrito; esperando lectura de verificación.",
+ "Curve read-back confirmed.": "Curva confirmada por lectura.",
+ "Read-back differs from the requested curve.": "La curva leída difiere de la solicitada.",
+ "Read-back failed; effective target is unknown.": "Lectura fallida; objetivo efectivo desconocido.",
+ "Target write failed.": "Error al escribir el objetivo.",
+ "Target read-back is too old.": "La lectura del objetivo es antigua.",
+ "Target not read yet.": "Objetivo aún no leído.",
+ "Last complete read-back {n} s ago.": "Última lectura completa hace {n} s."
 }

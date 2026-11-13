@@ -452,5 +452,14 @@
  "Range: hexadecimal, 16 KB at most.": "Bereich: hexadezimal, höchstens 16 KB.",
  "{n} of {t} frames read": "{n} von {t} Frames gelesen",
  "Done, {m} frames did not answer.": "Fertig, {m} Frames ohne Antwort.",
- "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen."
+ "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen.",
+ "Request queued.": "Anforderung vorgemerkt.",
+ "Written; waiting for read-back.": "Geschrieben; Rücklesung steht aus.",
+ "Curve read-back confirmed.": "Kurvenpunkte durch Rücklesung bestätigt.",
+ "Read-back differs from the requested curve.": "Zurückgelesene Kurve weicht von der Anforderung ab.",
+ "Read-back failed; effective target is unknown.": "Rücklesung fehlgeschlagen; wirksamer Sollwert unbekannt.",
+ "Target write failed.": "Schreiben des Sollwerts fehlgeschlagen.",
+ "Target read-back is too old.": "Rücklesung des Sollwerts ist veraltet.",
+ "Target not read yet.": "Sollwert noch nicht gelesen.",
+ "Last complete read-back {n} s ago.": "Letzte vollständige Rücklesung vor {n} s."
 }

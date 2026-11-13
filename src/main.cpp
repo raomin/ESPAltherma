@@ -1446,6 +1446,16 @@ void loop()
     LOOP_STAGE("update entity");
     publishUpdateEntity();
   }
+  static bool targetWasFresh[2] = {false, false};
+  for (CurveControl *c : {&dhwControl, &lwtControl})
+  {
+    bool fresh = c->confirmation.fresh(millis(), 3 * CONTROL_READ_INTERVAL_MS);
+    if (fresh != targetWasFresh[c->kind])
+    {
+      targetWasFresh[c->kind] = fresh;
+      c->changed = true; // publish expiry even when the heat-pump task no longer returns read-backs
+    }
+  }
   if ((dhwControl.changed || lwtControl.changed || limitControl.changed) && client.connected())
   {
     LOOP_STAGE("target controls state");
