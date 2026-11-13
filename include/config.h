@@ -3,10 +3,12 @@
 
 // Runtime configuration, persisted in NVS (as JSON) and changed from the web interface.
 
+#ifndef ESPALTHERMA_CONFIG_NATIVE_TEST
 #include <Arduino.h>
 #include "board.h"
-#include "topics.h"
 #include <Preferences.h>
+#endif
+#include "topics.h"
 // Not <ArduinoJson.h>: its "using namespace ArduinoJson" clashes with our Converter class
 #include <ArduinoJson.hpp>
 using ArduinoJson::DeserializationError;
@@ -170,8 +172,8 @@ static uint32_t ipFromString(const char *s)
   return (uint32_t)ip;
 }
 
-// Serializes the configuration. Secrets (passwords) are only included when asked, eg. to persist them.
-void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
+// Settings/backups omit passwords and device runtime. Only internal NVS persistence opts into both.
+void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets, bool includeRuntime = false)
 {
   JsonObject wifi = doc["wifi"].to<JsonObject>();
   wifi["ssid"] = c.wifiSsid;
@@ -199,13 +201,13 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   mqtt["base_topic"] = c.mqttBase;
 
   JsonObject hp = doc["hp"].to<JsonObject>();
-  hp["protocol"] = String(c.protocol);
+  hp["protocol"] = c.protocol == 'S' ? "S" : "I";
   hp["frequency"] = c.frequency;
   hp["rx"] = c.rxPin;
   hp["tx"] = c.txPin;
   hp["model"] = c.model;
   hp["confirmed"] = c.modelConfirmed;
-  hp["detected_key"] = c.detectedKey;
+  if (includeRuntime) hp["detected_key"] = c.detectedKey;
   hp["layout_check"] = c.layoutCheck;
   hp["outdoor_aux"] = c.outdoorAux;
   JsonArray fixes = hp["layout_fixes"].to<JsonArray>();
@@ -242,17 +244,21 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   control["dhw_target"] = c.dhwTarget;
   control["lwt_target"] = c.lwtTarget;
   control["ram_only"] = c.ctlRamOnly;
-  control["orig_dhw_hi"] = c.ctlOrig[0][0];
-  control["orig_dhw_lo"] = c.ctlOrig[0][1];
-  control["orig_lwt_hi"] = c.ctlOrig[1][0];
-  control["orig_lwt_lo"] = c.ctlOrig[1][1];
-  control["orig_sw"] = c.ctlOrigSw;
-  control["held_dhw"] = c.ctlHeld[0];
-  control["held_lwt"] = c.ctlHeld[1];
   control["power_limit"] = c.powerLimit;
-  control["limit_on"] = c.ctlLimitOn;
-  control["limit_value"] = c.ctlLimitValue;
-  control["limit_orig"] = c.ctlLimitOrig;
+  if (includeRuntime)
+  {
+    control["orig_dhw_hi"] = c.ctlOrig[0][0];
+    control["orig_dhw_lo"] = c.ctlOrig[0][1];
+    control["orig_lwt_hi"] = c.ctlOrig[1][0];
+    control["orig_lwt_lo"] = c.ctlOrig[1][1];
+    control["orig_sw"] = c.ctlOrigSw;
+    control["held_dhw"] = c.ctlHeld[0];
+    control["held_lwt"] = c.ctlHeld[1];
+    control["limit_on"] = c.ctlLimitOn;
+    control["limit_value"] = c.ctlLimitValue;
+    control["limit_orig"] = c.ctlLimitOrig;
+    control["limit_sw"] = c.ctlLimitSw;
+  }
   JsonObject stats = doc["stats"].to<JsonObject>();
   stats["enabled"] = c.statsEnabled;
   stats["voltage"] = c.statsVoltage;
@@ -262,7 +268,6 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   stats["buh1_kw"] = c.statsBuhKW[0];
   stats["buh2_kw"] = c.statsBuhKW[1];
   stats["tz"] = c.statsTz;
-  control["limit_sw"] = c.ctlLimitSw;
 
   JsonObject admin = doc["admin"].to<JsonObject>();
   admin["has_pwd"] = c.adminPwd[0] != 0;
@@ -272,8 +277,11 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets)
   JsonObject telemetry = doc["telemetry"].to<JsonObject>();
   telemetry["enabled"] = c.telemetry;
   doc["update"]["check"] = c.updateCheck;
-  telemetry["install_id"] = c.installId;
-  telemetry["sent"] = c.telemetrySent;
+  if (includeRuntime)
+  {
+    telemetry["install_id"] = c.installId;
+    telemetry["sent"] = c.telemetrySent;
+  }
 
   if (!includeSecrets)
   {
@@ -302,8 +310,8 @@ static void readIp(JsonVariantConst v, uint32_t &dst)
     dst = ipFromString(v.as<const char *>());
 }
 
-// Applies the keys present in src on top of c. Missing keys keep their current value.
-void configFromJson(AppConfig &c, JsonVariantConst src)
+// Applies settings keys on top of c. Missing keys keep their current value. Runtime fields are NVS-only.
+void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = false)
 {
   JsonVariantConst wifi = src["wifi"];
   readStr(wifi["ssid"], c.wifiSsid, sizeof(c.wifiSsid));
@@ -341,7 +349,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(hp["tx"], c.txPin);
   readStr(hp["model"], c.model, sizeof(c.model));
   readNum(hp["confirmed"], c.modelConfirmed);
-  readStr(hp["detected_key"], c.detectedKey, sizeof(c.detectedKey));
+  if (includeRuntime) readStr(hp["detected_key"], c.detectedKey, sizeof(c.detectedKey));
   readNum(hp["layout_check"], c.layoutCheck);
   readNum(hp["outdoor_aux"], c.outdoorAux);
   if (hp["layout_fixes"].is<JsonArrayConst>())
@@ -386,17 +394,21 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
   readNum(src["control"]["dhw_target"], c.dhwTarget);
   readNum(src["control"]["lwt_target"], c.lwtTarget);
   readNum(src["control"]["ram_only"], c.ctlRamOnly);
-  readNum(src["control"]["orig_dhw_hi"], c.ctlOrig[0][0]);
-  readNum(src["control"]["orig_dhw_lo"], c.ctlOrig[0][1]);
-  readNum(src["control"]["orig_lwt_hi"], c.ctlOrig[1][0]);
-  readNum(src["control"]["orig_lwt_lo"], c.ctlOrig[1][1]);
-  readStr(src["control"]["orig_sw"], c.ctlOrigSw, sizeof(c.ctlOrigSw));
-  readNum(src["control"]["held_dhw"], c.ctlHeld[0]);
-  readNum(src["control"]["held_lwt"], c.ctlHeld[1]);
   readNum(src["control"]["power_limit"], c.powerLimit);
-  readNum(src["control"]["limit_on"], c.ctlLimitOn);
-  readNum(src["control"]["limit_value"], c.ctlLimitValue);
-  readNum(src["control"]["limit_orig"], c.ctlLimitOrig);
+  if (includeRuntime)
+  {
+    readNum(src["control"]["orig_dhw_hi"], c.ctlOrig[0][0]);
+    readNum(src["control"]["orig_dhw_lo"], c.ctlOrig[0][1]);
+    readNum(src["control"]["orig_lwt_hi"], c.ctlOrig[1][0]);
+    readNum(src["control"]["orig_lwt_lo"], c.ctlOrig[1][1]);
+    readStr(src["control"]["orig_sw"], c.ctlOrigSw, sizeof(c.ctlOrigSw));
+    readNum(src["control"]["held_dhw"], c.ctlHeld[0]);
+    readNum(src["control"]["held_lwt"], c.ctlHeld[1]);
+    readNum(src["control"]["limit_on"], c.ctlLimitOn);
+    readNum(src["control"]["limit_value"], c.ctlLimitValue);
+    readNum(src["control"]["limit_orig"], c.ctlLimitOrig);
+    readStr(src["control"]["limit_sw"], c.ctlLimitSw, sizeof(c.ctlLimitSw));
+  }
   readNum(src["stats"]["enabled"], c.statsEnabled);
   readNum(src["stats"]["voltage"], c.statsVoltage);
   readNum(src["stats"]["phases"], c.statsPhases);
@@ -418,19 +430,22 @@ void configFromJson(AppConfig &c, JsonVariantConst src)
       c.statsBuhKW[k] = 3;
   if (c.statsAuxW < 1) // 0 W is no pump at all: the default instead (a configuration saved before beta.19 holds 0)
     c.statsAuxW = 100;
-  readStr(src["control"]["limit_sw"], c.ctlLimitSw, sizeof(c.ctlLimitSw));
 
   readStr(src["admin"]["pwd"], c.adminPwd, sizeof(c.adminPwd));
   readNum(src["telemetry"]["enabled"], c.telemetry);
   readNum(src["update"]["check"], c.updateCheck);
-  readStr(src["telemetry"]["install_id"], c.installId, sizeof(c.installId));
-  readNum(src["telemetry"]["sent"], c.telemetrySent);
+  if (includeRuntime)
+  {
+    readStr(src["telemetry"]["install_id"], c.installId, sizeof(c.installId));
+    readNum(src["telemetry"]["sent"], c.telemetrySent);
+  }
 }
 
+#ifndef ESPALTHERMA_CONFIG_NATIVE_TEST
 void configSave()
 {
   JsonDocument doc;
-  configToJson(config, doc, true);
+  configToJson(config, doc, true, true); // NVS retains runtime state; API settings/backups do not
   String s;
   serializeJson(doc, s);
   Preferences prefs;
@@ -451,7 +466,7 @@ void configLoad()
   JsonDocument doc;
   bool parsed = stored.length() > 0 && deserializeJson(doc, stored) == DeserializationError::Ok;
   if (parsed)
-    configFromJson(config, doc.as<JsonVariantConst>());
+    configFromJson(config, doc.as<JsonVariantConst>(), true);
 
   bool newId = config.installId[0] == 0;
   if (newId)
@@ -472,5 +487,6 @@ void configReset()
   prefs.clear();
   prefs.end();
 }
+#endif
 
 #endif
