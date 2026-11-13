@@ -6,6 +6,7 @@
 #include "comm.h"
 
 #include "topics.h"
+#include "sgdiscovery.h"
 
 // Every topic and every Home Assistant id, from the configurable base topic (Settings > MQTT output)
 MqttTopics mqttTopics;
@@ -278,14 +279,7 @@ bool mqttConnectOnce()
       if (smartGridConfigured())
       {
       // Smart Grid
-      int sgLen = snprintf(json, sizeof(json),
-               "{\"availability\":[{\"topic\":\"%s\",\"payload_available\":\"Online\",\"payload_not_available\":\"Offline\"}],\"availability_mode\":\"all\","
-               "\"unique_id\":\"%s_sg\",\"device\":{\"identifiers\":[\"%s\"],\"manufacturer\":\"ESPAltherma\",\"model\":\"M5StickC PLUS ESP32-PICO\",\"name\":\"%s\"},"
-               "\"icon\":\"mdi:solar-power\",\"name\":\"EspAltherma Smart Grid\",\"command_topic\":\"%s\","
-               "\"command_template\":\"{%% if value == 'Free Running' %%} 0 {%% elif value == 'Forced Off' %%} 1 {%% elif value == 'Recommended On' %%} 2 {%% elif value == 'Forced On' %%} 3 {%% else %%} 0 {%% endif %%}\","
-               "\"options\":[\"Free Running\",\"Forced Off\",\"Recommended On\",\"Forced On\"],\"state_topic\":\"%s\","
-               "\"value_template\":\"{%% set mapper = { '0':'Free Running', '1':'Forced Off', '2':'Recommended On', '3':'Forced On' } %%} {%% set word = mapper[value] %%} {{ word }}\"}",
-               mqttTopics.lwt, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName, mqttTopics.sgSet, mqttTopics.sgState);
+      int sgLen = smartGridDiscovery(json,sizeof(json),mqttTopics,BOARD_NAME);
       if (discoveryFits(sgLen, sizeof(json), "the Smart Grid select"))
         client.publish(mqttTopics.cfgSg, json, true);
       client.subscribe(mqttTopics.sgSet);
