@@ -1389,6 +1389,7 @@ void webLoop()
                        next->staticIp != config.staticIp || next->ip != config.ip || next->gateway != config.gateway ||
                        next->subnet != config.subnet || next->dns1 != config.dns1 || next->dns2 != config.dns2;
     bool baseChanged = strcmp(next->mqttBase, config.mqttBase) != 0;
+    bool pollPeriodChanged = next->frequency != config.frequency;
     bool mqttChanged = baseChanged || strcmp(next->mqttServer, config.mqttServer) != 0 || next->mqttPort != config.mqttPort ||
                        strcmp(next->mqttUser, config.mqttUser) != 0 || strcmp(next->mqttPwd, config.mqttPwd) != 0 ||
                        next->mqttTls != config.mqttTls || next->mqttOff != config.mqttOff || strcmp(next->mqttClientId, config.mqttClientId) != 0 ||
@@ -1427,7 +1428,7 @@ void webLoop()
       telemetryPending = true;
     if (statsChanged)
       statsSetup();
-    if (statsToggled)
+    if (statsToggled || pollPeriodChanged)
       discoveryDirty = true; // the entities come or go
     if (updateToggled)
       fwUpdate.dirty = true; // the update entity comes or goes
