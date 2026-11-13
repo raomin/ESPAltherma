@@ -11,6 +11,7 @@
 #include "webui_data.h"
 #include <HTTPClient.h>
 #include <esp_heap_caps.h>
+#include "configpatch.h"
 
 #ifndef TELEMETRY_URL
 #define TELEMETRY_URL "" // Collection endpoint of the opt-in telemetry; nothing is sent while empty
@@ -99,7 +100,7 @@ AsyncWebServer webServer(80);
 AsyncEventSource webEvents("/events");
 LogRing logHistory; // recent log, for the diagnostics page
 
-AppConfig *volatile pendingConfig = nullptr; // posted configuration, applied by webLoop
+ConfigPatchQueue pendingConfig; // posted settings patch, applied by webLoop to the latest state
 volatile bool rebootRequested = false;
 unsigned long rebootAt = 0;
 volatile bool factoryResetRequested = false;
@@ -653,19 +654,21 @@ void webBegin()
     JsonDocument doc;
     if (!parseBody(r, doc))
       return;
-    if (pendingConfig != nullptr)
+    if (pendingConfig.busy())
     {
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
       return;
     }
-    AppConfig *next = new AppConfig(config);
-    configFromJson(*next, doc.as<JsonVariantConst>());
-    if (strcmp(next->model, config.model) != 0 && !doc["hp"]["layout_fixes"].is<JsonArrayConst>())
-      next->fixCount = 0; // the corrections belong to the previous model
+    std::unique_ptr<AppConfig> next(new(std::nothrow) AppConfig(config));
+    if(!next) {r->send(503,"application/json","{\"ok\":false,\"error\":\"not enough memory\"}");return;}
+    configApplySettingsPatch(*next, doc.as<JsonVariantConst>());
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
-    pendingConfig = next;
+    next.reset();
+    ConfigQueueResult queued=pendingConfig.submit(doc);
+    if(queued!=ConfigQueueResult::queued)
+    {r->send(queued==ConfigQueueResult::busy?409:503,"application/json","{\"ok\":false,\"error\":\"busy, retry\"}");return;}
     JsonDocument res;
     res["ok"] = true;
     res["reboot"] = reboot;
@@ -1372,10 +1375,13 @@ static void telemetryLoop()
 // Applies what the request handlers queued. Main loop only.
 void webLoop()
 {
-  AppConfig *next = pendingConfig;
-  if (next != nullptr)
+  JsonDocument *patch = pendingConfig.peek();
+  if (patch != nullptr)
   {
     LOOP_STAGE("apply settings");
+    std::unique_ptr<AppConfig> next(new(std::nothrow) AppConfig(config));
+    if(!next) return; // retain the queued patch for a later loop, never lose a submitted change
+    configApplySettingsPatch(*next,patch->as<JsonVariantConst>());
     bool wifiChanged = strcmp(next->wifiSsid, config.wifiSsid) != 0 || strcmp(next->wifiPwd, config.wifiPwd) != 0 ||
                        next->staticIp != config.staticIp || next->ip != config.ip || next->gateway != config.gateway ||
                        next->subnet != config.subnet || next->dns1 != config.dns1 || next->dns2 != config.dns2;
@@ -1403,9 +1409,9 @@ void webLoop()
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
     if (baseChanged)
       mqttRetireDiscovery(); // the entities of the old base topic leave Home Assistant
-    config = *next;
-    pendingConfig = nullptr;
-    delete next;
+    configApplySettingsPatch(config,patch->as<JsonVariantConst>());
+    pendingConfig.complete(patch);
+    next.reset();
     configSave();
     mqttSerial.println("Configuration saved.");
     if (wifiChanged)
