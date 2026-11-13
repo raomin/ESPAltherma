@@ -2,8 +2,10 @@
 #define COMM_H
 #include <string.h>
 
+#ifndef ESPALTHERMA_COMM_NATIVE_TEST
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#endif
 HardwareSerial MySerial(1);
 #define SERIAL_CONFIG (SERIAL_8E1)
 #define SERIAL_FLUSH_TX_ONLY false
@@ -144,7 +146,7 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
   int replyLen = get_reply_len(regID, protocol);
   bool echoSkipped = false;
 
-  while ((len < replyLen) && (millis() < (start + SER_TIMEOUT)))
+  while ((len < replyLen) && (millis() - start < SER_TIMEOUT))
   {
     if (!MySerial.available())
     {
@@ -180,7 +182,9 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
       return false;
     }
   }
-  if (millis() >= (start + SER_TIMEOUT))
+  // The final byte may complete the frame exactly at the deadline. Decide from the received length,
+  // not a second clock comparison; never ask getCRC() to inspect an empty/incomplete response.
+  if (len != replyLen || len < 2)
   {
     if (len == 0)
     {
