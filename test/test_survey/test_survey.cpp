@@ -301,9 +301,14 @@ void test_survey_json_never_overflows(void)
     char json[64];
     memset(json, 'x', sizeof(json));
     size_t len = surveyToJson(s, json, 40, "1.2.3", "esp32", nullptr);
-    TEST_ASSERT_EQUAL_size_t(39, len);
-    TEST_ASSERT_EQUAL_CHAR(0, json[39]);
+    TEST_ASSERT_EQUAL_size_t(0, len); // caller can distinguish overflow from a complete report
+    TEST_ASSERT_EQUAL_CHAR(0, json[0]);
     TEST_ASSERT_EQUAL_CHAR('x', json[40]);
+    TEST_ASSERT_EQUAL_size_t(0, surveyToJson(s, nullptr, 0, "1.2.3", "esp32", nullptr));
+    char full[2048];
+    size_t required=surveyToJson(s,full,sizeof(full),"1.2.3","esp32",nullptr);
+    TEST_ASSERT_GREATER_THAN(0,required);
+    TEST_ASSERT_EQUAL_size_t(required,surveyToJson(s,full,required+1,"1.2.3","esp32",nullptr));
 }
 
 void test_survey_key_same_unit(void)

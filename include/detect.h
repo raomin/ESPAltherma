@@ -514,11 +514,13 @@ const char *detectConfidenceName(DetectConfidence c)
 // {"model":"...","family":"G","confidence":"high","method":"rules","margin":12,"candidates":[{"model":"...","score":40},...]}
 size_t detectToJson(const DetectResult &r, char *out, size_t size)
 {
+  if (!out || !size) return 0;
   size_t pos = 0;
   out[0] = 0;
   if (r.model < 0)
   {
     surveyAppend(out, size, pos, "{\"model\":null,\"confidence\":\"none\"}");
+    if (pos >= size) {out[0]=0;return 0;}
     return pos;
   }
   const CatalogModel &m = CATALOG_MODELS[r.model];
@@ -529,6 +531,7 @@ size_t detectToJson(const DetectResult &r, char *out, size_t size)
     surveyAppend(out, size, pos, "%s{\"model\":\"%s\",\"score\":%d}", c ? "," : "", CATALOG_MODELS[r.candidates[c]].name, r.scores[c]);
   }
   surveyAppend(out, size, pos, "]}");
+  if (pos >= size) {out[0]=0;return 0;}
   return pos;
 }
 

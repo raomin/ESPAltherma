@@ -188,7 +188,7 @@ void surveyRun(Survey &s, SurveyQueryFn query)
   }
 }
 
-// printf-style append that never overflows out
+// printf-style append that never overflows out. pos==size latches truncation for the caller.
 static void surveyAppend(char *out, size_t size, size_t &pos, const char *fmt, ...)
 {
   if (pos >= size)
@@ -197,8 +197,10 @@ static void surveyAppend(char *out, size_t size, size_t &pos, const char *fmt, .
   va_start(args, fmt);
   int n = vsnprintf(out + pos, size - pos, fmt, args);
   va_end(args);
-  if (n > 0)
-    pos += (size_t)n < size - pos ? (size_t)n : size - pos - 1;
+  if (n < 0 || (size_t)n >= size - pos)
+    pos = size;
+  else
+    pos += (size_t)n;
 }
 
 // Appends the bytes [offset, offset+count) of a registry as hex, or "--" per missing byte.
@@ -380,9 +382,10 @@ bool surveyKeyComplete(const char *key)
 }
 
 // Writes the survey report. detectJson (may be null) is inserted as the "detect" member.
-// Returns the length written.
+// Returns the complete length, or 0 with an empty output when it does not fit. Never expose partial JSON.
 size_t surveyToJson(const Survey &s, char *out, size_t size, const char *fw, const char *board, const char *detectJson)
 {
+  if (!out || !size) return 0;
   size_t pos = 0;
   out[0] = 0;
   char protocol[2] = {s.protocol, 0};
@@ -425,7 +428,7 @@ size_t surveyToJson(const Survey &s, char *out, size_t size, const char *fw, con
       surveyAppend(out, size, pos, "\"ou_pn\":\"%s\",", pn);
     surveyAppendHexField(s, "ou_mpu", 0x00, 10, 2, out, size, pos);
     surveyAppendByteField(s, "ou_cap", 0x00, 12, out, size, pos);
-    if (out[pos - 1] == ',')
+    if (pos < size && out[pos - 1] == ',')
       pos--;
     surveyAppend(out, size, pos, "},");
   }
@@ -454,6 +457,7 @@ size_t surveyToJson(const Survey &s, char *out, size_t size, const char *fw, con
     surveyAppend(out, size, pos, ",\"detect\":%s", detectJson);
   }
   surveyAppend(out, size, pos, "}");
+  if (pos >= size) {out[0]=0;return 0;}
   return pos;
 }
 
