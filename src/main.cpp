@@ -45,6 +45,7 @@ std::atomic<bool> busy{false}; // OTA/main task publishes the gate; the heat-pum
 
 Survey survey;
 char surveyJson[3072];
+bool surveyReportFailed = false; // read/written under valuesLock, no partial report is published
 unsigned long lastSurvey = 0;
 volatile bool discoveryDirty = false; //the values changed: HA discovery must be sent again
 volatile bool labelsDirty = false;    //the model or the selection changed: the heat pump task reloads the values
@@ -497,19 +498,26 @@ void runSurvey()
   surveyInProgress = false;
   static char detectJson[1024];
   detectModel(survey, detection);
-  detectToJson(detection, detectJson, sizeof(detectJson));
+  bool reportOk = detectToJson(detection, detectJson, sizeof(detectJson)) != 0;
   //Rendered aside then swapped in: the web interface may be reading the previous report. On the heap for that
   //time (3 KB kept for good as a static); without the room, rendered in place under the lock.
   std::unique_ptr<char[]> report(new (std::nothrow) char[sizeof(surveyJson)]);
-  if (report)
-    surveyToJson(survey, report.get(), sizeof(surveyJson), ESPALTHERMA_VERSION, BOARD_NAME, detectJson);
+  if (report && reportOk)
+    reportOk = surveyToJson(survey, report.get(), sizeof(surveyJson), ESPALTHERMA_VERSION, BOARD_NAME, detectJson) != 0;
   valuesLock();
-  if (report)
+  if (report && reportOk)
     memcpy(surveyJson, report.get(), sizeof(surveyJson));
-  else
-    surveyToJson(survey, surveyJson, sizeof(surveyJson), ESPALTHERMA_VERSION, BOARD_NAME, detectJson);
+  else if (!report && reportOk)
+    reportOk = surveyToJson(survey, surveyJson, sizeof(surveyJson), ESPALTHERMA_VERSION, BOARD_NAME, detectJson) != 0;
+  surveyReportFailed = !reportOk;
+  if (!reportOk) surveyJson[0] = 0;
   valuesUnlock();
   report.reset();
+  if (!reportOk)
+  {
+    mqttSerial.println("Survey report too large; partial JSON discarded.");
+    eventAddf("Survey report too large; partial JSON discarded");
+  }
   mqttSerial.printf("Survey done: protocol %c, %d registries.\n", survey.protocol ? survey.protocol : '-', survey.count);
   applyDetection();
   if (config.model[0] && survey.protocol == 'I')
@@ -523,7 +531,7 @@ void publishSurvey()
 {
   surveyReady = false;
   Serial.println(surveyJson);
-  mqttPublish(mqttTopics.detect, surveyJson, true);
+  mqttPublish(mqttTopics.detect, surveyJson[0] ? surveyJson : "{\"error\":\"survey report too large\"}", true);
 }
 
 void hpDelay(unsigned long ms);

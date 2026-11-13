@@ -24,6 +24,7 @@ extern MeterReader unitMeter; // main.cpp: the unit's meter and its model name (
 extern DiiiComm diii;         // main.cpp: the HT outdoor unit's frame reader (diii_comm.h)
 String heartbeatPayload();    // the daily heartbeat of the opt-in telemetry, below
 extern char surveyJson[];
+extern bool surveyReportFailed;
 extern volatile bool labelsDirty;
 extern volatile bool forceDetection;
 extern volatile bool surveyRequested;
@@ -355,6 +356,7 @@ static void statusJson(JsonDocument &doc)
   hp["last_poll"] = lastPollMs ? (long)((millis() - lastPollMs) / 1000) : -1;
   hp["survey_running"] = surveyRequested || surveyInProgress;
   hp["survey_done"] = surveyJson[0] != 0;
+  valuesLock();hp["survey_report_error"] = surveyReportFailed;valuesUnlock();
   JsonArray fixes = hp["layout_fixes"].to<JsonArray>();
   for (uint8_t f = 0; f < config.fixCount; f++)
   {
@@ -655,8 +657,9 @@ void webBegin()
   webServer.on("/api/detect", HTTP_GET, [](AsyncWebServerRequest *r) {
     valuesLock();
     String report = surveyJson[0] ? surveyJson : "{}";
+    bool failed = surveyReportFailed;
     valuesUnlock();
-    r->send(200, "application/json", report);
+    r->send(failed ? 503 : 200, "application/json", failed ? "{\"error\":\"survey report too large\"}" : report);
   });
 
   webServer.on("/api/detect", HTTP_POST, [](AsyncWebServerRequest *r) {

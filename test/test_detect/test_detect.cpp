@@ -581,6 +581,16 @@ void test_detect_json(void)
     TEST_ASSERT_EQUAL_STRING_LEN("{\"model\":\"PROTOCOL_S_ROTEX\",\"family\":\"R\",\"confidence\":\"high\",\"method\":\"rules\"", json, strlen("{\"model\":\"PROTOCOL_S_ROTEX\",\"family\":\"R\",\"confidence\":\"high\",\"method\":\"rules\""));
 }
 
+void test_detect_json_reports_truncation_instead_of_returning_a_partial_object(void)
+{
+    DetectResult r={};r.model=-1;
+    char out[64];memset(out,'x',sizeof(out));
+    TEST_ASSERT_EQUAL_size_t(0,detectToJson(r,out,10));
+    TEST_ASSERT_EQUAL_CHAR(0,out[0]);TEST_ASSERT_EQUAL_CHAR('x',out[10]);
+    TEST_ASSERT_EQUAL_size_t(0,detectToJson(r,nullptr,0));
+    TEST_ASSERT_GREATER_THAN(0,detectToJson(r,out,sizeof(out)));
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
@@ -600,6 +610,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_detect_ht_outdoor_by_its_shape);
     RUN_TEST(test_detect_unit_name_picks_the_capacity);
     RUN_TEST(test_detect_json);
+    RUN_TEST(test_detect_json_reports_truncation_instead_of_returning_a_partial_object);
     UNITY_END();
     return 0;
 }
