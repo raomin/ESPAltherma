@@ -835,6 +835,42 @@ static LimitControl freshLimit()
     return c;
 }
 
+void test_power_limit_retries_early_with_backoff_and_keeps_restored_request()
+{
+    LimitControl c=freshLimit();c.restore(true,5,0);unit.answer=false;
+    c.tick(1000);TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER,c.status);
+    c.tick(30999);TEST_ASSERT_EQUAL(1000,c.checkedAt);
+    c.tick(31000);TEST_ASSERT_EQUAL(31000,c.checkedAt);
+    c.tick(90999);TEST_ASSERT_EQUAL(31000,c.checkedAt);
+    c.tick(91000);TEST_ASSERT_EQUAL(91000,c.checkedAt);
+    unit.answer=true;c.tick(211000);TEST_ASSERT_EQUAL(CONTROL_READY,c.status);
+    c.tick(211100);TEST_ASSERT_EQUAL_FLOAT(5,unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(1,unit.ram[0x2FE8]);
+}
+
+void test_power_limit_retry_at_time_zero_does_not_flood_the_bus_and_reset_is_immediate()
+{
+    LimitControl c=freshLimit();unit.answer=false;c.tick(0);c.tick(1);
+    TEST_ASSERT_EQUAL(0,c.checkedAt);
+    c.tick(CONTROL_RETRY_FIRST_MS);TEST_ASSERT_EQUAL(CONTROL_RETRY_FIRST_MS,c.checkedAt);
+    unit.answer=true;c.reset();c.tick(CONTROL_RETRY_FIRST_MS+1);
+    TEST_ASSERT_EQUAL(CONTROL_READY,c.status);
+}
+
+void test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff()
+{
+    LimitControl c=freshLimit();unit.answer=false;c.tick(1000);
+    unsigned long now=1000, delay=CONTROL_RETRY_FIRST_MS;
+    for(int i=0;i<10;i++)
+    {
+        now+=delay;c.tick(now);TEST_ASSERT_EQUAL(now,c.checkedAt);
+        delay=CurveControl::nextRetry(delay);
+    }
+    unit.answer=true;now+=delay;c.tick(now);TEST_ASSERT_EQUAL(CONTROL_READY,c.status);
+    unit.answer=false;c.request(5);c.tick(++now);TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER,c.status);
+    unit.answer=true;c.tick(now+CONTROL_RETRY_FIRST_MS);TEST_ASSERT_EQUAL(CONTROL_READY,c.status);
+}
+
 // The power limit: identified from the unit's own state, applied as limit 1 + "continuous", read back, released
 void test_power_limit_applies_and_releases()
 {
@@ -1310,6 +1346,9 @@ int main(int, char **)
     RUN_TEST(test_ram_only_hold_from_the_saved_configuration);
     RUN_TEST(test_ram_only_hold_is_written_within_the_limits);
     RUN_TEST(test_ram_only_opens_the_leaving_water_range_to_the_units_own);
+    RUN_TEST(test_power_limit_retries_early_with_backoff_and_keeps_restored_request);
+    RUN_TEST(test_power_limit_retry_at_time_zero_does_not_flood_the_bus_and_reset_is_immediate);
+    RUN_TEST(test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff);
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
