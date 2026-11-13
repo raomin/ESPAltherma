@@ -1,5 +1,6 @@
 // convert read registry value to the expected format based on convID
 #include <string.h>
+#include "registryframe.h"
 char buff[64];
 class Converter
 {
@@ -30,32 +31,33 @@ public:
     }
 
     // Extract all values from the registry data response
-    void readRegistryValues(unsigned char *data, unsigned char protocol)
+    bool readRegistryValues(unsigned char *data, unsigned char protocol, size_t frameLength)
     {
-        if (protocol == 'S')
-        {
-            // Registry ID is first byte
-            readRegistryValues(data[0], data, 1);
-        }
-        else
-        {
-            readRegistryValues(data[1], data, 3);
-        }
+        size_t offset, length;
+        if (!registryFramePayload(data, frameLength, protocol, offset, length))
+            return false;
+        uint8_t reg = data[protocol == 'S' ? 0 : 1];
+        readRegistryPayload(reg, data + offset, length);
+        return true;
     }
 
-    void readRegistryValues(char registryID, unsigned char *data, unsigned int offset)
+    void readRegistryPayload(uint8_t registryID, unsigned char *data, size_t length)
     {
-        // Serial.printf("For registry %d, we have these labels:\n", registryID);
-        int num = 0;
-        LabelDef *labels[128];
-        getLabels(registryID, labels, num);
+        for (size_t i = 0; i < activeCount; i++)
+            if ((uint8_t)activeLabels[i].registryID == registryID)
+                convertBounded(&activeLabels[i], data, length);
+    }
 
-        for (int i = 0; i < num; i++)
+    bool convertBounded(LabelDef *def, unsigned char *payload, size_t length)
+    {
+        unsigned int needed = LabelDef::bytesRequired(def->convid, def->dataSize);
+        if (def->offset < 0 || (size_t)def->offset > length || needed > length - def->offset)
         {
-            unsigned char *input = data;
-            input += labels[i]->offset + offset;
-            convert(labels[i], input);
+            def->invalidate();
+            return false;
         }
+        convert(def, payload + def->offset);
+        return true;
     }
 
     double press2tempR410A(double d){
@@ -90,6 +92,7 @@ public:
 
     void convert(LabelDef *def, unsigned char *data)
     {
+        def->valid = true;
         def->asString[0] = {0};
         int convId = def->convid;
         int num = def->dataSize;
@@ -106,8 +109,18 @@ public:
         switch (convId)
         {
         case 100:
-            strlcat(def->asString, (char*)data, num);
+        {
+            // Preserve the legacy destination-size convention, but never scan past the field looking for NUL.
+            size_t limit = num > 0 ? (size_t)num - 1 : 0;
+            if (limit >= sizeof(def->asString))
+                limit = sizeof(def->asString) - 1;
+            size_t n = 0;
+            while (n < limit && data[n])
+                n++;
+            memcpy(def->asString, data, n);
+            def->asString[n] = 0;
             return;
+        }
         case 101:
             dblData = (double)getSignedValue(data, num, 0);
             break;

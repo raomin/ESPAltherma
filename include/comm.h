@@ -170,6 +170,11 @@ bool queryRegistryUnlocked(char regID, unsigned char *buffer, char protocol)
     {
       // Override reply length with the actual one (not counting already read bytes, see doc/Daikin I protocol.md)
       replyLen = buffer[2] + 2;
+      if (buffer[0] != 0x40 || buffer[1] != (uint8_t)regID || buffer[2] < 2 || replyLen > REPLY_BUFFER_SIZE)
+      {
+        mqttSerial.printf("ERR: Invalid frame header for register 0x%02x\n", (uint8_t)regID);
+        return false;
+      }
     }
     // Error reply common to both protocols
     if (len == 2 && buffer[0] == 0x15 && buffer[1] == 0xea)

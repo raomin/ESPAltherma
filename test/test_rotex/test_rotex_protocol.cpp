@@ -17,11 +17,19 @@ void tearDown(void)
 {
     // clean stuff up here
 }
-std::string decode_data(unsigned char *buff)
+template <size_t N>
+std::string decode_data(unsigned char (&buff)[N])
 {
     Converter converter;
     converter.setLabels(labelDefs, sizeof(labelDefs) / sizeof(LabelDef));
-    converter.readRegistryValues(buff, 'S');
+    // These handcrafted fixtures test conversion, and some carry a placeholder checksum.
+    unsigned char frame[N];
+    memcpy(frame, buff, N);
+    unsigned char sum = 0;
+    for (size_t i = 0; i + 1 < N; i++) sum += frame[i];
+    frame[N - 1] = (unsigned char)~sum;
+    if (!converter.readRegistryValues(frame, 'S', N))
+        return "[invalid frame]";
     LabelDef *labels[128];
     int num = 0;
     converter.getLabels(buff[0], labels, num);

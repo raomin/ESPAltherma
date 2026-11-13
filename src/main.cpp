@@ -95,6 +95,8 @@ void updateValues(char regID)
   converter.getLabels(regID, labels, num);
   for (int i = 0; i < num; i++)
   {
+    if (!labels[i]->valid)
+      continue;
     // ON/OFF as 1/0 when set (EmonCMS...). Only on MQTT: the web interface reads asString.
     const char *v = labels[i]->asString;
     if (config.binaryAsNumber)
@@ -212,11 +214,12 @@ static bool surveyTwoZones(int model)
     if (!catalogInModel(e, model) || !catalogMixedLabel(catalogLabel(e)))
       continue;
     const SurveyReg *r = survey.find(e.reg);
-    if (r == nullptr || !r->answered || e.offset + e.size > r->len)
+    if (r == nullptr || !r->answered)
       continue;
     LabelDef value(e.reg, e.offset, e.conv, e.size, e.type, catalogLabel(e));
     memset(value.asString, 0, sizeof(value.asString));
-    decoder.convert(&value, const_cast<uint8_t *>(r->payload + e.offset));
+    if (!decoder.convertBounded(&value, const_cast<uint8_t *>(r->payload), r->len))
+      continue;
     if (atof(value.asString) != 0)
       return true;
   }
@@ -546,13 +549,14 @@ void pollRegistries()
     if (registryOk[i])
     {
       valuesLock();
-      converter.readRegistryValues(buff, config.protocol); //process all values from the register
-      if (config.protocol == 'I')
+      size_t frameLength = config.protocol == 'I' ? (size_t)buff[2] + 2 : registryFrameSizeS(buff[0]);
+      registryOk[i] = converter.readRegistryValues(buff, config.protocol, frameLength);
+      if (registryOk[i] && config.protocol == 'I')
         replyCache.update(buff[1], buff + 3, buff[2] >= 2 ? buff[2] - 2 : 0);
-      else
+      else if (registryOk[i])
         replyCache.update(buff[0], buff + 1, get_reply_len(buff[0], 'S') - 2);
       valuesUnlock();
-      if (config.protocol == 'I' && buff[2] >= 2)
+      if (registryOk[i] && config.protocol == 'I' && buff[2] >= 2)
         layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
     }
   }
@@ -615,6 +619,8 @@ static float statsValue(std::initializer_list<const char *> prefixes, bool *foun
     for (size_t i = 0; i < converter.activeCount; i++)
     {
       const LabelDef &l = converter.activeLabels[i];
+      if (!l.valid)
+        continue;
       if (strncasecmp(l.label, p, strlen(p)) != 0)
         continue;
       if (found)
@@ -635,6 +641,8 @@ static int statsFlag(std::initializer_list<const char *> prefixes)
     for (size_t i = 0; i < converter.activeCount; i++)
     {
       const LabelDef &l = converter.activeLabels[i];
+      if (!l.valid)
+        continue;
       if (strncasecmp(l.label, p, strlen(p)) == 0)
         return strcasecmp(l.asString, "ON") == 0 || strcmp(l.asString, "1") == 0 ? 1 : 0;
     }
