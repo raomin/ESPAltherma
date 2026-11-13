@@ -298,6 +298,24 @@ void test_day_change(void)
     TEST_ASSERT_TRUE(s.inRun); // the run itself goes on
 }
 
+void test_last_hour_starts_survive_midnight_and_expire_normally(void)
+{
+    StatsDay rtc={};Stats s;s.begin(&rtc);
+    const uint32_t midnight=1700006400;
+    auto off=heating();off.inv=0;
+    s.update(off,midnight-1200,10);
+    s.update(heating(),midnight-900,310);
+    s.update(heating(),midnight-300,910);
+    TEST_ASSERT_EQUAL(1,s.startsLastHour(midnight-1,1209));
+    s.update(heating(),midnight+1,1211);
+    TEST_ASSERT_EQUAL(0,rtc.starts); // today's total resets
+    TEST_ASSERT_EQUAL(1,rtc.samples[STATS_HEATING]); // energy sample count also belongs to the new day
+    TEST_ASSERT_EQUAL(1,s.startsLastHour(midnight+1,1211)); // sliding hour does not
+    TEST_ASSERT_EQUAL(0,s.startsLastHour(midnight+2701,3911));
+    s.update(off,midnight+2800,4010);s.update(heating(),midnight+2830,4040);
+    TEST_ASSERT_EQUAL(1,rtc.starts);TEST_ASSERT_EQUAL(1,s.startsLastHour(midnight+2830,4040));
+}
+
 // The RTC block survives a restart of the board: begin() keeps it when the magic matches
 void test_rtc_survives_restart(void)
 {
@@ -359,6 +377,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_heater_in_tank_counts_its_heat);
     RUN_TEST(test_sanity_caps);
     RUN_TEST(test_day_change);
+    RUN_TEST(test_last_hour_starts_survive_midnight_and_expire_normally);
     RUN_TEST(test_rtc_survives_restart);
     RUN_TEST(test_a_restart_during_a_run_is_not_a_start);
     return UNITY_END();

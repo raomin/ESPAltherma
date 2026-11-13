@@ -125,14 +125,14 @@ public:
 
   void resetDay(int32_t d)
   {
-    uint32_t lastRun = day->lastRunSec, lastPause = day->lastPauseSec;
-    uint8_t running = day->running;
-    memset(day, 0, sizeof(*day));
+    // Daily totals reset; the sliding last-hour ring and the current/last cycle span midnight.
+    memset(day->heatKWh, 0, sizeof(day->heatKWh));
+    memset(day->elecKWh, 0, sizeof(day->elecKWh));
+    memset(day->samples, 0, sizeof(day->samples));
+    day->starts = day->defrosts = 0;
+    day->runSec = day->buhSec = 0;
     day->magic = STATS_MAGIC;
     day->day = d;
-    day->lastRunSec = lastRun;
-    day->lastPauseSec = lastPause;
-    day->running = running;
   }
 
   // Local day number from an epoch (0: clock not set)
