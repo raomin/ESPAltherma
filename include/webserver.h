@@ -206,8 +206,21 @@ static void updateFail(const char *why)
   eventAddf("Firmware update failed: %s", updateError);
 }
 
+// A page of another site cannot ask for a change (netpolicy.h requestSameSite)
+static bool sameSite(AsyncWebServerRequest *r)
+{
+  const AsyncWebHeader *origin = r->getHeader("Origin"), *forwarded = r->getHeader("X-Forwarded-Host");
+  return requestSameSite(origin ? origin->value().c_str() : nullptr, r->host().c_str(),
+                         forwarded ? forwarded->value().c_str() : nullptr);
+}
+
 static bool authorized(AsyncWebServerRequest *r)
 {
+  if (!sameSite(r))
+  {
+    r->send(403, "application/json", "{\"ok\":false,\"error\":\"refused: this request comes from another site\"}");
+    return false;
+  }
   if (!config.adminPwd[0])
     return true;
   if (r->authenticate("admin", config.adminPwd))
@@ -783,6 +796,8 @@ void webBegin()
   });
 
   webServer.on("/api/discover", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
     discoverDone = false;
     discoverRequested = true;
     sendOk(r);
@@ -1073,7 +1088,7 @@ void webBegin()
     rebootCause = "Firmware update from the web interface";
     rebootRequested = true;
   }, [](AsyncWebServerRequest *r, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-    if (config.adminPwd[0] && !r->authenticate("admin", config.adminPwd))
+    if (!sameSite(r) || (config.adminPwd[0] && !r->authenticate("admin", config.adminPwd)))
       return;
     if (index == 0)
     {

@@ -16,6 +16,8 @@
 //  - Several access points with the same SSID: while the signal is weak, scan for one at least 8dB stronger.
 
 #include <stdint.h>
+#include <string.h>
+#include <strings.h>
 
 #define NET_WIFI_RETRY_MS 15000UL
 #define NET_AP_FALLBACK_MS 120000UL
@@ -240,6 +242,38 @@ int netRoamPick(const NetAp *aps, int count, const uint8_t *currentBssid, int cu
       best = i;
   }
   return best;
+}
+
+// Web: may this request change the board? A browser names the page that asks in the Origin header of every
+// cross-site POST ("http://host[:port]", or "null"), and a page of another site can send a JSON body or a file
+// upload to an address of the local network without being able to read the answer: without this check, any
+// page open in a browser of the house could set a target, erase the settings or upload a firmware on a board
+// that has no admin password. Allowed: no Origin (not a browser's cross-site request: curl, a script, Home
+// Assistant), or the Origin's host is the one the request was sent to (Host; X-Forwarded-Host behind a reverse
+// proxy that rewrites Host, a header a page cannot set without the browser asking the board first).
+static bool requestHostIs(const char *origin, size_t originLen, const char *host)
+{
+  if (host == nullptr || originLen == 0)
+    return false;
+  size_t hostLen = strlen(host);
+  // the default port is left out by one side or the other
+  if (originLen > 3 && strncmp(origin + originLen - 3, ":80", 3) == 0)
+    originLen -= 3;
+  if (hostLen > 3 && strcmp(host + hostLen - 3, ":80") == 0)
+    hostLen -= 3;
+  return hostLen == originLen && strncasecmp(origin, host, originLen) == 0;
+}
+
+inline bool requestSameSite(const char *origin, const char *host, const char *forwardedHost = nullptr)
+{
+  if (origin == nullptr || origin[0] == 0)
+    return true;
+  const char *at = strstr(origin, "://");
+  if (at == nullptr)
+    return false; // "null": a sandboxed page, a file
+  at += 3;
+  size_t len = strcspn(at, "/");
+  return requestHostIs(at, len, host) || requestHostIs(at, len, forwardedHost);
 }
 
 #endif

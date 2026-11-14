@@ -281,6 +281,30 @@ void test_roam_pick()
   TEST_ASSERT_EQUAL_INT(-1, netRoamPick(aps, 1, current, -90)); // only ourselves
 }
 
+// A change asked by a page of another site is refused; the board's own page, scripts and proxies are not
+void test_request_same_site(void)
+{
+  TEST_ASSERT_TRUE(requestSameSite(nullptr, "espaltherma.local"));  // curl, a script, Home Assistant
+  TEST_ASSERT_TRUE(requestSameSite("", "espaltherma.local"));
+  TEST_ASSERT_TRUE(requestSameSite("http://espaltherma.local", "espaltherma.local"));
+  TEST_ASSERT_TRUE(requestSameSite("http://ESPAltherma.local", "espaltherma.LOCAL"));
+  TEST_ASSERT_TRUE(requestSameSite("http://192.168.0.10", "192.168.0.10"));
+  TEST_ASSERT_TRUE(requestSameSite("http://192.168.4.1", "192.168.4.1:80")); // the setup access point
+  TEST_ASSERT_TRUE(requestSameSite("http://192.168.0.10:80", "192.168.0.10"));
+  TEST_ASSERT_TRUE(requestSameSite("http://board.lan:8080", "board.lan:8080"));
+  // another site, whatever it looks like
+  TEST_ASSERT_FALSE(requestSameSite("https://example.com", "192.168.0.10"));
+  TEST_ASSERT_FALSE(requestSameSite("http://192.168.0.10.example.com", "192.168.0.10"));
+  TEST_ASSERT_FALSE(requestSameSite("http://192.168.0.1", "192.168.0.10"));
+  TEST_ASSERT_FALSE(requestSameSite("http://board.lan:8080", "board.lan"));
+  TEST_ASSERT_FALSE(requestSameSite("null", "192.168.0.10")); // a sandboxed page, a local file
+  TEST_ASSERT_FALSE(requestSameSite("http://", "192.168.0.10"));
+  TEST_ASSERT_FALSE(requestSameSite("http://example.com", nullptr));
+  // behind a reverse proxy that rewrites Host: the name the browser used comes in X-Forwarded-Host
+  TEST_ASSERT_TRUE(requestSameSite("https://heatpump.example.org", "192.168.0.10", "heatpump.example.org"));
+  TEST_ASSERT_FALSE(requestSameSite("https://example.com", "192.168.0.10", "heatpump.example.org"));
+}
+
 int main(int, char **)
 {
   UNITY_BEGIN();
@@ -301,5 +325,6 @@ int main(int, char **)
   RUN_TEST(test_ethernet_board_without_ethernet_at_boot_falls_back_to_wifi);
   RUN_TEST(test_roam_scans_only_while_weak);
   RUN_TEST(test_roam_pick);
+  RUN_TEST(test_request_same_site);
   return UNITY_END();
 }
