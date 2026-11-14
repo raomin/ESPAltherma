@@ -71,6 +71,7 @@ bool mqttPublish(const char *topic, const char *payload, bool retained = false)
 
 // Defined in main.cpp
 void requestSurvey();
+extern volatile bool discoveryDirty;
 void valuesLock();
 void valuesUnlock();
 void statsAppendJson(char *buf, size_t size); // main.cpp: the computed statistics, as ATTR keys
@@ -773,23 +774,37 @@ static void mqttDiscoverySink(void *ctx, const char *data, size_t len)
 {
   PubSubClient *c = static_cast<PubSubClient *>(ctx);
   if (!mqttWriteFailed && c->write(reinterpret_cast<const uint8_t *>(data), len) != len)
-    mqttWriteFailed = true; // the rest would wait 10s per write, with the values locked
+    mqttWriteFailed = true; // the remaining chunks must not wait again after a failed write
 }
 
 HaAnnounced haAnnounced; // the components of the last device discovery sent (haremoval.h)
 
 void publishHomeAssistantDeviceDiscovery()
 {
-  valuesLock(); // the heat pump task may be changing the values
-  const LabelDef *labels = converter.activeLabels;
-  const size_t count = converter.activeCount;
+  static bool allocationDeferred=false;
+  static unsigned long allocationFailedAt=0;
+  if (allocationDeferred && millis()-allocationFailedAt<30000)
+  {discoveryDirty=true;return;}
+  HaDiscoverySnapshot snapshot;
+  valuesLock();
+  bool copied=snapshot.capture(converter.activeLabels,converter.activeCount,haExtraLabels,haExtraCount,haDeviceModel);
+  valuesUnlock();
+  if (!copied)
+  {
+    allocationDeferred=true;allocationFailedAt=millis();
+    discoveryDirty=true;
+    mqttSerial.println("Home Assistant discovery deferred: no room for metadata snapshot.");
+    return;
+  }
+  allocationDeferred=false;
+  const size_t count = snapshot.count;
   const char *topic = mqttTopics.cfgDevice;
   haBinaryAsNumber = config.binaryAsNumber; // binary sensors then read 1/0
-  const std::vector<HaComponent> components = haComponents(labels, count);
+  const std::vector<HaComponent> components = haSnapshotComponents(snapshot);
   const std::vector<HaComponent> removed = haAnnounced.removed(components);
 
   // First pass: compute the exact payload length, required up-front for the MQTT fixed header.
-  size_t payloadLen = streamDeviceDiscoveryPayload(labels, count, nullptr, nullptr, &removed);
+  size_t payloadLen = streamDeviceDiscoverySnapshot(snapshot, nullptr, nullptr, &removed);
 
   mqttSerial.printf("Sending HA discovery: %u sensors, %u removed, %u bytes\n",
                     (unsigned)(count + 5), (unsigned)removed.size(), (unsigned)payloadLen);
@@ -799,14 +814,12 @@ void publishHomeAssistantDeviceDiscovery()
   // contiguous setBufferSize() allocation that previously ran out of heap on bigger definitions.
   if (!client.beginPublish(topic, payloadLen, true))
   {
-    valuesUnlock();
     mqttSerial.println("Error starting device discovery publish!");
     return;
   }
 
-  streamDeviceDiscoveryPayload(labels, count, mqttDiscoverySink, &client, &removed);
+  streamDeviceDiscoverySnapshot(snapshot, mqttDiscoverySink, &client, &removed);
 
   if (client.endPublish() && !mqttWriteFailed)
     haAnnounced.sent(components); // the next discovery leaves the removed ones out
-  valuesUnlock();
 }
