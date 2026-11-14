@@ -452,5 +452,8 @@
  "Range: hexadecimal, 16 KB at most.": "Intervallo: esadecimale, 16 KB al massimo.",
  "{n} of {t} frames read": "{n} frame su {t} letti",
  "Done, {m} frames did not answer.": "Fatto, {m} frame senza risposta.",
- "Give the unit its own curve back? The target set from here is dropped.": "Restituire all'unità la sua curva? Il setpoint impostato qui viene abbandonato."
+ "Give the unit its own curve back? The target set from here is dropped.": "Restituire all'unità la sua curva? Il setpoint impostato qui viene abbandonato.",
+ "Statistics UTC offset (minutes)": "Scostamento UTC delle statistiche (minuti)",
+ "Use this browser's offset": "Usa lo scostamento di questo browser",
+ "Fixed UTC offset for daily statistics. Update it when daylight saving time changes, then save settings.": "Scostamento UTC fisso per le statistiche giornaliere. Aggiornalo al cambio dell’ora legale, poi salva le impostazioni."
 }

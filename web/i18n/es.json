@@ -452,5 +452,8 @@
  "Range: hexadecimal, 16 KB at most.": "Rango: hexadecimal, 16 KB como máximo.",
  "{n} of {t} frames read": "{n} de {t} tramas leídas",
  "Done, {m} frames did not answer.": "Hecho, {m} tramas sin respuesta.",
- "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta."
+ "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta.",
+ "Statistics UTC offset (minutes)": "Desfase UTC de estadísticas (minutos)",
+ "Use this browser's offset": "Usar el desfase de este navegador",
+ "Fixed UTC offset for daily statistics. Update it when daylight saving time changes, then save settings.": "Desfase UTC fijo para las estadísticas diarias. Actualízalo al cambiar el horario de verano y guarda los ajustes."
 }
