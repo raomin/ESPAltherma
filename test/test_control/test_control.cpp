@@ -871,6 +871,56 @@ void test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff()
     unit.answer=true;c.tick(now+CONTROL_RETRY_FIRST_MS);TEST_ASSERT_EQUAL(CONTROL_READY,c.status);
 }
 
+void test_power_limit_rejects_unloaded_or_implausible_ram_without_writes()
+{
+    for (int fault=0;fault<7;fault++)
+    {
+        unit.reset();
+        if (fault==0) memset(unit.ram,0,sizeof(unit.ram)); // correct software ID, RAM not loaded
+        if (fault==1) unit.ram[0x2FE9]=0xFF;
+        if (fault==2) unit.ram[0x2FE8]=3;
+        if (fault==3) unit.setFloat(0x1880,NAN);
+        if (fault==4) unit.setFloat(0x1880,INFINITY);
+        if (fault==5) unit.setFloat(0x1880,0.0f);
+        if (fault==6) {unit.ram[0x2FE9]=0;unit.ram[0x2FC8]=255;}
+        LimitControl c=freshLimit();c.restore(true,5,0);
+        TEST_ASSERT_FALSE(c.identify(1000));
+        c.tick(2000);TEST_ASSERT_EQUAL(0,unit.ramWrites);
+        TEST_ASSERT_FALSE(c.apply(5,3000));TEST_ASSERT_FALSE(c.release(3000));
+        TEST_ASSERT_EQUAL(0,unit.ramWrites);
+    }
+}
+
+void test_power_limit_revalidates_ram_before_new_write_and_release()
+{
+    LimitControl c=freshLimit();TEST_ASSERT_TRUE(c.identify(1000));
+    memset(unit.ram,0,sizeof(unit.ram)); // unit restarts after successful identification
+    c.request(5);c.tick(2000);TEST_ASSERT_EQUAL(0,unit.ramWrites);
+    unit.reset();TEST_ASSERT_TRUE(c.identify(3000));c.request(5);c.tick(4000);
+    int writes=unit.ramWrites;
+    unit.ram[0x2FE8]=255;c.requestOn(false);c.tick(5000);
+    TEST_ASSERT_EQUAL(writes,unit.ramWrites);
+}
+
+void test_power_limit_kind_change_drops_hold_instead_of_reinterpreting_kw_as_amps()
+{
+    LimitControl c=freshLimit();TEST_ASSERT_TRUE(c.identify(1000));c.request(5);c.tick(2000);
+    int writes=unit.ramWrites;
+    unit.ram[0x2FE9]=0; // installer changed the unit's limitation type to amperes
+    c.tick(2000+LIMIT_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(LIMIT_CURRENT,c.kind);TEST_ASSERT_FALSE(c.on);
+    TEST_ASSERT_EQUAL_FLOAT(-1,c.value);TEST_ASSERT_EQUAL(writes,unit.ramWrites);
+    TEST_ASSERT_EQUAL(50,unit.ram[0x2FC8]);
+}
+
+void test_power_limit_reapply_clamps_a_previously_held_value()
+{
+    LimitControl c=freshLimit();TEST_ASSERT_TRUE(c.identify(1000));c.request(5);c.tick(2000);
+    c.value=30;unit.setFloat(0x1880,20);
+    c.tick(2000+LIMIT_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_FLOAT(LIMIT_MAX_KW,unit.getFloat(0x1880));
+}
+
 // The power limit: identified from the unit's own state, applied as limit 1 + "continuous", read back, released
 void test_power_limit_applies_and_releases()
 {
@@ -1349,6 +1399,10 @@ int main(int, char **)
     RUN_TEST(test_power_limit_retries_early_with_backoff_and_keeps_restored_request);
     RUN_TEST(test_power_limit_retry_at_time_zero_does_not_flood_the_bus_and_reset_is_immediate);
     RUN_TEST(test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff);
+    RUN_TEST(test_power_limit_rejects_unloaded_or_implausible_ram_without_writes);
+    RUN_TEST(test_power_limit_revalidates_ram_before_new_write_and_release);
+    RUN_TEST(test_power_limit_kind_change_drops_hold_instead_of_reinterpreting_kw_as_amps);
+    RUN_TEST(test_power_limit_reapply_clamps_a_previously_held_value);
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);

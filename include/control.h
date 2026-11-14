@@ -791,6 +791,7 @@ struct LimitControl : X10aClient
   ControlStatus status = CONTROL_OFF;
   char softwareId[9] = "";
   LimitKind kind = LIMIT_POWER;
+  bool kindKnown = false;
   float minLimit = LIMIT_MIN_KW, maxLimit = LIMIT_MAX_KW;
   int enable = -1;            // the unit's enable byte as read (-1: unknown)
   int origEnable = -1;        // the enable byte found before the first write from here (-1: none)
@@ -815,6 +816,7 @@ struct LimitControl : X10aClient
     status = CONTROL_OFF;
     softwareId[0] = 0;
     enable = -1;
+    kindKnown = false;
     limit = active = -1;
     wanted = -1;
     wantedOn = -1;
@@ -842,18 +844,10 @@ struct LimitControl : X10aClient
         if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
           profile = &CONTROL_PROFILES[i];
       spec = profile == nullptr || profile->limit.ramEnable == 0 ? nullptr : &profile->limit;
-      uint8_t k = 0;
       if (spec == nullptr)
         status = CONTROL_UNSUPPORTED;
-      else if (!readByte(spec->ramKind, k))
-        status = CONTROL_NO_ANSWER;
       else
-      {
-        kind = k == 1 ? LIMIT_POWER : LIMIT_CURRENT;
-        minLimit = kind == LIMIT_POWER ? LIMIT_MIN_KW : LIMIT_MIN_AMP;
-        maxLimit = kind == LIMIT_POWER ? LIMIT_MAX_KW : LIMIT_MAX_AMP;
         status = readBack(now) ? CONTROL_READY : CONTROL_NO_ANSWER;
-      }
     }
     if (status != CONTROL_READY)
     {
@@ -866,15 +860,17 @@ struct LimitControl : X10aClient
     return status == CONTROL_READY;
   }
 
-  // Reads the enable byte, limit 1 and the active limit from the unit.
+  // Accept only a complete, plausible enable/type/limit tuple. A unit can answer with zero RAM before
+  // its settings have loaded. A successful transport exchange is not sufficient permission to write.
   bool readBack(unsigned long now)
   {
     readAt = now;
-    uint8_t e = 0;
+    uint8_t e = 0, k = 0;
     float l = -1, a = -1;
-    if (spec == nullptr || !readByte(spec->ramEnable, e))
+    if (spec == nullptr || !readByte(spec->ramEnable, e) || !readByte(spec->ramKind, k) || e > 2 || k > 1)
       return false;
-    if (kind == LIMIT_POWER)
+    LimitKind readKind = k == 1 ? LIMIT_POWER : LIMIT_CURRENT;
+    if (readKind == LIMIT_POWER)
     {
       if (!readFloat(spec->ramKw, l))
         return false;
@@ -886,6 +882,18 @@ struct LimitControl : X10aClient
         return false;
       l = b;
     }
+    // Plausibility bounds allow the installer's range (wider than our requested 1..20 kW / 4..50 A).
+    if (!isfinite(l) || (readKind == LIMIT_POWER ? (l < 1 || l > 25) : (l < 4 || l > 75)))
+      return false;
+    if (kindKnown && readKind != kind)
+    {
+      // Never reinterpret an existing kW hold as amperes (or vice versa) after an installer change.
+      on = false; value = -1; origEnable = -1; wanted = -1; wantedOn = -1;
+      stateChanged = changed = true;
+    }
+    kind = readKind; kindKnown = true;
+    minLimit = kind == LIMIT_POWER ? LIMIT_MIN_KW : LIMIT_MIN_AMP;
+    maxLimit = kind == LIMIT_POWER ? LIMIT_MAX_KW : LIMIT_MAX_AMP;
     if (spec->ramActive) // a board whose active limit is not mapped keeps it unknown (-1)
       readFloat(kind == LIMIT_CURRENT && spec->ramActiveAmp ? spec->ramActiveAmp : spec->ramActive, a);
     if (e != enable || l != limit || a != active)
@@ -904,8 +912,10 @@ struct LimitControl : X10aClient
   // Writes limit 1 and, when needed, the enable byte. The enable byte found first is remembered.
   bool apply(float v, unsigned long now)
   {
-    if (spec == nullptr || enable < 0)
+    LimitKind expectedKind = kind;
+    if (status != CONTROL_READY || !isfinite(v) || !readBack(now) || kind != expectedKind)
       return false;
+    v = clamp(v); // includes automatic reapplication of a held/restored value
     bool ok;
     if (kind == LIMIT_POWER)
     {
@@ -942,9 +952,10 @@ struct LimitControl : X10aClient
   // Puts the enable byte back as found (or to "none") and forgets the limit.
   bool release(unsigned long now)
   {
-    if (spec == nullptr)
+    LimitKind expectedKind = kind;
+    if (status != CONTROL_READY || !readBack(now) || kind != expectedKind)
       return false;
-    uint8_t e = (uint8_t)(origEnable >= 0 && origEnable != 1 ? origEnable : 0);
+    uint8_t e = origEnable == 2 ? 2 : 0;
     if (!writeRamBytes(spec->ramEnable, &e, 1))
       return false;
     enable = e;
