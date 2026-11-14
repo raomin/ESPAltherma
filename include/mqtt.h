@@ -7,6 +7,7 @@
 
 #include "topics.h"
 #include "sgdiscovery.h"
+#include "mqttjson.h"
 
 // Every topic and every Home Assistant id, from the configurable base topic (Settings > MQTT output)
 MqttTopics mqttTopics;
@@ -14,12 +15,6 @@ IPAddress netIP(); // netmgr.h, included later
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
-
-#ifndef MAX_MSG_SIZE
-#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt
-#endif
-
-char jsonbuff[MAX_MSG_SIZE] = "{\0";
 
 #include <WiFiClientSecure.h>
 WiFiClient plainClient;
@@ -45,6 +40,9 @@ static const char *RESTORE_NAMES[2] = {"Restore hot water curve", "Restore leavi
 bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (with these limits)
 int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
 static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
+
+// Main-loop-only scratch for the individual discovery/control payloads. Reused after each synchronous publish.
+static char mqttDiscoveryJson[1400];
 
 // The MQTT client's own buffer: the incoming commands and the short messages. It is taken from the heap for as
 // long as the firmware runs, so it is kept small: a longer message is written straight to the connection.
@@ -73,14 +71,7 @@ bool mqttPublish(const char *topic, const char *payload, bool retained = false)
 void requestSurvey();
 void valuesLock();
 void valuesUnlock();
-void statsAppendJson(char *buf, size_t size); // main.cpp: the computed statistics, as ATTR keys
-void diiiAppendJson(char *buf, size_t size);  // main.cpp: the DIII E0/63 values of an HT outdoor unit (diii_comm.h)
-void meterAppendJson(char *buf, size_t size); // main.cpp: the unit's own energy meter, where the hydro board is mapped
-
-void resetJson()
-{
-  strcpy(jsonbuff, config.jsonTable ? "[{" : "{");
-}
+void sendValues(); // main.cpp: streams the current cycle and extra values, under valuesLock()
 
 // Selects the (plain or TLS) network client and the broker, from the configuration, and derives every topic and
 // Home Assistant id from the base topic.
@@ -109,7 +100,6 @@ void setupMqttClient()
     mqttNet = &plainClient;
     Serial.printf("Wifi client timeout: %d\n", plainClient.getTimeout());
   }
-  resetJson();
   client.setBufferSize(MQTT_BUFFER_SIZE);
   client.setServer(config.mqttServer, config.mqttPort);
   // 60 s instead of the library's 15: a main loop busy for a few seconds (a long publish on a slow link, a web
@@ -153,41 +143,6 @@ int safetyActiveState() { return config.safetyActiveHigh ? HIGH : LOW; }
  * Publishes a retained device discovery profile to MQTT, so Home Assistant can auto-configure our device and its sensors.
  */
 void publishHomeAssistantDeviceDiscovery();
-
-void sendValues()
-{
-  mqttSerial.printf("Sending values in MQTT.\n");
-#ifdef ARDUINO_M5Stick_C_Plus2
-  //Add Power values
-  // getBatteryVoltage returns battery voltage [mV] as an int16_t
-  float batteryVoltage = (float) M5.Power.getBatteryVoltage() / 1000; // convert to V as a float
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
-#elif ARDUINO_M5Stick_C
-  //Add M5 APX values
-  { // the input in use: the 5V pin (ACIN, eg. powered from the X10A) or USB (VBUS)
-    float acin = M5.Power.Axp192.getACINVoltage(), vbus = M5.Power.Axp192.getVBUSVoltage();
-    bool pin = acin > vbus;
-    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", pin ? acin : vbus,"M5AmpIn", pin ? M5.Power.Axp192.getACINCurrent() : M5.Power.Axp192.getVBUSCurrent());
-  }
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Power.Axp192.getBatteryVoltage(),"M5BatCur", M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Power.Axp192.getBatteryPower());
-#endif
-  statsAppendJson(jsonbuff, MAX_MSG_SIZE);
-  diiiAppendJson(jsonbuff, MAX_MSG_SIZE);
-  meterAppendJson(jsonbuff, MAX_MSG_SIZE);
-  if (WiFi.status() == WL_CONNECTED) // not over Ethernet
-    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
-  jsonbuff[strlen(jsonbuff) - 1] = '}';
-  if (config.jsonTable)
-  {
-    strcat(jsonbuff,"]");
-  }
-  mqttPublish(mqttTopics.attr, jsonbuff);
-  resetJson();
-}
 
 // Removes every entity this base topic published from Home Assistant, and marks it offline: called before the
 // base topic changes, so the old names do not linger as dead entities. Main loop only.
@@ -247,7 +202,7 @@ bool mqttConnectOnce()
     if (client.connect(mqttTopics.clientId, config.mqttUser, config.mqttPwd, mqttTopics.lwt, 0, true, "Offline"))
     {
       mqttSerial.println("connected!");
-      static char json[1400]; // the discovery payloads, built from the base topic (the Smart Grid one: 839 bytes with the default base, 991 with the longest)
+      auto &json = mqttDiscoveryJson;
       snprintf(json, sizeof(json),
                "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
                "\"uniq_id\":\"%s\",\"device\":{\"identifiers\":[\"%s\"]}, \"~\":\"%s\",\"json_attr_t\":\"~/ATTR\"}",
@@ -583,7 +538,7 @@ void publishControl(CurveControl &c)
   {
     // Same device as the readings (homeassistant.cpp): its identifier and its name, which Home Assistant
     // requires in every entity that shares a device. def_ent_id fixes the entity id, like the readings do.
-    static char json[960]; // 515 bytes with the default base topic, 697 with the longest (640 cut it from 25 characters on)
+    auto &json = mqttDiscoveryJson;
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
@@ -618,7 +573,7 @@ void publishControl(CurveControl &c)
   bool restorable = ready && c.origA >= 0;
   if (restorable && !restoreOn[k])
   {
-    static char json[720]; // 400 to 540 bytes
+    auto &json = mqttDiscoveryJson;
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"pl_prs\":\"restore\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"icon\":\"mdi:backup-restore\","
@@ -653,7 +608,7 @@ void publishUpdateEntity()
   }
   if (!fwUpdate.checked)
     return;
-  static char json[720]; // 406 to 546 bytes
+  auto &json = mqttDiscoveryJson;
   if (!updateDiscoveryOn)
   {
     int jsonLen = snprintf(json, sizeof(json),
@@ -679,7 +634,7 @@ void publishLimit()
   const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
   if (ready && (!limitDiscoveryOn || limitDiscoveryKind != c.kind))
   {
-    static char json[960]; // 485 to 667 bytes
+    auto &json = mqttDiscoveryJson;
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"Power limit\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","

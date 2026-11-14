@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include "labeldef.h"
+#include "hasensor.h"
 #include "haremoval.h"
 
 // ON/OFF values are published as 1/0 (setting "binary_num"): binary sensors then use 1/0 as their payloads
@@ -34,7 +35,7 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
  */
 std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count);
 // Extra values the firmware computes (stats.h): announced with the definition's, removed with them when off
-extern const LabelDef *haExtraLabels;
+extern const HaSensor *haExtraLabels;
 extern size_t haExtraCount;
 // dataType codes of the extra values (homeassistant.cpp maps them to a device class)
 #define ESP_SENSOR_POWER_KW 989

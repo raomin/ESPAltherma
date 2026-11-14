@@ -90,55 +90,6 @@ bool contains(char array[], int size, int value)
   return false;
 }
 
-//Converts to string and add the value to the JSON message
-void updateValues(char regID)
-{
-  LabelDef *labels[128];
-  int num = 0;
-  converter.getLabels(regID, labels, num);
-  for (int i = 0; i < num; i++)
-  {
-    // ON/OFF as 1/0 when set (EmonCMS...). Only on MQTT: the web interface reads asString.
-    const char *v = labels[i]->asString;
-    if (config.binaryAsNumber)
-    {
-      if (strcmp(v, "ON") == 0)
-        v = "1";
-      else if (strcmp(v, "OFF") == 0)
-        v = "0";
-    }
-    // A number goes in the JSON without quotes: digits, a dot, a leading minus, and at least one digit
-    // ("-" alone, as conversion 203 returns, broke the JSON: #418)
-    bool alpha = false, digit = false;
-    for (size_t j = 0; v[j]; j++)
-    {
-      char c = v[j];
-      if (isdigit(c))
-        digit = true;
-      else if (c!='.' && !(c=='-' && j==0)){
-        alpha = true;
-        break;
-      }
-    }
-    if (!digit)
-      alpha = true;
-
-    if (config.oneValOneTopic)
-    {
-      char topicBuff[128];
-      snprintf(topicBuff, sizeof(topicBuff), "%s%s", config.oneTopicPrefix, labels[i]->label);
-      mqttPublish(topicBuff, v);
-    }
-    else if (alpha){
-
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, v);
-    }
-    else{//number, no quotes
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, v);
-    }
-  }
-}
-
 uint16_t loopcount =0;
 boolean display_sleeping = false;
 
@@ -568,48 +519,48 @@ void pollRegistries()
 // Energy and cycle statistics (stats.h), fed from the labels' current values. Main loop, under the values lock.
 RTC_NOINIT_ATTR StatsDay statsDay;
 Stats stats;
-static const LabelDef STATS_LABELS[] = {
-    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Heat output (kW)"},
-    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Electrical input estimated (kW)"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP estimated"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today heating"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today hot water"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today heating (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today hot water (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today cooling (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today heating (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today hot water (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today cooling (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts today"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts last hour"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Defrosts today"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Compressor run today (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Backup heater today (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last run (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last pause (min)"},
+static const HaSensor STATS_LABELS[] = {
+    {"Stats: Heat output (kW)", ESP_SENSOR_POWER_KW},
+    {"Stats: Electrical input estimated (kW)", ESP_SENSOR_POWER_KW},
+    {"Stats: COP estimated", ESP_SENSOR_RATIO},
+    {"Stats: COP today heating", ESP_SENSOR_RATIO},
+    {"Stats: COP today hot water", ESP_SENSOR_RATIO},
+    {"Stats: Heat today heating (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Heat today hot water (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Heat today cooling (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today heating (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today hot water (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today cooling (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Compressor starts today", ESP_SENSOR_COUNT},
+    {"Stats: Compressor starts last hour", ESP_SENSOR_COUNT},
+    {"Stats: Defrosts today", ESP_SENSOR_COUNT},
+    {"Stats: Compressor run today (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Backup heater today (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Last run (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Last pause (min)", ESP_SENSOR_MINUTES},
 };
 
 // The DIII values (diii_comm.h appendJson keys): dataType 1 = temperature, conv 105 + "(A)" = current
-static const LabelDef DIII_LABELS[] = {
-    {-1, -1, -1, -1, 1, "E0: Leaving water (C)"},
-    {-1, -1, -1, -1, 1, "E0: Return water (C)"},
-    {-1, -1, -1, -1, 1, "E0: Remote room temp (C)"},
-    {-1, -1, -1, -1, 1, "E0: DHW tank (C)"},
-    {-1, -1, -1, -1, -1, "E0: 3-way valve DHW"},
-    {-1, -1, -1, -1, -1, "E0: Pump"},
-    {-1, -1, -1, -1, -1, "E0: EVL (pls)"},
-    {-1, -1, -1, -1, -1, "E0: EVH (pls)"},
-    {-1, -1, 105, -1, -1, "E0: INV current (A)"},
-    {-1, -1, -1, -1, -1, "E0: INV speed (rps)"},
-    {-1, -1, -1, -1, 1, "E0: INV fin temp (C)"},
-    {-1, -1, -1, -1, -1, "E0: Sync"},
-    {-1, -1, -1, -1, 1, "63: Leaving water (C)"},
-    {-1, -1, -1, -1, 1, "63: Return water (C)"},
-    {-1, -1, -1, -1, 1, "63: R410A liquid (C)"},
-    {-1, -1, -1, -1, 1, "63: BRC1 room temp (C)"},
-    {-1, -1, 105, -1, -1, "RAM: Outdoor input current (A)"},
-    {-1, -1, 105, -1, -1, "RAM: Outdoor rated current (A)"},
-    {-1, -1, -1, -1, -1, "RAM: Outdoor load (%)"},
+static const HaSensor DIII_LABELS[] = {
+    {"E0: Leaving water (C)", 1},
+    {"E0: Return water (C)", 1},
+    {"E0: Remote room temp (C)", 1},
+    {"E0: DHW tank (C)", 1},
+    {"E0: 3-way valve DHW", -1},
+    {"E0: Pump", -1},
+    {"E0: EVL (pls)", -1},
+    {"E0: EVH (pls)", -1},
+    {"E0: INV current (A)", -1, 105},
+    {"E0: INV speed (rps)", -1},
+    {"E0: INV fin temp (C)", 1},
+    {"E0: Sync", -1},
+    {"63: Leaving water (C)", 1},
+    {"63: Return water (C)", 1},
+    {"63: R410A liquid (C)", 1},
+    {"63: BRC1 room temp (C)", 1},
+    {"RAM: Outdoor input current (A)", -1, 105},
+    {"RAM: Outdoor rated current (A)", -1, 105},
+    {"RAM: Outdoor load (%)", -1},
 };
 
 // The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a number)
@@ -696,75 +647,42 @@ static int unitCounterSensorType(const UnitCounterDef &d)
 }
 
 // The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
-static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
+static const HaSensor METER_LABEL = {"Unit meter: Heat produced (kWh)", ESP_SENSOR_ENERGY_KWH};
 
 // The unit's model name (control.h MeterReader::model), a diagnostic text once read
-static const LabelDef UNIT_MODEL_LABEL = {-1, -1, -1, -1, ESP_SENSOR_TEXT, "Unit model"};
+static const HaSensor UNIT_MODEL_LABEL = {"Unit model", ESP_SENSOR_TEXT};
 
 // Room for every extra sensor: the statistics, the DIII values, the unit's meter and what other features add
-#define HA_EXTRA_LABELS_MAX 96
+static constexpr size_t HA_EXTRA_LABELS_MAX = sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) +
+                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT;
 
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
 void haExtraSetup()
 {
-  static LabelDef extra[HA_EXTRA_LABELS_MAX];
+  static HaSensor extra[HA_EXTRA_LABELS_MAX];
   size_t n = 0;
+  valuesLock();
   if (config.statsEnabled)
-    for (const LabelDef &l : STATS_LABELS)
+    for (const HaSensor &l : STATS_LABELS)
       extra[n++] = l;
   if (diii.status == DIII_READY)
-    for (const LabelDef &l : DIII_LABELS)
+    for (const HaSensor &l : DIII_LABELS)
       extra[n++] = l;
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
   if (unitMeter.model[0])
     extra[n++] = UNIT_MODEL_LABEL;
-  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT <= HA_EXTRA_LABELS_MAX, "room for the unit's counters");
   for (size_t i = 0; unitMeter.status == CONTROL_READY && i < UNIT_COUNTER_COUNT; i++)
     if (unitMeter.counterMapped(i))
-      extra[n++] = LabelDef(-1, -1, -1, -1, unitCounterSensorType(UNIT_COUNTER_DEFS[i]), UNIT_COUNTER_DEFS[i].label);
-  haExtraCount = 0; // the main loop may be reading the list
+      extra[n++] = HaSensor(UNIT_COUNTER_DEFS[i].label, unitCounterSensorType(UNIT_COUNTER_DEFS[i]));
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
+  valuesUnlock(); // readers see the complete list
 }
 
 // The DIII values as ATTR keys (mqtt.h, next to the statistics)
-void diiiAppendJson(char *buf, size_t size)
-{
-  valuesLock();
-  diii.appendJson(buf, size);
-  valuesUnlock();
-}
-
-// The unit's own energy meter as an ATTR key (mqtt.h): null while a read fails, absent on the boards not mapped
-void meterAppendJson(char *buf, size_t size)
-{
-  size_t n = strlen(buf);
-  if (unitMeter.model[0])
-    snprintf(buf + n, size - n, "\"%s\":\"%s\",", UNIT_MODEL_LABEL.label, unitMeter.model);
-  if (unitMeter.status != CONTROL_READY)
-    return;
-  n = strlen(buf);
-  if (unitMeter.known)
-    snprintf(buf + n, size - n, "\"%s\":%lu,", METER_LABEL.label, (unsigned long)unitMeter.heatKWh);
-  else
-    snprintf(buf + n, size - n, "\"%s\":null,", METER_LABEL.label);
-  for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++) // the unit's hours, starts and energy where mapped: null while not known
-  {
-    if (!unitMeter.counterMapped(i))
-      continue;
-    n = strlen(buf);
-    unsigned long v = unitMeter.counter[i];
-    if (!unitMeter.counterKnown[i])
-      snprintf(buf + n, size - n, "\"%s\":null,", UNIT_COUNTER_DEFS[i].label);
-    else if (unitCounterIsEnergy(UNIT_COUNTER_DEFS[i].kind)) // kept in Wh, published in kWh
-      snprintf(buf + n, size - n, "\"%s\":%lu.%03lu,", UNIT_COUNTER_DEFS[i].label, v / 1000, v % 1000);
-    else
-      snprintf(buf + n, size - n, "\"%s\":%lu,", UNIT_COUNTER_DEFS[i].label, v);
-  }
-}
-
+// and the unit meter are streamed by MqttValuesView below.
 static void statsUpdate()
 {
   if (!config.statsEnabled)
@@ -790,25 +708,165 @@ static void statsUpdate()
   stats.update(in, statsEpoch(), millis() / 1000);
 }
 
-// The statistics as ATTR keys, in the order of STATS_LABELS; null when not known. The "Stats:" prefix keeps them
-// together in Home Assistant (sensor.espaltherma_stats_...) and apart from what the unit itself reports.
-void statsAppendJson(char *buf, size_t size)
+// Volatile inputs are sampled once, before counting the MQTT payload. The selected labels and DIII
+// readings stay under valuesMutex until the write ends. These small snapshots replace jsonbuff[7120].
+struct MqttValues
 {
-  if (!config.statsEnabled)
-    return;
-  uint32_t epoch = statsEpoch(), up = millis() / 1000;
-  const StatsDay &d = *stats.day;
-  float values[] = {stats.heatKW, stats.elecKW, stats.cop, stats.copToday(STATS_HEATING), stats.copToday(STATS_DHW),
-                    d.heatKWh[0], d.heatKWh[1], d.heatKWh[2], d.elecKWh[0], d.elecKWh[1], d.elecKWh[2],
-                    (float)d.starts, (float)stats.startsLastHour(epoch, up), (float)d.defrosts,
-                    d.runSec / 60.0f, d.buhSec / 60.0f, d.lastRunSec / 60.0f, d.lastPauseSec / 60.0f};
-  for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++)
+  bool table, oneTopic, binary, withStats, wifi, meterReady, meterKnown;
+  uint8_t registries[32];
+  size_t registryCount = 0;
+  unsigned long at, uptime, freeMem, heatKWh;
+  int rssi;
+  char ip[16], model[UNIT_MODEL_MAX + 1];
+  float statsValues[sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0])];
+  uint32_t counters[UNIT_COUNTER_COUNT];
+  bool counterMapped[UNIT_COUNTER_COUNT], counterKnown[UNIT_COUNTER_COUNT];
+  DiiiComm::JsonOptions diiiOptions;
+#ifdef ARDUINO_M5Stick_C_Plus2
+  float battery;
+#elif defined(ARDUINO_M5Stick_C)
+  float vin, ampIn, battery, batteryCurrent, batteryPower;
+#endif
+
+  MqttValues()
   {
-    size_t n = strlen(buf);
-    if (isnan(values[i]))
-      snprintf(buf + n, size - n, "\"%s\":null,", STATS_LABELS[i].label);
-    else
-      snprintf(buf + n, size - n, "\"%s\":%.*f,", STATS_LABELS[i].label, i >= 11 && i <= 13 ? 0 : 2, values[i]);
+    table = config.jsonTable;
+    oneTopic = config.oneValOneTopic;
+    binary = config.binaryAsNumber;
+    withStats = config.statsEnabled;
+    at = diii.now();
+    diiiOptions = diii.jsonOptions();
+    uptime = millis() / 1000;
+    freeMem = ESP.getFreeHeap();
+    wifi = WiFi.status() == WL_CONNECTED;
+    rssi = wifi ? WiFi.RSSI() : 0;
+    IPAddress address = netIP();
+    snprintf(ip, sizeof(ip), "%u.%u.%u.%u", address[0], address[1], address[2], address[3]);
+    for (size_t i = 0; i < 32 && (uint8_t)registryIDs[i] != 0xFF; i++)
+      if (registryOk[i])
+        registries[registryCount++] = (uint8_t)registryIDs[i];
+
+    if (withStats)
+    {
+      const StatsDay &d = *stats.day;
+      float values[] = {stats.heatKW, stats.elecKW, stats.cop, stats.copToday(STATS_HEATING), stats.copToday(STATS_DHW),
+                        d.heatKWh[0], d.heatKWh[1], d.heatKWh[2], d.elecKWh[0], d.elecKWh[1], d.elecKWh[2],
+                        (float)d.starts, (float)stats.startsLastHour(statsEpoch(), uptime), (float)d.defrosts,
+                        d.runSec / 60.0f, d.buhSec / 60.0f, d.lastRunSec / 60.0f, d.lastPauseSec / 60.0f};
+      static_assert(sizeof(values) == sizeof(statsValues), "one value per statistics sensor");
+      memcpy(statsValues, values, sizeof(values));
+    }
+    strlcpy(model, unitMeter.model, sizeof(model));
+    meterReady = unitMeter.status == CONTROL_READY;
+    meterKnown = unitMeter.known;
+    heatKWh = unitMeter.heatKWh;
+    for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
+    {
+      counterMapped[i] = meterReady && unitMeter.counterMapped(i);
+      counterKnown[i] = unitMeter.counterKnown[i];
+      counters[i] = unitMeter.counter[i];
+    }
+#ifdef ARDUINO_M5Stick_C_Plus2
+    battery = (float)M5.Power.getBatteryVoltage() / 1000;
+#elif defined(ARDUINO_M5Stick_C)
+    float acin = M5.Power.Axp192.getACINVoltage(), vbus = M5.Power.Axp192.getVBUSVoltage();
+    bool pin = acin > vbus;
+    vin = pin ? acin : vbus;
+    ampIn = pin ? M5.Power.Axp192.getACINCurrent() : M5.Power.Axp192.getVBUSCurrent();
+    battery = M5.Power.Axp192.getBatteryVoltage();
+    batteryCurrent = M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent();
+    batteryPower = M5.Power.Axp192.getBatteryPower();
+#endif
+  }
+
+  template <typename Visit>
+  void selected(Visit visit) const
+  {
+    mqttVisitSelected(converter.activeLabels, converter.activeCount, registries, registryCount, visit);
+  }
+
+  void render(MqttJson &json) const
+  {
+    json.begin(table);
+    if (!oneTopic)
+      selected([&](const LabelDef &l) { json.converted(l.label, l.asString, binary); });
+#ifdef ARDUINO_M5Stick_C_Plus2
+    char value[48];
+    snprintf(value, sizeof(value), "%.3gV", battery);
+    json.text("M5BatV", value);
+#elif defined(ARDUINO_M5Stick_C)
+    char value[48];
+    snprintf(value, sizeof(value), "%.3gV", vin);
+    json.text("M5VIN", value);
+    snprintf(value, sizeof(value), "%gmA", ampIn);
+    json.text("M5AmpIn", value);
+    snprintf(value, sizeof(value), "%.3gV", battery);
+    json.text("M5BatV", value);
+    snprintf(value, sizeof(value), "%gmA", batteryCurrent);
+    json.text("M5BatCur", value);
+    snprintf(value, sizeof(value), "%.3gmW", batteryPower);
+    json.text("M5BatPwr", value);
+#endif
+    for (size_t i = 0; withStats && i < sizeof(statsValues) / sizeof(statsValues[0]); i++)
+      if (isnan(statsValues[i]))
+        json.number(STATS_LABELS[i].label, "null");
+      else
+        json.format(STATS_LABELS[i].label, "%.*f", i >= 11 && i <= 13 ? 0 : 2, statsValues[i]);
+    diii.writeJson(json, at, diiiOptions);
+    if (model[0])
+      json.text(UNIT_MODEL_LABEL.label, model);
+    if (meterReady)
+    {
+      if (meterKnown)
+        json.format(METER_LABEL.label, "%lu", heatKWh);
+      else
+        json.number(METER_LABEL.label, "null");
+      for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
+      {
+        if (!counterMapped[i])
+          continue;
+        unsigned long v = counters[i];
+        if (!counterKnown[i])
+          json.number(UNIT_COUNTER_DEFS[i].label, "null");
+        else if (unitCounterIsEnergy(UNIT_COUNTER_DEFS[i].kind))
+          json.format(UNIT_COUNTER_DEFS[i].label, "%lu.%03lu", v / 1000, v % 1000);
+        else
+          json.format(UNIT_COUNTER_DEFS[i].label, "%lu", v);
+      }
+    }
+    if (wifi)
+    {
+      char value[24];
+      snprintf(value, sizeof(value), "%ddBm", rssi);
+      json.text("WifiRSSI", value);
+    }
+    json.text("IP", ip);
+    char diagnostic[24];
+    snprintf(diagnostic, sizeof(diagnostic), "%lu", freeMem);
+    json.text("FreeMem", diagnostic);
+    snprintf(diagnostic, sizeof(diagnostic), "%lu", uptime);
+    json.text("Uptime", diagnostic);
+    json.end(table);
+  }
+};
+
+// Main loop, with valuesMutex held for both passes. Incoming MQTT commands retain their 2048-byte buffer.
+void sendValues()
+{
+  if (mqttWriteFailed || !client.connected())
+    return;
+  mqttSerial.printf("Sending values in MQTT.\n");
+  const MqttValues values;
+  if (values.oneTopic)
+    values.selected([&](const LabelDef &l) {
+      char topic[128];
+      snprintf(topic, sizeof(topic), "%s%s", config.oneTopicPrefix, l.label);
+      mqttPublish(topic, MqttJson::binaryValue(l.asString, values.binary));
+    });
+  if (!mqttWriteFailed && !mqttStreamJson(client, mqttTopics.attr, false, [&](MqttJson &json) { values.render(json); }))
+  {
+    mqttWriteFailed = true;
+    mqttNet->stop(); // discard a partial MQTT packet before any later publish can follow it
   }
 }
 
@@ -816,15 +874,8 @@ void publishValues()
 {
   valuesLock();
   statsUpdate();
-  for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
-  {
-    if (registryOk[i])
-    {
-      updateValues(registryIDs[i]);
-    }
-  }
+  sendValues();
   valuesUnlock();
-  sendValues();//Send the full json message
   webSendValues();
 }
 
