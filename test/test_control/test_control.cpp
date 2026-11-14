@@ -3,6 +3,7 @@
 #include <unity.h>
 
 #include "control.h"
+#include "unitsettings.h"
 
 // Limit records of the four curve settings, 5 bytes each: hot water A 35+21 / B 45+11 -> 45..55,
 // leaving water B 29+27 / A 29+17 -> 29..45 (the same block on both boards, at different addresses)
@@ -1014,6 +1015,57 @@ void test_a_board_without_the_L_command_is_identified_by_registry_0x60()
     TEST_ASSERT_EQUAL_STRING("4562", u.softwareId);
 }
 
+// The installer settings of 20002203, read only, from the bytes of a unit (EHBX08EF6V, 9 November 2026, its
+// settings export alongside): absolute ones from the minimum of their range, the curves relative to [9-01] and
+// [9-03]. Read once the unit is ready, then every ten minutes. Nothing written.
+static const struct
+{
+    uint16_t offset;
+    uint8_t byte;
+    int expected;
+} SETTINGS_READ[] = {
+    {366, 83, 55}, {367, 63, 60}, {368, 23, 15}, {369, 123, -10}, {370, 3, -40}, {371, 19, 14}, {372, 95, 38},
+    {373, 43, 25}, {375, 43, 20}, {376, 43, 35}, {377, 15, 20}, {378, 3, 17}, {403, 87, 35}, {460, 75, 55},
+    {461, 3, 15}, {462, 19, 22}, {463, 51, 17},
+};
+
+void test_the_installer_settings_are_read_on_20002203()
+{
+    unit.board(FakeUnit::profileFor("20002203"));
+    for (const auto &r : SETTINGS_READ)
+        unit.memory[r.offset] = r.byte;
+    SettingsReader s;
+    s.exchange = fakeExchange;
+    TEST_ASSERT_FALSE(s.tick(1000, "20002203", false)); // not ready yet: nothing read
+    TEST_ASSERT_FALSE(s.everRead);
+    TEST_ASSERT_TRUE(s.tick(2000, "20002203", true));
+    TEST_ASSERT_EQUAL(17, s.count());
+    for (const auto &r : SETTINGS_READ)
+    {
+        int i = s.positionOf(r.offset);
+        TEST_ASSERT_TRUE(i >= 0 && s.known[i]);
+        TEST_ASSERT_EQUAL_MESSAGE(r.expected, s.value[i], s.map->defs[i].label);
+    }
+    // [9-01] 15 -> 18: the board re-encodes the curve relative to it (38 stays 38), read ten minutes later
+    unit.memory[461] = (uint8_t)(3 << 2 | 3);
+    unit.memory[372] = (uint8_t)(20 << 2 | 3);
+    TEST_ASSERT_FALSE(s.tick(2000 + UNIT_SETTINGS_READ_INTERVAL_MS - 1, "20002203", true));
+    TEST_ASSERT_EQUAL(15, s.value[s.positionOf(461)]);
+    s.tick(2000 + UNIT_SETTINGS_READ_INTERVAL_MS, "20002203", true);
+    TEST_ASSERT_EQUAL(18, s.value[s.positionOf(461)]);
+    TEST_ASSERT_EQUAL(38, s.value[s.positionOf(372)]);
+    // a byte not loaded: unknown, and the settings relative to it too
+    unit.memory[461] = 0;
+    s.tick(2000 + 2 * UNIT_SETTINGS_READ_INTERVAL_MS, "20002203", true);
+    TEST_ASSERT_FALSE(s.known[s.positionOf(461)]);
+    TEST_ASSERT_FALSE(s.known[s.positionOf(372)]);
+    TEST_ASSERT_TRUE(s.known[s.positionOf(460)]);
+    // another software: none
+    TEST_ASSERT_TRUE(s.tick(3000 + 2 * UNIT_SETTINGS_READ_INTERVAL_MS, "18002904", true));
+    TEST_ASSERT_EQUAL(0, s.count());
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+}
+
 // The unit's own energy meter where the profile knows its address: a 32-bit count read once a minute, unknown
 // after a failed read until the next one, not offered on the boards without the address. Nothing written.
 void test_the_unit_energy_meter_is_read_where_mapped()
@@ -1323,6 +1375,7 @@ int main(int, char **)
     RUN_TEST(test_refuses_without_the_curve_mode);
     RUN_TEST(test_no_answer);
     RUN_TEST(test_a_unit_just_powered_up_is_tried_again_soon);
+    RUN_TEST(test_the_installer_settings_are_read_on_20002203);
     RUN_TEST(test_a_unit_never_ready_is_tried_at_the_check_interval_in_the_end);
     RUN_TEST(test_applies_then_saves);
     RUN_TEST(test_reads_the_effective_target_after_a_write);

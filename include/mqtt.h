@@ -76,6 +76,7 @@ void valuesUnlock();
 void statsAppendJson(char *buf, size_t size); // main.cpp: the computed statistics, as ATTR keys
 void diiiAppendJson(char *buf, size_t size);  // main.cpp: the DIII E0/63 values of an HT outdoor unit (diii_comm.h)
 void meterAppendJson(char *buf, size_t size); // main.cpp: the unit's own energy meter, where the hydro board is mapped
+void settingsAppendJson(char *buf, size_t size); // main.cpp: the installer settings, where the hydro board is mapped
 
 void resetJson()
 {
@@ -175,6 +176,7 @@ void sendValues()
   statsAppendJson(jsonbuff, MAX_MSG_SIZE);
   diiiAppendJson(jsonbuff, MAX_MSG_SIZE);
   meterAppendJson(jsonbuff, MAX_MSG_SIZE);
+  settingsAppendJson(jsonbuff, MAX_MSG_SIZE);
   if (WiFi.status() == WL_CONNECTED) // not over Ethernet
     snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
   snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());

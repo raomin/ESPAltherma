@@ -37,6 +37,7 @@ std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count);
 extern const LabelDef *haExtraLabels;
 extern size_t haExtraCount;
 // dataType codes of the extra values (homeassistant.cpp maps them to a device class)
+#define ESP_SENSOR_SETTING_C 985 // an installer setting in degrees Celsius, for diagnostics
 #define ESP_SENSOR_POWER_KW 989
 #define ESP_SENSOR_ENERGY_KWH 990
 #define ESP_SENSOR_RATIO 991

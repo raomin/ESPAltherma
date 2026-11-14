@@ -23,6 +23,7 @@
 #include "comm.h"
 #include "registrypoll.h"
 #include "control.h"
+#include "unitsettings.h"
 #include "diii_comm.h"
 #include "stats.h"
 #include "survey.h"
@@ -60,6 +61,7 @@ volatile bool surveyInProgress = false; //the survey is being written: readers m
 volatile bool surveyReady = false;
 CurveControl dhwControl, lwtControl;   //experimental hot water and leaving water targets (control.h), heat pump task
 LimitControl limitControl;             //experimental power limit (control.h), heat pump task
+SettingsReader unitSettings; // the installer settings, read only, where the hydro board is mapped for them
 MeterReader unitMeter; // the unit's own energy meter, where the hydro board is mapped for it (control.h)
 DiiiComm diii;                     //read-only DIII E0/63 frames of an HT outdoor unit (diii_comm.h), heat pump task
 static void diiiSleep(unsigned long ms)
@@ -716,6 +718,10 @@ void haExtraSetup()
   if (diii.status == DIII_READY)
     for (const LabelDef &l : DIII_LABELS)
       extra[n++] = l;
+  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + UNIT_SETTINGS_MAX + 1 + UNIT_COUNTER_COUNT + 2 <= HA_EXTRA_LABELS_MAX, "room for the unit's settings");
+  for (size_t i = 0; unitSettings.everRead && i < unitSettings.count(); i++)
+    extra[n++] = LabelDef(-1, -1, -1, -1, ESP_SENSOR_SETTING_C, unitSettings.map->defs[i].label);
+
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
   if (unitMeter.model[0])
@@ -1248,6 +1254,42 @@ static void memoryDumpTick()
   }
 }
 
+// The installer settings, read only (unitsettings.h): once the meter has found the unit loaded, every ten minutes
+static void settingsTick()
+{
+  if (config.protocol != 'I' || unitMeter.status == CONTROL_OFF || unitMeter.status == CONTROL_NO_ANSWER)
+  {
+    if (unitSettings.tick(millis(), nullptr, false))
+    {
+      haExtraSetup();
+      discoveryDirty = true;
+    }
+    return;
+  }
+  if (busy)
+    return;
+  if (unitSettings.exchange == nullptr)
+    unitSettings.exchange = x10aExchange;
+  if (!unitSettings.tick(millis(), unitMeter.softwareId, unitMeter.status == CONTROL_READY && unitMeter.known))
+    return;
+  mqttSerial.printf("Unit settings: %u read (software %s)\n", (unsigned)unitSettings.count(), unitMeter.softwareId);
+  haExtraSetup(); // their sensors join (or leave) the Home Assistant discovery
+  discoveryDirty = true;
+}
+
+// The installer settings as ATTR keys (mqtt.h): null while not known
+void settingsAppendJson(char *buf, size_t size)
+{
+  for (size_t i = 0; unitSettings.everRead && i < unitSettings.count(); i++)
+  {
+    size_t n = strlen(buf);
+    if (unitSettings.known[i])
+      snprintf(buf + n, size - n, "\"%s\":%d,", unitSettings.map->defs[i].label, unitSettings.value[i]);
+    else
+      snprintf(buf + n, size - n, "\"%s\":null,", unitSettings.map->defs[i].label);
+  }
+}
+
 void controlLoop()
 {
   controlTick(dhwControl, config.dhwTarget, "Hot water");
@@ -1257,6 +1299,7 @@ void controlLoop()
   memoryTick();
   memoryDumpTick();
   heldSaveTick();
+  settingsTick();
   // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
   bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;
   DiiiStatus before = diii.status;

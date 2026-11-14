@@ -199,6 +199,7 @@ std::string getConversion(const LabelDef &label)
         // the computed values are sent as numbers, or null when not known: the template then renders "None", the
         // one word the MQTT sensor takes for unknown (a string such as 'unknown' is refused on a numeric sensor,
         // which keeps its last value)
+        case ESP_SENSOR_SETTING_C:
         case ESP_SENSOR_POWER_KW:
         case ESP_SENSOR_ENERGY_KWH:
         case ESP_SENSOR_RATIO:
@@ -232,6 +233,9 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
         // "IP" (the board's address on the network, a text)
         case ESP_SENSOR_IP:
             return "\"p\":\"sensor\",\"icon\":\"mdi:ip-network\",";
+        // the unit's installer settings (unitsettings.h), read only
+        case ESP_SENSOR_SETTING_C:
+            return "\"p\":\"sensor\",\"dev_cla\":\"temperature\",\"unit_of_meas\":\"°C\",\"ent_cat\":\"diagnostic\",\"icon\":\"mdi:cog\",";
         // the computed statistics (stats.h)
         case ESP_SENSOR_POWER_KW:
             return "\"p\":\"sensor\",\"dev_cla\":\"power\",\"unit_of_meas\":\"kW\",\"sug_dsp_prc\":2,";
