@@ -710,6 +710,7 @@ void haExtraSetup()
 {
   static LabelDef extra[HA_EXTRA_LABELS_MAX];
   size_t n = 0;
+  valuesLock();
   if (config.statsEnabled)
     for (const LabelDef &l : STATS_LABELS)
       extra[n++] = l;
@@ -727,6 +728,7 @@ void haExtraSetup()
   haExtraCount = 0; // the main loop may be reading the list
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
+  valuesUnlock(); // readers see the complete list
 }
 
 // The DIII values as ATTR keys (mqtt.h, next to the statistics)
