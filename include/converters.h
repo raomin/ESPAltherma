@@ -5,7 +5,15 @@ class Converter
 {
 public:
     int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22, 804=R744, 805=R134a
-    bool quiet = false; // no conversion trace on Serial (one-off decodes for the web interface)
+    // The conversion trace on Serial ("Converting from: 0x.. -> .."), for a build made with -D CONVERTER_TRACE.
+    // It was written for every value of every cycle, while the values are locked: about 38 characters a value,
+    // so near half a second of serial time a cycle for a large selection at 115200 baud. The replies are in the
+    // log as before (comm.h logBuffer).
+#ifdef CONVERTER_TRACE
+    bool quiet = false;
+#else
+    bool quiet = true;
+#endif
 
     // Active labels: the values selected for this installation
     LabelDef *activeLabels = nullptr;
