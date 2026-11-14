@@ -13,11 +13,11 @@ const char *haAttrTopic = "espaltherma/ATTR";
 const char *haHostname = "ESPAltherma";
 static std::string jsonEscape(const char *s);
 
-static std::string discoveryStart()
+static std::string discoveryStart(const char *model)
 {
     const std::string url=std::string("http://")+haHostname+".local/";
     return std::string("{\"dev\":{\"ids\":\"") + haDeviceId + "\",\"name\":\"" + haDeviceName +
-           "\",\"mf\":\"Daikin\",\"mdl\":\"" + haDeviceModel + "\",\"sw_version\":\"ESPAltherma " ESPALTHERMA_VERSION
+           "\",\"mf\":\"Daikin\",\"mdl\":\"" + model + "\",\"sw_version\":\"ESPAltherma " ESPALTHERMA_VERSION
            "\",\"configuration_url\":\"" + jsonEscape(url.c_str()) + "\"},\"o\":{\"name\":\"" + haDeviceId +
            "\",\"sw\":\"" ESPALTHERMA_VERSION "\",\"url\":\"https://github.com/raomin/ESPAltherma/\"},\"cmps\":{";
 }
@@ -54,8 +54,9 @@ static bool isMeasurementSensor(const std::string &sensorProperties)
            sensorProperties.find("\"stat_cla\"") == std::string::npos; // the computed values set their own
 }
 
-size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx,
-                                    const std::vector<HaComponent> *removed)
+template<typename Read>
+static size_t streamDiscovery(size_t count,Read read,const char *model,DiscoverySink sink,void *ctx,
+                              const std::vector<HaComponent> *removed)
 {
     size_t total = 0;
     auto emit = [&](const char *data, size_t len) {
@@ -66,7 +67,7 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
         }
     };
 
-    std::string s = discoveryStart();
+    std::string s = discoveryStart(model);
     emit(s.data(), s.size());
 
     // Hardcoded ESP diagnostic sensors.
@@ -94,13 +95,7 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     // payload is never held in memory all at once.
     for (size_t i = 0; i < count; i++)
     {
-        s = "," + makeSensorJson(labels[i], false);
-        emit(s.data(), s.size());
-    }
-    // The values the firmware computes (energy and cycle statistics)
-    for (size_t i = 0; i < haExtraCount; i++)
-    {
-        s = "," + makeSensorJson(haExtraLabels[i], false);
+        s = "," + makeSensorJson(read(i), false);
         emit(s.data(), s.size());
     }
     // Values no longer selected: only their platform, so Home Assistant removes their entities
@@ -114,6 +109,29 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     emit(s.data(), s.size());
 
     return total;
+}
+
+size_t streamDeviceDiscoveryPayload(const LabelDef *labels,size_t count,DiscoverySink sink,void *ctx,
+                                    const std::vector<HaComponent> *removed)
+{
+    return streamDiscovery(count+haExtraCount,[&](size_t i){return i<count?labels[i]:haExtraLabels[i-count];},haDeviceModel,sink,ctx,removed);
+}
+
+size_t streamDeviceDiscoverySnapshot(const HaDiscoverySnapshot &s,DiscoverySink sink,void *ctx,
+                                    const std::vector<HaComponent> *removed)
+{
+    return streamDiscovery(s.count,[&](size_t i){return s.labels[i].definition();},s.model,sink,ctx,removed);
+}
+
+std::vector<HaComponent> haSnapshotComponents(const HaDiscoverySnapshot &s)
+{
+    std::vector<HaComponent> out;
+    for(size_t i=0;i<s.count;i++)
+    {
+        bool binary=!s.labels[i].extra && getSensorDeviceAndUnit(s.labels[i].definition()).find("\"p\":\"binary_sensor\"")!=std::string::npos;
+        out.push_back({makeJsonKey(s.labels[i].label),binary?"binary_sensor":"sensor"});
+    }
+    return out;
 }
 
 std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count)

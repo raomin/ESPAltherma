@@ -2,6 +2,7 @@
 #include <vector>
 #include "labeldef.h"
 #include "haremoval.h"
+#include "mqttsnapshot.h"
 
 // ON/OFF values are published as 1/0 (setting "binary_num"): binary sensors then use 1/0 as their payloads
 extern bool haBinaryAsNumber;
@@ -33,6 +34,9 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
  * The components the values announce (key and platform), to tell which ones a later discovery removes (haremoval.h).
  */
 std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count);
+size_t streamDeviceDiscoverySnapshot(const HaDiscoverySnapshot &snapshot,DiscoverySink sink,void *ctx,
+                                    const std::vector<HaComponent> *removed=nullptr);
+std::vector<HaComponent> haSnapshotComponents(const HaDiscoverySnapshot &snapshot);
 // Extra values the firmware computes (stats.h): announced with the definition's, removed with them when off
 extern const LabelDef *haExtraLabels;
 extern size_t haExtraCount;

@@ -5,7 +5,7 @@ class Converter
 {
 public:
     int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22, 804=R744, 805=R134a
-    bool quiet = false; // no conversion trace on Serial (one-off decodes for the web interface)
+    bool quiet = true; // conversion runs under valuesLock: opt into byte-by-byte Serial traces only for debugging
 
     // Active labels: the values selected for this installation
     LabelDef *activeLabels = nullptr;
