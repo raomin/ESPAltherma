@@ -55,6 +55,7 @@ struct CurveSpec
   uint8_t modeMask;        // bits set when the target follows the curve
   uint16_t ramEffective;   // what the thermostat really aims for (0: not known)
   uint16_t ramCeiling;     // the unit's own maximum, which caps the target (0: none)
+  uint8_t ramMinimum;      // verified lower DHW target in RAM-only mode (0: keep the setting limits)
 };
 
 // The power limitation (the installer's demand control), as the hydro board holds it in RAM: the enable byte
@@ -159,7 +160,7 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // its interface (ppuetsch, #647): the meter rises with the heat delivered, the same count again as a float at
     // 0x3756, the hours equal to the interface's.
     {"20002203",
-     {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160},
+     {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160, 25},
      {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0},
      {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC},
      0x08E6,
@@ -512,6 +513,11 @@ struct CurveControl : X10aClient
           minTarget = minB;
           maxTarget = maxB;
         }
+        // The DHW field settings start at 35/45 C, but a lower flat curve can work in RAM. On 20002203,
+        // 20/20 held in RAM while the effective target stayed at 25 C; 25/25 and 30/30 followed directly.
+        // Only profiles verified on a unit opt in. Keep minA/minB for decoding and writing the memory.
+        if (ramOnly && kind == CONTROL_DHW && spec->ramMinimum > 0 && spec->ramMinimum < minTarget)
+          minTarget = spec->ramMinimum;
         status = minTarget >= 5 && maxTarget <= 90 && minTarget < maxTarget ? CONTROL_READY : CONTROL_UNSUPPORTED;
       }
     }

@@ -828,6 +828,96 @@ void test_ram_only_opens_the_leaving_water_range_to_the_units_own()
     TEST_ASSERT_EQUAL(55, d.maxTarget);
 }
 
+// The lower RAM range belongs only to the verified software; persistent targets retain the field-setting range.
+void test_dhw_low_range_only_on_verified_software_in_ram_only()
+{
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; ++i)
+    {
+        const ControlProfile &p = CONTROL_PROFILES[i];
+        if (!p.dhw.ramA) continue;
+        unit.reset(); unit.board(p);
+        CurveControl c = fresh();
+        TEST_ASSERT_TRUE(c.identify(1000));
+        TEST_ASSERT_EQUAL(45, c.minTarget);
+        c.setRamOnly(true, 2000);
+        TEST_ASSERT_EQUAL(strcmp(p.softwareId, "20002203") == 0 ? 25 : 45, c.minTarget);
+        TEST_ASSERT_EQUAL(55, c.maxTarget);
+        TEST_ASSERT_EQUAL(35, c.minA);
+        TEST_ASSERT_EQUAL(45, c.minB);
+        c.setRamOnly(false, 3000);
+        TEST_ASSERT_EQUAL(45, c.minTarget);
+        TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    }
+}
+
+void test_dhw_low_target_clamps_and_restores_without_persistent_writes()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    CurveControl c = fresh(); c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    uint8_t a = unit.memory[366], b = unit.memory[367];
+    c.request(20); c.tick(2000); // the effective target cannot go below 25 on the tested unit
+    TEST_ASSERT_EQUAL(25, c.held);
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramB));
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS);
+    c.tick(2000 + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(a, unit.memory[366]);
+    TEST_ASSERT_EQUAL(b, unit.memory[367]);
+    TEST_ASSERT_FALSE(c.persist(25, 25)); // below the encoding bases: never wrap into another stored value
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    c.requestRestore(); c.tick(3000 + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(p.dhw.ramB));
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+void test_dhw_low_hold_is_clamped_before_saving_when_ram_only_is_disabled()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    CurveControl c = fresh(); c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(25); c.tick(2000);
+    c.setRamOnly(false, 3000);
+    c.tick(3100);
+    TEST_ASSERT_EQUAL(45 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(45 << 8, unit.word(p.dhw.ramB));
+    TEST_ASSERT_EQUAL(-1, c.held);
+    c.tick(3100 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL(45, c.saved);
+    TEST_ASSERT_EQUAL(45, (unit.memory[366] >> 2) + 35);
+    TEST_ASSERT_EQUAL(45, (unit.memory[367] >> 2) + 45);
+    TEST_ASSERT_EQUAL(2, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+void test_dhw_low_hold_returns_after_ram_is_reloaded_and_esp_restarts()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    CurveControl c = fresh(); c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(25); c.tick(2000);
+    unit.setWord(p.dhw.ramA, 48 << 8); unit.setWord(p.dhw.ramB, 52 << 8);
+    c.tick(2000 + CONTROL_READ_INTERVAL_MS);
+    c.tick(2010 + CONTROL_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramB));
+    unit.setWord(p.dhw.ramA, 48 << 8); unit.setWord(p.dhw.ramB, 52 << 8);
+    CurveControl restarted = fresh(); restarted.ramOnly = true;
+    TEST_ASSERT_TRUE(restarted.identify(1000));
+    restarted.setHeld(25); // the caller restores this from RTC/config after an ESP restart
+    restarted.tick(2000); restarted.tick(2010);
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramB));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
 static LimitControl freshLimit()
 {
     LimitControl c;
@@ -1349,6 +1439,10 @@ int main(int, char **)
     RUN_TEST(test_power_limit_retries_early_with_backoff_and_keeps_restored_request);
     RUN_TEST(test_power_limit_retry_at_time_zero_does_not_flood_the_bus_and_reset_is_immediate);
     RUN_TEST(test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff);
+    RUN_TEST(test_dhw_low_range_only_on_verified_software_in_ram_only);
+    RUN_TEST(test_dhw_low_target_clamps_and_restores_without_persistent_writes);
+    RUN_TEST(test_dhw_low_hold_is_clamped_before_saving_when_ram_only_is_disabled);
+    RUN_TEST(test_dhw_low_hold_returns_after_ram_is_reloaded_and_esp_restarts);
     RUN_TEST(test_power_limit_applies_and_releases);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
