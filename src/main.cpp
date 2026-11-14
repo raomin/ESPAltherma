@@ -445,19 +445,23 @@ void layoutFeedSurvey()
   layoutCheck();
 }
 
+// The X10A commands sent outside the controls (the survey's two reads, the memory reads of the diagnostics): the
+// controls' client (control.h), so that a frame and the check of its reply are written in one place
+static X10aClient &x10aLink()
+{
+  static X10aClient link;
+  link.exchange = x10aExchange;
+  return link;
+}
+
 // The hydro board's software, with the 'L' command of the X10A port: 4 bytes, the version's digits reversed
 // (04 29 00 18 is 18002904). Boards without the command answer NAK or nothing: the report then has no "iu_sw_id".
 static void surveyReadSoftwareId(Survey &s)
 {
-  uint8_t frame[4], reply[8];
-  size_t len = x10aFrame(0x4C, nullptr, 0, frame);
-  size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-  uint8_t sum = 0;
-  for (size_t i = 0; i < 5 && i < got; i++)
-    sum += reply[i];
-  s.hasSwId = got == 6 && reply[0] == 0x4C && (uint8_t)~sum == reply[5];
+  uint8_t id[4];
+  s.hasSwId = x10aLink().command(0x4C, nullptr, 0, id, sizeof(id));
   if (s.hasSwId)
-    memcpy(s.swId, reply + 1, 4);
+    memcpy(s.swId, id, sizeof(id));
 }
 
 // The unit's model name at the start of the hydro board's settings memory (the 'I' command, one byte each), where
@@ -469,14 +473,12 @@ static void surveyReadUnitModel(Survey &s)
   char name[UNIT_MODEL_MAX + 1] = {0};
   for (uint16_t i = 0; i < UNIT_MODEL_MAX; i++)
   {
-    uint8_t data[2] = {(uint8_t)i, (uint8_t)(i >> 8)}, frame[8], reply[8];
-    size_t len = x10aFrame(0x49, data, 2, frame);
-    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-    if (got != 3 || reply[0] != 0x49 || (uint8_t)~(uint8_t)(reply[0] + reply[1]) != reply[2])
+    uint8_t letter = 0;
+    if (!x10aLink().readMemory(i, letter))
       return;
-    if (reply[1] == 0)
+    if (letter == 0)
       break;
-    name[i] = (char)reply[1];
+    name[i] = (char)letter;
   }
   if (unitModelLooksValid(name))
     strlcpy(s.unitModel, name, sizeof(s.unitModel));
@@ -1107,16 +1109,10 @@ static void memoryTick()
   size_t pos = 0;
   for (uint16_t off = 0; off < memReqLen && ok; off += 16)
   {
-    uint16_t at = memReqAddr + off;
-    uint8_t a[2] = {(uint8_t)at, (uint8_t)(at >> 8)}, frame[8], reply[24];
-    size_t len = x10aFrame(0x52, a, 2, frame);
-    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-    uint8_t sum = 0;
-    for (size_t i = 0; i < 17 && i < got; i++)
-      sum += reply[i];
-    ok = got >= 18 && reply[0] == 0x52 && (uint8_t)~sum == reply[17];
+    uint8_t row[16];
+    ok = x10aLink().readRam(memReqAddr + off, row);
     for (size_t i = 0; ok && i < 16 && off + i < memReqLen; i++)
-      pos += snprintf(memHex + pos, sizeof(memHex) - pos, "%02X", reply[1 + i]);
+      pos += snprintf(memHex + pos, sizeof(memHex) - pos, "%02X", row[i]);
   }
   memHex[ok ? pos : 0] = 0;
   memReqOk = ok;
@@ -1225,16 +1221,10 @@ static void memoryDumpTick()
     return;
   for (int n = 0; n < MEMORY_DUMP_FRAMES_PER_TICK && dumpPos < dumpLen; n++)
   {
-    uint16_t at = dumpFrom + dumpPos;
-    uint8_t a[2] = {(uint8_t)at, (uint8_t)(at >> 8)}, frame[8], reply[24];
-    size_t len = x10aFrame(0x52, a, 2, frame);
-    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-    uint8_t sum = 0;
-    for (size_t i = 0; i < 17 && i < got; i++)
-      sum += reply[i];
-    bool ok = got >= 18 && reply[0] == 0x52 && (uint8_t)~sum == reply[17];
+    uint8_t row[16];
+    bool ok = x10aLink().readRam(dumpFrom + dumpPos, row);
     if (ok)
-      memcpy(dumpBuf + dumpPos, reply + 1, 16);
+      memcpy(dumpBuf + dumpPos, row, 16);
     else if (++dumpTries < MEMORY_DUMP_TRIES)
       return; // the same frame again at the next tick, the poll in between
     else
