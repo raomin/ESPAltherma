@@ -1250,16 +1250,24 @@ static void memoryDumpTick()
 
 void controlLoop()
 {
+  HP_STAGE("hot water target");
   controlTick(dhwControl, config.dhwTarget, "Hot water");
+  HP_STAGE("leaving water target");
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
+  HP_STAGE("power limit");
   limitTick();
+  HP_STAGE("unit counters");
   meterTick();
+  HP_STAGE("memory read");
   memoryTick();
+  HP_STAGE("memory dump");
   memoryDumpTick();
+  HP_STAGE("save held targets");
   heldSaveTick();
   // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
   bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;
   DiiiStatus before = diii.status;
+  HP_STAGE("DIII read");
   if (!diiiOn)
   {
     if (diii.status != DIII_OFF)
@@ -1269,6 +1277,7 @@ void controlLoop()
     diii.tick();
   if ((before == DIII_READY) != (diii.status == DIII_READY))
   {
+    HP_STAGE("extra sensor list");
     haExtraSetup(); // its sensors join (or leave) the Home Assistant discovery
     discoveryDirty = true;
   }
@@ -1310,7 +1319,6 @@ void hpTask(void *)
     while (millis() - start < wait && !surveyRequested && !labelsDirty)
     {
       watchdogHp();
-      HP_STAGE("hot water target");
       controlLoop();
       HP_STAGE("wait");
       delay(diii.idleMs()); // 100 ms, 10 ms while a DIII frame is being learnt or is due
