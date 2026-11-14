@@ -113,6 +113,38 @@ struct AppConfig
 
 AppConfig config;
 
+// Who touches the configuration: the heat pump task writes it (a detection, a layout correction, what the
+// controls hold), the main loop writes it (the settings saved from the page, the credentials sent by the
+// installer), and the web server's task copies the lot for a settings form. One lock for whoever writes several
+// fields, copies the whole, or saves it; reading one field needs none. Recursive: configSave() takes it too.
+// Nothing that takes the values lock is called while it is held.
+#ifndef ESPALTHERMA_CONFIG_NATIVE_TEST
+SemaphoreHandle_t configMutex = xSemaphoreCreateRecursiveMutex();
+void configLock() { xSemaphoreTakeRecursive(configMutex, portMAX_DELAY); }
+void configUnlock() { xSemaphoreGiveRecursive(configMutex); }
+#else
+void configLock() {}
+void configUnlock() {}
+#endif
+
+// What the board itself keeps in the configuration: the controls' held values and the curves found before their
+// first write, the identity of the unit and of the installation. No settings form sets them (configFromJson
+// leaves them alone), so the copy made for a form takes them again from the live configuration when it is
+// applied: a target the heat pump task held between the click and the save is not put back to what it was.
+void configKeepRuntime(AppConfig &next, const AppConfig &live)
+{
+  memcpy(next.ctlOrig, live.ctlOrig, sizeof(next.ctlOrig));
+  memcpy(next.ctlOrigSw, live.ctlOrigSw, sizeof(next.ctlOrigSw));
+  memcpy(next.ctlHeld, live.ctlHeld, sizeof(next.ctlHeld));
+  next.ctlLimitOn = live.ctlLimitOn;
+  next.ctlLimitValue = live.ctlLimitValue;
+  next.ctlLimitOrig = live.ctlLimitOrig;
+  memcpy(next.ctlLimitSw, live.ctlLimitSw, sizeof(next.ctlLimitSw));
+  memcpy(next.detectedKey, live.detectedKey, sizeof(next.detectedKey));
+  memcpy(next.installId, live.installId, sizeof(next.installId));
+  next.telemetrySent = live.telemetrySent;
+}
+
 // The Smart Grid contacts need both relays: with one pin only nothing is set up, published or switched
 inline bool smartGridConfigured() { return config.sg1Pin >= 0 && config.sg2Pin >= 0; }
 
@@ -444,6 +476,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = fa
 #ifndef ESPALTHERMA_CONFIG_NATIVE_TEST
 void configSave()
 {
+  configLock(); // through the write: two tasks saving must not store the older of their two copies last
   JsonDocument doc;
   configToJson(config, doc, true, true); // NVS retains runtime state; API settings/backups do not
   String s;
@@ -452,6 +485,7 @@ void configSave()
   prefs.begin(CONFIG_NVS_NAMESPACE, false);
   prefs.putString("cfg", s);
   prefs.end();
+  configUnlock();
 }
 
 // Loads the configuration: the defaults, then what is stored on top.

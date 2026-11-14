@@ -653,7 +653,9 @@ void webBegin()
   // Changing the settings, the firmware and the targets still ask for it.
   webServer.on("/api/config", HTTP_GET, [](AsyncWebServerRequest *r) {
     JsonDocument doc;
+    configLock();
     configToJson(config, doc, false);
+    configUnlock();
     sendJson(r, doc);
   });
 
@@ -668,7 +670,14 @@ void webBegin()
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
       return;
     }
-    AppConfig *next = new AppConfig(config);
+    configLock();
+    AppConfig *next = new (std::nothrow) AppConfig(config);
+    configUnlock();
+    if (next == nullptr) // no room for the copy now: without exceptions a plain new would have restarted the board
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
+      return;
+    }
     configFromJson(*next, doc.as<JsonVariantConst>());
     if (strcmp(next->model, config.model) != 0 && !doc["hp"]["layout_fixes"].is<JsonArrayConst>())
       next->fixCount = 0; // the corrections belong to the previous model
@@ -827,7 +836,9 @@ void webBegin()
     if (!parseBody(r, doc))
       return;
     // A copy of the whole configuration, kept for good, was 1.7 KB of RAM for a button pressed once
+    configLock();
     AppConfig *settings = mqttTestConfig == nullptr ? new (std::nothrow) AppConfig(config) : nullptr;
+    configUnlock();
     if (settings == nullptr) // a test is running, or no room for now
     {
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
@@ -1253,8 +1264,10 @@ static void sendTelemetry()
   // Done when accepted, or refused for good (4xx but 429): retried later otherwise
   if ((code >= 200 && code < 300) || (code >= 400 && code < 500 && code != 429))
   {
+    configLock();
     config.telemetrySent = subject;
     configSave();
+    configUnlock();
   }
 }
 
@@ -1427,10 +1440,13 @@ void webLoop()
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
     if (baseChanged)
       mqttRetireDiscovery(); // the entities of the old base topic leave Home Assistant
+    configLock();
+    configKeepRuntime(*next, config); // what the heat pump task wrote since the form's copy was made
     config = *next;
     pendingConfig = nullptr;
     delete next;
     configSave();
+    configUnlock();
     mqttSerial.println("Configuration saved.");
     if (wifiChanged)
       connectWifi();

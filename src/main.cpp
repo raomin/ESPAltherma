@@ -374,8 +374,10 @@ void applyDetection()
     // Completes a key saved while the outdoor unit slept, the selection stays
     if (strcmp(key, config.detectedKey) != 0 && surveyKeyComplete(key))
     {
+      configLock();
       strlcpy(config.detectedKey, key, sizeof(config.detectedKey));
       configSave();
+      configUnlock();
     }
     return;
   }
@@ -389,6 +391,7 @@ void applyDetection()
     mqttSerial.println("Model uncertain and no value is safe to read: choose the model in the web interface.");
     return;
   }
+  configLock();
   strlcpy(config.model, CATALOG_MODELS[detection.model].name, sizeof(config.model));
   strlcpy(config.detectedKey, key, sizeof(config.detectedKey));
   config.fixCount = 0; //corrections belong to the previous model
@@ -396,6 +399,7 @@ void applyDetection()
   config.labelCount = safe < 0 ? 0 : safe; //0: all the recommended values
   memcpy(config.labels, keys, sizeof(uint32_t) * config.labelCount);
   configSave();
+  configUnlock();
   mqttSerial.printf("Detected %s (%s confidence)\n", config.model, detectConfidenceName(detection.confidence));
   reloadLabels();
 }
@@ -420,9 +424,11 @@ void layoutCheck()
     const LayoutCandidate &a = rc.c[0], &c = rc.c[k];
     mqttSerial.printf("Registry 0x%02x does not match %s on this unit (%u/%u plausible values): read with the layout of %s (%u/%u)\n",
                       rc.reg, config.model, a.plausible, a.checks, CATALOG_MODELS[c.model].name, c.plausible, c.checks);
+    configLock();
     config.fixReg[config.fixCount] = rc.reg;
     strlcpy(config.fixModel[config.fixCount], CATALOG_MODELS[c.model].name, sizeof(config.fixModel[0]));
     config.fixCount++;
+    configUnlock();
     changed = true;
   }
   if (changed)
@@ -966,19 +972,23 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   if (c.origChanged)
   {
     c.origChanged = false;
+    configLock();
     config.ctlOrig[k][0] = c.origA;
     config.ctlOrig[k][1] = c.origB;
     if (c.origA >= 0)
       strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
     configSave();
+    configUnlock();
   }
   if (c.heldChanged)
   {
     c.heldChanged = false;
+    configLock();
     config.ctlHeld[k] = c.held;
     if (c.held >= 0)
       strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
     heldStateChanged(c.held < 0); // a hold that ends is saved at once: it must not come back after a power cut
+    configUnlock();
   }
 }
 
@@ -1020,12 +1030,14 @@ static void limitTick()
   if (c.stateChanged)
   {
     c.stateChanged = false;
+    configLock();
     bool switched = config.ctlLimitOn != c.on; // on or off is saved at once, a new value when due
     config.ctlLimitOn = c.on;
     config.ctlLimitValue = c.value;
     config.ctlLimitOrig = c.origEnable;
     strlcpy(config.ctlLimitSw, c.softwareId, sizeof(config.ctlLimitSw));
     heldStateChanged(switched);
+    configUnlock();
   }
 }
 
