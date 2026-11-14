@@ -452,5 +452,6 @@
  "Range: hexadecimal, 16 KB at most.": "Plage : hexadécimale, 16 Ko au plus.",
  "{n} of {t} frames read": "{n} trames sur {t} lues",
  "Done, {m} frames did not answer.": "Terminé, {m} trames sans réponse.",
- "Give the unit its own curve back? The target set from here is dropped.": "Rendre à l'unité sa propre courbe ? La consigne fixée ici est abandonnée."
+ "Give the unit its own curve back? The target set from here is dropped.": "Rendre à l'unité sa propre courbe ? La consigne fixée ici est abandonnée.",
+ "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Les valeurs MQTT dépassent le tampon du message. Sélectionnez moins de mesures ou utilisez un sujet par valeur dans les paramètres."
 }

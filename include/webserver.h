@@ -336,6 +336,7 @@ static void statusJson(JsonDocument &doc)
   mqtt["connected"] = (bool)mqttConnectedCache;
   mqtt["server"] = config.mqttServer;
   mqtt["state"] = (int)mqttStateCache;
+  mqtt["values_too_large"] = mqttValuesTooLarge.load();
 
   JsonObject up = doc["update"].to<JsonObject>(); // the daily check for a newer firmware (update.h)
   up["check"] = config.updateCheck;

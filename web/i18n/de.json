@@ -452,5 +452,6 @@
  "Range: hexadecimal, 16 KB at most.": "Bereich: hexadezimal, höchstens 16 KB.",
  "{n} of {t} frames read": "{n} von {t} Frames gelesen",
  "Done, {m} frames did not answer.": "Fertig, {m} Frames ohne Antwort.",
- "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen."
+ "Give the unit its own curve back? The target set from here is dropped.": "Der Einheit ihre eigene Kurve zurückgeben? Das hier gesetzte Ziel wird verworfen.",
+ "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Die MQTT-Werte überschreiten den Nachrichtenspeicher. Wähle weniger Messwerte oder aktiviere in den Einstellungen ein Topic pro Wert."
 }

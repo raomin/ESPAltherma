@@ -370,6 +370,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
 
 <section id="values">
  <h1>Values</h1>
+ <p class="msg bad" id="valuesSizeError" hidden>MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.</p>
  <div class="vbar card">
   <label class="s"><input type="search" id="valSearch" placeholder="Search: temperature, pump, 0x61…" aria-label="Search"></label>
   <label class="chk"><input type="checkbox" id="valSel">Selected only</label>
@@ -879,6 +880,7 @@ for (const u of Object.values(CONTROLS)) {
   };
 }
 function renderStatus() {
+  $('#valuesSizeError').hidden = !(status.mqtt && status.mqtt.values_too_large);
   const hp = status.hp;
   $('#hdrModel').textContent = [hp.unit, hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : ''].filter(Boolean).join(' · ');
   renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl(); renderToday();
