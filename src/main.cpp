@@ -496,9 +496,13 @@ void runSurvey()
     surveyReadUnitModel(survey);
   }
   surveyInProgress = false;
-  static char detectJson[1024];
+  // The detection's part of the report, on the heap like the report itself (1 KB was kept for good as a static);
+  // without the room the report goes without it
+  const size_t detectSize = 1024;
+  std::unique_ptr<char[]> detectText(new (std::nothrow) char[detectSize]);
+  char *detectJson = detectText.get();
   detectModel(survey, detection);
-  bool reportOk = detectToJson(detection, detectJson, sizeof(detectJson)) != 0;
+  bool reportOk = detectJson == nullptr || detectToJson(detection, detectJson, detectSize) != 0;
   //Rendered aside then swapped in: the web interface may be reading the previous report. On the heap for that
   //time (3 KB kept for good as a static); without the room, rendered in place under the lock.
   std::unique_ptr<char[]> report(new (std::nothrow) char[sizeof(surveyJson)]);
@@ -513,6 +517,7 @@ void runSurvey()
   if (!reportOk) surveyJson[0] = 0;
   valuesUnlock();
   report.reset();
+  detectText.reset();
   if (!reportOk)
   {
     mqttSerial.println("Survey report too large; partial JSON discarded.");

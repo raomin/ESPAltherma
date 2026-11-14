@@ -106,7 +106,7 @@ unsigned long rebootAt = 0;
 volatile bool factoryResetRequested = false;
 const char *volatile rebootCause = "Restart from the web interface"; // restart cause saved for the next boot
 volatile bool mqttTestRequested = false;
-AppConfig mqttTestConfig;
+AppConfig *volatile mqttTestConfig = nullptr; // the settings under test, on the heap until the test has run
 char mqttTestResult[16] = ""; // "running", "ok" or "error"
 const char *mqttTestReason = "";  // English, translated by the web interface
 int mqttTestState = 0;             // PubSubClient state
@@ -826,9 +826,16 @@ void webBegin()
     JsonDocument doc;
     if (!parseBody(r, doc))
       return;
-    mqttTestConfig = config;
-    configFromJson(mqttTestConfig, doc.as<JsonVariantConst>());
+    // A copy of the whole configuration, kept for good, was 1.7 KB of RAM for a button pressed once
+    AppConfig *settings = mqttTestConfig == nullptr ? new (std::nothrow) AppConfig(config) : nullptr;
+    if (settings == nullptr) // a test is running, or no room for now
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
+      return;
+    }
+    configFromJson(*settings, doc.as<JsonVariantConst>());
     strcpy(mqttTestResult, "running");
+    mqttTestConfig = settings;
     mqttTestRequested = true;
     sendOk(r);
   }, nullptr, collectBody);
@@ -1172,19 +1179,22 @@ static void runMqttTest()
 {
   LOOP_STAGE("MQTT test");
   mqttTestRequested = false;
+  if (mqttTestConfig == nullptr)
+    return;
+  const AppConfig &settings = *mqttTestConfig; // freed at the end: a new test is refused until then
   WiFiClient plain;
   PubSubClient test;
   test.setClient(plain);
   WiFiClientSecure secure;
-  if (mqttTestConfig.mqttTls)
+  if (settings.mqttTls)
   {
     secure.setInsecure();
     test.setClient(secure);
   }
-  test.setServer(mqttTestConfig.mqttServer, mqttTestConfig.mqttPort);
+  test.setServer(settings.mqttServer, settings.mqttPort);
   char id[48];
-  snprintf(id, sizeof(id), "%s-test", mqttTestConfig.mqttClientId);
-  if (test.connect(id, mqttTestConfig.mqttUser, mqttTestConfig.mqttPwd))
+  snprintf(id, sizeof(id), "%s-test", settings.mqttClientId);
+  if (test.connect(id, settings.mqttUser, settings.mqttPwd))
   {
     strcpy(mqttTestResult, "ok");
     test.disconnect();
@@ -1196,6 +1206,9 @@ static void runMqttTest()
     mqttTestReason = mqttTestState == -2 ? "broker unreachable" : (mqttTestState == 4 || mqttTestState == 5) ? "wrong user or password" : "connection refused";
     strcpy(mqttTestResult, "error");
   }
+  AppConfig *done = mqttTestConfig;
+  mqttTestConfig = nullptr;
+  delete done;
 }
 
 // What a report is about: the identification key of the heat pump, the model and the firmware version, hashed
