@@ -221,6 +221,26 @@ def c_string(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+# These two multi-tank definitions need an owner's identification before their pump names can change.
+# Keep only the existing pairs exempt: another location, converter or model must still fail the check.
+DEFERRED_PUMP_MODELS = {"CKHWS-BJV3(Multi DHW tank 2).h", "EKHWET-BAV3(Multi DHW tank).h"}
+DEFERRED_PUMP_LOCATIONS = {
+    "Add pump": {(0x64, 2, 302, 1), (0x64, 9, 302, 1)},
+    "Main pump": {(0x64, 2, 301, 1), (0x64, 9, 301, 1)},
+}
+
+
+def duplicate_locations(entries, filename=None):
+    """A name is a MQTT key/HA id: two offsets or converters in one page still collide."""
+    locations = collections.defaultdict(set)
+    for reg, offset, conv, size, dtype, label in entries:
+        if label not in NOT_RENAMED:
+            locations[label].add((reg, offset, conv, size))
+    deferred = DEFERRED_PUMP_LOCATIONS if filename in DEFERRED_PUMP_MODELS else {}
+    return {name: sorted(found) for name, found in locations.items()
+            if len(found) > 1 and found != deferred.get(name)}
+
+
 # Sensor names in other languages, from the translated definition files (definitions/<Language>/). They are
 # line-by-line translations of the English files: each English name gets the translation found most often.
 # Only the names shown in Home Assistant and the web interface change; the MQTT keys and ids stay English.
@@ -329,12 +349,9 @@ def build():
         if expected != rebuilt:
             raise SystemExit("gen_catalog: round trip failed for %s" % f)
         # One name, one value: the name is the MQTT key and the Home Assistant id
-        regs = collections.defaultdict(set)
-        for reg, offset, conv, size, dtype, label in rebuilt:
-            regs[label].add(reg)
-        clash = sorted(label for label, found in regs.items() if len(found) > 1 and label not in NOT_RENAMED)
-        if FAMILIES[f] not in "SR" and clash:
-            raise SystemExit("gen_catalog: %s has %s in several registries" % (f, clash))
+        clash = duplicate_locations(rebuilt, f)
+        if clash:
+            raise SystemExit("gen_catalog: %s has names at several locations: %s" % (f, clash))
 
     labels = {}
     pool = []
@@ -448,4 +465,5 @@ def main():
         print("gen_catalog: include/catalog_data.h updated")
 
 
-main()
+if __name__ == "__main__" or "env" in globals():  # also executed by PlatformIO/SCons
+    main()
