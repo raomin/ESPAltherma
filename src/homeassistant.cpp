@@ -42,7 +42,7 @@ const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 const LabelDef m5_vin = {-1, -1, -1, -1, ESP_SENSOR_M5VIN, "M5VIN"};
 const LabelDef uptime = {-1, -1, -1, -1, ESP_SENSOR_UPTIME, "Uptime"};
 const LabelDef ip_addr = {-1, -1, -1, -1, ESP_SENSOR_IP, "IP"};
-const LabelDef *haExtraLabels = nullptr;
+const HaSensor *haExtraLabels = nullptr;
 size_t haExtraCount = 0;
 
 static bool isMeasurementSensor(const std::string &sensorProperties)
@@ -100,7 +100,7 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     // The values the firmware computes (energy and cycle statistics)
     for (size_t i = 0; i < haExtraCount; i++)
     {
-        s = "," + makeSensorJson(haExtraLabels[i], false);
+        s = "," + makeSensorJson(haExtraLabels[i].definition(), false);
         emit(s.data(), s.size());
     }
     // Values no longer selected: only their platform, so Home Assistant removes their entities

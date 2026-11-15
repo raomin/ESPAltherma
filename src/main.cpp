@@ -595,48 +595,48 @@ void pollRegistries()
 // Energy and cycle statistics (stats.h), fed from the labels' current values. Main loop, under the values lock.
 RTC_NOINIT_ATTR StatsDay statsDay;
 Stats stats;
-static const LabelDef STATS_LABELS[] = {
-    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Heat output (kW)"},
-    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Electrical input estimated (kW)"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP estimated"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today heating"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today hot water"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today heating (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today hot water (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today cooling (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today heating (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today hot water (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today cooling (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts today"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts last hour"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Defrosts today"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Compressor run today (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Backup heater today (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last run (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last pause (min)"},
+static const HaSensor STATS_LABELS[] = {
+    {"Stats: Heat output (kW)", ESP_SENSOR_POWER_KW},
+    {"Stats: Electrical input estimated (kW)", ESP_SENSOR_POWER_KW},
+    {"Stats: COP estimated", ESP_SENSOR_RATIO},
+    {"Stats: COP today heating", ESP_SENSOR_RATIO},
+    {"Stats: COP today hot water", ESP_SENSOR_RATIO},
+    {"Stats: Heat today heating (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Heat today hot water (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Heat today cooling (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today heating (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today hot water (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today cooling (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Compressor starts today", ESP_SENSOR_COUNT},
+    {"Stats: Compressor starts last hour", ESP_SENSOR_COUNT},
+    {"Stats: Defrosts today", ESP_SENSOR_COUNT},
+    {"Stats: Compressor run today (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Backup heater today (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Last run (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Last pause (min)", ESP_SENSOR_MINUTES},
 };
 
 // The DIII values (diii_comm.h appendJson keys): dataType 1 = temperature, conv 105 + "(A)" = current
-static const LabelDef DIII_LABELS[] = {
-    {-1, -1, -1, -1, 1, "E0: Leaving water (C)"},
-    {-1, -1, -1, -1, 1, "E0: Return water (C)"},
-    {-1, -1, -1, -1, 1, "E0: Remote room temp (C)"},
-    {-1, -1, -1, -1, 1, "E0: DHW tank (C)"},
-    {-1, -1, -1, -1, -1, "E0: 3-way valve DHW"},
-    {-1, -1, -1, -1, -1, "E0: Pump"},
-    {-1, -1, -1, -1, -1, "E0: EVL (pls)"},
-    {-1, -1, -1, -1, -1, "E0: EVH (pls)"},
-    {-1, -1, 105, -1, -1, "E0: INV current (A)"},
-    {-1, -1, -1, -1, -1, "E0: INV speed (rps)"},
-    {-1, -1, -1, -1, 1, "E0: INV fin temp (C)"},
-    {-1, -1, -1, -1, -1, "E0: Sync"},
-    {-1, -1, -1, -1, 1, "63: Leaving water (C)"},
-    {-1, -1, -1, -1, 1, "63: Return water (C)"},
-    {-1, -1, -1, -1, 1, "63: R410A liquid (C)"},
-    {-1, -1, -1, -1, 1, "63: BRC1 room temp (C)"},
-    {-1, -1, 105, -1, -1, "RAM: Outdoor input current (A)"},
-    {-1, -1, 105, -1, -1, "RAM: Outdoor rated current (A)"},
-    {-1, -1, -1, -1, -1, "RAM: Outdoor load (%)"},
+static const HaSensor DIII_LABELS[] = {
+    {"E0: Leaving water (C)", 1},
+    {"E0: Return water (C)", 1},
+    {"E0: Remote room temp (C)", 1},
+    {"E0: DHW tank (C)", 1},
+    {"E0: 3-way valve DHW", -1},
+    {"E0: Pump", -1},
+    {"E0: EVL (pls)", -1},
+    {"E0: EVH (pls)", -1},
+    {"E0: INV current (A)", -1, 105},
+    {"E0: INV speed (rps)", -1},
+    {"E0: INV fin temp (C)", 1},
+    {"E0: Sync", -1},
+    {"63: Leaving water (C)", 1},
+    {"63: Return water (C)", 1},
+    {"63: R410A liquid (C)", 1},
+    {"63: BRC1 room temp (C)", 1},
+    {"RAM: Outdoor input current (A)", -1, 105},
+    {"RAM: Outdoor rated current (A)", -1, 105},
+    {"RAM: Outdoor load (%)", -1},
 };
 
 // The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a number)
@@ -723,35 +723,35 @@ static int unitCounterSensorType(const UnitCounterDef &d)
 }
 
 // The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
-static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
+static const HaSensor METER_LABEL = {"Unit meter: Heat produced (kWh)", ESP_SENSOR_ENERGY_KWH};
 
 // The unit's model name (control.h MeterReader::model), a diagnostic text once read
-static const LabelDef UNIT_MODEL_LABEL = {-1, -1, -1, -1, ESP_SENSOR_TEXT, "Unit model"};
+static const HaSensor UNIT_MODEL_LABEL = {"Unit model", ESP_SENSOR_TEXT};
 
-// Room for every extra sensor: the statistics, the DIII values, the unit's meter and what other features add
-#define HA_EXTRA_LABELS_MAX 96
+// Room for every extra sensor: the statistics, the DIII values, the unit's meter, its model and its counters
+static constexpr size_t HA_EXTRA_LABELS_MAX = sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) +
+                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT;
 
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
 void haExtraSetup()
 {
-  static LabelDef extra[HA_EXTRA_LABELS_MAX];
+  static HaSensor extra[HA_EXTRA_LABELS_MAX];
   size_t n = 0;
   valuesLock();
   if (config.statsEnabled)
-    for (const LabelDef &l : STATS_LABELS)
+    for (const HaSensor &l : STATS_LABELS)
       extra[n++] = l;
   if (diii.status == DIII_READY)
-    for (const LabelDef &l : DIII_LABELS)
+    for (const HaSensor &l : DIII_LABELS)
       extra[n++] = l;
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
   if (unitMeter.model[0])
     extra[n++] = UNIT_MODEL_LABEL;
-  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT <= HA_EXTRA_LABELS_MAX, "room for the unit's counters");
   for (size_t i = 0; unitMeter.status == CONTROL_READY && i < UNIT_COUNTER_COUNT; i++)
     if (unitMeter.counterMapped(i))
-      extra[n++] = LabelDef(-1, -1, -1, -1, unitCounterSensorType(UNIT_COUNTER_DEFS[i]), UNIT_COUNTER_DEFS[i].label);
+      extra[n++] = HaSensor(UNIT_COUNTER_DEFS[i].label, unitCounterSensorType(UNIT_COUNTER_DEFS[i]));
   haExtraCount = 0; // the main loop may be reading the list
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
