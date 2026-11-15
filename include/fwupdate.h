@@ -14,6 +14,16 @@
 #define UPDATE_CHECK_EVERY_MS (24UL * 3600UL * 1000UL)      // after a check
 #define UPDATE_CHECK_RETRY_MS (60UL * 60UL * 1000UL)        // after a failed attempt
 
+// A web update is being written while its blocks keep coming. One that went quiet this long (a browser gone without
+// the connection saying so) no longer counts, so nothing that waits for it waits for ever.
+#define UPLOAD_QUIET_MS 15000UL
+
+// lastBlockMs: when the last block of the upload was written (millis), 0 when no upload is being written
+static bool uploadInProgress(uint32_t lastBlockMs, uint32_t nowMs)
+{
+  return lastBlockMs != 0 && (uint32_t)(nowMs - lastBlockMs) < UPLOAD_QUIET_MS;
+}
+
 struct FirmwareUpdate
 {
   char latest[24] = "";     // the newest version on the site, once read
