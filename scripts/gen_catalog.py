@@ -223,6 +223,26 @@ def unique_name(reg, label, english, doubled, language=None):
     return name + " (0x%02X)" % reg if english in one_side else name
 
 
+# The two pumps of the multi-tank definitions wait for an owner who can tell which is which. Only these exact pairs
+# are let through: another location, another conversion or another definition still fails the check.
+DEFERRED_PUMP_MODELS = {"CKHWS-BJV3(Multi DHW tank 2).h", "EKHWET-BAV3(Multi DHW tank).h"}
+DEFERRED_PUMP_LOCATIONS = {
+    "Add pump": {(0x64, 2, 302, 1), (0x64, 9, 302, 1)},
+    "Main pump": {(0x64, 2, 301, 1), (0x64, 9, 301, 1)},
+}
+
+
+def duplicate_locations(entries, filename=None):
+    """The names read at more than one place: a name is one MQTT key, so the second value would replace the first."""
+    locations = collections.defaultdict(set)
+    for reg, offset, conv, size, dtype, label in entries:
+        if label not in NOT_RENAMED:
+            locations[label].add((reg, offset, conv, size))
+    deferred = DEFERRED_PUMP_LOCATIONS if filename in DEFERRED_PUMP_MODELS else {}
+    return {name: sorted(found) for name, found in locations.items()
+            if len(found) > 1 and found != deferred.get(name)}
+
+
 def c_string(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
@@ -341,9 +361,9 @@ def build():
         regs = collections.defaultdict(set)
         for reg, offset, conv, size, dtype, label in rebuilt:
             regs[label].add(reg)
-        clash = sorted(label for label, found in regs.items() if len(found) > 1 and label not in NOT_RENAMED)
-        if FAMILIES[f] not in "SR" and clash:
-            raise SystemExit("gen_catalog: %s has %s in several registries" % (f, clash))
+        clash = duplicate_locations(rebuilt, f)
+        if clash:
+            raise SystemExit("gen_catalog: %s has names at several places: %s" % (f, clash))
         names_out.append("")
         names_out.append("[%s]" % f[:-2])
         names_out += sorted(set(regs) - NOT_RENAMED)
@@ -495,4 +515,5 @@ def main():
                 print("  " + line)
 
 
-main()
+if __name__ == "__main__" or "env" in globals():  # "env": run by PlatformIO as a build script
+    main()
