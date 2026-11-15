@@ -50,6 +50,11 @@ bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (
 int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
 static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
 
+// One buffer for the discovery and control messages, which are built and published one after the other in the main
+// loop: each had its own, kept for as long as the firmware runs (1400 + 960 + 720 + 720 + 960 bytes). The longest
+// is the Smart Grid select: 839 bytes with the default base topic, 991 with the longest.
+static char mqttDiscoveryJson[1400];
+
 // The MQTT client's own buffer: the incoming commands and the short messages. It is taken from the heap for as
 // long as the firmware runs, so it is kept small: a longer message is written straight to the connection.
 #define MQTT_BUFFER_SIZE 2048
@@ -257,7 +262,7 @@ bool mqttConnectOnce()
     if (client.connect(mqttTopics.clientId, config.mqttUser, config.mqttPwd, mqttTopics.lwt, 0, true, "Offline"))
     {
       mqttSerial.println("connected!");
-      static char json[1400]; // the discovery payloads, built from the base topic (the Smart Grid one: 839 bytes with the default base, 991 with the longest)
+      auto &json = mqttDiscoveryJson;
       snprintf(json, sizeof(json),
                "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
                "\"uniq_id\":\"%s\",\"device\":{\"identifiers\":[\"%s\"]}, \"~\":\"%s\",\"json_attr_t\":\"~/ATTR\"}",
@@ -593,7 +598,7 @@ void publishControl(CurveControl &c)
   {
     // Same device as the readings (homeassistant.cpp): its identifier and its name, which Home Assistant
     // requires in every entity that shares a device. def_ent_id fixes the entity id, like the readings do.
-    static char json[960]; // 515 bytes with the default base topic, 697 with the longest (640 cut it from 25 characters on)
+    auto &json = mqttDiscoveryJson; // 515 bytes with the default base topic, 697 with the longest
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
@@ -628,7 +633,7 @@ void publishControl(CurveControl &c)
   bool restorable = ready && c.origA >= 0;
   if (restorable && !restoreOn[k])
   {
-    static char json[720]; // 400 to 540 bytes
+    auto &json = mqttDiscoveryJson; // 400 to 540 bytes
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"pl_prs\":\"restore\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"icon\":\"mdi:backup-restore\","
@@ -663,7 +668,7 @@ void publishUpdateEntity()
   }
   if (!fwUpdate.checked)
     return;
-  static char json[720]; // 406 to 546 bytes
+  auto &json = mqttDiscoveryJson; // 406 to 546 bytes
   if (!updateDiscoveryOn)
   {
     int jsonLen = snprintf(json, sizeof(json),
@@ -689,7 +694,7 @@ void publishLimit()
   const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
   if (ready && (!limitDiscoveryOn || limitDiscoveryKind != c.kind))
   {
-    static char json[960]; // 485 to 667 bytes
+    auto &json = mqttDiscoveryJson; // 485 to 667 bytes
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"Power limit\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
