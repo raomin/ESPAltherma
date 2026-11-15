@@ -59,6 +59,18 @@ void test_development_builds_are_not_offered(void)
     TEST_ASSERT_FALSE(updateNewer("", 1800, "2.0.0-beta.18", 1700));
 }
 
+// The polls wait while the blocks of a web update keep coming, and no longer than that
+void test_upload_in_progress(void)
+{
+    TEST_ASSERT_FALSE(uploadInProgress(0, 5000)); // no upload
+    TEST_ASSERT_TRUE(uploadInProgress(5000, 5000));
+    TEST_ASSERT_TRUE(uploadInProgress(5000, 5000 + UPLOAD_QUIET_MS - 1));
+    TEST_ASSERT_FALSE(uploadInProgress(5000, 5000 + UPLOAD_QUIET_MS)); // gone quiet: the polls go on
+    // across the wrap of millis() after 49 days
+    TEST_ASSERT_TRUE(uploadInProgress(0xFFFFFF00u, 0x00000100u));
+    TEST_ASSERT_FALSE(uploadInProgress(0xFFFFFF00u, 0x00000100u + UPLOAD_QUIET_MS));
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
@@ -66,5 +78,6 @@ int main(int argc, char **argv)
     RUN_TEST(test_newer_by_version);
     RUN_TEST(test_newer_by_build_time);
     RUN_TEST(test_development_builds_are_not_offered);
+    RUN_TEST(test_upload_in_progress);
     return UNITY_END();
 }

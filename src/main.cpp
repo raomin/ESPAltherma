@@ -1309,7 +1309,7 @@ void hpTask(void *)
     }
     // While a DIII phase is learnt, a 30 s poll would hit the short hydro frame every minute: shift it by 7 s
     unsigned long wait = config.frequency + (diii.learning() ? 7000 : 0);
-    if (!busy && (uint8_t)registryIDs[0] != 0xFF)
+    if (!busy && !webUpdateRunning() && (uint8_t)registryIDs[0] != 0xFF)
     {
       HP_STAGE("query");
       pollRegistries();
@@ -1435,7 +1435,7 @@ void loop()
   webLoop();
   //The heat pump task does the querying, we publish its results
   extraLoop();
-  if (cycleReady)
+  if (cycleReady && !webUpdateRunning()) // a poll under way when the upload began is published after it
   {
     cycleReady = false;
     LOOP_STAGE("publish values");

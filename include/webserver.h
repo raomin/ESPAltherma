@@ -6,6 +6,7 @@
 // directly. Changes are queued and applied by webLoop() in the main loop.
 
 #include <ESPAsyncWebServer.h>
+#include <atomic>
 #include <memory>
 #include <Update.h>
 #include "webui_data.h"
@@ -119,6 +120,18 @@ AsyncWebServerRequest *updateOwner = nullptr;
 size_t updateBytes = 0;          // received so far
 unsigned long updateStarted = 0;
 uint32_t updateLowHeap = 0;      // lowest free data heap seen while it was written
+// When the upload's last block was written, 0 when none is being written: the heat pump task reads it
+std::atomic<uint32_t> updateLastBlock{0};
+
+// The polls and their publishes wait while a web update is written (#663). Publishing the values of one poll takes
+// more memory than the upload itself, and the two meet on nearly every update: an upload lasts about as long as
+// the time between two polls. Sampled on an ESP32-S3 with 128 values selected, MQTT connected and the page open
+// (it gets the values as an event): 71 KB of the data heap at the worst moment with a poll during the upload,
+// 21 KB without one.
+bool webUpdateRunning()
+{
+  return uploadInProgress(updateLastBlock, millis());
+}
 
 // An HTTPS connection takes 54 KB of the data heap while it is made: the TLS library's two 17 KB buffers, then
 // the handshake (sampled on an M5StickC: 62 KB free before, 8.6 KB at the lowest; /api/heap gives the last one).
@@ -185,6 +198,7 @@ struct TlsWatch
 static void updateFail(const char *why)
 {
   updateFailed = true;
+  updateLastBlock = 0; // the polls go on
   strlcpy(updateError, why && *why ? why : "unknown error", sizeof(updateError));
   if (Update.isRunning())
     Update.abort(); // frees its buffer; the reason is kept above
@@ -1082,6 +1096,7 @@ void webBegin()
         if (updateOwner != r)
           return;
         updateOwner = nullptr;
+        updateLastBlock = 0;
         if (updateDone || updateFailed)
           return;
         char why[sizeof(updateError)];
@@ -1097,6 +1112,8 @@ void webBegin()
     if (updateOwner != r)
       return;
     updateBytes = index + len;
+    if (!updateFailed)
+      updateLastBlock = millis() | 1; // never 0, which says "no upload"
     uint32_t freeNow = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     if (freeNow < updateLowHeap)
       updateLowHeap = freeNow;
