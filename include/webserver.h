@@ -122,6 +122,7 @@ unsigned long updateStarted = 0;
 uint32_t updateLowHeap = 0;      // lowest free data heap seen while it was written
 // When the upload's last block was written, 0 when none is being written: the heat pump task reads it
 std::atomic<uint32_t> updateLastBlock{0};
+#define UPLOAD_SILENCE_S 30 // an upload may stay this long without data before its connection is dropped
 
 // The polls and their publishes wait while a web update is written (#663). Publishing the values of one poll takes
 // more memory than the upload itself, and the two meet on nearly every update: an upload lasts about as long as
@@ -1123,6 +1124,10 @@ void webBegin()
       updateBytes = 0;
       updateStarted = millis();
       updateLowHeap = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+      // The web server drops a request that stays 3 s without data. A firmware is 1.5 MB over a link that may
+      // stall longer than that (#663: uploads at 4 to 17 KB/s, each cut after a few hundred KB, with memory to
+      // spare): an upload gets 30 s. The server takes the limit off itself once it answers.
+      r->client()->setRxTimeout(UPLOAD_SILENCE_S);
       // The browser left or the connection was cut: said in the events with how far it got, and the update is
       // dropped (its buffer freed) instead of staying half done until the next one
       r->onDisconnect([r]() {
