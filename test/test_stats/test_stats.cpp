@@ -332,6 +332,41 @@ void test_rtc_survives_restart(void)
     TEST_ASSERT_TRUE(again.running);
 }
 
+// A restart with the first reading before the clock is set: the day's counters are kept, and still are once the
+// clock says it is the same day; a clock that comes back on the next day starts the new day
+void test_a_reading_before_the_clock_keeps_the_day(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    for (int i = 0; i <= 10; i++)
+        s.update(heating(), T0 + i * 60, 10 + i * 60);
+    float heat = rtc.heatKWh[STATS_HEATING];
+    int32_t day = rtc.day;
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    TEST_ASSERT_EQUAL(600, rtc.runSec);
+
+    Stats again;
+    again.begin(&rtc);
+    again.update(heating(), 0, 12); // no clock yet
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    TEST_ASSERT_EQUAL(600, rtc.runSec);
+    TEST_ASSERT_EQUAL_FLOAT(heat, rtc.heatKWh[STATS_HEATING]);
+    TEST_ASSERT_EQUAL(day, rtc.day);
+    again.update(heating(), T0 + 700, 42); // the clock, on the same day
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    TEST_ASSERT_EQUAL(630, rtc.runSec);
+    TEST_ASSERT_TRUE(rtc.heatKWh[STATS_HEATING] > heat);
+    TEST_ASSERT_EQUAL(day, rtc.day);
+
+    Stats nextDay;
+    nextDay.begin(&rtc);
+    nextDay.update(heating(), 0, 12);
+    nextDay.update(heating(), T0 + 86400, 42); // the clock, a day later
+    TEST_ASSERT_EQUAL(day + 1, rtc.day);
+    TEST_ASSERT_EQUAL(0, rtc.starts);
+    TEST_ASSERT_EQUAL(30, rtc.runSec); // the 30 s since this boot's first reading are the new day's
+}
+
 // A restart of the board (an update, a reset) while the compressor runs is not a start; a start while the board
 // restarted, the compressor stopped before and running after, is
 void test_a_restart_during_a_run_is_not_a_start(void)
@@ -379,6 +414,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_day_change);
     RUN_TEST(test_last_hour_starts_survive_midnight_and_expire_normally);
     RUN_TEST(test_rtc_survives_restart);
+    RUN_TEST(test_a_reading_before_the_clock_keeps_the_day);
     RUN_TEST(test_a_restart_during_a_run_is_not_a_start);
     return UNITY_END();
 }
