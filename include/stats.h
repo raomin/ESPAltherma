@@ -163,7 +163,10 @@ public:
       if (day->day == -1)
         day->day = d;
     }
-    if (day->day != d)
+    // Only the clock tells that the day changed. A reading that comes before the clock is set (after a restart,
+    // where the clock did not survive it, until the time server answers) knows no day: it emptied the counters
+    // kept from before the restart (#663)
+    if (epoch && day->day != d)
       resetDay(d);
     float dt = haveSample && now > lastSampleAt ? (float)(now - lastSampleAt) : 0;
     if (dt > 600)
