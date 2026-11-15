@@ -49,6 +49,13 @@ static const char *RESTORE_NAMES[2] = {"Restore hot water curve", "Restore leavi
 bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (with these limits)
 int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
 static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
+// When a control's entities leave Home Assistant: its option off, a hydro board software that is not mapped, a
+// setpoint no longer weather dependent. Not a unit that does not answer for a moment: removing an entity also
+// drops what its owner set on it (name, area), and it came back 30 s later.
+static bool controlGone(const CurveControl &c)
+{
+  return !controlEnabled(c) || c.status == CONTROL_UNSUPPORTED || c.status == CONTROL_NOT_CURVE_MODE;
+}
 
 // One buffer for the discovery and control messages, which are built and published one after the other in the main
 // loop: each had its own, kept for as long as the firmware runs (1400 + 960 + 720 + 720 + 960 bytes). The longest
@@ -612,7 +619,7 @@ void publishControl(CurveControl &c)
     controlDiscoveryMin[c.kind] = c.minTarget;
     controlDiscoveryMax[c.kind] = c.maxTarget;
   }
-  else if (!ready && on)
+  else if (on && controlGone(c))
   {
     mqttPublish(mqttTopics.cfgCtl[k], "", true); // removes the entity
     on = false;
@@ -644,7 +651,7 @@ void publishControl(CurveControl &c)
       mqttPublish(mqttTopics.cfgRestore[k], json, true);
     restoreOn[k] = true;
   }
-  else if (!restorable && restoreOn[k])
+  else if (restoreOn[k] && (controlGone(c) || (ready && c.origA < 0)))
   {
     mqttPublish(mqttTopics.cfgRestore[k], "", true);
     restoreOn[k] = false;
@@ -715,7 +722,7 @@ void publishLimit()
     limitDiscoveryOn = true;
     limitDiscoveryKind = c.kind;
   }
-  else if (!ready && limitDiscoveryOn)
+  else if (limitDiscoveryOn && (!config.powerLimit || c.status == CONTROL_UNSUPPORTED))
   {
     mqttPublish(mqttTopics.cfgLimit, "", true);
     mqttPublish(mqttTopics.cfgLimitOn, "", true);

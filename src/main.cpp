@@ -945,7 +945,8 @@ static void heldSaveTick()
 // One target control: identification, requests, saves. Heat pump task only (it owns the X10A link).
 static void controlTick(CurveControl &c, bool enabled, const char *what)
 {
-  if (!enabled || config.protocol != 'I' || busy)
+  // An option switched off with a curve from here in the unit: the unit's own goes back first (control.h leaving)
+  if (config.protocol != 'I' || busy || (!enabled && !c.leaving()))
   {
     if (c.status != CONTROL_OFF)
       c.reset();
@@ -1010,7 +1011,8 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
 static void limitTick()
 {
   LimitControl &c = limitControl;
-  if (!config.powerLimit || config.protocol != 'I' || busy)
+  // The option switched off with a limit from here in the unit: the unit's own limitation goes back first
+  if (config.protocol != 'I' || busy || (!config.powerLimit && !c.leaving()))
   {
     if (c.status != CONTROL_OFF)
       c.reset();

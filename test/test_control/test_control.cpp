@@ -18,7 +18,9 @@ struct FakeUnit
     uint8_t memory[1024]; // the board's memory, by offset
     uint8_t ram[0x6000];  // RAM, by address
     bool answer = true;
-    int loseRamWrite = -1; // this many RAM writes go through, then one is lost: not written, not acknowledged (-1: none)
+    int loseRamWrite = -1; // this many RAM writes go through, then loseCount are lost: not written, not acknowledged (-1: none)
+    int loseCount = 2;     // two by default: the second try of the same write is lost as well
+    int loseReplies = 0;   // this many exchanges of any kind get no answer
     int ramWrites = 0, memoryWrites = 0, badWrites = 0;
 
     void reset()
@@ -31,6 +33,8 @@ struct FakeUnit
         memset(ram, 0, sizeof(ram));
         answer = true;
         loseRamWrite = -1;
+        loseCount = 2;
+        loseReplies = 0;
         ramWrites = memoryWrites = badWrites = 0;
         // hot water: weather-dependent tank mode, curve 52 (low outdoor temperature) to 48 (high),
         // limits 35+21 / 45+11 -> 45..55, effective 48 capped by a ceiling of 51
@@ -139,6 +143,11 @@ struct FakeUnit
     {
         if (!answer || len < 3 || frame[0] != len - 1 || checksum(frame, len - 1) != frame[len - 1])
             return 0;
+        if (loseReplies > 0)
+        {
+            loseReplies--;
+            return 0;
+        }
         uint8_t cmd = frame[1];
         const uint8_t *data = frame + 2;
         size_t n = len - 3, out = 0;
@@ -168,7 +177,8 @@ struct FakeUnit
         {
             if (loseRamWrite == 0)
             {
-                loseRamWrite = -1;
+                if (--loseCount <= 0)
+                    loseRamWrite = -1;
                 return 0;
             }
             if (loseRamWrite > 0)
@@ -837,6 +847,188 @@ void test_ram_only_opens_the_leaving_water_range_to_the_units_own()
     TEST_ASSERT_EQUAL(55, d.maxTarget);
 }
 
+// One lost frame is asked for again: the control stays ready
+void test_one_lost_reply_is_asked_again()
+{
+    CurveControl c = fresh();
+    unit.loseReplies = 1;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL_STRING("18002904", c.softwareId);
+    unit.loseReplies = 1;
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A unit that has the 'L' command is not read through registry 0x60 when its 'L' reply is lost: it answers
+// that registry too, and looked like another board (the hold dropped, the control "unsupported")
+void test_lost_software_reply_does_not_make_another_board_of_the_unit()
+{
+    unit.reg60[15] = 0x82;
+    unit.reg60[14] = 0x94; // what a recent unit has there
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(47);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(47, c.held);
+    unit.loseReplies = 2; // 'L' and its second try
+    TEST_ASSERT_FALSE(c.identify(3000));
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, c.status);
+    TEST_ASSERT_EQUAL_STRING("18002904", c.softwareId);
+    TEST_ASSERT_EQUAL(47, c.held);
+    TEST_ASSERT_TRUE(c.identify(4000));
+    TEST_ASSERT_EQUAL(47, c.held);
+
+    // the first identification of all can still go to the registry; the next one corrects it without dropping a hold
+    CurveControl f = fresh();
+    f.ramOnly = true;
+    unit.loseReplies = 2;
+    TEST_ASSERT_FALSE(f.identify(1000));
+    TEST_ASSERT_EQUAL_STRING("8294", f.softwareId);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, f.status);
+    f.setHeld(47); // kept by the caller from before
+    TEST_ASSERT_TRUE(f.identify(2000));
+    TEST_ASSERT_EQUAL_STRING("18002904", f.softwareId);
+    TEST_ASSERT_EQUAL(47, f.held);
+}
+
+// The unit's curve is recorded before the first write. The second point's write fails: the curve recorded is the
+// unit's own, not the half-written one, and the restore puts it back
+void test_original_curve_is_recorded_before_a_write_that_fails_halfway()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    unit.loseRamWrite = 1; // the first point goes in, the second is lost twice
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8)); // half written
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_EQUAL(52, c.origB);
+    TEST_ASSERT_TRUE(c.origChanged);
+    c.request(50); // asked again: what is recorded does not move
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_EQUAL(52, c.origB);
+    c.requestRestore();
+    c.tick(4000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The RAM holds a flat curve left by an earlier hold the board no longer knows of (its settings were erased): the
+// curve recorded is the one of the unit's memory. A RAM not loaded yet (zeros) and a memory that does not
+// answer: nothing is recorded
+void test_original_curve_comes_from_the_units_memory()
+{
+    unit.setWord(0x187A, 50 << 8);
+    unit.setWord(0x18B8, 50 << 8);
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(47);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_EQUAL(52, c.origB);
+    c.requestRestore();
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+
+    CurveControl z = fresh();
+    z.minA = 35; z.maxA = 55; z.minB = 45; z.maxB = 55;
+    z.target = z.targetLo = 0;
+    z.savedA = z.savedB = -1;
+    TEST_ASSERT_FALSE(z.curveInRange(z.target, z.targetLo));
+    TEST_ASSERT_TRUE(z.curveInRange(48, 52));
+    TEST_ASSERT_FALSE(z.curveInRange(48, 44));
+}
+
+// A curve kept from before that this unit cannot hold is forgotten at the restore, and nothing is written
+void test_restore_of_a_curve_out_of_range_writes_nothing()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.setOriginal(0, 0);
+    c.requestRestore();
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    TEST_ASSERT_EQUAL(-1, c.origA);
+    TEST_ASSERT_TRUE(c.origChanged);
+}
+
+// A hold with no curve recorded (the first target was what the RAM already had), then the RAM changed: the
+// restore takes the curve of the memory, which this mode never writes
+void test_restore_of_a_hold_without_a_recorded_curve_takes_the_memorys()
+{
+    unit.setWord(0x187A, 50 << 8);
+    unit.setWord(0x18B8, 50 << 8);
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50); // already there: nothing written, nothing recorded
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50, c.held);
+    TEST_ASSERT_EQUAL(-1, c.origA);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites);
+    c.requestRestore();
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
+// The option is switched off with a target from here in the unit: its own curve goes back, in the memory too
+// when the target was saved there, and only then the control stops
+void test_option_switched_off_puts_the_units_curve_back_first()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_FALSE(c.leaving()); // nothing of ours: stops at once
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_FALSE(c.leaving());
+    c.request(50);
+    c.tick(2000);
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS); // saved in the memory
+    TEST_ASSERT_EQUAL(50, c.saved);
+    unsigned long t = 2000 + CONTROL_SAVE_DELAY_MS + CONTROL_SAVE_INTERVAL_MS;
+    TEST_ASSERT_TRUE(c.leaving());
+    c.tick(t);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL((uint8_t)((48 - 35) << 2 | 0x01), unit.memory[366]);
+    TEST_ASSERT_EQUAL((uint8_t)((52 - 45) << 2 | 0x03), unit.memory[367]);
+    TEST_ASSERT_FALSE(c.leaving());
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+
+    // a hold, and a unit that does not answer when the option goes off: it waits for the unit
+    unit.reset();
+    CurveControl h = fresh();
+    h.ramOnly = true;
+    TEST_ASSERT_TRUE(h.identify(1000));
+    h.request(47);
+    h.tick(2000);
+    unit.answer = false;
+    h.identify(3000);
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, h.status);
+    TEST_ASSERT_TRUE(h.leaving());
+    unit.answer = true;
+    TEST_ASSERT_TRUE(h.identify(4000));
+    TEST_ASSERT_TRUE(h.leaving());
+    h.tick(5000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(-1, h.held);
+    TEST_ASSERT_FALSE(h.leaving());
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
 static LimitControl freshLimit()
 {
     LimitControl c;
@@ -1098,6 +1290,24 @@ void test_power_limit_enable_byte_lost_is_written_again()
     c.tick(2000 + 2 * LIMIT_READ_INTERVAL_MS + LIMIT_REAPPLY_MS);
     TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
     TEST_ASSERT_EQUAL(0, c.origEnable); // still the unit's own
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The option is switched off with a limit on: the unit's own limitation goes back first
+void test_power_limit_option_switched_off_releases_first()
+{
+    unit.ram[0x2FE8] = 2;
+    LimitControl c = freshLimit();
+    TEST_ASSERT_FALSE(c.leaving());
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(3.0f);
+    c.tick(2000);
+    TEST_ASSERT_TRUE(c.leaving());
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(2, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_FALSE(c.on);
+    TEST_ASSERT_FALSE(c.leaving());
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
@@ -1556,6 +1766,14 @@ int main(int, char **)
     RUN_TEST(test_power_limit_off_puts_the_installers_limitation_back);
     RUN_TEST(test_power_limit_resumed_after_a_restart_keeps_what_was_remembered);
     RUN_TEST(test_power_limit_enable_byte_lost_is_written_again);
+    RUN_TEST(test_power_limit_option_switched_off_releases_first);
+    RUN_TEST(test_one_lost_reply_is_asked_again);
+    RUN_TEST(test_lost_software_reply_does_not_make_another_board_of_the_unit);
+    RUN_TEST(test_original_curve_is_recorded_before_a_write_that_fails_halfway);
+    RUN_TEST(test_original_curve_comes_from_the_units_memory);
+    RUN_TEST(test_restore_of_a_curve_out_of_range_writes_nothing);
+    RUN_TEST(test_restore_of_a_hold_without_a_recorded_curve_takes_the_memorys);
+    RUN_TEST(test_option_switched_off_puts_the_units_curve_back_first);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
     RUN_TEST(test_power_limit_on_every_mapped_board);

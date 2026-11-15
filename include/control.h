@@ -302,18 +302,27 @@ struct X10aClient
     if (exchange == nullptr || n + 3 > sizeof(frame))
       return false;
     size_t len = x10aFrame(cmd, data, n, frame);
-    size_t r = exchange(frame, len, got, sizeof(got), firstByteMs);
     size_t want = 2 + replyData;
-    if (r < want || got[0] != cmd)
-      return false;
-    uint8_t sum = 0;
-    for (size_t i = 0; i < want - 1; i++)
-      sum += got[i];
-    if ((uint8_t)~sum != got[want - 1])
-      return false;
-    if (reply != nullptr)
-      memcpy(reply, got + 1, replyData);
-    return true;
+    // Asked a second time when no sound reply came: one lost frame made a control "not ready" for 30 s, and its
+    // entities left Home Assistant meanwhile. Every command used here gives the same result when repeated (a read,
+    // or a write of the same value at the same place). A unit that refuses (NAK) is not asked again.
+    for (int attempt = 0; attempt < 2; attempt++)
+    {
+      size_t r = exchange(frame, len, got, sizeof(got), firstByteMs);
+      if (r >= 1 && got[0] == 0x15)
+        return false;
+      if (r < want || got[0] != cmd)
+        continue;
+      uint8_t sum = 0;
+      for (size_t i = 0; i < want - 1; i++)
+        sum += got[i];
+      if ((uint8_t)~sum != got[want - 1])
+        continue;
+      if (reply != nullptr)
+        memcpy(reply, got + 1, replyData);
+      return true;
+    }
+    return false;
   }
 
   bool readRam(uint16_t addr, uint8_t *out16)
@@ -385,14 +394,20 @@ struct X10aClient
   // The hydro board's software: the 'L' command, 4 bytes, the digits reversed (04 29 00 18 is 18002904). The
   // boards of 2014-2017 (Altherma LT CA and CB) have no 'L' command and give it in registry 0x60 instead, bytes
   // 15 and 14 ("I/U Software ID (xx)" and "(yy)": 76 F2 is 76F2), the one printed by the service tools.
+  // out9 holds the id read before ("" when none): a unit that gave 8 digits has the 'L' command, and its registry
+  // 0x60 is not read in its place when a reply is lost. The newer units answer that registry too, with other
+  // bytes at 15 and 14: the unit then looked like another board, and a held target was dropped for it.
   bool readSoftwareId(char *out9)
   {
+    bool hasL = strlen(out9) == 8;
     uint8_t id[4];
     if (command(0x4C, nullptr, 0, id, 4))
     {
       snprintf(out9, 9, "%02X%02X%02X%02X", id[3], id[2], id[1], id[0]);
       return true;
     }
+    if (hasL)
+      return false;
     // 03 40 60 crc -> 40 60 L payload[L-2] crc
     uint8_t reg = 0x60, frame[CONTROL_FRAME_MAX], got[CONTROL_FRAME_MAX];
     if (exchange == nullptr)
@@ -420,6 +435,7 @@ struct CurveControl : X10aClient
   char softwareId[9] = "";
   int minTarget = 0, maxTarget = 0; // allowed targets (the unit's own limits)
   int minA = 0, minB = 0;           // minimum of each curve setting, the base of its memory encoding
+  int maxA = 0, maxB = 0;           // and its maximum: a curve outside these is not one the unit can hold
   int target = -1;                  // curve setpoint at the high outdoor temperature, as read from the unit (-1: unknown)
   int targetLo = -1;                // curve setpoint at the low outdoor temperature (equal to target once set from here)
   int effective = -1;               // what the thermostat really aims for (-1: unknown)
@@ -480,8 +496,10 @@ struct CurveControl : X10aClient
     }
     else
     {
-      if (softwareBefore[0] && strcmp(softwareBefore, softwareId) != 0)
-        setHeld(-1); // another hydro board software: the held target belongs to the previous one
+      // Another hydro board software: the held target belongs to the previous one. Not when one of the two is an
+      // id of the older boards and the other is not: that was a first identification gone to registry 0x60.
+      if (softwareBefore[0] && strlen(softwareBefore) == strlen(softwareId) && strcmp(softwareBefore, softwareId) != 0)
+        setHeld(-1);
       profile = nullptr;
       for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       {
@@ -490,7 +508,6 @@ struct CurveControl : X10aClient
       }
       spec = profile == nullptr ? nullptr : kind == CONTROL_LWT ? &profile->lwt : &profile->dhw;
       uint8_t mode = 0;
-      int maxA = 0, maxB = 0;
       if (spec == nullptr || spec->ramA == 0)
         status = CONTROL_UNSUPPORTED;
       else if (!readMemory(spec->modeByte, mode))
@@ -567,6 +584,32 @@ struct CurveControl : X10aClient
     return value < minTarget ? minTarget : value > maxTarget ? maxTarget : value;
   }
 
+  // A pair the unit's two curve settings can hold
+  bool curveInRange(int a, int b) const
+  {
+    return a >= minA && a <= maxA && b >= minB && b <= maxB;
+  }
+
+  // The unit's own curve, taken before the first write from here (it was taken after it: a write that failed
+  // between the two points left a half-written curve to be recorded as the unit's at the next request). The curve
+  // the unit's memory holds, which is what it comes back to by itself; its RAM when the memory does not answer.
+  // Nothing is recorded when neither gives a curve within the ranges of the two settings (a RAM not loaded yet).
+  void rememberOriginal()
+  {
+    readSaved();
+    int a = savedA, b = savedB;
+    if (!curveInRange(a, b))
+    {
+      a = target;
+      b = targetLo;
+    }
+    if (!curveInRange(a, b))
+      return;
+    origA = a;
+    origB = b;
+    origChanged = true;
+  }
+
   // Writes the two points of the curve in the RAM of the unit: applied within its next control cycle.
   bool apply(int a, int b, unsigned long now)
   {
@@ -632,6 +675,20 @@ struct CurveControl : X10aClient
     origB = b;
   }
 
+  // The option was switched off. True while a curve from here is still in a unit that can take its own back: the
+  // caller keeps ticking, and the restore is asked for. (The control just stopped: the flat curve stayed in the
+  // unit, in its memory too when saved there, with nothing left on the page to put the unit's own back.)
+  bool leaving()
+  {
+    if (origA < 0 && held < 0)
+      return false;
+    if (status != CONTROL_READY && status != CONTROL_NO_ANSWER)
+      return false;
+    if (status == CONTROL_READY && !restoring && !restoreWanted)
+      requestRestore();
+    return true;
+  }
+
   // The wait before the next try at a unit that is not ready: doubled each time, up to the check interval, so a
   // unit that never gets ready is not asked more often than before
   static unsigned long nextRetry(unsigned long wait)
@@ -673,7 +730,24 @@ struct CurveControl : X10aClient
     {
       restoreWanted = false;
       wanted = -1;
+      bool wasHeld = held >= 0;
       setHeld(-1); // released: the unit's curve is back, in its RAM and (if it was changed) in its memory
+      if (origA >= 0 && origB >= 0 && !curveInRange(origA, origB))
+      {
+        origA = origB = -1; // not a curve this unit can hold (kept from an older firmware): forgotten, never written
+        origChanged = changed = true;
+      }
+      if (origA < 0 && wasHeld && ramOnly)
+      {
+        // A hold with no curve recorded (the first target was the one the RAM already had): the memory was never
+        // written in this mode, so it still holds the unit's own curve
+        readSaved();
+        if (curveInRange(savedA, savedB))
+        {
+          origA = savedA;
+          origB = savedB;
+        }
+      }
       if (origA >= 0 && origB >= 0 && !restoring)
       {
         pendingA = origA;
@@ -699,19 +773,15 @@ struct CurveControl : X10aClient
       if (pendingA != target || pendingB != targetLo)
       {
         uint8_t mode = 0;
-        int beforeA = target, beforeB = targetLo;
-        if (!readMemory(spec->modeByte, mode) || !(mode & spec->modeMask) || !apply(pendingA, pendingB, now))
+        bool curveMode = readMemory(spec->modeByte, mode) && (mode & spec->modeMask);
+        if (curveMode && !restoring && origA < 0)
+          rememberOriginal();
+        if (!curveMode || !apply(pendingA, pendingB, now))
         {
           wanted = pendingA = pendingB = -1;
           restoring = false;
           identify(now); // the unit stopped answering, or its interface left the weather-dependent mode
           return;
-        }
-        if (!restoring && origA < 0 && beforeA >= 0 && beforeB >= 0)
-        {
-          origA = beforeA; // the unit's own curve, from before the first write
-          origB = beforeB;
-          origChanged = true;
         }
       }
       bool done = false;
@@ -1004,6 +1074,19 @@ struct LimitControl : X10aClient
 
   void request(float v) { wanted = v; }
   void requestOn(bool wantOn) { wantedOn = wantOn ? 1 : 0; }
+
+  // The option was switched off. True while a limit from here is still in a unit that can take its own
+  // limitation back: the caller keeps ticking, and the limit is switched off first.
+  bool leaving()
+  {
+    if (!on)
+      return false;
+    if (status != CONTROL_READY && status != CONTROL_NO_ANSWER)
+      return false;
+    if (status == CONTROL_READY && wantedOn != 0)
+      requestOn(false);
+    return true;
+  }
 
   // The limit the caller saved (from before a restart of ESPAltherma): applied once the unit is ready
   void restore(bool savedOn, float savedValue, int savedOrigEnable, float savedOrigLimit = -1)
