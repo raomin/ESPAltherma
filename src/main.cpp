@@ -287,9 +287,23 @@ void initRegistries(){
   }
 }
 
+#ifdef HAS_M5_SCREEN
+// Starts the M5 library without the board's clock chip. Left to itself, M5.begin() puts in the system clock
+// whatever that chip holds, at every start, and nothing here ever sets the chip: the clock, which survives a
+// restart by itself as on any ESP32, was wrong until the time server answered. The first reading after a
+// restart then looked like another day and emptied the day's counters (#663), and an event could be dated
+// years away.
+static void m5Begin()
+{
+  auto cfg = M5.config();
+  cfg.internal_rtc = false;
+  M5.begin(cfg);
+}
+#endif
+
 void setupScreen(){
 #if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stack_Tough)
-  M5.begin();
+  m5Begin();
   M5.Lcd.setRotation(1);
   M5.Display.setBrightness(127);
   M5.Lcd.fillScreen(TFT_WHITE);
@@ -305,7 +319,7 @@ void setupScreen(){
   M5.Lcd.setTextColor(TFT_GREEN);
 
 #elif defined(ARDUINO_M5Stick_C_Plus2)
-  M5.begin();
+  m5Begin();
   M5.Lcd.setRotation(1);
   M5.Lcd.setBrightness(127);
   M5.Lcd.fillScreen(TFT_WHITE);
