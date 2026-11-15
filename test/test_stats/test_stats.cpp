@@ -369,6 +369,44 @@ void test_a_reading_before_the_clock_keeps_the_day(void)
 
 // A restart of the board (an update, a reset) while the compressor runs is not a start; a start while the board
 // restarted, the compressor stopped before and running after, is
+// The unit stops answering during a run: each value keeps its last text, so the readings looked the same and the
+// day went on adding heat and electricity at the last power. A cycle without a reading adds nothing, and neither
+// does a silence of more than ten minutes; the run is not ended by it, so coming back is not a start
+void test_a_unit_that_does_not_answer_adds_nothing(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    s.update(heating(), T0, 100);
+    s.update(heating(), T0 + 300, 400);
+    float heat = rtc.heatKWh[STATS_HEATING], elec = rtc.elecKWh[STATS_HEATING];
+    uint32_t run = rtc.runSec;
+    TEST_ASSERT_TRUE(heat > 0);
+    TEST_ASSERT_EQUAL(1, rtc.starts);
+    for (int i = 1; i <= 40; i++)
+    {
+        s.noReading(); // forty cycles of silence
+        TEST_ASSERT_EQUAL_FLOAT(heat, rtc.heatKWh[STATS_HEATING]);
+        TEST_ASSERT_EQUAL_FLOAT(elec, rtc.elecKWh[STATS_HEATING]);
+    }
+    TEST_ASSERT_TRUE(isnan(s.heatKW));
+    TEST_ASSERT_TRUE(isnan(s.elecKW));
+    s.update(heating(), T0 + 300 + 40 * 30, 400 + 40 * 30); // it answers again, twenty minutes later
+    TEST_ASSERT_EQUAL_FLOAT(heat, rtc.heatKWh[STATS_HEATING]);
+    TEST_ASSERT_EQUAL_FLOAT(elec, rtc.elecKWh[STATS_HEATING]);
+    TEST_ASSERT_EQUAL(run, rtc.runSec);
+    TEST_ASSERT_EQUAL(1, rtc.starts); // the same run
+    s.update(heating(), T0 + 300 + 41 * 30, 400 + 41 * 30);
+    TEST_ASSERT_TRUE(rtc.heatKWh[STATS_HEATING] > heat); // and it counts again from there
+    // one cycle missed: the next reading covers its time, as it does between any two readings
+    heat = rtc.heatKWh[STATS_HEATING];
+    s.noReading();
+    s.update(heating(), T0 + 300 + 43 * 30, 400 + 43 * 30);
+    float twoCycles = rtc.heatKWh[STATS_HEATING] - heat;
+    heat = rtc.heatKWh[STATS_HEATING];
+    s.update(heating(), T0 + 300 + 44 * 30, 400 + 44 * 30);
+    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 2 * (rtc.heatKWh[STATS_HEATING] - heat), twoCycles);
+}
+
 void test_a_restart_during_a_run_is_not_a_start(void)
 {
     StatsDay rtc;
@@ -415,6 +453,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_last_hour_starts_survive_midnight_and_expire_normally);
     RUN_TEST(test_rtc_survives_restart);
     RUN_TEST(test_a_reading_before_the_clock_keeps_the_day);
+    RUN_TEST(test_a_unit_that_does_not_answer_adds_nothing);
     RUN_TEST(test_a_restart_during_a_run_is_not_a_start);
     return UNITY_END();
 }

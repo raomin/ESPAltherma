@@ -41,6 +41,7 @@
 ::Converter converter; // qualified: ArduinoJson (via ESPAsyncWebServer) also has a Converter
 char registryIDs[32]; //Holds the registries to query
 bool registryOk[32]; //Registries successfully read during the last query cycle
+bool registryEverOk[32]; // and those that answered at least once since the list was made
 std::atomic<bool> busy{false}; // OTA/main task publishes the gate; the heat-pump task observes it
 
 Survey survey;
@@ -269,6 +270,7 @@ void initRegistries(){
   for (size_t i = 0; i < sizeof(registryIDs); i++)
   {
     registryIDs[i]=0xff;
+    registryEverOk[i] = false;
   }
 
   int i = 0;
@@ -577,6 +579,7 @@ void pollRegistries()
       []() { mqttSerial.println("Retrying..."); hpDelay(1000); });
     if (registryOk[i])
     {
+      registryEverOk[i] = true;
       valuesLock();
       converter.readRegistryValues(buff, config.protocol); //process all values from the register
       if (config.protocol == 'I')
@@ -639,8 +642,21 @@ static const HaSensor DIII_LABELS[] = {
     {"RAM: Outdoor load (%)", -1},
 };
 
-// The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a number)
-static float statsValue(std::initializer_list<const char *> prefixes, bool *found = nullptr)
+// How fresh a value is. A value keeps its last text when its registry does not answer: read in this cycle, read
+// before but not in this cycle (stale), or never read since the start (a registry this unit does not have).
+enum ValueAge { VALUE_READ, VALUE_STALE, VALUE_NEVER };
+static ValueAge valueAge(int registryID)
+{
+  for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
+    if ((uint8_t)registryIDs[i] == (uint8_t)registryID)
+      return registryOk[i] ? VALUE_READ : registryEverOk[i] ? VALUE_STALE : VALUE_NEVER;
+  return VALUE_NEVER;
+}
+
+// The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a
+// number). With `stale` given, a value not read in this cycle is not taken: NAN, and *stale set when it was read
+// before. Without it, the last text whatever its age.
+static float statsValue(std::initializer_list<const char *> prefixes, bool *stale = nullptr)
 {
   for (const char *p : prefixes)
   {
@@ -649,8 +665,14 @@ static float statsValue(std::initializer_list<const char *> prefixes, bool *foun
       const LabelDef &l = converter.activeLabels[i];
       if (strncasecmp(l.label, p, strlen(p)) != 0)
         continue;
-      if (found)
-        *found = true;
+      if (stale)
+      {
+        ValueAge age = valueAge(l.registryID);
+        if (age == VALUE_STALE)
+          *stale = true;
+        if (age != VALUE_READ)
+          return NAN;
+      }
       char *end;
       float v = strtof(l.asString, &end);
       return end == l.asString ? NAN : v;
@@ -659,8 +681,8 @@ static float statsValue(std::initializer_list<const char *> prefixes, bool *foun
   return NAN;
 }
 
-// ON/OFF labels: 1, 0, or -1 when not selected
-static int statsFlag(std::initializer_list<const char *> prefixes)
+// ON/OFF labels: 1, 0, or -1 when not selected or not read in this cycle (*stale set when it was read before)
+static int statsFlag(std::initializer_list<const char *> prefixes, bool *stale)
 {
   for (const char *p : prefixes)
   {
@@ -668,7 +690,14 @@ static int statsFlag(std::initializer_list<const char *> prefixes)
     {
       const LabelDef &l = converter.activeLabels[i];
       if (strncasecmp(l.label, p, strlen(p)) == 0)
+      {
+        ValueAge age = valueAge(l.registryID);
+        if (age == VALUE_STALE)
+          *stale = true;
+        if (age != VALUE_READ)
+          return -1;
         return strcasecmp(l.asString, "ON") == 0 || strcmp(l.asString, "1") == 0 ? 1 : 0;
+      }
     }
   }
   return -1;
@@ -801,22 +830,34 @@ static void statsUpdate()
   stats.settings.maxHeatKW = statsHeatCap(); // the model may have been detected or changed since the start
   stats.settings.heaterInTank = strstr(config.model, "ECH2O") != nullptr; // every ECH2O definition carries it in its name
   StatsInput in;
-  in.inv = statsValue({"INV frequency", "INV Comp. Frequency"});
-  in.flow = statsValue({"Flow sensor"});
-  in.lw = statsValue({"Leaving water temp. before BUH", "Outlet Water Heat Exch. Temp.", "[HPSU] Tv inflow Temp", "Leaving water temp. (hydrobox)"});
-  in.lwAfter = statsValue({"Leaving water temp. after BUH", "Outlet Water BUH Temp.", "[HPSU] Tvbh inflow Temp"});
-  in.inlet = statsValue({"Inlet water temp", "[HPSU] Tr return Temp"});
-  in.amp = statsValue({"INV primary current"});
-  in.volt = statsValue({"Voltage (N-phase)", "Voltage (V)"}); // the Hybrid names it without the phase
-  in.outdoor = statsValue({"R1T-Outdoor air temp", "Outdoor air temp"});
-  in.v3 = statsFlag({"3way valve", "Priority to domestic water"});
-  in.defrost = statsFlag({"Defrost Operation"});
-  in.buh = statsFlag({"BUH Step1"});
-  in.buh2 = statsFlag({"BUH Step2"});
+  bool stale = false;
+  in.inv = statsValue({"INV frequency", "INV Comp. Frequency"}, &stale);
+  in.flow = statsValue({"Flow sensor"}, &stale);
+  in.lw = statsValue({"Leaving water temp. before BUH", "Outlet Water Heat Exch. Temp.", "[HPSU] Tv inflow Temp", "Leaving water temp. (hydrobox)"}, &stale);
+  in.lwAfter = statsValue({"Leaving water temp. after BUH", "Outlet Water BUH Temp.", "[HPSU] Tvbh inflow Temp"}, &stale);
+  in.inlet = statsValue({"Inlet water temp", "[HPSU] Tr return Temp"}, &stale);
+  in.amp = statsValue({"INV primary current"}, &stale);
+  in.volt = statsValue({"Voltage (N-phase)", "Voltage (V)"}, &stale); // the Hybrid names it without the phase
+  in.outdoor = statsValue({"R1T-Outdoor air temp", "Outdoor air temp"}, &stale);
+  in.v3 = statsFlag({"3way valve", "Priority to domestic water"}, &stale);
+  in.defrost = statsFlag({"Defrost Operation"}, &stale);
+  in.buh = statsFlag({"BUH Step1"}, &stale);
+  in.buh2 = statsFlag({"BUH Step2"}, &stale);
   for (size_t i = 0; i < converter.activeCount; i++)
     if (strcasecmp(converter.activeLabels[i].label, "Operation Mode") == 0)
+    {
       in.cooling = strcasestr(converter.activeLabels[i].asString, "cool") != nullptr;
-  stats.update(in, statsEpoch(), millis() / 1000);
+      if (valueAge(converter.activeLabels[i].registryID) == VALUE_STALE)
+        stale = true;
+    }
+  // A value the statistics read was read before and not in this cycle: it only has the text of its last reading.
+  // A unit that stopped answering went on adding heat and electricity to the day at its last power, for as long
+  // as it stayed silent. Such a cycle is no reading. (A registry that never answered is a value this unit does
+  // not have, as before.)
+  if (stale)
+    stats.noReading();
+  else
+    stats.update(in, statsEpoch(), millis() / 1000);
 }
 
 // The statistics as ATTR keys, in the order of STATS_LABELS; null when not known. The "Stats:" prefix keeps them

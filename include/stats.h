@@ -144,6 +144,14 @@ public:
   }
 
   // One reading. epoch: the clock (0 when not set), uptime: seconds since boot.
+  // A cycle in which the unit gave no reading: no power to show and nothing added. The run in progress, the
+  // starts and the day stay as they are. The next reading counts the time since the last one like any other,
+  // unless the silence lasted more than ten minutes (update(): nothing is added across such a gap).
+  void noReading()
+  {
+    heatKW = elecKW = cop = NAN;
+  }
+
   void update(const StatsInput &in, uint32_t epoch, uint32_t uptime)
   {
     uint32_t now = epoch ? epoch : uptime;
