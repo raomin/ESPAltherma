@@ -770,7 +770,8 @@ struct CurveControl : X10aClient
 // and reports what it applies in the active limit. Below the compressor's minimum the unit stops it, hence a
 // floor on the value. Nothing is written in the board's memory: a restart of the heat pump brings its own
 // settings back, and this control re-applies the wanted limit as soon as it sees it gone (the caller keeps the
-// wanted limit in its configuration). Switching off restores the enable byte found before the first write.
+// wanted limit in its configuration). Switching off puts back the enable byte and limit 1 found before the first
+// write: an installer's own continuous limitation is in force again, at its own value.
 #define LIMIT_REAPPLY_MS 60000UL  // a lost limit is written again at most this often
 #define LIMIT_READ_INTERVAL_MS 120000UL
 #define LIMIT_MIN_KW 1.0f
@@ -795,6 +796,8 @@ struct LimitControl : X10aClient
   float minLimit = LIMIT_MIN_KW, maxLimit = LIMIT_MAX_KW;
   int enable = -1;            // the unit's enable byte as read (-1: unknown)
   int origEnable = -1;        // the enable byte found before the first write from here (-1: none)
+  float origLimit = -1;       // limit 1 as found before the first write from here (-1: none)
+  bool resumed = false;       // the limit comes from before a restart of ESPAltherma: an enable byte at 1 may be ours
   float limit = -1;           // limit 1 as the unit holds it (-1: unknown)
   float active = -1;          // the limit the unit applies right now (-1: unknown)
   bool on = false;            // a limit from here is applied
@@ -888,7 +891,7 @@ struct LimitControl : X10aClient
     if (kindKnown && readKind != kind)
     {
       // Never reinterpret an existing kW hold as amperes (or vice versa) after an installer change.
-      on = false; value = -1; origEnable = -1; wanted = -1; wantedOn = -1;
+      on = false; value = -1; origEnable = -1; origLimit = -1; wanted = -1; wantedOn = -1;
       stateChanged = changed = true;
     }
     kind = readKind; kindKnown = true;
@@ -909,12 +912,21 @@ struct LimitControl : X10aClient
     return v < minLimit ? minLimit : v > maxLimit ? maxLimit : v;
   }
 
-  // Writes limit 1 and, when needed, the enable byte. The enable byte found first is remembered.
+  // Writes limit 1 and, when needed, the enable byte. What the unit held before the first write is remembered
+  // first: its enable byte and its limit 1, both put back when the limit is switched off.
   bool apply(float v, unsigned long now)
   {
     LimitKind expectedKind = kind;
     if (status != CONTROL_READY || !isfinite(v) || !readBack(now) || kind != expectedKind)
       return false;
+    // After a restart of ESPAltherma with nothing remembered, an enable byte at 1 may be the one written from
+    // here: it is not taken for the unit's own
+    if (!on && origEnable < 0 && !(resumed && enable == 1))
+    {
+      origEnable = enable;
+      origLimit = limit;
+      stateChanged = true;
+    }
     v = clamp(v); // includes automatic reapplication of a held/restored value
     bool ok;
     if (kind == LIMIT_POWER)
@@ -930,38 +942,59 @@ struct LimitControl : X10aClient
     }
     if (!ok)
       return false;
+    // The limit is in the unit from here on: should the enable byte not go through, the read-back writes it again
+    limit = v;
+    value = v;
+    on = true;
+    resumed = false;
+    stateChanged = changed = true;
     if (enable != 1)
     {
-      if (!on && origEnable < 0)
-        origEnable = enable; // the installer's own setting, put back when switched off
       uint8_t one = 1;
       if (!writeRamBytes(spec->ramEnable, &one, 1))
         return false;
       enable = 1;
     }
-    limit = v;
-    value = v;
-    on = true;
     applied = v;
     wroteAt = now;
     readAt = now + 5000 - LIMIT_READ_INTERVAL_MS; // read back once the board has recomputed
-    stateChanged = changed = true;
     return true;
   }
 
-  // Puts the enable byte back as found (or to "none") and forgets the limit.
+  // Puts limit 1 and the enable byte back as found before the first write ("none" when not known) and forgets
+  // the limit. A unit whose installer set a continuous limitation gets it back, at its own value.
   bool release(unsigned long now)
   {
     LimitKind expectedKind = kind;
     if (status != CONTROL_READY || !readBack(now) || kind != expectedKind)
       return false;
-    uint8_t e = origEnable == 2 ? 2 : 0;
+    bool origPlausible = kind == LIMIT_POWER ? (origLimit >= 1 && origLimit <= 25) : (origLimit >= 4 && origLimit <= 75);
+    if (origPlausible && origLimit != limit)
+    {
+      bool ok;
+      if (kind == LIMIT_POWER)
+      {
+        uint8_t f[4];
+        memcpy(f, &origLimit, 4);
+        ok = writeRamBytes(spec->ramKw, f, 4);
+      }
+      else
+      {
+        uint8_t b = (uint8_t)(origLimit + 0.5f);
+        ok = writeRamBytes(spec->ramAmp, &b, 1);
+      }
+      if (!ok)
+        return false;
+      limit = origLimit;
+    }
+    uint8_t e = origEnable >= 0 && origEnable <= 2 ? (uint8_t)origEnable : 0;
     if (!writeRamBytes(spec->ramEnable, &e, 1))
       return false;
     enable = e;
     on = false;
     value = -1;
     origEnable = -1;
+    origLimit = -1;
     released = true;
     wroteAt = now;
     readAt = now + 5000 - LIMIT_READ_INTERVAL_MS;
@@ -973,12 +1006,14 @@ struct LimitControl : X10aClient
   void requestOn(bool wantOn) { wantedOn = wantOn ? 1 : 0; }
 
   // The limit the caller saved (from before a restart of ESPAltherma): applied once the unit is ready
-  void restore(bool savedOn, float savedValue, int savedOrigEnable)
+  void restore(bool savedOn, float savedValue, int savedOrigEnable, float savedOrigLimit = -1)
   {
     if (!savedOn || savedValue < 0)
       return;
     value = savedValue;
     origEnable = savedOrigEnable;
+    origLimit = savedOrigLimit;
+    resumed = true;
     wantedOn = 1;
   }
 
@@ -1006,7 +1041,9 @@ struct LimitControl : X10aClient
     {
       wanted = -1;
       wantedOn = -1;
-      float v = clamp(w >= 0 ? w : value);
+      // Switched on with no value given: the limit applied from here before, else the unit's own limit 1, the
+      // value the number shows while off. (It was the minimum, 1 kW or 4 A.)
+      float v = clamp(w >= 0 ? w : value >= 0 ? value : limit);
       if (v >= minLimit && !apply(v, now))
         identify(now);
       return;
@@ -1020,11 +1057,7 @@ struct LimitControl : X10aClient
       }
       // The heat pump restarted (its settings came back) or someone changed them: apply ours again
       if (on && value >= 0 && (enable != 1 || limit < value - 0.05f || limit > value + 0.05f) && now - wroteAt >= LIMIT_REAPPLY_MS)
-      {
-        int keep = origEnable;
-        apply(value, now);
-        origEnable = keep;
-      }
+        apply(value, now); // `on` is set: what the unit held before the first write stays as remembered
     }
     else if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS)
       identify(now);

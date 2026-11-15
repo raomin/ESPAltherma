@@ -99,6 +99,7 @@ struct AppConfig
   bool ctlLimitOn;    // a limit is applied from here, re-applied after a restart of the heat pump or of ESPAltherma
   float ctlLimitValue;
   int ctlLimitOrig;   // the unit's own enable byte, put back when the limit is switched off
+  float ctlLimitOrigValue; // and its own limit 1 (-1: not known)
   char ctlLimitSw[9];
 
   // Web interface
@@ -139,6 +140,7 @@ void configKeepRuntime(AppConfig &next, const AppConfig &live)
   next.ctlLimitOn = live.ctlLimitOn;
   next.ctlLimitValue = live.ctlLimitValue;
   next.ctlLimitOrig = live.ctlLimitOrig;
+  next.ctlLimitOrigValue = live.ctlLimitOrigValue;
   memcpy(next.ctlLimitSw, live.ctlLimitSw, sizeof(next.ctlLimitSw));
   memcpy(next.detectedKey, live.detectedKey, sizeof(next.detectedKey));
   memcpy(next.installId, live.installId, sizeof(next.installId));
@@ -186,6 +188,7 @@ void configDefaults(AppConfig &c)
   c.ctlLimitOn = false;
   c.ctlLimitValue = -1;
   c.ctlLimitOrig = -1;
+  c.ctlLimitOrigValue = -1;
   c.ctlLimitSw[0] = 0;
 }
 
@@ -289,6 +292,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets, bo
     control["limit_on"] = c.ctlLimitOn;
     control["limit_value"] = c.ctlLimitValue;
     control["limit_orig"] = c.ctlLimitOrig;
+    control["limit_orig_value"] = c.ctlLimitOrigValue;
     control["limit_sw"] = c.ctlLimitSw;
   }
   JsonObject stats = doc["stats"].to<JsonObject>();
@@ -439,6 +443,7 @@ void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = fa
     readNum(src["control"]["limit_on"], c.ctlLimitOn);
     readNum(src["control"]["limit_value"], c.ctlLimitValue);
     readNum(src["control"]["limit_orig"], c.ctlLimitOrig);
+    readNum(src["control"]["limit_orig_value"], c.ctlLimitOrigValue);
     readStr(src["control"]["limit_sw"], c.ctlLimitSw, sizeof(c.ctlLimitSw));
   }
   readNum(src["stats"]["enabled"], c.statsEnabled);

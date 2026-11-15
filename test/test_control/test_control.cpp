@@ -18,6 +18,7 @@ struct FakeUnit
     uint8_t memory[1024]; // the board's memory, by offset
     uint8_t ram[0x6000];  // RAM, by address
     bool answer = true;
+    int loseRamWrite = -1; // this many RAM writes go through, then one is lost: not written, not acknowledged (-1: none)
     int ramWrites = 0, memoryWrites = 0, badWrites = 0;
 
     void reset()
@@ -29,6 +30,7 @@ struct FakeUnit
         memset(memory, 0, sizeof(memory));
         memset(ram, 0, sizeof(ram));
         answer = true;
+        loseRamWrite = -1;
         ramWrites = memoryWrites = badWrites = 0;
         // hot water: weather-dependent tank mode, curve 52 (low outdoor temperature) to 48 (high),
         // limits 35+21 / 45+11 -> 45..55, effective 48 capped by a ceiling of 51
@@ -164,6 +166,13 @@ struct FakeUnit
         }
         else if (cmd == 0x46 && n >= 3 && n <= 6)
         {
+            if (loseRamWrite == 0)
+            {
+                loseRamWrite = -1;
+                return 0;
+            }
+            if (loseRamWrite > 0)
+                loseRamWrite--;
             uint16_t addr = data[0] | data[1] << 8;
             ramWrites++;
             if (!isCurveWord(addr))
@@ -953,6 +962,145 @@ void test_power_limit_applies_and_releases()
     TEST_ASSERT_EQUAL(0, unit.memoryWrites); // never the board's memory
 }
 
+// Switched on with no value (the switch in Home Assistant, the box of the page): the unit's own limit 1, the value
+// the number shows while off. It was the minimum, 1 kW or 4 A.
+void test_power_limit_switched_on_without_a_value_takes_the_units_own_limit()
+{
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.requestOn(true);
+    c.tick(2000);
+    TEST_ASSERT_TRUE(c.on);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, c.value);
+    // a value, off, then on again: the unit's own limit is back in between, and it is the one taken
+    c.request(3.0f);
+    c.tick(3000);
+    TEST_ASSERT_EQUAL_FLOAT(3.0f, unit.getFloat(0x1880));
+    c.requestOn(false);
+    c.tick(4000);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    c.requestOn(true);
+    c.tick(5000);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    // amperes: the unit's 50 A, not 4
+    unit.reset();
+    unit.ram[0x2FE9] = 0;
+    LimitControl a = freshLimit();
+    TEST_ASSERT_TRUE(a.identify(1000));
+    a.requestOn(true);
+    a.tick(2000);
+    TEST_ASSERT_EQUAL(50, unit.ram[0x2FC8]);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The installer set a limitation of his own (continuous at 16 A, or by the digital inputs): switching ours off
+// puts his enable byte and his limit 1 back. It wrote "none" over a continuous one and left our value in limit 1.
+void test_power_limit_off_puts_the_installers_limitation_back()
+{
+    unit.ram[0x2FE9] = 0; // amperes
+    unit.ram[0x2FE8] = 1; // continuous
+    unit.ram[0x2FC8] = 16;
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(10.0f);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(10, unit.ram[0x2FC8]);
+    TEST_ASSERT_EQUAL(1, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(16.0f, c.origLimit);
+    c.request(8.0f); // a second value does not change what is remembered
+    c.tick(3000);
+    TEST_ASSERT_EQUAL_FLOAT(16.0f, c.origLimit);
+    c.requestOn(false);
+    c.tick(4000);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL(16, unit.ram[0x2FC8]);
+    TEST_ASSERT_FALSE(c.on);
+    TEST_ASSERT_EQUAL(-1, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(-1, c.origLimit);
+
+    unit.reset();
+    unit.ram[0x2FE8] = 2; // by the digital inputs, kW
+    unit.setFloat(0x1880, 6.5f);
+    LimitControl d = freshLimit();
+    TEST_ASSERT_TRUE(d.identify(1000));
+    d.request(3.0f);
+    d.tick(2000);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    d.requestOn(false);
+    d.tick(3000);
+    TEST_ASSERT_EQUAL(2, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(6.5f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// ESPAltherma restarted with a limit on. What it remembered of the unit comes back with it; with nothing
+// remembered (a limit set by an older firmware), an enable byte at 1 is not taken for the unit's own
+void test_power_limit_resumed_after_a_restart_keeps_what_was_remembered()
+{
+    unit.ram[0x2FE9] = 0;
+    unit.ram[0x2FE8] = 1; // our own 1, still in the unit
+    unit.ram[0x2FC8] = 10;
+    LimitControl c = freshLimit();
+    c.restore(true, 10.0f, 1, 16.0f);
+    c.tick(1000);
+    c.tick(1500);
+    TEST_ASSERT_TRUE(c.on);
+    TEST_ASSERT_EQUAL(1, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(16.0f, c.origLimit);
+    c.requestOn(false);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL(16, unit.ram[0x2FC8]);
+
+    unit.reset();
+    unit.ram[0x2FE9] = 0;
+    unit.ram[0x2FE8] = 1;
+    unit.ram[0x2FC8] = 10;
+    LimitControl o = freshLimit();
+    o.restore(true, 10.0f, -1); // nothing remembered
+    o.tick(1000);
+    o.tick(1500);
+    TEST_ASSERT_TRUE(o.on);
+    TEST_ASSERT_EQUAL(-1, o.origEnable); // the 1 read now may be ours
+    o.requestOn(false);
+    o.tick(2000);
+    TEST_ASSERT_EQUAL(0, unit.ram[0x2FE8]); // as before: none
+    TEST_ASSERT_EQUAL(10, unit.ram[0x2FC8]);
+
+    unit.reset(); // nothing remembered, but the unit restarted too: its enable byte is not 1, so it is its own
+    unit.ram[0x2FE8] = 2;
+    LimitControl r = freshLimit();
+    r.restore(true, 5.0f, -1);
+    r.tick(1000);
+    r.tick(1500);
+    TEST_ASSERT_EQUAL(2, r.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, r.origLimit);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The limit went in but the enable byte did not: the limit counts as on, and the next read-back writes the byte
+void test_power_limit_enable_byte_lost_is_written_again()
+{
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    unit.loseRamWrite = 1; // the limit goes through, the enable byte is lost
+    c.request(4.0f);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL_FLOAT(4.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(0, unit.ram[0x2FE8]);
+    TEST_ASSERT_TRUE(c.on);
+    TEST_ASSERT_EQUAL(0, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, c.origLimit);
+    c.tick(2000 + LIMIT_READ_INTERVAL_MS + LIMIT_REAPPLY_MS);
+    c.tick(2000 + 2 * LIMIT_READ_INTERVAL_MS + LIMIT_REAPPLY_MS);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL(0, c.origEnable); // still the unit's own
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
 // After a restart of the heat pump its own settings are back: the limit is written again, once per minute at most
 void test_power_limit_is_applied_again_after_the_unit_restarts()
 {
@@ -1404,6 +1552,10 @@ int main(int, char **)
     RUN_TEST(test_power_limit_kind_change_drops_hold_instead_of_reinterpreting_kw_as_amps);
     RUN_TEST(test_power_limit_reapply_clamps_a_previously_held_value);
     RUN_TEST(test_power_limit_applies_and_releases);
+    RUN_TEST(test_power_limit_switched_on_without_a_value_takes_the_units_own_limit);
+    RUN_TEST(test_power_limit_off_puts_the_installers_limitation_back);
+    RUN_TEST(test_power_limit_resumed_after_a_restart_keeps_what_was_remembered);
+    RUN_TEST(test_power_limit_enable_byte_lost_is_written_again);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
     RUN_TEST(test_power_limit_on_every_mapped_board);

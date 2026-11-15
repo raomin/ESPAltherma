@@ -48,6 +48,7 @@ void test_settings_copy_keeps_what_the_board_wrote_meanwhile()
     live.ctlOrig[0][0] = 55;
     live.ctlLimitOn = false;
     live.ctlLimitValue = -1;
+    live.ctlLimitOrigValue = 16;
     strcpy(live.detectedKey, "the unit, complete");
     live.telemetrySent = 0x1234;
     configKeepRuntime(form, live);
@@ -55,6 +56,7 @@ void test_settings_copy_keeps_what_the_board_wrote_meanwhile()
     TEST_ASSERT_EQUAL(55, form.ctlOrig[0][0]);
     TEST_ASSERT_FALSE(form.ctlLimitOn);
     TEST_ASSERT_EQUAL_FLOAT(-1, form.ctlLimitValue);
+    TEST_ASSERT_EQUAL_FLOAT(16, form.ctlLimitOrigValue);
     TEST_ASSERT_EQUAL_STRING("the unit, complete", form.detectedKey);
     TEST_ASSERT_EQUAL_STRING("0123456789abcdef", form.installId);
     TEST_ASSERT_EQUAL_UINT32(0x1234, form.telemetrySent);

@@ -1023,7 +1023,7 @@ static void limitTick()
   if (c.status != before)
     mqttSerial.printf("Power limit control: %s (software %s)\n", controlStatusName(c.status), c.softwareId);
   if (before != CONTROL_READY && c.status == CONTROL_READY && !c.on && config.ctlLimitOn && strcmp(config.ctlLimitSw, c.softwareId) == 0)
-    c.restore(true, config.ctlLimitValue, config.ctlLimitOrig); // the limit wanted before a restart
+    c.restore(true, config.ctlLimitValue, config.ctlLimitOrig, config.ctlLimitOrigValue); // the limit wanted before a restart
   const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
   if (c.applied >= 0)
   {
@@ -1045,10 +1045,13 @@ static void limitTick()
   {
     c.stateChanged = false;
     configLock();
-    bool switched = config.ctlLimitOn != c.on; // on or off is saved at once, a new value when due
+    // On or off is saved at once, a new value when due. What the unit held before the first write is saved at once
+    // too: its limit 1 is only in the configuration (the block in RTC memory keeps its size across updates)
+    bool switched = config.ctlLimitOn != c.on || config.ctlLimitOrigValue != c.origLimit;
     config.ctlLimitOn = c.on;
     config.ctlLimitValue = c.value;
     config.ctlLimitOrig = c.origEnable;
+    config.ctlLimitOrigValue = c.origLimit;
     strlcpy(config.ctlLimitSw, c.softwareId, sizeof(config.ctlLimitSw));
     heldStateChanged(switched);
     configUnlock();
