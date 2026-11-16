@@ -297,11 +297,9 @@ bool mqttConnectOnce()
     {
       mqttSerial.println("connected!");
       auto &json = mqttDiscoveryJson;
-      snprintf(json, sizeof(json),
-               "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
-               "\"uniq_id\":\"%s\",\"device\":{\"identifiers\":[\"%s\"]}, \"~\":\"%s\",\"json_attr_t\":\"~/ATTR\"}",
-               mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.base);
-      client.publish(mqttTopics.cfgSensor, json, true);
+      int sensorLen = boardSensorDiscovery(json, sizeof(json), mqttTopics, BOARD_NAME); // with the board as the device's model
+      if (discoveryFits(sensorLen, sizeof(json), "the AlthermaSensors entity"))
+        client.publish(mqttTopics.cfgSensor, json, true);
       client.publish(mqttTopics.lwt, "Online", true);
       if (config.thermPin >= 0)
       {
