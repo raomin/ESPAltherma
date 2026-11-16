@@ -43,11 +43,22 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"; else echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"; fi
       - name: Build the installer firmwares
         run: python scripts/build_flasher.py --build --version "${{ steps.version.outputs.version }}"
+      # The event history gives the addresses of a crash (main.cpp crashReport): they are looked up in the ELF of
+      # the same build, with addr2line. One zip for the 11 boards, on the release only (too large for the site).
+      - name: Keep the ELF of each board
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p elf
+          (find .pio/build -name firmware.elf | while read f; do cp "$f" "elf/$(basename "$(dirname "$f")").elf"; done) || true
+          (cd elf && zip -q -9 ../firmware-elf.zip *.elf) || true
+          ls -l firmware-elf.zip || true
       - name: Attach the firmwares to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: flasher/firmware/*.bin
+          files: |
+            flasher/firmware/*.bin
+            firmware-elf.zip
           prerelease: ${{ contains(github.ref_name, '-') }}
           make_latest: ${{ !contains(github.ref_name, '-') }}
       - name: Publish the installer on Cloudflare Pages
