@@ -150,9 +150,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -359,9 +360,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U SV (drain pan heater)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
@@ -571,9 +573,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -1295,9 +1298,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -1505,9 +1509,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -1713,9 +1718,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -1937,9 +1943,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -2162,9 +2169,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -2387,9 +2395,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -2973,9 +2982,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U SV (drain pan heater)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
@@ -3183,9 +3193,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U SV (drain pan heater)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
@@ -3407,9 +3418,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U SV (drain pan heater)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
@@ -3618,9 +3630,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -3842,9 +3855,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.(R4T)
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
 Oil Return Operation
@@ -5957,9 +5971,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U RA:SV2
 O/U Thermostat ON/OFF
 O/U capacity (kW)
@@ -6162,9 +6177,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U SV (drain pan heater)
 O/U Thermostat ON/OFF
 O/U capacity (kW)
@@ -6722,9 +6738,10 @@ O/U Error Code
 O/U Error type
 O/U Expansion valve 3 (pls)
 O/U Heat Exch. Temp.
-O/U MPU ID
 O/U MPU ID (xx)
+O/U MPU ID (xx) (0xA0)
 O/U MPU ID (yy)
+O/U MPU ID (yy) (0xA0)
 O/U Pressure
 O/U RA:SV2
 O/U Thermostat ON/OFF
