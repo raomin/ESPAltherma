@@ -4,7 +4,7 @@
 // Heat pump survey, the first step of the auto-detection.
 // Finds the protocol the heat pump speaks, reads once every registry used by the definition files,
 // and extracts the identification fields (fingerprint) that every Altherma indoor unit reports.
-// The JSON report is published on espaltherma/detect, and is the payload of the opt-in telemetry.
+// The JSON report is published on espaltherma/detect, and is the payload of the heat pump report (webserver.h).
 //
 // No Arduino dependency: the registry query is injected, so recorded dumps can be replayed in unit tests.
 

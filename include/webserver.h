@@ -14,7 +14,7 @@
 #include <esp_heap_caps.h>
 
 #ifndef TELEMETRY_URL
-#define TELEMETRY_URL "" // Collection endpoint of the opt-in telemetry; nothing is sent while empty
+#define TELEMETRY_URL "" // Collection endpoint of the heat pump reports; nothing is sent while empty
 #endif
 #define TELEMETRY_AVAILABLE (strlen(TELEMETRY_URL) > 0)
 
@@ -23,7 +23,7 @@
 extern Survey survey;
 extern MeterReader unitMeter; // main.cpp: the unit's meter and its model name (control.h)
 extern DiiiComm diii;         // main.cpp: the HT outdoor unit's frame reader (diii_comm.h)
-String heartbeatPayload();    // the daily heartbeat of the opt-in telemetry, below
+String heartbeatPayload();    // the daily heartbeat of the reports, below
 extern char surveyJson[];
 extern bool surveyReportFailed;
 extern volatile bool labelsDirty;
@@ -488,7 +488,7 @@ static void statusJson(JsonDocument &doc)
 #endif
 }
 
-// The exact payload of the opt-in telemetry: the survey report, the chosen model, and the random install id.
+// The exact payload of the heat pump report: the survey report, the chosen model, and the random install id.
 String telemetryPayload()
 {
   String s = "{\"install_id\":\"";
@@ -1279,7 +1279,7 @@ static void sendTelemetry()
   }
 }
 
-// The daily heartbeat of the opt-in telemetry, under the same box as the report: which boards are alive, on which
+// The daily heartbeat, under the same box as the report: which boards are alive, on which
 // firmware and board, with which model, and which optional features are on and working. No readings, no settings.
 // Posted to the report's site once a day, the first time ten minutes after the start (the controls have identified
 // by then), again an hour later when it failed. One row per board and day on the site.

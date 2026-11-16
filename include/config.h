@@ -107,7 +107,7 @@ struct AppConfig
   // Web interface
   char adminPwd[33]; // protects the configuration, updates and OTA when set (user "admin")
 
-  // Opt-in telemetry: sends the heat pump identification to help the auto-detection
+  // The reports (a box ticked by default, unticked to opt out): the heat pump identification, to help the auto-detection
   bool telemetry;
   bool updateCheck;   // reads the site's manifest once a day and tells the page and Home Assistant of a newer build
   char installId[17]; // random, to deduplicate reports
