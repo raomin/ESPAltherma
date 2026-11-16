@@ -21,7 +21,7 @@ std::string decode_data(unsigned char *buff)
 {
     Converter converter;
     converter.setLabels(labelDefs, sizeof(labelDefs) / sizeof(LabelDef));
-    converter.readRegistryValues(buff, 'S');
+    converter.readRegistryValues(buff, 'S', 16); // 18 bytes: the registry id, 16 of payload, the checksum
     LabelDef *labels[128];
     int num = 0;
     converter.getLabels(buff[0], labels, num);

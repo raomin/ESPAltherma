@@ -80,9 +80,33 @@ void test_refrigerant_r134a(void)
     TEST_ASSERT_EQUAL_STRING_LEN("5.", lp.asString, 2);
 }
 
+// A value whose bytes are beyond the end of a short reply is not decoded from the checksum: it keeps its last
+// reading. The values inside the reply are read as before (#667)
+void test_a_value_beyond_a_short_reply_is_skipped(void)
+{
+    LabelDef labels[] = {
+        LabelDef(0x20, 0, 105, 2, 1, "Inside"),
+        LabelDef(0x20, 2, 105, 2, 1, "Last two bytes"),
+        LabelDef(0x20, 3, 105, 2, 1, "Half outside"),
+        LabelDef(0x20, 4, 105, 2, 1, "Outside"),
+    };
+    for (LabelDef &label : labels)
+        strcpy(label.asString, "before");
+    Converter converter;
+    converter.setLabels(labels, 4);
+    // protocol I: 40 <registry> <length> <payload> <checksum>, length = payload + 2: four bytes of payload here
+    unsigned char reply[] = {0x40, 0x20, 0x06, 0x0A, 0x00, 0x14, 0x00, 0x7B, 0x00, 0x00};
+    converter.readRegistryValues(reply, 'I', 4);
+    TEST_ASSERT_EQUAL_STRING("1", labels[0].asString);
+    TEST_ASSERT_EQUAL_STRING("2", labels[1].asString);
+    TEST_ASSERT_EQUAL_STRING("before", labels[2].asString);
+    TEST_ASSERT_EQUAL_STRING("before", labels[3].asString);
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_a_value_beyond_a_short_reply_is_skipped);
     RUN_TEST(test_conv119_signed);
     RUN_TEST(test_conv119_no_sensor);
     RUN_TEST(test_conv119_matches_103);
