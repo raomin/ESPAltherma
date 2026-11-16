@@ -40,7 +40,7 @@
 
 ::Converter converter; // qualified: ArduinoJson (via ESPAsyncWebServer) also has a Converter
 char registryIDs[32]; //Holds the registries to query
-bool registryOk[32]; //Registries successfully read during the last query cycle
+std::atomic<bool> registryOk[32]; // polling task publishes results while MQTT reads them
 bool registryEverOk[32]; // and those that answered at least once since the list was made
 std::atomic<bool> busy{false}; // OTA/main task publishes the gate; the heat-pump task observes it
 
@@ -54,6 +54,7 @@ volatile bool forceDetection = false; //detect again even if a model is set (req
 unsigned long lastPollMs = 0;         //end of the last query cycle
 DetectResult detection;
 std::vector<LabelDef> catalogLabels; //values of the model, from the catalog
+uint32_t labelGeneration=0; // protected by valuesLock; a publish stops when its selection changes
 LayoutChecker layoutChecker;         //checks the model's layout against the replies (layoutfix.h)
 LayoutCycle layoutCycle;             //replies of the last query cycle
 volatile bool surveyRequested = false;
@@ -124,13 +125,7 @@ void updateValues(char regID)
     if (!digit)
       alpha = true;
 
-    if (config.oneValOneTopic)
-    {
-      char topicBuff[128];
-      snprintf(topicBuff, sizeof(topicBuff), "%s%s", config.oneTopicPrefix, labels[i]->label);
-      mqttPublish(topicBuff, v);
-    }
-    else if (alpha){
+    if (alpha){
 
       mqttJsonAppend(jsonbuff,MAX_MSG_SIZE,mqttValuesOverflow,"\"%s\":\"%s\",",labels[i]->label,v);
     }
@@ -228,6 +223,7 @@ static bool surveyTwoZones(int model)
 }
 
 void initLabels(){
+  labelGeneration++;
   //The values of the configured model, from the catalog
   int model = catalogFindModel(config.model);
   if (model < 0)
@@ -367,7 +363,7 @@ void reloadLabels()
   valuesLock();
   initLabels();
   initRegistries();
-  memset(registryOk, 0, sizeof(registryOk));
+  for (auto &ok : registryOk) ok.store(false);
   valuesUnlock();
   discoveryDirty = true;
 }
@@ -884,6 +880,20 @@ void publishValues()
 {
   valuesLock();
   statsUpdate();
+  if (config.oneValOneTopic)
+  {
+    valuesUnlock();
+    publishOneValueSnapshots(converter.activeLabels,converter.activeCount,registryIDs,registryOk,labelGeneration,
+      valuesLock,valuesUnlock,[](const MqttReading &reading) {
+        const char *v=reading.value;
+        if (config.binaryAsNumber) {if (!strcmp(v,"ON")) v="1";else if (!strcmp(v,"OFF")) v="0";}
+        char topic[128];
+        int n=snprintf(topic,sizeof(topic),"%s%s",config.oneTopicPrefix,reading.label);
+        if (n>=0 && (size_t)n<sizeof(topic)) mqttPublish(topic,v);
+        else mqttSerial.println("Value topic too long; publish skipped.");
+      });
+    sendValues();webSendValues();return;
+  }
   for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
   {
     if (registryOk[i])
