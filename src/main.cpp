@@ -921,6 +921,14 @@ struct HeldRtc
   uint32_t sum;
 };
 RTC_NOINIT_ATTR HeldRtc heldRtc;
+// What is kept in RTC memory is written by one version of the firmware and read by the next one after an update:
+// each block must keep its size, and no block may be added before another (the linker places them one after the
+// other). A block that grows moves the ones behind it, and the day's counters, the event history and the cause of
+// the restart are then lost at that update. New data to keep goes to the configuration in flash, or needs a
+// version of the block that is told apart.
+static_assert(sizeof(HeldRtc) == 40, "HeldRtc is kept in RTC memory across updates: its size must not change");
+static_assert(sizeof(StatsDay) == 164, "StatsDay is kept in RTC memory across updates: its size must not change");
+static_assert(sizeof(EventRing) == 2316, "EventRing is kept in RTC memory across updates: its size must not change");
 static DeferredSave heldSave;
 static ChangeLog targetLog[2], limitLog;
 
