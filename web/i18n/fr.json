@@ -457,5 +457,8 @@
  "{n} of {t} frames read": "{n} trames sur {t} lues",
  "Done, {m} frames did not answer.": "Terminé, {m} trames sans réponse.",
  "Give the unit its own curve back? The target set from here is dropped.": "Rendre à l'unité sa propre courbe ? La consigne fixée ici est abandonnée.",
- "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Les valeurs MQTT dépassent le tampon du message. Sélectionnez moins de mesures ou utilisez un sujet par valeur dans les paramètres."
+ "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Les valeurs MQTT dépassent le tampon du message. Sélectionnez moins de mesures ou utilisez un sujet par valeur dans les paramètres.",
+ "UTC offset of the day's figures (minutes)": "Décalage UTC des chiffres du jour (minutes)",
+ "This browser's": "Celui de ce navigateur",
+ "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Avec un mot de passe admin, la page ne règle pas le décalage d'elle-même, ce qui demanderait le mot de passe : réglez-le ici, et de nouveau au changement d'heure."
 }

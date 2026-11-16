@@ -457,5 +457,8 @@
  "{n} of {t} frames read": "{n} de {t} tramas leídas",
  "Done, {m} frames did not answer.": "Hecho, {m} tramas sin respuesta.",
  "Give the unit its own curve back? The target set from here is dropped.": "¿Devolver a la unidad su propia curva? La consigna fijada aquí se descarta.",
- "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Los valores MQTT superan el búfer del mensaje. Selecciona menos lecturas o usa un tema por valor en Ajustes."
+ "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Los valores MQTT superan el búfer del mensaje. Selecciona menos lecturas o usa un tema por valor en Ajustes.",
+ "UTC offset of the day's figures (minutes)": "Desfase UTC de las cifras del día (minutos)",
+ "This browser's": "El de este navegador",
+ "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Con una contraseña de administrador la página no fija el desfase por sí misma, porque pediría la contraseña: fíjelo aquí, y de nuevo con el cambio de hora."
 }
