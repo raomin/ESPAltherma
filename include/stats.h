@@ -111,10 +111,21 @@ public:
   bool runBeforeRestart = false; // the RTC block says a run was going on when the board restarted
   bool runStateKnown = false;    // a reading since the start told whether the compressor runs
 
+  // What a day's block can hold: a day's worth at most. The mark alone does not tell a day kept from before the
+  // restart from memory that holds something else behind a mark left there: seen on a board that went through a
+  // build with another layout, 9.1e11 kWh of heat for the day, published as such.
+  static bool plausible(const StatsDay &d)
+  {
+    for (int m = 0; m < 3; m++)
+      if (!(d.heatKWh[m] >= 0 && d.heatKWh[m] < 2000) || !(d.elecKWh[m] >= 0 && d.elecKWh[m] < 2000)) // a NAN fails too
+        return false;
+    return d.runSec <= 172800UL && d.buhSec <= 172800UL && d.day >= -1 && d.day < 100000;
+  }
+
   void begin(StatsDay *rtc)
   {
     day = rtc;
-    if (day->magic != STATS_MAGIC)
+    if (day->magic != STATS_MAGIC || !plausible(*day))
     {
       memset(day, 0, sizeof(*day)); // a power-up: the RTC memory holds anything
       day->magic = STATS_MAGIC;

@@ -407,6 +407,30 @@ void test_a_unit_that_does_not_answer_adds_nothing(void)
     TEST_ASSERT_FLOAT_WITHIN(0.0005f, 2 * (rtc.heatKWh[STATS_HEATING] - heat), twoCycles);
 }
 
+// The mark is there but the figures are not a day's: the block is started again, nothing of it is published
+void test_a_block_with_impossible_figures_is_not_kept(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    s.update(heating(), T0, 100);
+    s.update(heating(), T0 + 300, 400);
+    TEST_ASSERT_TRUE(rtc.heatKWh[STATS_HEATING] > 0);
+    Stats kept; // a restart: the day is kept
+    kept.begin(&rtc);
+    TEST_ASSERT_TRUE(rtc.heatKWh[STATS_HEATING] > 0);
+    rtc.heatKWh[STATS_HEATING] = 911626862592.0f; // the mark read as a float, as a shifted block gives
+    Stats again;
+    again.begin(&rtc);
+    TEST_ASSERT_EQUAL_FLOAT(0, rtc.heatKWh[STATS_HEATING]);
+    TEST_ASSERT_EQUAL(-1, rtc.day);
+    rtc.elecKWh[STATS_DHW] = NAN;
+    again.begin(&rtc);
+    TEST_ASSERT_EQUAL_FLOAT(0, rtc.elecKWh[STATS_DHW]);
+    rtc.runSec = 400000;
+    again.begin(&rtc);
+    TEST_ASSERT_EQUAL(0, rtc.runSec);
+}
+
 void test_a_restart_during_a_run_is_not_a_start(void)
 {
     StatsDay rtc;
@@ -454,6 +478,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_rtc_survives_restart);
     RUN_TEST(test_a_reading_before_the_clock_keeps_the_day);
     RUN_TEST(test_a_unit_that_does_not_answer_adds_nothing);
+    RUN_TEST(test_a_block_with_impossible_figures_is_not_kept);
     RUN_TEST(test_a_restart_during_a_run_is_not_a_start);
     return UNITY_END();
 }
