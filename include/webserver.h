@@ -32,6 +32,7 @@ extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
 #include "stats.h"
 #include "fwupdate.h"
+#include "valuesjson.h"
 extern Stats stats;
 bool memoryRequest(uint16_t addr, uint8_t len); // main.cpp: the heat pump task reads the hydro board's memory
 void memoryResult(JsonDocument &doc);
@@ -252,26 +253,25 @@ void webLogChunk(const char *chunk, size_t len)
     webEvents.send(chunk, "log");
 }
 
+// The values to the open pages, once a poll (valuesjson.h). The buffer is taken in steps of 1024 bytes: the text
+// moves by a few bytes from poll to poll, and a buffer of the same size finds the hole the last one left. Without
+// the room for it, this poll's values are not sent: the pages show the next ones.
+#define WEB_VALUES_ROOM_STEP 1024
 void webSendValues()
 {
   if (webEvents.count() == 0)
     return;
-  // One document: serializeJson() overwrites a String, it does not append to it
-  JsonDocument doc;
-  JsonArray values = doc.to<JsonArray>();
   valuesLock();
-  for (size_t i = 0; i < converter.activeCount; i++)
-  {
-    const LabelDef &l = converter.activeLabels[i];
-    JsonObject item = values.add<JsonObject>();
-    item["l"] = l.label;
-    item["v"] = l.asString;
-    item["r"] = l.registryID;
-  }
+  size_t length = valuesJson(converter.activeLabels, converter.activeCount, nullptr, 0);
+  size_t room = (length + WEB_VALUES_ROOM_STEP) / WEB_VALUES_ROOM_STEP * WEB_VALUES_ROOM_STEP; // the text and its zero
+  char *text = (char *)malloc(room);
+  if (text != nullptr)
+    valuesJson(converter.activeLabels, converter.activeCount, text, room);
   valuesUnlock();
-  String s;
-  serializeJson(doc, s);
-  webEvents.send(s.c_str(), "values");
+  if (text == nullptr)
+    return;
+  webEvents.send(text, "values");
+  free(text);
 }
 
 // One target control, for the web interface
