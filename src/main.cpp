@@ -1424,12 +1424,69 @@ void setupPins()
   }
 }
 
+// After a crash or a watchdog reset the core writes a dump of the tasks in the "coredump" partition before it
+// restarts. Until now nothing read it: the event history said "crash" and that was all, and finding the cause took
+// an owner with a USB cable and the tools to decode the partition (#639). What the dump says in short now goes to
+// the event history at the next start: the task that crashed, the cause and the address, then the calls that led
+// there, as addresses to look up in the firmware.elf of the release
+// (xtensa-esp32-elf-addr2line -pfiaC -e firmware.elf <addresses>). The dump itself stays in its partition.
+//
+// This runs at a start that follows a crash: should reading the dump crash in its turn, the next start must not
+// try again. A mark in the board's flash, next to the boot number, tells that a read was in progress (only written
+// at a start that follows a crash).
+#if __has_include(<esp_core_dump.h>)
+#include <esp_core_dump.h>
+#endif
+
+static void crashReport()
+{
+#if defined(CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH) && defined(CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF) && __has_include(<esp_core_dump.h>)
+  esp_reset_reason_t why = esp_reset_reason();
+  if (why != ESP_RST_PANIC && why != ESP_RST_INT_WDT && why != ESP_RST_TASK_WDT && why != ESP_RST_WDT)
+    return;
+  Preferences prefs;
+  prefs.begin(EVENT_NVS_NAMESPACE, false);
+  if (prefs.getBool("crashread", false))
+  {
+    prefs.putBool("crashread", false);
+    prefs.end();
+    eventAddf("Crash report not read: reading the last one restarted the board");
+    return;
+  }
+  prefs.putBool("crashread", true);
+  esp_core_dump_summary_t *dump = nullptr;
+  if (esp_core_dump_image_check() == ESP_OK)
+    dump = (esp_core_dump_summary_t *)calloc(1, sizeof(esp_core_dump_summary_t));
+  if (dump != nullptr && esp_core_dump_get_summary(dump) == ESP_OK)
+  {
+    dump->exc_task[sizeof(dump->exc_task) - 1] = 0;
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    eventAddf("Crash in task %s at %08x, cause %u, address %08x", dump->exc_task, (unsigned)dump->exc_pc,
+              (unsigned)dump->ex_info.exc_cause, (unsigned)dump->ex_info.exc_vaddr);
+    char calls[EVENT_TEXT_SIZE] = "Crash calls:";
+    size_t n = strlen(calls);
+    for (uint32_t i = 0; i < dump->exc_bt_info.depth && i < 16 && n + 10 < sizeof(calls); i++)
+      n += snprintf(calls + n, sizeof(calls) - n, " %08x", (unsigned)dump->exc_bt_info.bt[i]);
+    if (dump->exc_bt_info.depth > 0)
+      eventAddf("%s%s", calls, dump->exc_bt_info.corrupted ? " ?" : "");
+#else
+    eventAddf("Crash in task %s at %08x, cause %u, address %08x", dump->exc_task, (unsigned)dump->exc_pc,
+              (unsigned)dump->ex_info.mcause, (unsigned)dump->ex_info.mtval);
+#endif
+  }
+  free(dump);
+  prefs.putBool("crashread", false);
+  prefs.end();
+#endif
+}
+
 void setup()
 {
   heapMark("start");
   restartCauseLoad();
   eventBegin();
   eventAddf("Boot #%u: %s, firmware %s", eventBoot, resetReasonName(), ESPALTHERMA_VERSION);
+  crashReport();
   Serial.begin(115200);
 #if ARDUINO_USB_CDC_ON_BOOT && ARDUINO_USB_MODE
   Serial.setTxTimeoutMs(0); //USB port of the chip: do not block when no computer is connected
