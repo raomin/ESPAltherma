@@ -12,6 +12,17 @@ On a ROTEX this connects to J16 pins 1 and 2. RT needs to be switched ON in the 
 
 Other users' installations are described [in this issue](https://github.com/raomin/ESPAltherma/issues/17).
 
+## Cooling: a second relay
+
+The thermostat relay above closes one contact: the unit heats, or cools, according to the operating mode chosen on its interface. To choose between the two from Home Assistant, a reversible unit has a second input: with the thermostat connection set to separate heating and cooling requests (on the Altherma 3 this is the contact type *C/H request*, field setting [C-05] = 2; the installer reference of your unit has the setting and the two terminals), the unit heats while the heating input is closed and cools while the cooling input is closed.
+
+- Wire a second relay to the cooling input and set its pin in **Settings → Relays** (*Cooling relay pin*, with the level that activates it). It must be another pin than the thermostat relay's.
+- `switch.altherma_cooling` in Home Assistant, or `ON` / `OFF` on `espaltherma/COOL`; the state is published on `espaltherma/COOL_STATE` and shown on the home page.
+- Never both: switching the cooling demand on opens the heating relay first, and the other way round. Each state is kept across a restart of ESPAltherma, and the relays take it back before anything else starts.
+- A climate entity in Home Assistant can use the two switches as its heater and its cooler.
+
+I wrote this from the installer documentation and could not try it: my unit is heating only. Tell me how it goes.
+
 ## Smart Grid
 
 The two relays open and close the SG1 and SG2 contacts of the heat pump; the mode is the combination of the two:

@@ -7,6 +7,7 @@
 
 #include "topics.h"
 #include "sgdiscovery.h"
+#include "relays.h"
 #include "mqttjsonbuffer.h"
 #include <atomic>
 
@@ -16,6 +17,7 @@ IPAddress netIP(); // netmgr.h, included later
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
+#define EEPROM_COOL 2 // the cooling demand relay: 1 when on
 
 #ifndef MAX_MSG_SIZE
 #define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt
@@ -136,10 +138,14 @@ void setupMqttClient()
 
 // Relay states, for the web interface
 bool thermostatOn = false;
+bool coolingOn = false;    // the cooling demand relay is closed
 bool safetyActive = false; // the heat pump is stopped by the safety relay
 int sgMode = 0;
 
 int thermActiveState() { return config.thermActiveHigh ? HIGH : LOW; }
+int coolActiveState() { return config.coolActiveHigh ? HIGH : LOW; }
+// The cooling demand relay: a pin of its own, not the thermostat relay's
+bool coolConfigured() { return config.coolPin >= 0 && config.coolPin != config.thermPin; }
 
 // When the board last subscribed: a retained command reaches it within moments of that, at every connection
 static unsigned long mqttSubscribedAt = 0;
@@ -219,11 +225,13 @@ void mqttRetireDiscovery()
     return;
   const char *cfgs[] = {mqttTopics.cfgSensor, mqttTopics.cfgSwitch, mqttTopics.cfgSg, mqttTopics.cfgSafety,
                         mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgRestore[0], mqttTopics.cfgRestore[1],
-                        mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgUpdate, mqttTopics.cfgDevice};
+                        mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgUpdate, mqttTopics.cfgDevice,
+                        mqttTopics.cfgCool};
   for (const char *t : cfgs)
     client.publish(t, "", true);
   const char *states[] = {mqttTopics.ctlState[0], mqttTopics.ctlState[1], mqttTopics.ctlAttrs[0], mqttTopics.ctlAttrs[1],
-                          mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect, mqttTopics.updateTopic};
+                          mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect, mqttTopics.updateTopic,
+                          mqttTopics.coolState};
   for (const char *t : states)
     client.publish(t, "", true);
   client.publish(mqttTopics.lwt, "Offline", true);
@@ -241,6 +249,9 @@ void readEEPROM(){
     }
     thermostatOn = EEPROM.read(EEPROM_STATE) == thermActiveState();
     mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == thermActiveState())? "On":"Off" );
+    // The cooling demand as it was (1: on; anything else, like the 0xFF of a board that never had it: off). Never
+    // with the heating demand: the heating one wins
+    coolingOn = coolConfigured() && EEPROM.read(EEPROM_COOL) == 1 && !(config.thermPin >= 0 && thermostatOn);
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
@@ -251,6 +262,22 @@ void readEEPROM(){
       digitalWrite(config.thermPin,!thermActiveState());
     }
   }
+  if (coolConfigured())
+    digitalWrite(config.coolPin, coolingOn ? coolActiveState() : !coolActiveState()); // its level before it becomes an output
+}
+
+// The cooling demand relay to its state: the pin, the state kept for the next start, the state told to the broker
+static void coolApply()
+{
+  if (!coolConfigured())
+    return;
+  digitalWrite(config.coolPin, coolingOn ? coolActiveState() : !coolActiveState());
+  if (EEPROM.read(EEPROM_COOL) != (coolingOn ? 1 : 0))
+  {
+    EEPROM.write(EEPROM_COOL, coolingOn ? 1 : 0);
+    EEPROM.commit();
+  }
+  client.publish(mqttTopics.coolState, coolingOn ? "ON" : "OFF", true);
 }
 
 // One connection attempt; on success publishes the discovery messages and subscribes.
@@ -291,6 +318,22 @@ bool mqttConnectOnce()
       {
         // No thermostat relay: remove the switch from HA
         client.publish(mqttTopics.cfgSwitch, "", true);
+      }
+      if (coolConfigured())
+      {
+        // The cooling demand relay, a switch next to the thermostat one
+        int coolLen = snprintf(json, sizeof(json),
+                 "{\"name\":\"Altherma Cooling\",\"cmd_t\":\"~/COOL\",\"stat_t\":\"~/COOL_STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"%s\","
+                 "\"uniq_id\":\"%s_cooling\",\"icon\":\"mdi:snowflake\",\"device\":{\"identifiers\":[\"%s\"],\"name\":\"%s\"}}",
+                 mqttTopics.base, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName);
+        if (discoveryFits(coolLen, sizeof(json), "the cooling switch"))
+          client.publish(mqttTopics.cfgCool, json, true);
+        client.publish(mqttTopics.coolState, coolingOn ? "ON" : "OFF", true);
+        client.subscribe(mqttTopics.cool);
+      }
+      else
+      {
+        client.publish(mqttTopics.cfgCool, "", true);
       }
 
       publishHomeAssistantDeviceDiscovery();
@@ -387,6 +430,11 @@ void callbackTherm(byte *payload, unsigned int length)
   }
   else if (length >= 2 && payload[1] == 'N')
   { //turn on
+    if (demandSwitch(thermostatOn, coolingOn, true))
+    {
+      coolApply(); // the cooling contact opens first: the unit never sees both demands
+      mqttSerial.println("Cooling demand released");
+    }
     digitalWrite(config.thermPin, thermActiveState());
     saveEEPROM(thermActiveState());
     thermostatOn = true;
@@ -457,6 +505,29 @@ void callbackSg(byte *payload, unsigned int length)
   {
     mqttSerial.printf("Unknown message: %s\n", payload);
   }
+}
+
+// The cooling demand relay: ON or OFF. Switching it on releases the heating demand first.
+void callbackCool(byte *payload, unsigned int length)
+{
+  payload[length] = '\0';
+  bool on = strcasecmp((const char *)payload, "ON") == 0;
+  if (!on && strcasecmp((const char *)payload, "OFF") != 0)
+  {
+    mqttSerial.printf("Unknown message: %s\n", payload);
+    return;
+  }
+  if (demandSwitch(coolingOn, thermostatOn, on))
+  {
+    // the heating contact opens first: the unit never sees both demands
+    if (config.thermPin >= 0)
+      digitalWrite(config.thermPin, !thermActiveState());
+    saveEEPROM(!thermActiveState());
+    client.publish(mqttTopics.state, "OFF", true);
+    mqttSerial.println("Heating demand released");
+  }
+  coolApply();
+  mqttSerial.println(on ? "Cooling demand ON" : "Cooling demand OFF");
 }
 
 void callbackSafety(byte *payload, unsigned int length)
@@ -762,6 +833,10 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (config.safetyPin >= 0 && strcmp(topic, mqttTopics.safety) == 0)
   {
     callbackSafety(payload, length);
+  }
+  else if (coolConfigured() && strcmp(topic, mqttTopics.cool) == 0)
+  {
+    callbackCool(payload, length);
   }
   else if (config.debugSerial && strcmp(topic, mqttTopics.serialTx) == 0)
   {

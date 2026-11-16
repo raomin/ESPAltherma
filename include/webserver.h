@@ -406,6 +406,8 @@ static void statusJson(JsonDocument &doc)
   JsonObject relays = doc["relays"].to<JsonObject>();
   if (config.thermPin >= 0)
     relays["thermostat"] = thermostatOn;
+  if (coolConfigured())
+    relays["cooling"] = coolingOn;
   if (config.safetyPin >= 0)
     relays["safety"] = safetyActive;
   if (smartGridConfigured())
@@ -683,6 +685,7 @@ void webBegin()
     if (strcmp(next->model, config.model) != 0 && !doc["hp"]["layout_fixes"].is<JsonArrayConst>())
       next->fixCount = 0; // the corrections belong to the previous model
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
+                  next->coolPin != config.coolPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
     pendingConfig = next;
@@ -1441,6 +1444,7 @@ void webLoop()
     bool statsToggled = next->statsEnabled != config.statsEnabled;
     bool updateToggled = next->updateCheck != config.updateCheck;
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
+                  next->coolPin != config.coolPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
     if (baseChanged)

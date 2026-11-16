@@ -19,6 +19,8 @@ void test_default_base_keeps_the_legacy_strings(void)
     TEST_ASSERT_EQUAL_STRING("espaltherma/detect/run", t.detectRun);
     TEST_ASSERT_EQUAL_STRING("espaltherma/sg/set", t.sgSet);
     TEST_ASSERT_EQUAL_STRING("espaltherma/SAFETY_STATE", t.safetyState);
+    TEST_ASSERT_EQUAL_STRING("espaltherma/COOL", t.cool);
+    TEST_ASSERT_EQUAL_STRING("espaltherma/COOL_STATE", t.coolState);
     TEST_ASSERT_EQUAL_STRING("espaltherma/serialTX", t.serialTx);
     TEST_ASSERT_EQUAL_STRING("espaltherma/dhw_target/set", t.ctlSet[0]);
     TEST_ASSERT_EQUAL_STRING("espaltherma/lwt_target/attributes", t.ctlAttrs[1]);
@@ -26,6 +28,7 @@ void test_default_base_keeps_the_legacy_strings(void)
     TEST_ASSERT_EQUAL_STRING("homeassistant/switch/espAltherma/config", t.cfgSwitch);
     TEST_ASSERT_EQUAL_STRING("homeassistant/select/espAltherma/sg/config", t.cfgSg);
     TEST_ASSERT_EQUAL_STRING("homeassistant/switch/espAltherma/safety/config", t.cfgSafety);
+    TEST_ASSERT_EQUAL_STRING("homeassistant/switch/espAltherma/cooling/config", t.cfgCool);
     TEST_ASSERT_EQUAL_STRING("homeassistant/number/espAltherma/dhw_target/config", t.cfgCtl[0]);
     TEST_ASSERT_EQUAL_STRING("homeassistant/device/espaltherma-mqtt-discovery/config", t.cfgDevice);
     TEST_ASSERT_EQUAL_STRING("homeassistant/update/espAltherma/firmware/config", t.cfgUpdate);
@@ -123,6 +126,7 @@ void test_longest_base_cuts_nothing(void)
     TEST_ASSERT_EQUAL_STRING(base, t.base);
     NOT_CUT(attr); NOT_CUT(lwt); NOT_CUT(log); NOT_CUT(detect); NOT_CUT(detectRun); NOT_CUT(power); NOT_CUT(state);
     NOT_CUT(sgSet); NOT_CUT(sgState); NOT_CUT(safety); NOT_CUT(safetyState); NOT_CUT(serialTx); NOT_CUT(serialRx);
+    NOT_CUT(cool); NOT_CUT(coolState); NOT_CUT(cfgCool);
     for (int k = 0; k < 2; k++)
     {
         NOT_CUT(ctlSet[k]); NOT_CUT(ctlState[k]); NOT_CUT(ctlAttrs[k]); NOT_CUT(cfgCtl[k]); NOT_CUT(cfgRestore[k]);
@@ -139,7 +143,7 @@ void test_longest_base_cuts_nothing(void)
     TEST_ASSERT_EQUAL_STRING("button.heatpump_ground_floor_altherma_3_leaving_water_curve_restore", t.restoreEntity[1]);
     TEST_ASSERT_EQUAL_STRING("Daikin Altherma via ESPAltherma (heatpump/ground-floor/altherma-3)", t.deviceName);
     // what the board subscribes to is never what it publishes on
-    const char *listens[] = {t.power, t.detectRun, t.sgSet, t.safety, t.serialTx, t.ctlSet[0], t.ctlSet[1], t.limitSet, t.limitOnSet};
+    const char *listens[] = {t.power, t.detectRun, t.sgSet, t.safety, t.cool, t.serialTx, t.ctlSet[0], t.ctlSet[1], t.limitSet, t.limitOnSet};
     const char *says[] = {t.attr, t.lwt, t.log, t.detect, t.state, t.sgState, t.safetyState, t.serialRx, t.ctlState[0], t.ctlState[1],
                           t.ctlAttrs[0], t.ctlAttrs[1], t.limitState, t.limitAttrs, t.limitOnState, t.updateTopic};
     for (const char *l : listens)

@@ -55,11 +55,12 @@ struct MqttTopics
   // topics
   char attr[TOPIC_SIZE], lwt[TOPIC_SIZE], log[TOPIC_SIZE], detect[TOPIC_SIZE], detectRun[TOPIC_SIZE], power[TOPIC_SIZE], state[TOPIC_SIZE];
   char sgSet[TOPIC_SIZE], sgState[TOPIC_SIZE], safety[TOPIC_SIZE], safetyState[TOPIC_SIZE], serialTx[TOPIC_SIZE], serialRx[TOPIC_SIZE];
+  char cool[TOPIC_SIZE], coolState[TOPIC_SIZE]; // the cooling demand relay
   char ctlSet[2][TOPIC_SIZE], ctlState[2][TOPIC_SIZE], ctlAttrs[2][TOPIC_SIZE];
   char limitSet[TOPIC_SIZE], limitState[TOPIC_SIZE], limitAttrs[TOPIC_SIZE], limitOnSet[TOPIC_SIZE], limitOnState[TOPIC_SIZE]; // the power limit
   // Home Assistant discovery topics and identifiers
   char cfgSensor[TOPIC_CFG_SIZE], cfgSwitch[TOPIC_CFG_SIZE], cfgSg[TOPIC_CFG_SIZE], cfgSafety[TOPIC_CFG_SIZE], cfgCtl[2][TOPIC_CFG_SIZE], cfgRestore[2][TOPIC_CFG_SIZE], cfgDevice[TOPIC_CFG_SIZE];
-  char cfgLimit[TOPIC_CFG_SIZE], cfgLimitOn[TOPIC_CFG_SIZE];
+  char cfgLimit[TOPIC_CFG_SIZE], cfgLimitOn[TOPIC_CFG_SIZE], cfgCool[TOPIC_CFG_SIZE];
   char deviceId[TOPIC_SIZE], deviceName[TOPIC_ID_SIZE];   // the device of the readings (device-based discovery)
   char relayDeviceId[TOPIC_SIZE], relayDeviceName[TOPIC_SIZE]; // the device of the relays (the legacy entities)
   char ctlUniq[2][TOPIC_SIZE], ctlEntity[2][TOPIC_ID_SIZE];
@@ -100,6 +101,8 @@ struct MqttTopics
     snprintf(sgState, sizeof(sgState), "%s/sg/state", base);
     snprintf(safety, sizeof(safety), "%s/SAFETY", base);
     snprintf(safetyState, sizeof(safetyState), "%s/SAFETY_STATE", base);
+    snprintf(cool, sizeof(cool), "%s/COOL", base);
+    snprintf(coolState, sizeof(coolState), "%s/COOL_STATE", base);
     snprintf(serialTx, sizeof(serialTx), "%s/serialTX", base);
     snprintf(serialRx, sizeof(serialRx), "%s/serialRX", base);
     const char *ctl[2] = {"dhw_target", "lwt_target"};
@@ -133,6 +136,7 @@ struct MqttTopics
     snprintf(cfgSwitch, sizeof(cfgSwitch), "homeassistant/switch/%s/config", seg);
     snprintf(cfgSg, sizeof(cfgSg), "homeassistant/select/%s/sg/config", seg);
     snprintf(cfgSafety, sizeof(cfgSafety), "homeassistant/switch/%s/safety/config", seg);
+    snprintf(cfgCool, sizeof(cfgCool), "homeassistant/switch/%s/cooling/config", seg);
     for (int k = 0; k < 2; k++)
     {
       snprintf(cfgCtl[k], sizeof(cfgCtl[k]), "homeassistant/number/%s/%s/config", seg, ctl[k]);

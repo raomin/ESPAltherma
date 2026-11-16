@@ -1404,6 +1404,9 @@ void setupPins()
     pinMode(config.thermPin, OUTPUT);
   }
 
+  if (coolConfigured())
+    pinMode(config.coolPin, OUTPUT); // its level was set by readEEPROM() as well
+
   if (config.safetyPin >= 0)
   {
     //Inactive level first, then output: an output starts low, which would be active for a low-triggered relay

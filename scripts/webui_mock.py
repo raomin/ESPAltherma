@@ -85,7 +85,7 @@ class Device:
             "hostname": "ESPAltherma",
             "mqtt": {"server": "" if fresh else "192.168.1.10", "port": 1883, "user": "", "tls": False, "client_id": "ESPAltherma-dev", "base_topic": "espaltherma", "has_pwd": False},
             "hp": {"protocol": "I", "frequency": 30000, "rx": 16, "tx": 17, "model": "" if fresh else MODELS[0][0], "confirmed": False, "detected_key": "", "labels": []},
-            "relays": {"therm_pin": -1, "therm_high": True, "sg1_pin": -1, "sg2_pin": -1, "sg_high": True, "safety_pin": -1, "safety_high": True},
+            "relays": {"therm_pin": -1, "therm_high": True, "cool_pin": -1, "cool_high": True, "sg1_pin": -1, "sg2_pin": -1, "sg_high": True, "safety_pin": -1, "safety_high": True},
             "output": {"one_topic": False, "one_topic_prefix": "espaltherma/OneATTR/", "json_table": False, "binary_num": False, "no_log": False, "debug_serial": False},
             "control": {"dhw_target": False, "lwt_target": False, "power_limit": LIMIT_ON},
             "stats": {"enabled": True, "voltage": 230, "phases": 1, "aux_w": 0, "tz": 60},

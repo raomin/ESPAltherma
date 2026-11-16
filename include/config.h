@@ -67,6 +67,8 @@ struct AppConfig
   // Relays, pin -1 when not used
   int8_t thermPin;
   bool thermActiveHigh;
+  int8_t coolPin; // the relay on the cooling input of the thermostat connection (reversible units)
+  bool coolActiveHigh;
   int8_t sg1Pin, sg2Pin;
   bool sgActiveHigh;
   int8_t safetyPin;
@@ -167,6 +169,8 @@ void configDefaults(AppConfig &c)
   c.txPin = BOARD_DEFAULT_TX_PIN;
   c.thermPin = -1;
   c.thermActiveHigh = true;
+  c.coolPin = -1;
+  c.coolActiveHigh = true;
   c.sg1Pin = -1;
   c.sg2Pin = -1;
   c.sgActiveHigh = true;
@@ -261,6 +265,8 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets, bo
   JsonObject relays = doc["relays"].to<JsonObject>();
   relays["therm_pin"] = c.thermPin;
   relays["therm_high"] = c.thermActiveHigh;
+  relays["cool_pin"] = c.coolPin;
+  relays["cool_high"] = c.coolActiveHigh;
   relays["sg1_pin"] = c.sg1Pin;
   relays["sg2_pin"] = c.sg2Pin;
   relays["sg_high"] = c.sgActiveHigh;
@@ -415,6 +421,8 @@ void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = fa
   readNum(relays["therm_pin"], c.thermPin);
   readNum(relays["therm_high"], c.thermActiveHigh);
   readNum(relays["sg1_pin"], c.sg1Pin);
+  readNum(relays["cool_pin"], c.coolPin);
+  readNum(relays["cool_high"], c.coolActiveHigh);
   readNum(relays["sg2_pin"], c.sg2Pin);
   readNum(relays["sg_high"], c.sgActiveHigh);
   readNum(relays["safety_pin"], c.safetyPin);
