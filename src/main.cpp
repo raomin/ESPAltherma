@@ -580,12 +580,10 @@ void pollRegistries()
     if (registryOk[i])
     {
       registryEverOk[i] = true;
+      size_t payloadLength = config.protocol == 'I' ? (buff[2] >= 2 ? buff[2] - 2 : 0) : get_reply_len(buff[0], 'S') - 2;
       valuesLock();
-      converter.readRegistryValues(buff, config.protocol); //process all values from the register
-      if (config.protocol == 'I')
-        replyCache.update(buff[1], buff + 3, buff[2] >= 2 ? buff[2] - 2 : 0);
-      else
-        replyCache.update(buff[0], buff + 1, get_reply_len(buff[0], 'S') - 2);
+      converter.readRegistryValues(buff, config.protocol, payloadLength); //process all values from the register
+      replyCache.update(config.protocol == 'I' ? buff[1] : buff[0], buff + (config.protocol == 'I' ? 3 : 1), payloadLength);
       valuesUnlock();
       if (config.protocol == 'I' && buff[2] >= 2)
         layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
