@@ -757,7 +757,11 @@ struct CurveControl : X10aClient
         changed = true;
       }
     }
+    // Taken here, and only this value: a request that arrives while this tick talks to the unit (seconds) stays
+    // for the next one. It was erased when the tick ended, and Home Assistant kept showing the earlier value.
     int w = wanted;
+    if (w >= 0 && wanted == w)
+      wanted = -1;
     if (w >= 0)
     {
       w = clamp(w);
@@ -778,7 +782,7 @@ struct CurveControl : X10aClient
           rememberOriginal();
         if (!curveMode || !apply(pendingA, pendingB, now))
         {
-          wanted = pendingA = pendingB = -1;
+          pendingA = pendingB = -1;
           restoring = false;
           identify(now); // the unit stopped answering, or its interface left the weather-dependent mode
           return;
@@ -816,7 +820,7 @@ struct CurveControl : X10aClient
           restoring = false;
           changed = true;
         }
-        wanted = pendingA = pendingB = -1;
+        pendingA = pendingB = -1;
       }
       if (now - readAt >= CONTROL_READ_INTERVAL_MS)
         readTarget(now);

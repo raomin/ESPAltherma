@@ -349,7 +349,8 @@ void test_applies_then_saves()
     TEST_ASSERT_EQUAL(50, c.targetLo);
     TEST_ASSERT_EQUAL(50, c.applied);
     TEST_ASSERT_TRUE(c.changed);
-    TEST_ASSERT_EQUAL(50, (int)c.wanted); // still pending its save
+    TEST_ASSERT_EQUAL(-1, (int)c.wanted); // taken by the tick
+    TEST_ASSERT_EQUAL(50, c.pendingA);     // and still pending its save
     c.tick(2000 + CONTROL_SAVE_DELAY_MS - 1);
     TEST_ASSERT_EQUAL(0, unit.memoryWrites);
     c.tick(2000 + CONTROL_SAVE_DELAY_MS);
@@ -357,7 +358,7 @@ void test_applies_then_saves()
     TEST_ASSERT_EQUAL((50 - 35) << 2 | 0x01, unit.memory[366]); // flag bits kept
     TEST_ASSERT_EQUAL((50 - 45) << 2 | 0x03, unit.memory[367]);
     TEST_ASSERT_EQUAL(50, c.saved);
-    TEST_ASSERT_EQUAL(-1, (int)c.wanted);
+    TEST_ASSERT_EQUAL(-1, c.pendingA);
     TEST_ASSERT_EQUAL(2, unit.ramWrites); // not written again
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
@@ -845,6 +846,22 @@ void test_ram_only_opens_the_leaving_water_range_to_the_units_own()
     TEST_ASSERT_TRUE(d.identify(1000)); // hot water: unchanged
     TEST_ASSERT_EQUAL(45, d.minTarget);
     TEST_ASSERT_EQUAL(55, d.maxTarget);
+}
+
+// A second request that arrives while the first one is being written is applied at the next tick
+void test_request_arriving_during_a_tick_is_kept()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(-1, (int)c.wanted); // taken by the tick
+    c.request(53);                         // as if it had arrived while the tick was writing
+    c.tick(2100);
+    TEST_ASSERT_EQUAL(53 << 8, unit.word(0x187A));
+    c.tick(2100 + CONTROL_SAVE_DELAY_MS + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(53, c.saved);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
 // One lost frame is asked for again: the control stays ready
@@ -1767,6 +1784,7 @@ int main(int, char **)
     RUN_TEST(test_power_limit_resumed_after_a_restart_keeps_what_was_remembered);
     RUN_TEST(test_power_limit_enable_byte_lost_is_written_again);
     RUN_TEST(test_power_limit_option_switched_off_releases_first);
+    RUN_TEST(test_request_arriving_during_a_tick_is_kept);
     RUN_TEST(test_one_lost_reply_is_asked_again);
     RUN_TEST(test_lost_software_reply_does_not_make_another_board_of_the_unit);
     RUN_TEST(test_original_curve_is_recorded_before_a_write_that_fails_halfway);
