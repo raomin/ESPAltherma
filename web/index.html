@@ -412,6 +412,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <label class="f"><span class="k">Power factor</span><input type="number" id="sStatsPf" min="0.4" max="1" step="0.01" translate="no"></label>
     <label class="f"><span class="k">Backup heater step 1 (kW)</span><input type="number" id="sStatsBuh1" min="0" max="12" step="0.5" translate="no"></label>
     <label class="f"><span class="k">Backup heater step 2 (kW)</span><input type="number" id="sStatsBuh2" min="0" max="12" step="0.5" translate="no"></label>
+    <div id="sStatsTzRow" hidden><label class="f"><span class="k">UTC offset of the day's figures (minutes)</span><input type="number" id="sStatsTz" min="-720" max="840" step="15" translate="no"></label> <button type="button" id="sStatsTzBrowser">This browser's</button>
+    <p class="sub">With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.</p></div>
    <p class="sub">The electricity is an estimate: the inverter current, which the unit reports, times the phase voltage (times 3 on three phases); units that report their voltage use it. The pump and the electronics are added while the compressor runs, 100 W unless a meter on your unit says otherwise, and the backup heater's kW while a step is on (3 kW steps on most kits, 3 and 6 kW on the 9 kW one; 0 for a step your unit has not).</p>
    <p class="sub">The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.</p></div>
   <div class="card"><h2>Experimental</h2><p class="sub">Under test: may not work on every unit.</p>
@@ -683,6 +685,7 @@ function renderTiles() {
   $('#tiles').replaceChildren(...tiles, ...(grip ? [grip] : []));
 }
 // The day's energy and cycle figures (stats.h): a card of figures, each with its detail under it
+$('#sStatsTzBrowser').onclick = () => { $('#sStatsTz').value = -new Date().getTimezoneOffset(); };
 function renderToday() {
   const st = status.stats, card = $('#todayCard');
   card.hidden = !st;
@@ -719,9 +722,12 @@ function renderToday() {
   const sv = cfg.stats || {};
   $('#todayNote').textContent = (st.voltage_read ? t('Voltage as the unit reports it.') : t('Electricity at {v} V, {ph}: change it in Settings.', {v: sv.voltage || 230, ph: sv.phases == 3 ? t('3 phases') : t('1 phase')}))
     + (sv.power_factor && sv.power_factor < 1 ? ' ' + t('Power factor {pf}.', {pf: sv.power_factor}) : '');
-  // the day changes at the local midnight: the board learns the time zone from the browser
+  // the day changes at the local midnight: the board learns the time zone from the browser. Not with an admin
+  // password: the change would ask for it on a mere look at the home page (the offset is then set in Settings).
+  // Nothing before the configuration is loaded: until then the page does not know whether there is one.
   const tz = -new Date().getTimezoneOffset();
-  if (st.tz !== tz && !renderToday.tzSent) { renderToday.tzSent = true; post('/api/config', {stats: {tz}}).catch(() => {}); }
+  const noPassword = cfg.admin && !cfg.admin.has_pwd;
+  if (st.tz !== tz && noPassword && !renderToday.tzSent) { renderToday.tzSent = true; post('/api/config', {stats: {tz}}).catch(() => {}); }
 }
 // The home page's blocks in the order this browser keeps (localStorage): a grip in the corner of each block drags it
 // above or below the others; the move shows as the pointer goes, and the order is saved when it is let go.
@@ -1277,6 +1283,7 @@ function fillSettings() {
   $('#sStatsPh').options[0].text = t('1 phase (230 V)'); $('#sStatsPh').options[1].text = t('3 phases (3 × 230 V)');
   $('#sStats').checked = st.enabled !== false; $('#sStatsV').value = st.voltage || 230; $('#sStatsPh').value = st.phases == 3 ? '3' : '1'; $('#sStatsAux').value = st.aux_w || 100; $('#sStatsPf').value = st.power_factor || 1;
   $('#sStatsBuh1').value = st.buh1_kw != null ? st.buh1_kw : 3; $('#sStatsBuh2').value = st.buh2_kw != null ? st.buh2_kw : 3;
+  $('#sStatsTzRow').hidden = !cfg.admin.has_pwd; $('#sStatsTz').value = st.tz != null ? st.tz : -new Date().getTimezoneOffset();
   $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target); $('#sLwtTarget').checked = !!(cfg.control && cfg.control.lwt_target); $('#sRamOnly').checked = !!(cfg.control && cfg.control.ram_only); $('#sPowerLimit').checked = !!(cfg.control && cfg.control.power_limit);
   $('#sHost').value = cfg.hostname; $('#sNtp').value = cfg.ntp || ''; $('#sAdminState').textContent = cfg.admin.has_pwd ? t('(set)') : t('(none)'); $('#sAdminClearL').style.display = cfg.admin.has_pwd ? '' : 'none'; $('#sAdminClear').checked = false;
   fillLangs();
@@ -1292,7 +1299,8 @@ $('#sSave').onclick = async () => {
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
     control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, ram_only: $('#sRamOnly').checked, power_limit: $('#sPowerLimit').checked},
     stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 100, power_factor: parseFloat($('#sStatsPf').value) || 1,
-            buh1_kw: parseFloat($('#sStatsBuh1').value) || 0, buh2_kw: parseFloat($('#sStatsBuh2').value) || 0},
+            buh1_kw: parseFloat($('#sStatsBuh1').value) || 0, buh2_kw: parseFloat($('#sStatsBuh2').value) || 0,
+            ...($('#sStatsTzRow').hidden ? {} : {tz: n('#sStatsTz')})},
     mqtt: {base_topic: $('#sBase').value.trim() || 'espaltherma'},
     hostname: $('#sHost').value.trim() || 'ESPAltherma',
     ntp: $('#sNtp').value.trim(),

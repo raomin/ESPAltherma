@@ -453,5 +453,8 @@
  "{n} of {t} frames read": "{n} van {t} frames gelezen",
  "Done, {m} frames did not answer.": "Klaar, {m} frames zonder antwoord.",
  "Give the unit its own curve back? The target set from here is dropped.": "Het toestel zijn eigen stooklijn teruggeven? Het hier ingestelde doel vervalt.",
- "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "De MQTT-waarden overschrijden de berichtbuffer. Selecteer minder meetwaarden of gebruik één topic per waarde in Instellingen."
+ "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "De MQTT-waarden overschrijden de berichtbuffer. Selecteer minder meetwaarden of gebruik één topic per waarde in Instellingen.",
+ "UTC offset of the day's figures (minutes)": "UTC-verschil van de dagcijfers (minuten)",
+ "This browser's": "Dat van deze browser",
+ "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Met een beheerderswachtwoord stelt de pagina het verschil niet zelf in, want dat zou om het wachtwoord vragen: stel het hier in, en opnieuw bij de klokwissel."
 }
