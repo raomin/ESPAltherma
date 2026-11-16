@@ -50,6 +50,28 @@ void test_newer_by_build_time(void)
     TEST_ASSERT_FALSE(updateNewer("2.0.0-beta.20", 1700, "2.0.0-beta.19", 1800));
 }
 
+// A release tagged on the commit of its last release candidate has the same commit time: the version decides,
+// so the boards on the candidate are offered the release (they said "up to date")
+void test_same_commit_is_decided_by_the_version(void)
+{
+    TEST_ASSERT_TRUE(updateNewer("2.0.0", 1800, "2.0.0-rc.1", 1800));
+    TEST_ASSERT_TRUE(updateNewer("2.0.0-rc.1", 1800, "2.0.0-beta.31", 1800));
+    TEST_ASSERT_FALSE(updateNewer("2.0.0-rc.1", 1800, "2.0.0", 1800));
+    TEST_ASSERT_FALSE(updateNewer("2.0.0", 1800, "dev-1a2b3c4", 1800)); // a development build has no order
+}
+
+// The version read on the site goes into the update entity's JSON: only what a version is made of
+void test_a_version_is_letters_digits_dots_and_dashes(void)
+{
+    TEST_ASSERT_TRUE(versionText("2.0.0-beta.31"));
+    TEST_ASSERT_TRUE(versionText("dev-1a2b3c4"));
+    TEST_ASSERT_FALSE(versionText(""));
+    TEST_ASSERT_FALSE(versionText(nullptr));
+    TEST_ASSERT_FALSE(versionText("9\",\"release_url\":\"//x.y"));
+    TEST_ASSERT_FALSE(versionText("2.0.0 beta"));
+    TEST_ASSERT_FALSE(versionText("123456789012345678901234")); // 24 characters: the field holds 23
+}
+
 // A development build on either side, without build times, is never "newer": the page offers those by hand
 void test_development_builds_are_not_offered(void)
 {
@@ -77,6 +99,8 @@ int main(int argc, char **argv)
     RUN_TEST(test_version_rank);
     RUN_TEST(test_newer_by_version);
     RUN_TEST(test_newer_by_build_time);
+    RUN_TEST(test_same_commit_is_decided_by_the_version);
+    RUN_TEST(test_a_version_is_letters_digits_dots_and_dashes);
     RUN_TEST(test_development_builds_are_not_offered);
     RUN_TEST(test_upload_in_progress);
     return UNITY_END();

@@ -1383,6 +1383,12 @@ static void updateCheckLoop()
     {
       const char *latest = doc["version"] | "";
       uint32_t build = doc["build_time"] | 0UL;
+      if (!versionText(latest))
+      {
+        mqttSerial.println("Update check: the site's answer holds no version");
+        http.end();
+        return;
+      }
       bool available = updateNewer(latest, build, ESPALTHERMA_VERSION, ESPALTHERMA_BUILD_TIME);
       if (!fwUpdate.checked || available != fwUpdate.available || strcmp(latest, fwUpdate.latest) != 0)
         fwUpdate.dirty = true; // Home Assistant hears of it

@@ -1456,7 +1456,7 @@ function versionRank(v) {
 // Newer: by the time of the commits when both builds carry it (CI builds from 2.0.0-beta.8 on), else by the version.
 // A development build is never offered over a newer one, nor a release over a newer development build.
 function newerBuild(m, s) {
-  if (m.build_time && s.build) return m.build_time > s.build;
+  if (m.build_time && s.build && m.build_time !== s.build) return m.build_time > s.build; // the same commit: by the version
   return newerVersion(String(m.version || ''), s.fw);
 }
 function newerVersion(latest, current) {
