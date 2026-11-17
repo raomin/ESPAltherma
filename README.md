@@ -20,6 +20,8 @@
 
 <p align="center"><b><a href="https://espaltherma.pages.dev/">➜ Install ESPAltherma from your browser</a></b></p>
 
+<p align="center"><b><a href="https://espaltherma.pages.dev/demo/">➜ Or try it first: the live demo of the web interface, no board needed</a></b></p>
+
 ![The home page of ESPAltherma](doc/images/dashboard.png)
 
 <p align="center"><img src="doc/images/phone-dark.png" width="300" alt="ESPAltherma on a phone, dark mode"></p>
