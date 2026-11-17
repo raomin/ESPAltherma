@@ -2,6 +2,7 @@ name: Release
 
 # On a version tag: builds the firmwares of the web installer, attaches them to a GitHub release, and publishes
 # the installer (flasher/ with its firmwares) on Cloudflare Pages: https://espaltherma.pages.dev
+# The demo of the web interface (demo/, scripts/build_demo.py) is published with it, at /demo/.
 # GitHub Pages is left to main.
 # A tag with a suffix (v2.0.0-beta.1) makes a pre-release, never shown as the repository's latest release.
 # The firmwares must be served by the installer's own site: ESP Web Tools downloads them with fetch(), and
@@ -43,6 +44,9 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"; else echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"; fi
       - name: Build the installer firmwares
         run: python scripts/build_flasher.py --build --version "${{ steps.version.outputs.version }}"
+      # The page of this very build, answered by recordings of a real unit in place of a board: flasher/demo/
+      - name: Build the demo of the web interface
+        run: python scripts/build_demo.py --version "${{ steps.version.outputs.version }}"
       # The event history gives the addresses of a crash (main.cpp crashReport): they are looked up in the ELF of
       # the same build, with addr2line. One zip for the 11 boards, on the release only (too large for the site).
       - name: Keep the ELF of each board

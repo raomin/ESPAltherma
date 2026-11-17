@@ -1,0 +1,43 @@
+{
+  "about": "The event history of the demo. Written for it, not recorded: a few days of a board as its history tells them, with the firmware's own wording (the texts of eventAdd in the sources). scripts/build_demo.py puts it in place of the recorded history. A boot starts 'started' seconds before now; the last one has none: it started when the recorded board did. An event is [seconds after its boot, text], or with a negative time, seconds before the next boot; the line 'Boot #n: reason, firmware' is added in front of each boot. {fw} is the demo's version and {old} the one before; {bssid}, {channel}, {ip}, {broker} and {board} come from the recording. A board keeps 24 events: the 24 newest are shown.",
+  "first_boot": 12,
+  "boots": [
+    {
+      "reason": "restart by the firmware", "firmware": "{old}", "started": 462000,
+      "events": [
+        [201600, "Hot water target set to 50"]
+      ]
+    },
+    {
+      "reason": "power on", "firmware": "{old}", "started": 205200,
+      "events": [
+        [5, "WiFi: joined access point {bssid}, channel {channel}"],
+        [7, "Online over WiFi: {ip}, -54 dBm"],
+        [8, "MQTT connected to {broker}"],
+        [18000, "Power limit set to 4.0 kW"],
+        [25200, "Power limit switched off"],
+        [72400, "WiFi: disconnected, BEACON_TIMEOUT (200)"],
+        [72401, "MQTT lost, state -3"],
+        [72409, "WiFi: joined access point A8:03:2A:00:00:11, channel 11"],
+        [72411, "Online over WiFi: {ip}, -63 dBm"],
+        [72412, "MQTT connected to {broker} (2 changes in the last minutes)"],
+        [108000, "Supply low: 4.38 V on the 5V pin, battery 4.02 V"],
+        [108040, "Supply back: 4.91 V on the 5V pin, lowest 4.31 V"],
+        [-12, "Firmware update from the web interface: {board}-ota.bin"],
+        [-5, "Restart: Firmware update from the web interface"]
+      ]
+    },
+    {
+      "reason": "restart by the firmware", "firmware": "{fw}",
+      "events": [
+        [4, "WiFi: joined access point {bssid}, channel {channel}"],
+        [6, "Online over WiFi: {ip}, -51 dBm"],
+        [7, "MQTT connected to {broker}"],
+        [35, "Firmware update confirmed: it will be kept"],
+        [9240, "Leaving water target set to 37"],
+        [16980, "Hot water target set to 55"],
+        [31500, "Hot water target at 52 after 3 more changes"]
+      ]
+    }
+  ]
+}
