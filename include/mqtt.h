@@ -19,11 +19,12 @@ IPAddress netIP(); // netmgr.h, included later
 #define EEPROM_STATE 0
 #define EEPROM_COOL 2 // the cooling demand relay: 1 when on
 
-#ifndef MAX_MSG_SIZE
-#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt
-#endif
-
-char jsonbuff[MAX_MSG_SIZE] = "{\0";
+// The values message of a poll, for the time of its publish. It was a 7,120-byte buffer kept for as long as the
+// firmware runs: it is now taken from the heap when a poll's values are published, with the room the selection
+// needs (mqttValuesBegin), and given back after the publish (mqttValuesEnd). It is filled as before, and the values
+// lock is released before the send as before.
+char *jsonbuff = nullptr;
+size_t jsonSize = 0;
 bool mqttValuesOverflow=false;
 std::atomic<bool> mqttValuesTooLarge{false};
 
@@ -96,10 +97,38 @@ void statsAppendJson(char *buf, size_t size); // main.cpp: the computed statisti
 void diiiAppendJson(char *buf, size_t size);  // main.cpp: the DIII E0/63 values of an HT outdoor unit (diii_comm.h)
 void meterAppendJson(char *buf, size_t size); // main.cpp: the unit's own energy meter, where the hydro board is mapped
 
-void resetJson()
+void eventAddf(const char *format, ...); // eventlog.h
+
+// Takes the buffer of one values message, with room for its values and what the firmware adds. False when there
+// is nobody to send it to, or no room in the heap: the values of this poll are then not sent over MQTT (said once
+// in the event history). Main loop only.
+bool mqttValuesBegin(size_t room)
 {
-  mqttValuesOverflow=false;
+  static bool noRoomSaid = false;
+  free(jsonbuff); // never two at a time
+  jsonbuff = nullptr;
+  mqttValuesOverflow = false;
+  if (mqttWriteFailed || !client.connected())
+    return false;
+  jsonbuff = (char *)malloc(room);
+  if (jsonbuff == nullptr)
+  {
+    if (!noRoomSaid)
+      eventAddf("MQTT values not sent: no memory for a message of %u bytes", (unsigned)room);
+    noRoomSaid = true;
+    return false;
+  }
+  noRoomSaid = false;
+  jsonSize = room;
   strcpy(jsonbuff, config.jsonTable ? "[{" : "{");
+  return true;
+}
+
+void mqttValuesEnd()
+{
+  free(jsonbuff);
+  jsonbuff = nullptr;
+  jsonSize = 0;
 }
 
 // Selects the (plain or TLS) network client and the broker, from the configuration, and derives every topic and
@@ -129,7 +158,6 @@ void setupMqttClient()
     mqttNet = &plainClient;
     Serial.printf("Wifi client timeout: %d\n", plainClient.getTimeout());
   }
-  resetJson();
   client.setBufferSize(MQTT_BUFFER_SIZE);
   client.setServer(config.mqttServer, config.mqttPort);
   // 60 s instead of the library's 15: a main loop busy for a few seconds (a long publish on a slow link, a web
@@ -180,42 +208,45 @@ void publishHomeAssistantDeviceDiscovery();
 
 void sendValues()
 {
+  if (jsonbuff == nullptr)
+    return; // no message for this poll (mqttValuesBegin)
   mqttSerial.printf("Sending values in MQTT.\n");
 #ifdef ARDUINO_M5Stick_C_Plus2
   //Add Power values
   // getBatteryVoltage returns battery voltage [mV] as an int16_t
   float batteryVoltage = (float) M5.Power.getBatteryVoltage() / 1000; // convert to V as a float
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
 #elif ARDUINO_M5Stick_C
   //Add M5 APX values
   { // the input in use: the 5V pin (ACIN, eg. powered from the X10A) or USB (VBUS)
     float acin = M5.Power.Axp192.getACINVoltage(), vbus = M5.Power.Axp192.getVBUSVoltage();
     bool pin = acin > vbus;
-    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", pin ? acin : vbus,"M5AmpIn", pin ? M5.Power.Axp192.getACINCurrent() : M5.Power.Axp192.getVBUSCurrent());
+    snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", pin ? acin : vbus,"M5AmpIn", pin ? M5.Power.Axp192.getACINCurrent() : M5.Power.Axp192.getVBUSCurrent());
   }
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Power.Axp192.getBatteryVoltage(),"M5BatCur", M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Power.Axp192.getBatteryPower());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Power.Axp192.getBatteryVoltage(),"M5BatCur", M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Power.Axp192.getBatteryPower());
 #endif
-  statsAppendJson(jsonbuff, MAX_MSG_SIZE);
-  diiiAppendJson(jsonbuff, MAX_MSG_SIZE);
-  meterAppendJson(jsonbuff, MAX_MSG_SIZE);
+  statsAppendJson(jsonbuff, jsonSize);
+  diiiAppendJson(jsonbuff, jsonSize);
+  meterAppendJson(jsonbuff, jsonSize);
   if (WiFi.status() == WL_CONNECTED) // not over Ethernet
-    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
-  if (!mqttJsonFinish(jsonbuff,MAX_MSG_SIZE,config.jsonTable,mqttValuesOverflow))
+    snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
+  if (!mqttJsonFinish(jsonbuff,jsonSize,config.jsonTable,mqttValuesOverflow))
   {
     if (!mqttValuesTooLarge.exchange(true))
     {
       mqttSerial.println("MQTT values exceed the payload buffer; incomplete JSON discarded.");
       eventAddf("MQTT values too large; reduce selection or use individual topics");
     }
-    resetJson();return;
+    mqttValuesEnd();
+    return;
   }
   mqttValuesTooLarge=false;
   mqttPublish(mqttTopics.attr, jsonbuff);
-  resetJson();
+  mqttValuesEnd();
 }
 
 // Removes every entity this base topic published from Home Assistant, and marks it offline: called before the

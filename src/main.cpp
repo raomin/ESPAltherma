@@ -125,12 +125,16 @@ void updateValues(char regID)
     if (!digit)
       alpha = true;
 
-    if (alpha){
+    if (jsonbuff == nullptr)
+    {
+      // no values message for this poll (mqttValuesBegin)
+    }
+    else if (alpha){
 
-      mqttJsonAppend(jsonbuff,MAX_MSG_SIZE,mqttValuesOverflow,"\"%s\":\"%s\",",labels[i]->label,v);
+      mqttJsonAppend(jsonbuff,jsonSize,mqttValuesOverflow,"\"%s\":\"%s\",",labels[i]->label,v);
     }
     else{//number, no quotes
-      mqttJsonAppend(jsonbuff,MAX_MSG_SIZE,mqttValuesOverflow,"\"%s\":%s,",labels[i]->label,v);
+      mqttJsonAppend(jsonbuff,jsonSize,mqttValuesOverflow,"\"%s\":%s,",labels[i]->label,v);
     }
   }
 }
@@ -876,6 +880,27 @@ void statsAppendJson(char *buf, size_t size)
   }
 }
 
+// The room the values message of this poll needs: each selected value's name and its text as it is now, then what
+// the firmware adds itself, rounded up to a step so that it is the same from poll to poll. Under the values lock,
+// which is kept until the values are in the message.
+#define VALUES_ROOM_BOARD 320 // the board's supply (M5), signal, address, free memory and uptime
+#define VALUES_ROOM_STATS 900 // 18 statistics: 536 characters of names, a figure each
+#define VALUES_ROOM_DIII 700  // 19 DIII values: 364 characters of names
+#define VALUES_ROOM_METER 900 // the unit's model, its meter and its 13 counters: 580 characters of names
+static size_t valuesMessageRoom()
+{
+  size_t room = VALUES_ROOM_BOARD + MQTT_JSON_FRAME_ROOM;
+  for (size_t i = 0; !config.oneValOneTopic && i < converter.activeCount; i++)
+    room += mqttJsonValueRoom(converter.activeLabels[i].label, converter.activeLabels[i].asString);
+  if (config.statsEnabled)
+    room += VALUES_ROOM_STATS;
+  if (diii.status == DIII_READY)
+    room += VALUES_ROOM_DIII;
+  if (unitMeter.status == CONTROL_READY || unitMeter.model[0])
+    room += VALUES_ROOM_METER;
+  return mqttJsonRoomRounded(room);
+}
+
 void publishValues()
 {
   valuesLock();
@@ -892,8 +917,10 @@ void publishValues()
         if (n>=0 && (size_t)n<sizeof(topic)) mqttPublish(topic,v);
         else mqttSerial.println("Value topic too long; publish skipped.");
       });
+    mqttValuesBegin(valuesMessageRoom()); // one topic per value: the message only holds what the firmware adds
     sendValues();webSendValues();return;
   }
+  mqttValuesBegin(valuesMessageRoom());
   for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
   {
     if (registryOk[i])
