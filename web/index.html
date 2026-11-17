@@ -393,8 +393,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <path d="M80 26H280M80 86H280" style="stroke:var(--ink2);stroke-width:2;fill:none;opacity:.6"/><path d="M80 46H280" style="stroke:var(--hot);stroke-width:3;fill:none;stroke-linecap:round"/><path d="M80 66H280" style="stroke:var(--cold);stroke-width:3;fill:none;stroke-linecap:round"/>
    </svg>
    <div class="row"><label class="f"><span class="k">RX pin (to X10A TX)</span><input type="number" id="sRx"></label><label class="f"><span class="k">TX pin (to X10A RX)</span><input type="number" id="sTx"></label><label class="f"><span class="k">Read every (seconds)</span><input type="number" id="sFreq" min="5"></label></div>
-   <div class="row"><label class="f"><span class="k">Outdoor temperature on the home page</span><select id="sOutdoor"><option value="unit">Outdoor unit's sensor</option><option value="aux">External sensor (R6T)</option></select></label></div>
-   <p class="sub">When field setting [C-08] is "outdoor sensor", the unit follows the external sensor: choose it here to show it, with the auxiliary sensor (R6T) among the selected values.</p></div>
+   <div class="row"><label class="f"><span class="k">Outdoor temperature on the home page</span><select id="sOutdoor"><option value="unit">Outdoor unit's sensor</option><option value="aux">External sensor (R6T)</option></select></label><label class="f"><span class="k">Room temperature on the home page</span><select id="sIndoor"><option value="unit">The unit's own sensor</option><option value="aux">External sensor (R6T)</option></select></label></div>
+   <p class="sub">When field setting [C-08] is "outdoor sensor" or "room sensor", the unit follows the external sensor: choose it here to show it, with the auxiliary sensor (R6T) among the selected values. Only this page changes: both readings stay in the values and in Home Assistant.</p></div>
   <div class="card"><h2>Relays</h2><p class="sub">Optional: a thermostat input, the safety stop, Smart Grid. -1 = not used.</p>
    <div class="row"><label class="f"><span class="k">Thermostat relay pin</span><input type="number" id="sTherm"></label><label class="f"><span class="k">Cooling relay pin</span><input type="number" id="sCool"></label><label class="f"><span class="k">Safety relay pin</span><input type="number" id="sSafety"></label><label class="f"><span class="k">Smart Grid pin 1</span><input type="number" id="sSg1"></label><label class="f"><span class="k">Smart Grid pin 2</span><input type="number" id="sSg2"></label></div>
    <label class="chk"><input type="checkbox" id="sThermHigh">Thermostat relay active high</label><label class="chk"><input type="checkbox" id="sCoolHigh">Cooling relay active high</label><label class="chk"><input type="checkbox" id="sSafetyHigh">Safety relay active high</label><label class="chk"><input type="checkbox" id="sSgHigh">Smart Grid relays active high</label></div>
@@ -925,6 +925,9 @@ function reading(list) {
   // The outdoor temperature from the external sensor when Settings say so: with [C-08] on "outdoor sensor" the unit runs
   // its curve from that one, not from the outdoor unit's (#629)
   if (cfg.hp && cfg.hp.outdoor_aux && r.aux != null) { r.out = r.aux; r.outAux = true; }
+  // The room temperature likewise, with [C-08] on "room sensor" (#699). Without the sensor among the values the room
+  // has no reading: the unit's own sensor is not the one it follows, it is not shown in its place
+  if (cfg.hp && cfg.hp.indoor_aux) { if (r.aux != null) r.room = r.aux; else delete r.room; }
   // No backup heater (EDLA...W1/V3 monoblocs): its outlet sensor (R2T) reads exactly 0, the leaving water is the heat exchanger's (R1T)
   if (r.lw2 != null && +r.lw2 === 0 && r.lw1 != null) r.lw2 = r.lw1;
   // The mixed zone's water is the bizone kit's sensor where the kit is fitted (the ECH2O units have no other). Not
@@ -1276,6 +1279,10 @@ function fillSettings() {
   const r = cfg.relays, o = cfg.output, w = cfg.wifi;
   $('#sRx').value = cfg.hp.rx; $('#sTx').value = cfg.hp.tx; $('#sFreq').value = Math.round(cfg.hp.frequency / 1000);
   $('#sOutdoor').options[0].text = t("Outdoor unit's sensor"); $('#sOutdoor').options[1].text = t('External sensor (R6T)'); $('#sOutdoor').value = cfg.hp.outdoor_aux ? 'aux' : 'unit';
+  $('#sIndoor').options[0].text = t("The unit's own sensor"); $('#sIndoor').options[1].text = t('External sensor (R6T)'); $('#sIndoor').value = cfg.hp.indoor_aux ? 'aux' : 'unit';
+  // one sensor, one place: choosing it for one gives the other back to the unit's sensor
+  $('#sOutdoor').onchange = () => { if ($('#sOutdoor').value === 'aux') $('#sIndoor').value = 'unit'; };
+  $('#sIndoor').onchange = () => { if ($('#sIndoor').value === 'aux') $('#sOutdoor').value = 'unit'; };
   tx('pinRx', 'G' + cfg.hp.rx); tx('pinTx', 'G' + cfg.hp.tx); tx('pinBoard', status.board || 'ESP32');
   $('#sTherm').value = r.therm_pin; $('#sCool').value = r.cool_pin == null ? -1 : r.cool_pin; $('#sCoolHigh').checked = r.cool_high !== false; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
@@ -1295,7 +1302,7 @@ $('#sStatic').onchange = e => $('#sStaticBox').hidden = !e.target.checked;
 $('#sSave').onclick = async () => {
   const n = id => parseInt($(id).value, 10);
   const d = {
-    hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000, outdoor_aux: $('#sOutdoor').value === 'aux'},
+    hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000, outdoor_aux: $('#sOutdoor').value === 'aux', indoor_aux: $('#sIndoor').value === 'aux'},
     relays: {therm_pin: n('#sTherm'), cool_pin: n('#sCool'), cool_high: $('#sCoolHigh').checked, sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
     control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, ram_only: $('#sRamOnly').checked, power_limit: $('#sPowerLimit').checked},

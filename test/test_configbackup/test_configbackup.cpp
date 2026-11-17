@@ -64,4 +64,24 @@ void test_settings_copy_keeps_what_the_board_wrote_meanwhile()
     TEST_ASSERT_EQUAL_STRING("renamed", form.hostname);
     TEST_ASSERT_EQUAL(15000, form.frequency);
 }
-int main(int,char**){UNITY_BEGIN();RUN_TEST(test_settings_copy_keeps_what_the_board_wrote_meanwhile);RUN_TEST(test_api_ignores_runtime_fields_in_legacy_backup_but_applies_settings);RUN_TEST(test_public_backup_omits_runtime_and_secrets);RUN_TEST(test_internal_persistence_still_round_trips_runtime_and_passwords);return UNITY_END();}
+// The external sensor (R6T) is shown as the outdoor or as the room temperature, never as both (#699)
+void test_external_sensor_has_one_place()
+{
+    AppConfig c; configDefaults(c); JsonDocument doc;
+    TEST_ASSERT_FALSE(c.outdoorAux); TEST_ASSERT_FALSE(c.indoorAux);
+    deserializeJson(doc, R"({"hp":{"indoor_aux":true}})"); configFromJson(c, doc.as<JsonVariantConst>());
+    TEST_ASSERT_TRUE(c.indoorAux); TEST_ASSERT_FALSE(c.outdoorAux);
+    // the other place chosen alone: it takes the sensor
+    deserializeJson(doc, R"({"hp":{"outdoor_aux":true}})"); configFromJson(c, doc.as<JsonVariantConst>());
+    TEST_ASSERT_TRUE(c.outdoorAux); TEST_ASSERT_FALSE(c.indoorAux);
+    deserializeJson(doc, R"({"hp":{"indoor_aux":true}})"); configFromJson(c, doc.as<JsonVariantConst>());
+    TEST_ASSERT_TRUE(c.indoorAux); TEST_ASSERT_FALSE(c.outdoorAux);
+    // both asked at once on a board that had neither: the outdoor one
+    configDefaults(c);
+    deserializeJson(doc, R"({"hp":{"outdoor_aux":true,"indoor_aux":true}})"); configFromJson(c, doc.as<JsonVariantConst>());
+    TEST_ASSERT_TRUE(c.outdoorAux); TEST_ASSERT_FALSE(c.indoorAux);
+    // and the setting is in the backup
+    configDefaults(c); c.indoorAux = true; JsonDocument out; configToJson(c, out, false);
+    TEST_ASSERT_TRUE(out["hp"]["indoor_aux"].as<bool>()); TEST_ASSERT_FALSE(out["hp"]["outdoor_aux"].as<bool>());
+}
+int main(int,char**){UNITY_BEGIN();RUN_TEST(test_external_sensor_has_one_place);RUN_TEST(test_settings_copy_keeps_what_the_board_wrote_meanwhile);RUN_TEST(test_api_ignores_runtime_fields_in_legacy_backup_but_applies_settings);RUN_TEST(test_public_backup_omits_runtime_and_secrets);RUN_TEST(test_internal_persistence_still_round_trips_runtime_and_passwords);return UNITY_END();}
