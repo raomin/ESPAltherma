@@ -1361,6 +1361,18 @@ inline bool unitModelLooksValid(const char *name)
 // A heat pump just powered up answers before it has loaded its counts into RAM: they read 0 for a minute or so. A
 // meter in use is never back at 0, so a count of 0 means "not ready": nothing is published (a lifetime total going
 // to 0 and back would count twice in Home Assistant's statistics), and the unit is tried again a minute later.
+// A scheduled disinfection of the tank, running: a bit of the on/off byte in the image of the board's memory (the
+// one with hot water and space heating on or off). On 20002203 the byte read 156 instead of 28 from the start of a
+// disinfection until it was switched off on the interface (doc/memory-20002203.md). Read with the meter, so only
+// where the meter is mapped. Not seen yet: a disinfection that ends by itself.
+struct DisinfectionFlag
+{
+  const char *softwareId;
+  uint16_t memIndex; // the byte in the memory image ('I' command)
+  uint8_t mask;      // its bit set while a disinfection runs
+};
+static const DisinfectionFlag DISINFECTION_FLAGS[] = {{"20002203", 77, 0x80}};
+
 struct MeterReader : X10aClient
 {
   const ControlProfile *profile = nullptr;
@@ -1373,6 +1385,8 @@ struct MeterReader : X10aClient
   unsigned long checkedAt = 0, readAt = 0;
   uint32_t counter[UNIT_COUNTER_COUNT] = {0};     // the highest count read of each mapped counter since the start (energy in Wh)
   bool counterKnown[UNIT_COUNTER_COUNT] = {false}; // the last read gave it
+  const DisinfectionFlag *disinfectionFlag = nullptr; // where this board shows a disinfection running (nullptr: not known)
+  int disinfection = -1;                              // 1 running, 0 not, -1 not known (the last read failed, or not mapped)
 
   void reset()
   {
@@ -1383,6 +1397,8 @@ struct MeterReader : X10aClient
     modelTries = 0;
     heatKWh = 0;
     known = false;
+    disinfectionFlag = nullptr;
+    disinfection = -1;
     checkedAt = readAt = 0;
     forgetCounters();
     memset(counter, 0, sizeof(counter));
@@ -1404,6 +1420,15 @@ struct MeterReader : X10aClient
         counter[i] = v;
       counterKnown[i] = true;
     }
+  }
+
+  void readDisinfection()
+  {
+    uint8_t b = 0;
+    if (disinfectionFlag == nullptr || !readMemory(disinfectionFlag->memIndex, b))
+      disinfection = -1;
+    else
+      disinfection = (b & disinfectionFlag->mask) ? 1 : 0;
   }
 
   void forgetCounters()
@@ -1450,6 +1475,10 @@ struct MeterReader : X10aClient
     for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
         profile = &CONTROL_PROFILES[i];
+    disinfectionFlag = nullptr;
+    for (const DisinfectionFlag &f : DISINFECTION_FLAGS)
+      if (strcmp(f.softwareId, softwareId) == 0)
+        disinfectionFlag = &f;
     if (profile == nullptr || profile->ramHeatKwh == 0)
     {
       status = CONTROL_UNSUPPORTED;
@@ -1475,6 +1504,7 @@ struct MeterReader : X10aClient
       readCounters();
     else
       forgetCounters();
+    readDisinfection();
     return known;
   }
 

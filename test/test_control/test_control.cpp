@@ -1590,6 +1590,37 @@ void test_the_unit_energy_meter_is_read_where_mapped()
     TEST_ASSERT_FALSE(u.known);
 }
 
+// A disinfection of the tank running: bit 7 of the on/off byte (memory 77) on 20002203, read with the meter.
+// Nowhere else: no other software is known to keep it there.
+void test_the_disinfection_is_read_with_the_meter_on_20002203()
+{
+    unit.board(FakeUnit::profileFor("20002203"));
+    unit.setU32(0x08E6, 18720);
+    unit.memory[77] = 28; // hot water and space heating on
+    MeterReader m;
+    m.exchange = fakeExchange;
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_NOT_NULL(m.disinfectionFlag);
+    TEST_ASSERT_EQUAL(0, m.disinfection);
+    unit.memory[77] = 156; // as on 17 November, from 11:00
+    m.tick(61000);
+    TEST_ASSERT_EQUAL(1, m.disinfection);
+    unit.answer = false;
+    m.tick(122000);
+    TEST_ASSERT_EQUAL(-1, m.disinfection);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    unit.reset(); // 18002904: a meter, but no disinfection known there
+    unit.setU32(0x08C2, 18720);
+    unit.memory[77] = 156;
+    MeterReader o;
+    o.exchange = fakeExchange;
+    o.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, o.status);
+    TEST_ASSERT_NULL(o.disinfectionFlag);
+    TEST_ASSERT_EQUAL(-1, o.disinfection);
+}
+
 // The unit's model name: the first bytes of the hydro board's memory up to a 0, read with the meter's
 // identification on any board (a meter mapped or not); kept only when it looks like a name, given up after a few
 // tries. Nothing written.
@@ -1919,6 +1950,7 @@ int main(int, char **)
     RUN_TEST(test_a_board_without_the_L_command_is_identified_by_registry_0x60);
     RUN_TEST(test_the_unit_energy_meter_is_read_where_mapped);
     RUN_TEST(test_the_unit_model_name_is_read_from_the_memory);
+    RUN_TEST(test_the_disinfection_is_read_with_the_meter_on_20002203);
     RUN_TEST(test_every_mapped_software_reads_its_meter_and_counters);
     RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
     RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);

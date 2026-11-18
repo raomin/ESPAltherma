@@ -57,10 +57,21 @@ void test_label_reload_during_publish_stops_without_reading_freed_selection()
     }));
     TEST_ASSERT_EQUAL(1,sent);TEST_ASSERT_FALSE(locked);
 }
+// An extra value can be a binary sensor (the disinfection running): its component is removed as one
+void test_an_extra_binary_sensor_is_listed_as_one()
+{
+    HaDiscoverySnapshot snapshot;
+    std::vector<HaSensor> extras={{"Unit meter: Heat produced (kWh)",ESP_SENSOR_ENERGY_KWH},{"Disinfection running",-1,300}};
+    TEST_ASSERT_TRUE(snapshot.capture(nullptr,0,extras.data(),extras.size(),"Altherma"));
+    auto components=haSnapshotComponents(snapshot);
+    TEST_ASSERT_EQUAL(2,components.size());
+    TEST_ASSERT_EQUAL_STRING("sensor",components[0].platform.c_str());
+    TEST_ASSERT_EQUAL_STRING("binary_sensor",components[1].platform.c_str());
+}
 void test_snapshot_rejects_invalid_or_unbounded_sources()
 {
     HaDiscoverySnapshot snapshot;TEST_ASSERT_FALSE(snapshot.capture(nullptr,225,nullptr,0,"x"));
     TEST_ASSERT_FALSE(snapshot.capture(nullptr,1,nullptr,0,"x"));
     TEST_ASSERT_TRUE(snapshot.capture(nullptr,0,nullptr,0,"x"));TEST_ASSERT_EQUAL(0,snapshot.count);
 }
-int main(int,char**){UNITY_BEGIN();RUN_TEST(test_discovery_snapshot_matches_existing_bytes_and_survives_source_reload_mid_send);RUN_TEST(test_one_value_sink_runs_without_lock_and_owns_its_copied_value);RUN_TEST(test_label_reload_during_publish_stops_without_reading_freed_selection);RUN_TEST(test_snapshot_rejects_invalid_or_unbounded_sources);return UNITY_END();}
+int main(int,char**){UNITY_BEGIN();RUN_TEST(test_discovery_snapshot_matches_existing_bytes_and_survives_source_reload_mid_send);RUN_TEST(test_one_value_sink_runs_without_lock_and_owns_its_copied_value);RUN_TEST(test_label_reload_during_publish_stops_without_reading_freed_selection);RUN_TEST(test_an_extra_binary_sensor_is_listed_as_one);RUN_TEST(test_snapshot_rejects_invalid_or_unbounded_sources);return UNITY_END();}
