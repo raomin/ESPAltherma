@@ -462,5 +462,12 @@
  "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "I valori MQTT superano il buffer del messaggio. Seleziona meno misure o usa un topic per valore nelle impostazioni.",
  "UTC offset of the day's figures (minutes)": "Scostamento UTC dei dati del giorno (minuti)",
  "This browser's": "Quello di questo browser",
- "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Con una password admin la pagina non imposta lo scostamento da sola, perché chiederebbe la password: impostalo qui, e di nuovo al cambio dell'ora."
+ "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Con una password admin la pagina non imposta lo scostamento da sola, perché chiederebbe la password: impostalo qui, e di nuovo al cambio dell'ora.",
+ "Cooling target": "Obiettivo di raffrescamento",
+ "Additional zone target": "Obiettivo della zona aggiuntiva",
+ "The leaving water target while the unit cools (main zone), written into its cooling curve. Experimental: not seen during a cooling run yet.": "L'obiettivo di mandata mentre l'unità raffresca (zona principale), scritto nella sua curva di raffrescamento. Sperimentale: non ancora osservato durante un ciclo di raffrescamento.",
+ "The leaving water target of the additional zone while the unit heats, written into its curve. The unit never aims the additional zone lower than the main zone. Experimental: not seen with two zones and real valves yet.": "L'obiettivo di mandata della zona aggiuntiva mentre l'unità riscalda, scritto nella sua curva. L'unità non punta mai più in basso nella zona aggiuntiva che nella zona principale. Sperimentale: non ancora osservato con due zone e valvole reali.",
+ "Cooling target (main zone) from Home Assistant and this page (software 20002203)": "Obiettivo di raffrescamento (zona principale) da Home Assistant e da questa pagina (software 20002203)",
+ "Additional zone target from Home Assistant and this page (software 20002203)": "Obiettivo della zona aggiuntiva da Home Assistant e da questa pagina (software 20002203)",
+ "What the board aims for in the additional zone: the target plus its shift, never lower than the main zone.": "Ciò a cui punta la scheda nella zona aggiuntiva: l'obiettivo più il suo spostamento, mai più in basso che nella zona principale."
 }

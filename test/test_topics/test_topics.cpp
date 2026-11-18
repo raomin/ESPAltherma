@@ -127,7 +127,7 @@ void test_longest_base_cuts_nothing(void)
     NOT_CUT(attr); NOT_CUT(lwt); NOT_CUT(log); NOT_CUT(detect); NOT_CUT(detectRun); NOT_CUT(power); NOT_CUT(state);
     NOT_CUT(sgSet); NOT_CUT(sgState); NOT_CUT(safety); NOT_CUT(safetyState); NOT_CUT(serialTx); NOT_CUT(serialRx);
     NOT_CUT(cool); NOT_CUT(coolState); NOT_CUT(cfgCool);
-    for (int k = 0; k < 2; k++)
+    for (int k = 0; k < TOPICS_TARGET_COUNT; k++)
     {
         NOT_CUT(ctlSet[k]); NOT_CUT(ctlState[k]); NOT_CUT(ctlAttrs[k]); NOT_CUT(cfgCtl[k]); NOT_CUT(cfgRestore[k]);
         NOT_CUT(ctlUniq[k]); NOT_CUT(ctlEntity[k]); NOT_CUT(restoreUniq[k]); NOT_CUT(restoreEntity[k]);
@@ -141,11 +141,15 @@ void test_longest_base_cuts_nothing(void)
     TEST_ASSERT_EQUAL_STRING("heatpump/ground-floor/altherma-3/power_limit/on/set", t.limitOnSet);
     TEST_ASSERT_EQUAL_STRING("heatpump/ground-floor/altherma-3/power_limit/on/state", t.limitOnState);
     TEST_ASSERT_EQUAL_STRING("button.heatpump_ground_floor_altherma_3_leaving_water_curve_restore", t.restoreEntity[1]);
+    TEST_ASSERT_EQUAL_STRING("button.heatpump_ground_floor_altherma_3_additional_zone_curve_restore", t.restoreEntity[3]);
+    TEST_ASSERT_EQUAL_STRING("number.heatpump_ground_floor_altherma_3_cooling_target", t.ctlEntity[2]);
+    TEST_ASSERT_EQUAL_STRING("heatpump/ground-floor/altherma-3/add_target/set", t.ctlSet[3]);
     TEST_ASSERT_EQUAL_STRING("Daikin Altherma via ESPAltherma (heatpump/ground-floor/altherma-3)", t.deviceName);
     // what the board subscribes to is never what it publishes on
-    const char *listens[] = {t.power, t.detectRun, t.sgSet, t.safety, t.cool, t.serialTx, t.ctlSet[0], t.ctlSet[1], t.limitSet, t.limitOnSet};
+    const char *listens[] = {t.power, t.detectRun, t.sgSet, t.safety, t.cool, t.serialTx, t.ctlSet[0], t.ctlSet[1], t.ctlSet[2], t.ctlSet[3], t.limitSet, t.limitOnSet};
     const char *says[] = {t.attr, t.lwt, t.log, t.detect, t.state, t.sgState, t.safetyState, t.serialRx, t.ctlState[0], t.ctlState[1],
-                          t.ctlAttrs[0], t.ctlAttrs[1], t.limitState, t.limitAttrs, t.limitOnState, t.updateTopic};
+                          t.ctlAttrs[0], t.ctlAttrs[1], t.limitState, t.limitAttrs, t.limitOnState, t.updateTopic,
+                          t.ctlState[2], t.ctlState[3], t.ctlAttrs[2], t.ctlAttrs[3]};
     for (const char *l : listens)
         for (const char *p : says)
             TEST_ASSERT_TRUE_MESSAGE(strcmp(l, p) != 0, l);

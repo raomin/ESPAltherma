@@ -16,9 +16,10 @@
 // power limit's became the same one) and a cut identifier another entity
 #define TOPICS_BASE_MAX 32
 #define TOPIC_SIZE (TOPICS_BASE_MAX + 32)     // base + "/power_limit/attributes" (23)
-#define TOPIC_ID_SIZE (TOPICS_BASE_MAX + 40)  // "button." + id + "_leaving_water_curve_restore" (35), the device name (34)
+#define TOPIC_ID_SIZE (TOPICS_BASE_MAX + 40)  // "button." + id + "_additional_zone_curve_restore" (36), the device name (34)
 #define TOPIC_CFG_SIZE (TOPICS_BASE_MAX + 64) // "homeassistant/button/" + id + "/lwt_target_restore/config" (47)
 #define TOPICS_DEFAULT_CLIENT_ID "ESPAltherma-dev"
+#define TOPICS_TARGET_COUNT 4 // the target controls, in the order of ControlKind (control.h)
 
 // Cleans a base topic typed by the user: no spaces, no MQTT wildcards, no control characters, no leading or
 // trailing slash; empty becomes the default. Returns true when something was changed.
@@ -56,15 +57,15 @@ struct MqttTopics
   char attr[TOPIC_SIZE], lwt[TOPIC_SIZE], log[TOPIC_SIZE], detect[TOPIC_SIZE], detectRun[TOPIC_SIZE], power[TOPIC_SIZE], state[TOPIC_SIZE];
   char sgSet[TOPIC_SIZE], sgState[TOPIC_SIZE], safety[TOPIC_SIZE], safetyState[TOPIC_SIZE], serialTx[TOPIC_SIZE], serialRx[TOPIC_SIZE];
   char cool[TOPIC_SIZE], coolState[TOPIC_SIZE]; // the cooling demand relay
-  char ctlSet[2][TOPIC_SIZE], ctlState[2][TOPIC_SIZE], ctlAttrs[2][TOPIC_SIZE];
+  char ctlSet[TOPICS_TARGET_COUNT][TOPIC_SIZE], ctlState[TOPICS_TARGET_COUNT][TOPIC_SIZE], ctlAttrs[TOPICS_TARGET_COUNT][TOPIC_SIZE];
   char limitSet[TOPIC_SIZE], limitState[TOPIC_SIZE], limitAttrs[TOPIC_SIZE], limitOnSet[TOPIC_SIZE], limitOnState[TOPIC_SIZE]; // the power limit
   // Home Assistant discovery topics and identifiers
-  char cfgSensor[TOPIC_CFG_SIZE], cfgSwitch[TOPIC_CFG_SIZE], cfgSg[TOPIC_CFG_SIZE], cfgSafety[TOPIC_CFG_SIZE], cfgCtl[2][TOPIC_CFG_SIZE], cfgRestore[2][TOPIC_CFG_SIZE], cfgDevice[TOPIC_CFG_SIZE];
+  char cfgSensor[TOPIC_CFG_SIZE], cfgSwitch[TOPIC_CFG_SIZE], cfgSg[TOPIC_CFG_SIZE], cfgSafety[TOPIC_CFG_SIZE], cfgCtl[TOPICS_TARGET_COUNT][TOPIC_CFG_SIZE], cfgRestore[TOPICS_TARGET_COUNT][TOPIC_CFG_SIZE], cfgDevice[TOPIC_CFG_SIZE];
   char cfgLimit[TOPIC_CFG_SIZE], cfgLimitOn[TOPIC_CFG_SIZE], cfgCool[TOPIC_CFG_SIZE];
   char deviceId[TOPIC_SIZE], deviceName[TOPIC_ID_SIZE];   // the device of the readings (device-based discovery)
   char relayDeviceId[TOPIC_SIZE], relayDeviceName[TOPIC_SIZE]; // the device of the relays (the legacy entities)
-  char ctlUniq[2][TOPIC_SIZE], ctlEntity[2][TOPIC_ID_SIZE];
-  char restoreUniq[2][TOPIC_SIZE], restoreEntity[2][TOPIC_ID_SIZE]; // the "restore the unit's curve" buttons
+  char ctlUniq[TOPICS_TARGET_COUNT][TOPIC_SIZE], ctlEntity[TOPICS_TARGET_COUNT][TOPIC_ID_SIZE];
+  char restoreUniq[TOPICS_TARGET_COUNT][TOPIC_SIZE], restoreEntity[TOPICS_TARGET_COUNT][TOPIC_ID_SIZE]; // the "restore the unit's curve" buttons
   char limitUniq[TOPIC_SIZE], limitEntity[TOPIC_ID_SIZE], limitOnUniq[TOPIC_SIZE], limitOnEntity[TOPIC_ID_SIZE];
   char updateTopic[TOPIC_SIZE], cfgUpdate[TOPIC_CFG_SIZE], updateUniq[TOPIC_SIZE], updateEntity[TOPIC_ID_SIZE]; // the firmware update entity
   char clientId[TOPIC_SIZE];       // the MQTT client id: the broker drops a connection when another one takes its id
@@ -105,9 +106,10 @@ struct MqttTopics
     snprintf(coolState, sizeof(coolState), "%s/COOL_STATE", base);
     snprintf(serialTx, sizeof(serialTx), "%s/serialTX", base);
     snprintf(serialRx, sizeof(serialRx), "%s/serialRX", base);
-    const char *ctl[2] = {"dhw_target", "lwt_target"};
-    const char *entity[2] = {"hot_water_target", "leaving_water_target"};
-    for (int k = 0; k < 2; k++)
+    const char *ctl[TOPICS_TARGET_COUNT] = {"dhw_target", "lwt_target", "cool_target", "add_target"};
+    const char *entity[TOPICS_TARGET_COUNT] = {"hot_water_target", "leaving_water_target", "cooling_target", "additional_zone_target"};
+    const char *curve[TOPICS_TARGET_COUNT] = {"hot_water", "leaving_water", "cooling", "additional_zone"};
+    for (int k = 0; k < TOPICS_TARGET_COUNT; k++)
     {
       snprintf(ctlSet[k], sizeof(ctlSet[k]), "%s/%s/set", base, ctl[k]);
       snprintf(ctlState[k], sizeof(ctlState[k]), "%s/%s/state", base, ctl[k]);
@@ -115,7 +117,7 @@ struct MqttTopics
       snprintf(ctlUniq[k], sizeof(ctlUniq[k]), "%s_%s", id, ctl[k]);
       snprintf(ctlEntity[k], sizeof(ctlEntity[k]), "number.%s_%s", id, entity[k]);
       snprintf(restoreUniq[k], sizeof(restoreUniq[k]), "%s_%s_restore", id, ctl[k]);
-      snprintf(restoreEntity[k], sizeof(restoreEntity[k]), "button.%s_%s_curve_restore", id, k == 0 ? "hot_water" : "leaving_water");
+      snprintf(restoreEntity[k], sizeof(restoreEntity[k]), "button.%s_%s_curve_restore", id, curve[k]);
     }
     snprintf(limitSet, sizeof(limitSet), "%s/power_limit/set", base);
     snprintf(limitState, sizeof(limitState), "%s/power_limit/state", base);
@@ -137,7 +139,7 @@ struct MqttTopics
     snprintf(cfgSg, sizeof(cfgSg), "homeassistant/select/%s/sg/config", seg);
     snprintf(cfgSafety, sizeof(cfgSafety), "homeassistant/switch/%s/safety/config", seg);
     snprintf(cfgCool, sizeof(cfgCool), "homeassistant/switch/%s/cooling/config", seg);
-    for (int k = 0; k < 2; k++)
+    for (int k = 0; k < TOPICS_TARGET_COUNT; k++)
     {
       snprintf(cfgCtl[k], sizeof(cfgCtl[k]), "homeassistant/number/%s/%s/config", seg, ctl[k]);
       snprintf(cfgRestore[k], sizeof(cfgRestore[k]), "homeassistant/button/%s/%s_restore/config", seg, ctl[k]);

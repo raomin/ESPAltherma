@@ -84,13 +84,17 @@ struct AppConfig
   bool debugSerial;
 
   // Experimental: the hot water and leaving water targets can be set from Home Assistant and the web
-  // interface (control.h)
+  // interface (control.h); the cooling target and the additional zone's target on 20002203 only
   bool dhwTarget;
   bool lwtTarget;
+  bool coolTarget;
+  bool addTarget;
   bool ctlRamOnly;      // the targets are held in the unit's RAM only, never saved in its memory (control.h)
-  int ctlOrig[2][2];  // the curve each control found before its first write (high, low point; -1: none), restorable
+  // One per target control, in the order of ControlKind (control.h): hot water, leaving water, cooling, additional zone
+#define CONFIG_TARGET_COUNT 4
+  int ctlOrig[CONFIG_TARGET_COUNT][2]; // the curve each control found before its first write (high, low point; -1: none), restorable
   char ctlOrigSw[9];  // the hydro board software those curves belong to
-  int ctlHeld[2];     // the target each control holds in RAM only (-1: none), written again after a restart
+  int ctlHeld[CONFIG_TARGET_COUNT]; // the target each control holds in RAM only (-1: none), written again after a restart
   bool powerLimit;    // the power limit can be set from Home Assistant and the web interface (control.h)
   bool statsEnabled;  // energy and cycle statistics (stats.h): heat output, estimated input and COP, the day's counters
   float statsVoltage; // mains voltage for the estimate, used when the unit reports none
@@ -179,7 +183,7 @@ void configDefaults(AppConfig &c)
   c.safetyPin = -1;
   c.safetyActiveHigh = true;
   strlcpy(c.oneTopicPrefix, "espaltherma/OneATTR/", sizeof(c.oneTopicPrefix));
-  for (int k = 0; k < 2; k++)
+  for (int k = 0; k < CONFIG_TARGET_COUNT; k++)
     c.ctlOrig[k][0] = c.ctlOrig[k][1] = c.ctlHeld[k] = -1;
   c.ctlOrigSw[0] = 0;
   c.powerLimit = false;
@@ -287,6 +291,8 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets, bo
   JsonObject control = doc["control"].to<JsonObject>();
   control["dhw_target"] = c.dhwTarget;
   control["lwt_target"] = c.lwtTarget;
+  control["cool_target"] = c.coolTarget;
+  control["add_target"] = c.addTarget;
   control["ram_only"] = c.ctlRamOnly;
   control["power_limit"] = c.powerLimit;
   if (includeRuntime)
@@ -295,9 +301,15 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets, bo
     control["orig_dhw_lo"] = c.ctlOrig[0][1];
     control["orig_lwt_hi"] = c.ctlOrig[1][0];
     control["orig_lwt_lo"] = c.ctlOrig[1][1];
+    control["orig_cool_hi"] = c.ctlOrig[2][0];
+    control["orig_cool_lo"] = c.ctlOrig[2][1];
+    control["orig_add_hi"] = c.ctlOrig[3][0];
+    control["orig_add_lo"] = c.ctlOrig[3][1];
     control["orig_sw"] = c.ctlOrigSw;
     control["held_dhw"] = c.ctlHeld[0];
     control["held_lwt"] = c.ctlHeld[1];
+    control["held_cool"] = c.ctlHeld[2];
+    control["held_add"] = c.ctlHeld[3];
     control["limit_on"] = c.ctlLimitOn;
     control["limit_value"] = c.ctlLimitValue;
     control["limit_orig"] = c.ctlLimitOrig;
@@ -448,6 +460,8 @@ void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = fa
   readNum(out["debug_serial"], c.debugSerial);
   readNum(src["control"]["dhw_target"], c.dhwTarget);
   readNum(src["control"]["lwt_target"], c.lwtTarget);
+  readNum(src["control"]["cool_target"], c.coolTarget);
+  readNum(src["control"]["add_target"], c.addTarget);
   readNum(src["control"]["ram_only"], c.ctlRamOnly);
   readNum(src["control"]["power_limit"], c.powerLimit);
   if (includeRuntime)
@@ -456,9 +470,15 @@ void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = fa
     readNum(src["control"]["orig_dhw_lo"], c.ctlOrig[0][1]);
     readNum(src["control"]["orig_lwt_hi"], c.ctlOrig[1][0]);
     readNum(src["control"]["orig_lwt_lo"], c.ctlOrig[1][1]);
+    readNum(src["control"]["orig_cool_hi"], c.ctlOrig[2][0]);
+    readNum(src["control"]["orig_cool_lo"], c.ctlOrig[2][1]);
+    readNum(src["control"]["orig_add_hi"], c.ctlOrig[3][0]);
+    readNum(src["control"]["orig_add_lo"], c.ctlOrig[3][1]);
     readStr(src["control"]["orig_sw"], c.ctlOrigSw, sizeof(c.ctlOrigSw));
     readNum(src["control"]["held_dhw"], c.ctlHeld[0]);
     readNum(src["control"]["held_lwt"], c.ctlHeld[1]);
+    readNum(src["control"]["held_cool"], c.ctlHeld[2]);
+    readNum(src["control"]["held_add"], c.ctlHeld[3]);
     readNum(src["control"]["limit_on"], c.ctlLimitOn);
     readNum(src["control"]["limit_value"], c.ctlLimitValue);
     readNum(src["control"]["limit_orig"], c.ctlLimitOrig);

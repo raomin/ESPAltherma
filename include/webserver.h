@@ -46,7 +46,7 @@ extern volatile bool discoveryDirty;
 float statsVoltageRead(); // main.cpp: the unit's own voltage reading, NAN when it has none
 extern unsigned long lastPollMs;
 extern DetectResult detection;
-extern CurveControl dhwControl, lwtControl;
+extern CurveControl dhwControl, lwtControl, coolControl, addControl;
 extern LimitControl limitControl;
 void requestSurvey();
 void valuesLock();
@@ -457,7 +457,7 @@ static void statusJson(JsonDocument &doc)
     st["tz"] = config.statsTz;
     st["voltage_read"] = !isnan(statsVoltageRead());
   }
-  if (config.dhwTarget || config.lwtTarget || config.powerLimit)
+  if (config.dhwTarget || config.lwtTarget || config.coolTarget || config.addTarget || config.powerLimit)
   {
     // Target controls (experimental, control.h)
     JsonObject ctl = doc["control"].to<JsonObject>();
@@ -465,6 +465,10 @@ static void statusJson(JsonDocument &doc)
       controlJson(ctl["dhw"].to<JsonObject>(), dhwControl);
     if (config.lwtTarget)
       controlJson(ctl["lwt"].to<JsonObject>(), lwtControl);
+    if (config.coolTarget)
+      controlJson(ctl["cool"].to<JsonObject>(), coolControl);
+    if (config.addTarget)
+      controlJson(ctl["add"].to<JsonObject>(), addControl);
     if (config.powerLimit)
       limitJson(ctl["limit"].to<JsonObject>(), limitControl);
   }
@@ -932,8 +936,8 @@ void webBegin()
     sendJson(r, doc);
   });
 
-  // Target controls (experimental): {"dhw_target": 50} or {"lwt_target": 35}, applied by the heat pump task;
-  // {"dhw_restore": true} or {"lwt_restore": true} puts the unit's own curve back
+  // Target controls (experimental): {"dhw_target": 50}, {"lwt_target": 35}, {"cool_target": 18} or {"add_target": 40},
+  // applied by the heat pump task; {"dhw_restore": true} (lwt_, cool_, add_) puts the unit's own curve back
   webServer.on("/api/control", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
@@ -963,36 +967,54 @@ void webBegin()
       sendOk(r);
       return;
     }
-    // A restore is asked with true: "lwt_restore": false used to restore as well
-    bool dhwRestore = doc["dhw_restore"].is<bool>() && doc["dhw_restore"].as<bool>();
-    bool lwtRestore = doc["lwt_restore"].is<bool>() && doc["lwt_restore"].as<bool>();
-    bool dhw = doc["dhw_target"].is<int>() || dhwRestore;
-    bool lwt = doc["lwt_target"].is<int>() || lwtRestore;
-    if (!dhw && !lwt)
+    // A restore is asked with true: "lwt_restore": false used to restore as well. One target per request, the
+    // first of these found.
+    struct TargetKeys
     {
-      r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target or lwt_target missing\"}");
+      const char *target, *restore, *name;
+      CurveControl &control;
+      bool enabled;
+    };
+    const TargetKeys keys[] = {{"lwt_target", "lwt_restore", "Leaving water target", lwtControl, config.lwtTarget},
+                               {"dhw_target", "dhw_restore", "Hot water target", dhwControl, config.dhwTarget},
+                               {"cool_target", "cool_restore", "Cooling target", coolControl, config.coolTarget},
+                               {"add_target", "add_restore", "Additional zone target", addControl, config.addTarget}};
+    const TargetKeys *asked = nullptr;
+    bool restore = false;
+    for (const TargetKeys &k : keys)
+    {
+      bool wantsRestore = doc[k.restore].is<bool>() && doc[k.restore].as<bool>();
+      if (doc[k.target].is<int>() || wantsRestore)
+      {
+        asked = &k;
+        restore = wantsRestore;
+        break;
+      }
+    }
+    if (asked == nullptr)
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target, lwt_target, cool_target or add_target missing\"}");
       return;
     }
-    CurveControl &c = lwt ? lwtControl : dhwControl;
-    if (!(lwt ? config.lwtTarget : config.dhwTarget) || c.status != CONTROL_READY)
+    CurveControl &c = asked->control;
+    if (!asked->enabled || c.status != CONTROL_READY)
     {
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"not ready\"}");
       return;
     }
-    if (lwt ? lwtRestore : dhwRestore)
+    if (restore)
     {
       if (c.origA < 0)
       {
         r->send(409, "application/json", "{\"ok\":false,\"error\":\"no curve to restore\"}");
         return;
       }
-      eventAddf("%s: the unit's curve asked back from the web page (%s)", lwt ? "Leaving water target" : "Hot water target",
-                r->client()->remoteIP().toString().c_str());
+      eventAddf("%s: the unit's curve asked back from the web page (%s)", asked->name, r->client()->remoteIP().toString().c_str());
       c.requestRestore();
       sendOk(r);
       return;
     }
-    int value = doc[lwt ? "lwt_target" : "dhw_target"].as<int>();
+    int value = doc[asked->target].as<int>();
     if (value < c.minTarget || value > c.maxTarget)
     {
       r->send(400, "application/json", "{\"ok\":false,\"error\":\"out of range\"}");

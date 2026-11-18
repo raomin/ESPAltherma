@@ -52,7 +52,7 @@ struct CurveSpec
   uint16_t memA, memB;     // the same settings in the board's memory (6-bit value above a minimum, in bits 7..2)
   uint16_t slotA, slotB;   // RAM records of their allowed ranges: 5 bytes [?, ?, span, minimum, step]
   uint16_t modeByte;       // memory byte of the setpoint mode
-  uint8_t modeMask;        // bits set when the target follows the curve
+  uint8_t modeMask;        // bits set when the target follows the curve (0: the mode is not known, not checked)
   uint16_t ramEffective;   // what the thermostat really aims for (0: not known)
   uint16_t ramCeiling;     // the unit's own maximum, which caps the target (0: none)
   uint8_t ramMinimum;      // verified lower DHW target in RAM-only mode (0: keep the setting limits)
@@ -96,6 +96,8 @@ struct ControlProfile
   LimitSpec limit;        // power limitation (missing on the boards not mapped for it)
   uint16_t ramHeatKwh;    // the unit's own energy meter, the heat produced in kWh as a 32-bit count (0: not mapped)
   UnitCounters counters;  // its operating hours and compressor starts (0: not mapped)
+  CurveSpec cool;         // cooling leaving water target of the main zone (experimental, 20002203 only)
+  CurveSpec add;          // heating leaving water target of the additional zone (experimental, 20002203 only)
 };
 
 // The energy meter (the heat produced since the installation, the user interface's energy data) is a 32-bit count
@@ -164,7 +166,16 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0},
      {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC},
      0x08E6,
-     {0x36B2, 0x3696, 0x3650, 0x3692, 0x3752, 0x36C2, 0x3664, 0x36A6, 0x08E2, 0x3722, 0x3702, 0x36FA, 0x371A}},
+     {0x36B2, 0x3696, 0x3650, 0x3692, 0x3752, 0x36C2, 0x3664, 0x36A6, 0x08E2, 0x3722, 0x3702, 0x36FA, 0x371A},
+     // Cooling and the additional zone, read on the same EHBX08EF6V while changing the settings on its interface
+     // and written in RAM (doc/memory-20002203.md): the cooling curve [1-09] / [1-08] (memory 378 / 377, both
+     // ranges [9-03]..[9-02]), its target in the same word as the heating one; the additional zone's heating curve
+     // [0-00] / [0-01] (memory 358 / 359, ranges 20..45 and 20..55), its target what the board aims for there.
+     // The cooling target follows the curve with the main zone weather dependent (the same mode byte); where the
+     // additional zone's setpoint mode is kept is not known: not checked. Neither a cooling run nor two zones with
+     // real valves were seen yet.
+     {0x3466, 0x34A4, 378, 377, 0x4FC9, 0x4FC4, 374, 0x0C, 0x2F3C, 0},
+     {0x3474, 0x34B2, 358, 359, 0x4F92, 0x4F97, 0, 0, 0x2F44, 0}},
     // 11-16 kW EBBH/EBBX DF, EBVH/EBVX/EBVZ S18/S23 DJ and EBSH/EBSX(B) P30/P50 DF and DG series (Altherma 3 H F
     // and its ECH2O, on ERLA outdoor units)
     {"20007903",
@@ -248,8 +259,28 @@ static const ControlProfile CONTROL_PROFILES[] = {
 enum ControlKind
 {
   CONTROL_DHW,
-  CONTROL_LWT
+  CONTROL_LWT,
+  CONTROL_COOL, // cooling leaving water target of the main zone
+  CONTROL_ADD   // heating leaving water target of the additional zone
 };
+#define CONTROL_KIND_COUNT 4
+
+inline const CurveSpec *controlSpec(const ControlProfile *p, ControlKind kind)
+{
+  if (p == nullptr)
+    return nullptr;
+  switch (kind)
+  {
+  case CONTROL_LWT:
+    return &p->lwt;
+  case CONTROL_COOL:
+    return &p->cool;
+  case CONTROL_ADD:
+    return &p->add;
+  default:
+    return &p->dhw;
+  }
+}
 
 enum ControlStatus
 {
@@ -507,13 +538,13 @@ struct CurveControl : X10aClient
         if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
           profile = &CONTROL_PROFILES[i];
       }
-      spec = profile == nullptr ? nullptr : kind == CONTROL_LWT ? &profile->lwt : &profile->dhw;
+      spec = controlSpec(profile, kind);
       uint8_t mode = 0;
       if (spec == nullptr || spec->ramA == 0)
         status = CONTROL_UNSUPPORTED;
-      else if (!readMemory(spec->modeByte, mode))
+      else if (spec->modeMask && !readMemory(spec->modeByte, mode))
         status = CONTROL_NO_ANSWER;
-      else if (!(mode & spec->modeMask))
+      else if (spec->modeMask && !(mode & spec->modeMask))
         status = CONTROL_NOT_CURVE_MODE;
       else if (!readSlot(spec->slotA, minA, maxA) || !readSlot(spec->slotB, minB, maxB))
         status = CONTROL_UNSUPPORTED; // no answer, or limits that make no sense: not ours to write
@@ -521,7 +552,7 @@ struct CurveControl : X10aClient
       {
         minTarget = minA > minB ? minA : minB;
         maxTarget = maxA < maxB ? maxA : maxB;
-        if (ramOnly && kind == CONTROL_LWT)
+        if (ramOnly && (kind == CONTROL_LWT || kind == CONTROL_ADD))
         {
           // The mild point's record stops at 45 by a rule of the interface for that setting (the same literal in
           // every software), while the cold point's is the unit's own range [9-01]..[9-00], and the thermostat
@@ -791,7 +822,7 @@ struct CurveControl : X10aClient
       if (pendingA != target || pendingB != targetLo)
       {
         uint8_t mode = 0;
-        bool curveMode = readMemory(spec->modeByte, mode) && (mode & spec->modeMask);
+        bool curveMode = !spec->modeMask || (readMemory(spec->modeByte, mode) && (mode & spec->modeMask));
         if (curveMode && !restoring && origA < 0)
           rememberOriginal();
         if (!curveMode || !apply(pendingA, pendingB, now))

@@ -313,6 +313,12 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <div class="card pad" id="lwtCard" data-block="lwt" hidden><h2>Leaving water target</h2><p class="sub" id="lwtSub"></p>
   <div class="acts" style="margin-top:12px"><input type="number" id="lwtVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="lwtSet">Apply</button><button id="lwtRestore" hidden>Restore the unit's curve</button><span class="msg" id="lwtMsg" translate="no"></span></div>
   <p class="sub">The shift set on the unit's interface or in the Daikin app adds to this target: with a +10 K shift, 35 °C here makes 45 °C at the floor or the radiators. Check the effective target above after a change.</p></div>
+ <div class="card pad" id="coolCard" data-block="cool" hidden><h2>Cooling target</h2><p class="sub" id="coolSub"></p>
+  <div class="acts" style="margin-top:12px"><input type="number" id="coolVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="coolSet">Apply</button><button id="coolRestore" hidden>Restore the unit's curve</button><span class="msg" id="coolMsg" translate="no"></span></div>
+  <p class="sub">The leaving water target while the unit cools (main zone), written into its cooling curve. Experimental: not seen during a cooling run yet.</p></div>
+ <div class="card pad" id="addCard" data-block="add" hidden><h2>Additional zone target</h2><p class="sub" id="addSub"></p>
+  <div class="acts" style="margin-top:12px"><input type="number" id="addVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="addSet">Apply</button><button id="addRestore" hidden>Restore the unit's curve</button><span class="msg" id="addMsg" translate="no"></span></div>
+  <p class="sub">The leaving water target of the additional zone while the unit heats, written into its curve. The unit never aims the additional zone lower than the main zone. Experimental: not seen with two zones and real valves yet.</p></div>
  <div class="card pad" id="limitCard" data-block="limit" hidden><h2>Power limit</h2><p class="sub" id="limitSub"></p>
   <div class="acts" style="margin-top:12px"><label class="chk" style="margin:0"><input type="checkbox" id="limitOn">Limit the heat pump</label><input type="number" id="limitVal" step="0.5" style="width:110px"><span translate="no" id="limitUnit">kW</span><button class="p" id="limitSet">Apply</button><span class="msg" id="limitMsg" translate="no"></span></div></div>
  <details class="all card" id="allBox" data-block="all"><summary><span>All readings</span> <span class="sub" id="valAge" translate="no"></span></summary><table><tbody id="dValues" translate="no"></tbody></table></details>
@@ -419,6 +425,8 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
   <div class="card"><h2>Experimental</h2><p class="sub">Under test: may not work on every unit.</p>
    <label class="chk"><input type="checkbox" id="sDhwTarget">Hot water target from Home Assistant and this page</label>
    <label class="chk"><input type="checkbox" id="sLwtTarget">Leaving water target (main zone) from Home Assistant and this page</label>
+   <label class="chk"><input type="checkbox" id="sCoolTarget">Cooling target (main zone) from Home Assistant and this page (software 20002203)</label>
+   <label class="chk"><input type="checkbox" id="sAddTarget">Additional zone target from Home Assistant and this page (software 20002203)</label>
    <label class="chk"><input type="checkbox" id="sRamOnly">Keep the targets in the unit's working memory only</label>
    <label class="chk"><input type="checkbox" id="sPowerLimit">Power limit from Home Assistant and this page</label>
    <p class="sub">ESPAltherma writes the target into the weather-dependent curve of the unit: the hot water curve, or the leaving water curve of the main zone. The corresponding setpoint mode must be set to weather dependent on the unit's interface, and the hydro board software must be a supported one (the versions are listed in the README). The interface may show its old curve until it restarts.</p>
@@ -798,7 +806,7 @@ function renderSystem() {
 }
 // Target controls (experimental): a card shows when its setting is on, the input when the unit allows it.
 // The effective value is what the thermostat really aims for, explained in a tip on hover.
-const CONTROLS = {dhw: {id: 'dhw', key: 'dhw_target'}, lwt: {id: 'lwt', key: 'lwt_target'}};
+const CONTROLS = {dhw: {id: 'dhw', key: 'dhw_target'}, lwt: {id: 'lwt', key: 'lwt_target'}, cool: {id: 'cool', key: 'cool_target'}, add: {id: 'add', key: 'add_target'}};
 function renderOneControl(u, c) {
   const card = $('#' + u.id + 'Card');
   card.hidden = !c;
@@ -821,6 +829,7 @@ function renderOneControl(u, c) {
       const tip = u.id === 'dhw'
         ? (capped ? t('What the thermostat really aims for: at this outdoor temperature the heat pump reaches {n} °C on its own, the rest would need the booster heater.', {n: c.ceiling})
                   : t('What the thermostat really aims for, after the limits of the unit.'))
+        : u.id === 'add' ? t('What the board aims for in the additional zone: the target plus its shift, never lower than the main zone.')
         : t('What the heat pump follows right now: the target, plus the shift and the room modulation set on the unit.');
       sub.append(' ', el('span', {class: 'tip', title: tip}, t('Aims for {n} °C', {n: c.effective})), '.');
     }
@@ -1292,7 +1301,7 @@ function fillSettings() {
   $('#sStats').checked = st.enabled !== false; $('#sStatsV').value = st.voltage || 230; $('#sStatsPh').value = st.phases == 3 ? '3' : '1'; $('#sStatsAux').value = st.aux_w || 100; $('#sStatsPf').value = st.power_factor || 1;
   $('#sStatsBuh1').value = st.buh1_kw != null ? st.buh1_kw : 3; $('#sStatsBuh2').value = st.buh2_kw != null ? st.buh2_kw : 3;
   $('#sStatsTzRow').hidden = !cfg.admin.has_pwd; $('#sStatsTz').value = st.tz != null ? st.tz : -new Date().getTimezoneOffset();
-  $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target); $('#sLwtTarget').checked = !!(cfg.control && cfg.control.lwt_target); $('#sRamOnly').checked = !!(cfg.control && cfg.control.ram_only); $('#sPowerLimit').checked = !!(cfg.control && cfg.control.power_limit);
+  $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target); $('#sLwtTarget').checked = !!(cfg.control && cfg.control.lwt_target); $('#sCoolTarget').checked = !!(cfg.control && cfg.control.cool_target); $('#sAddTarget').checked = !!(cfg.control && cfg.control.add_target); $('#sRamOnly').checked = !!(cfg.control && cfg.control.ram_only); $('#sPowerLimit').checked = !!(cfg.control && cfg.control.power_limit);
   $('#sHost').value = cfg.hostname; $('#sNtp').value = cfg.ntp || ''; $('#sAdminState').textContent = cfg.admin.has_pwd ? t('(set)') : t('(none)'); $('#sAdminClearL').style.display = cfg.admin.has_pwd ? '' : 'none'; $('#sAdminClear').checked = false;
   fillLangs();
   $('#sStatic').checked = w.static; $('#sIp').value = w.ip; $('#sGw').value = w.gateway; $('#sMask').value = w.subnet; $('#sDns1').value = w.dns1;
@@ -1305,7 +1314,7 @@ $('#sSave').onclick = async () => {
     hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000, outdoor_aux: $('#sOutdoor').value === 'aux', indoor_aux: $('#sIndoor').value === 'aux'},
     relays: {therm_pin: n('#sTherm'), cool_pin: n('#sCool'), cool_high: $('#sCoolHigh').checked, sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
-    control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, ram_only: $('#sRamOnly').checked, power_limit: $('#sPowerLimit').checked},
+    control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, cool_target: $('#sCoolTarget').checked, add_target: $('#sAddTarget').checked, ram_only: $('#sRamOnly').checked, power_limit: $('#sPowerLimit').checked},
     stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 100, power_factor: parseFloat($('#sStatsPf').value) || 1,
             buh1_kw: parseFloat($('#sStatsBuh1').value) || 0, buh2_kw: parseFloat($('#sStatsBuh2').value) || 0,
             ...($('#sStatsTzRow').hidden ? {} : {tz: n('#sStatsTz')})},
