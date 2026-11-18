@@ -462,5 +462,12 @@
  "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Los valores MQTT superan el búfer del mensaje. Selecciona menos lecturas o usa un tema por valor en Ajustes.",
  "UTC offset of the day's figures (minutes)": "Desfase UTC de las cifras del día (minutos)",
  "This browser's": "El de este navegador",
- "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Con una contraseña de administrador la página no fija el desfase por sí misma, porque pediría la contraseña: fíjelo aquí, y de nuevo con el cambio de hora."
+ "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Con una contraseña de administrador la página no fija el desfase por sí misma, porque pediría la contraseña: fíjelo aquí, y de nuevo con el cambio de hora.",
+ "Cooling target": "Objetivo de refrigeración",
+ "Additional zone target": "Objetivo de la zona adicional",
+ "The leaving water target while the unit cools (main zone), written into its cooling curve. Experimental: not seen during a cooling run yet.": "El objetivo de impulsión mientras la unidad refrigera (zona principal), escrito en su curva de refrigeración. Experimental: aún no observado durante un ciclo de refrigeración.",
+ "The leaving water target of the additional zone while the unit heats, written into its curve. The unit never aims the additional zone lower than the main zone. Experimental: not seen with two zones and real valves yet.": "El objetivo de impulsión de la zona adicional mientras la unidad calienta, escrito en su curva. La unidad nunca apunta más bajo en la zona adicional que en la zona principal. Experimental: aún no observado con dos zonas y válvulas reales.",
+ "Cooling target (main zone) from Home Assistant and this page (software 20002203)": "Objetivo de refrigeración (zona principal) desde Home Assistant y esta página (software 20002203)",
+ "Additional zone target from Home Assistant and this page (software 20002203)": "Objetivo de la zona adicional desde Home Assistant y esta página (software 20002203)",
+ "What the board aims for in the additional zone: the target plus its shift, never lower than the main zone.": "Lo que la placa persigue en la zona adicional: el objetivo más su desplazamiento, nunca más bajo que en la zona principal."
 }

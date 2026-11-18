@@ -35,23 +35,40 @@ PubSubClient client;
 Client *mqttNet = &plainClient; // the network client under PubSubClient
 
 extern Converter converter;
-extern CurveControl dhwControl, lwtControl;
+extern CurveControl dhwControl, lwtControl, coolControl, addControl;
 extern LimitControl limitControl;
 static bool limitDiscoveryOn = false;   // the power limit entities are in Home Assistant
 static bool updateDiscoveryOn = false;  // the firmware update entity is in Home Assistant
 static LimitKind limitDiscoveryKind = LIMIT_POWER;
 
-// The two target controls on MQTT (experimental, control.h): the entity's name and icon; the topics and the ids
-// come from mqttTopics (ctlSet, ctlState, ctlAttrs, cfgCtl, ctlUniq, ctlEntity)
+// The target controls on MQTT (experimental, control.h), in the order of ControlKind: the entity's name and icon;
+// the topics and the ids come from mqttTopics (ctlSet, ctlState, ctlAttrs, cfgCtl, ctlUniq, ctlEntity)
 struct ControlNames
 {
   const char *name, *icon;
 };
-static const ControlNames CONTROL_NAMES[2] = {{"Hot water target", "mdi:water-boiler"}, {"Leaving water target", "mdi:heating-coil"}};
-static const char *RESTORE_NAMES[2] = {"Restore hot water curve", "Restore leaving water curve"};
-bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (with these limits)
-int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
-static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
+static_assert(CONTROL_KIND_COUNT == TOPICS_TARGET_COUNT, "one set of topics per target control");
+static const ControlNames CONTROL_NAMES[CONTROL_KIND_COUNT] = {{"Hot water target", "mdi:water-boiler"}, {"Leaving water target", "mdi:heating-coil"},
+                                                               {"Cooling target", "mdi:snowflake-thermometer"}, {"Additional zone target", "mdi:heating-coil"}};
+static const char *RESTORE_NAMES[CONTROL_KIND_COUNT] = {"Restore hot water curve", "Restore leaving water curve", "Restore cooling curve",
+                                                        "Restore additional zone curve"};
+bool controlDiscoveryOn[CONTROL_KIND_COUNT] = {}; // the number entity is published (with these limits)
+int controlDiscoveryMin[CONTROL_KIND_COUNT] = {}, controlDiscoveryMax[CONTROL_KIND_COUNT] = {};
+static CurveControl *const curveControls[CONTROL_KIND_COUNT] = {&dhwControl, &lwtControl, &coolControl, &addControl};
+static bool controlEnabled(const CurveControl &c)
+{
+  switch (c.kind)
+  {
+  case CONTROL_LWT:
+    return config.lwtTarget;
+  case CONTROL_COOL:
+    return config.coolTarget;
+  case CONTROL_ADD:
+    return config.addTarget;
+  default:
+    return config.dhwTarget;
+  }
+}
 // When a control's entities leave Home Assistant: its option off, a hydro board software that is not mapped, a
 // setpoint no longer weather dependent. Not a unit that does not answer for a moment: removing an entity also
 // drops what its owner set on it (name, area), and it came back 30 s later.
@@ -256,16 +273,20 @@ void mqttRetireDiscovery()
   if (!client.connected())
     return;
   const char *cfgs[] = {mqttTopics.cfgSensor, mqttTopics.cfgSwitch, mqttTopics.cfgSg, mqttTopics.cfgSafety,
-                        mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgRestore[0], mqttTopics.cfgRestore[1],
                         mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgUpdate, mqttTopics.cfgDevice,
                         mqttTopics.cfgCool};
   for (const char *t : cfgs)
     client.publish(t, "", true);
-  const char *states[] = {mqttTopics.ctlState[0], mqttTopics.ctlState[1], mqttTopics.ctlAttrs[0], mqttTopics.ctlAttrs[1],
-                          mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect, mqttTopics.updateTopic,
+  const char *states[] = {mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect, mqttTopics.updateTopic,
                           mqttTopics.coolState};
   for (const char *t : states)
     client.publish(t, "", true);
+  for (int k = 0; k < CONTROL_KIND_COUNT; k++)
+  {
+    const char *target[] = {mqttTopics.cfgCtl[k], mqttTopics.cfgRestore[k], mqttTopics.ctlState[k], mqttTopics.ctlAttrs[k]};
+    for (const char *t : target)
+      client.publish(t, "", true);
+  }
   client.publish(mqttTopics.lwt, "Offline", true);
 }
 
@@ -408,7 +429,7 @@ bool mqttConnectOnce()
       }
 
       // Target controls (experimental): the number entities follow the controls' state, published by the main loop
-      for (CurveControl *c : {&dhwControl, &lwtControl})
+      for (CurveControl *c : curveControls)
       {
         controlDiscoveryOn[c->kind] = false;
         c->changed = true;
@@ -737,7 +758,7 @@ void publishControl(CurveControl &c)
     mqttPublish(mqttTopics.ctlAttrs[k], attrs, true);
   }
   // The "restore the unit's curve" button: present while a curve from before the first write is known
-  static bool restoreOn[2] = {false, false};
+  static bool restoreOn[CONTROL_KIND_COUNT] = {};
   bool restorable = ready && c.origA >= 0;
   if (restorable && !restoreOn[k])
   {
@@ -879,6 +900,14 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (config.lwtTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_LWT]) == 0)
   {
     callbackControl(lwtControl, payload, length);
+  }
+  else if (config.coolTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_COOL]) == 0)
+  {
+    callbackControl(coolControl, payload, length);
+  }
+  else if (config.addTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_ADD]) == 0)
+  {
+    callbackControl(addControl, payload, length);
   }
   else if (config.powerLimit && strcmp(topic, mqttTopics.limitSet) == 0)
   {

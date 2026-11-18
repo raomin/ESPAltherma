@@ -61,6 +61,8 @@ volatile bool surveyRequested = false;
 volatile bool surveyInProgress = false; //the survey is being written: readers must not use it
 volatile bool surveyReady = false;
 CurveControl dhwControl, lwtControl;   //experimental hot water and leaving water targets (control.h), heat pump task
+CurveControl coolControl, addControl; //experimental cooling and additional zone targets (control.h, 20002203), heat pump task
+static_assert(CONFIG_TARGET_COUNT == CONTROL_KIND_COUNT, "one configuration slot per target control");
 LimitControl limitControl;             //experimental power limit (control.h), heat pump task
 MeterReader unitMeter; // the unit's own energy meter, where the hydro board is mapped for it (control.h)
 DiiiComm diii;                     //read-only DIII E0/63 frames of an HT outdoor unit (diii_comm.h), heat pump task
@@ -947,7 +949,7 @@ struct HeldRtc
 {
   uint32_t magic;
   uint8_t unsaved; // newer than the configuration in flash
-  int16_t held[2];
+  int16_t held[2]; // hot water and leaving water; the cooling and additional zone holds go to the flash only
   char origSw[9];
   uint8_t limitOn;
   float limitValue;
@@ -965,7 +967,7 @@ static_assert(sizeof(HeldRtc) == 40, "HeldRtc is kept in RTC memory across updat
 static_assert(sizeof(StatsDay) == 164, "StatsDay is kept in RTC memory across updates: its size must not change");
 static_assert(sizeof(EventRing) == 2316, "EventRing is kept in RTC memory across updates: its size must not change");
 static DeferredSave heldSave;
-static ChangeLog targetLog[2], limitLog;
+static ChangeLog targetLog[CONTROL_KIND_COUNT], limitLog;
 
 static uint32_t heldRtcSum()
 {
@@ -1366,6 +1368,10 @@ void controlLoop()
   controlTick(dhwControl, config.dhwTarget, "Hot water");
   HP_STAGE("leaving water target");
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
+  HP_STAGE("cooling target");
+  controlTick(coolControl, config.coolTarget, "Cooling");
+  HP_STAGE("additional zone target");
+  controlTick(addControl, config.addTarget, "Additional zone");
   HP_STAGE("power limit");
   limitTick();
   HP_STAGE("unit counters");
@@ -1579,6 +1585,8 @@ void setup()
   requestSurvey();
   heapMark("values list");
   lwtControl.kind = CONTROL_LWT;
+  coolControl.kind = CONTROL_COOL;
+  addControl.kind = CONTROL_ADD;
   diii.exchange = x10aExchange;
   diii.clock = millis;
   diii.log = diiiLog;
@@ -1631,7 +1639,7 @@ void loop()
     LOOP_STAGE("update entity");
     publishUpdateEntity();
   }
-  if ((dhwControl.changed || lwtControl.changed || limitControl.changed) && client.connected())
+  if ((dhwControl.changed || lwtControl.changed || coolControl.changed || addControl.changed || limitControl.changed) && client.connected())
   {
     LOOP_STAGE("target controls state");
     if (dhwControl.changed)
@@ -1643,6 +1651,16 @@ void loop()
     {
       lwtControl.changed = false;
       publishControl(lwtControl);
+    }
+    if (coolControl.changed)
+    {
+      coolControl.changed = false;
+      publishControl(coolControl);
+    }
+    if (addControl.changed)
+    {
+      addControl.changed = false;
+      publishControl(addControl);
     }
     if (limitControl.changed)
     {

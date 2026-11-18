@@ -462,5 +462,12 @@
  "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "De MQTT-waarden overschrijden de berichtbuffer. Selecteer minder meetwaarden of gebruik één topic per waarde in Instellingen.",
  "UTC offset of the day's figures (minutes)": "UTC-verschil van de dagcijfers (minuten)",
  "This browser's": "Dat van deze browser",
- "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Met een beheerderswachtwoord stelt de pagina het verschil niet zelf in, want dat zou om het wachtwoord vragen: stel het hier in, en opnieuw bij de klokwissel."
+ "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Met een beheerderswachtwoord stelt de pagina het verschil niet zelf in, want dat zou om het wachtwoord vragen: stel het hier in, en opnieuw bij de klokwissel.",
+ "Cooling target": "Koeldoel",
+ "Additional zone target": "Doel van de extra zone",
+ "The leaving water target while the unit cools (main zone), written into its cooling curve. Experimental: not seen during a cooling run yet.": "Het aanvoerdoel terwijl het toestel koelt (hoofdzone), geschreven in zijn koelcurve. Experimenteel: nog niet gezien tijdens een koelcyclus.",
+ "The leaving water target of the additional zone while the unit heats, written into its curve. The unit never aims the additional zone lower than the main zone. Experimental: not seen with two zones and real valves yet.": "Het aanvoerdoel van de extra zone terwijl het toestel verwarmt, geschreven in haar curve. Het toestel mikt in de extra zone nooit lager dan in de hoofdzone. Experimenteel: nog niet gezien met twee zones en echte kleppen.",
+ "Cooling target (main zone) from Home Assistant and this page (software 20002203)": "Koeldoel (hoofdzone) vanuit Home Assistant en deze pagina (software 20002203)",
+ "Additional zone target from Home Assistant and this page (software 20002203)": "Doel van de extra zone vanuit Home Assistant en deze pagina (software 20002203)",
+ "What the board aims for in the additional zone: the target plus its shift, never lower than the main zone.": "Waar de print in de extra zone op mikt: het doel plus haar verschuiving, nooit lager dan in de hoofdzone."
 }

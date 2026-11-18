@@ -462,5 +462,12 @@
  "MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.": "Les valeurs MQTT dépassent le tampon du message. Sélectionnez moins de mesures ou utilisez un sujet par valeur dans les paramètres.",
  "UTC offset of the day's figures (minutes)": "Décalage UTC des chiffres du jour (minutes)",
  "This browser's": "Celui de ce navigateur",
- "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Avec un mot de passe admin, la page ne règle pas le décalage d'elle-même, ce qui demanderait le mot de passe : réglez-le ici, et de nouveau au changement d'heure."
+ "With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.": "Avec un mot de passe admin, la page ne règle pas le décalage d'elle-même, ce qui demanderait le mot de passe : réglez-le ici, et de nouveau au changement d'heure.",
+ "Cooling target": "Consigne de rafraîchissement",
+ "Additional zone target": "Consigne de la zone additionnelle",
+ "The leaving water target while the unit cools (main zone), written into its cooling curve. Experimental: not seen during a cooling run yet.": "La consigne de départ d'eau pendant que l'unité rafraîchit (zone principale), écrite dans sa courbe de rafraîchissement. Expérimental : pas encore observé pendant un cycle de rafraîchissement.",
+ "The leaving water target of the additional zone while the unit heats, written into its curve. The unit never aims the additional zone lower than the main zone. Experimental: not seen with two zones and real valves yet.": "La consigne de départ d'eau de la zone additionnelle pendant que l'unité chauffe, écrite dans sa courbe. L'unité ne vise jamais plus bas dans la zone additionnelle que dans la zone principale. Expérimental : pas encore observé avec deux zones et de vraies vannes.",
+ "Cooling target (main zone) from Home Assistant and this page (software 20002203)": "Consigne de rafraîchissement (zone principale) depuis Home Assistant et cette page (logiciel 20002203)",
+ "Additional zone target from Home Assistant and this page (software 20002203)": "Consigne de la zone additionnelle depuis Home Assistant et cette page (logiciel 20002203)",
+ "What the board aims for in the additional zone: the target plus its shift, never lower than the main zone.": "Ce que la carte vise dans la zone additionnelle : la consigne plus son décalage, jamais plus bas que dans la zone principale."
 }

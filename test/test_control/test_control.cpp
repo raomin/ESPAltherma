@@ -118,6 +118,8 @@ struct FakeUnit
             const ControlProfile &p = CONTROL_PROFILES[i];
             if (addr == p.dhw.ramA || addr == p.dhw.ramB || addr == p.lwt.ramA || addr == p.lwt.ramB)
                 return true;
+            if (p.cool.ramA && (addr == p.cool.ramA || addr == p.cool.ramB || addr == p.add.ramA || addr == p.add.ramB))
+                return true;
             if (p.limit.ramEnable && (addr == p.limit.ramEnable || addr == p.limit.ramKw || addr == p.limit.ramAmp))
                 return true;
         }
@@ -193,7 +195,7 @@ struct FakeUnit
         {
             uint16_t off = data[0] | data[1] << 8;
             memoryWrites++;
-            if (off != 366 && off != 367 && off != 372 && off != 373)
+            if (off != 366 && off != 367 && off != 372 && off != 373 && off != 377 && off != 378 && off != 358 && off != 359)
                 badWrites++;
             memory[off] = data[2];
         }
@@ -846,6 +848,103 @@ void test_ram_only_opens_the_leaving_water_range_to_the_units_own()
     TEST_ASSERT_TRUE(d.identify(1000)); // hot water: unchanged
     TEST_ASSERT_EQUAL(45, d.minTarget);
     TEST_ASSERT_EQUAL(55, d.maxTarget);
+}
+
+// The cooling curve and the additional zone's curve of 20002203 (doc/memory-20002203.md), as read on an EHBX08EF6V:
+// cooling 17 at the high outdoor temperature and 20 at the low one ([9-03]..[9-02] 17..22), its target in the
+// leaving water's word; the additional zone 35 / 50 (20..45 and 20..55), its target in a word of its own
+static const ControlProfile &coolingUnit()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    const uint8_t cooling[5] = {0xFF, 0x00, 6, 17, 8}, mild[5] = {0x00, 0x00, 26, 20, 8}, cold[5] = {0xFF, 0x00, 36, 20, 8};
+    memcpy(unit.ram + p.cool.slotA, cooling, 5);
+    memcpy(unit.ram + p.cool.slotB, cooling, 5);
+    memcpy(unit.ram + p.add.slotA, mild, 5);
+    memcpy(unit.ram + p.add.slotB, cold, 5);
+    unit.setWord(p.cool.ramA, 17 << 8);
+    unit.setWord(p.cool.ramB, 20 << 8);
+    unit.setWord(p.cool.ramEffective, 22 << 8);
+    unit.setWord(p.add.ramA, 35 << 8);
+    unit.setWord(p.add.ramB, 50 << 8);
+    unit.setWord(p.add.ramEffective, 35 << 8);
+    unit.memory[378] = (uint8_t)((17 - 17) << 2 | 0x03);
+    unit.memory[377] = (uint8_t)((20 - 17) << 2 | 0x03);
+    unit.memory[358] = (uint8_t)((35 - 20) << 2 | 0x03);
+    unit.memory[359] = (uint8_t)((50 - 20) << 2 | 0x03);
+    return p;
+}
+
+void test_cooling_target_writes_its_own_curve_on_20002203()
+{
+    const ControlProfile &p = coolingUnit();
+    CurveControl c = fresh(CONTROL_COOL);
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(17, c.minTarget);
+    TEST_ASSERT_EQUAL(22, c.maxTarget);
+    TEST_ASSERT_EQUAL(17, c.target);   // high outdoor temperature point, [1-09]
+    TEST_ASSERT_EQUAL(20, c.targetLo); // low outdoor temperature point, [1-08]
+    TEST_ASSERT_EQUAL(22, c.effective);
+    c.request(19);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(19 << 8, unit.word(p.cool.ramA));
+    TEST_ASSERT_EQUAL(19 << 8, unit.word(p.cool.ramB));
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.dhw.ramA)); // the other curves untouched
+    TEST_ASSERT_EQUAL(36 << 8, unit.word(p.lwt.ramA));
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL((19 - 17) << 2 | 0x03, unit.memory[377]);
+    TEST_ASSERT_EQUAL((19 - 17) << 2 | 0x03, unit.memory[378]);
+    TEST_ASSERT_EQUAL(19, c.saved);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+    // the main zone not weather dependent: refused, as the leaving water target
+    unit.memory[374] = 0x00;
+    TEST_ASSERT_FALSE(c.identify(3000 + CONTROL_SAVE_DELAY_MS));
+    TEST_ASSERT_EQUAL(CONTROL_NOT_CURVE_MODE, c.status);
+}
+
+void test_additional_zone_target_writes_its_own_curve_on_20002203()
+{
+    const ControlProfile &p = coolingUnit();
+    unit.memory[374] = 0x00; // its own setpoint mode is not known: the main zone's does not stop it
+    CurveControl c = fresh(CONTROL_ADD);
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(20, c.minTarget);
+    TEST_ASSERT_EQUAL(45, c.maxTarget); // the mild point's record, as for the main zone
+    TEST_ASSERT_EQUAL(35, c.target);    // [0-00]
+    TEST_ASSERT_EQUAL(50, c.targetLo);  // [0-01]
+    TEST_ASSERT_EQUAL(35, c.effective);
+    c.setRamOnly(true, 1500); // RAM only: the cold point's range, up to [9-06]
+    TEST_ASSERT_EQUAL(55, c.maxTarget);
+    c.request(48);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.add.ramA));
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.add.ramB));
+    TEST_ASSERT_EQUAL(48, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    c.requestRestore();
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(35 << 8, unit.word(p.add.ramA));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(p.add.ramB));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+void test_cooling_and_additional_zone_only_where_mapped()
+{
+    const ControlKind kinds[] = {CONTROL_COOL, CONTROL_ADD};
+    for (ControlKind kind : kinds)
+    {
+        CurveControl c = fresh(kind); // the default board, 18002904
+        TEST_ASSERT_FALSE(c.identify(1000));
+        TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+        c.request(20);
+        c.tick(2000);
+    }
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    size_t mapped = 0;
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+        mapped += CONTROL_PROFILES[i].cool.ramA != 0;
+    TEST_ASSERT_EQUAL(1, mapped);
 }
 
 // A second request that arrives while the first one is being written is applied at the next tick
@@ -1887,6 +1986,9 @@ int main(int, char **)
     RUN_TEST(test_ram_only_hold_from_the_saved_configuration);
     RUN_TEST(test_ram_only_hold_is_written_within_the_limits);
     RUN_TEST(test_ram_only_opens_the_leaving_water_range_to_the_units_own);
+    RUN_TEST(test_cooling_target_writes_its_own_curve_on_20002203);
+    RUN_TEST(test_additional_zone_target_writes_its_own_curve_on_20002203);
+    RUN_TEST(test_cooling_and_additional_zone_only_where_mapped);
     RUN_TEST(test_power_limit_retries_early_with_backoff_and_keeps_restored_request);
     RUN_TEST(test_power_limit_retry_at_time_zero_does_not_flood_the_bus_and_reset_is_immediate);
     RUN_TEST(test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff);
