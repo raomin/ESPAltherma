@@ -323,23 +323,33 @@
     }
   }, 250);
 
-  // ---- the firmware upload: received, thrown away, and the board "restarts" on the version it had
-  window.XMLHttpRequest = class {
-    constructor() { this.upload = {}; this.status = 0; this.responseText = ''; }
-    open() {}
-    send() {
-      let sent = 0;
-      const timer = setInterval(() => {
-        sent += 8;
-        if (this.upload.onprogress) this.upload.onprogress({loaded: Math.min(sent, 100), total: 100});
-        if (sent < 100) return;
-        clearInterval(timer);
-        this.status = 200; this.responseText = '{"ok":true}';
-        restart('Firmware update from the web interface (demo: nothing was installed)', 8);
-        if (this.onload) this.onload();
-      }, 250);
-    }
+  // ---- the firmware upload: received, thrown away, and the board "restarts" on the version it had. Only a request
+  // opened on the board's /update is answered here: any other is the browser's own (the visit counter the site
+  // adds to its pages sends its figures with one)
+  const RealRequest = window.XMLHttpRequest;
+  window.XMLHttpRequest = function () {
+    const x = new RealRequest(), open = x.open.bind(x);
+    x.open = (method, address, ...rest) => {
+      const url = new URL(address, location.href);
+      if (url.origin !== location.origin || url.pathname !== '/update') return open(method, address, ...rest);
+      x.send = () => {
+        let sent = 0;
+        const timer = setInterval(() => {
+          sent += 8;
+          if (x.upload.onprogress) x.upload.onprogress({loaded: Math.min(sent, 100), total: 100});
+          if (sent < 100) return;
+          clearInterval(timer);
+          Object.defineProperty(x, 'status', {value: 200});
+          Object.defineProperty(x, 'responseText', {value: '{"ok":true}'});
+          restart('Firmware update from the web interface (demo: nothing was installed)', 8);
+          if (x.onload) x.onload();
+        }, 250);
+      };
+    };
+    return x;
   };
+  window.XMLHttpRequest.prototype = RealRequest.prototype;
+  for (const k of ['UNSENT', 'OPENED', 'HEADERS_RECEIVED', 'LOADING', 'DONE']) window.XMLHttpRequest[k] = RealRequest[k];
 
   // ---- the two things a page of a site cannot do like a board
   document.addEventListener('click', e => {
