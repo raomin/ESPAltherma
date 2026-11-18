@@ -11,14 +11,29 @@ const char *haDeviceName = "Daikin Altherma via ESPAltherma";
 const char *haDeviceModel = "Altherma";
 const char *haAttrTopic = "espaltherma/ATTR";
 const char *haHostname = "ESPAltherma";
-static std::string jsonEscape(const char *s);
 
+// The board's name on the network is free text ("Heat pump cellar" is one): only a name made of letters, digits,
+// hyphens and underscores is also an address, <name>.local, that a browser opens.
+static bool isHostName(const char *s)
+{
+    const size_t n = strlen(s);
+    if (n == 0 || n > 63 || s[0] == '-' || s[n - 1] == '-')
+        return false;
+    for (; *s; s++)
+        if (!((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') || (*s >= '0' && *s <= '9') || *s == '-' || *s == '_'))
+            return false;
+    return true;
+}
+
+// The address of the board's page (the "Visit" link of the device) is given only when the name makes one. Home
+// Assistant checks it, and since 2026.11 refuses an address with a space in its host: one field refused is the
+// whole message refused, and every entity of the device then reads "no longer provided by the mqtt integration".
 static std::string discoveryStart(const char *model)
 {
-    const std::string url=std::string("http://")+haHostname+".local/";
+    const std::string url = isHostName(haHostname) ? std::string("\",\"configuration_url\":\"http://") + haHostname + ".local/" : "";
     return std::string("{\"dev\":{\"ids\":\"") + haDeviceId + "\",\"name\":\"" + haDeviceName +
-           "\",\"mf\":\"Daikin\",\"mdl\":\"" + model + "\",\"sw_version\":\"ESPAltherma " ESPALTHERMA_VERSION
-           "\",\"configuration_url\":\"" + jsonEscape(url.c_str()) + "\"},\"o\":{\"name\":\"" + haDeviceId +
+           "\",\"mf\":\"Daikin\",\"mdl\":\"" + model + "\",\"sw_version\":\"ESPAltherma " ESPALTHERMA_VERSION + url +
+           "\"},\"o\":{\"name\":\"" + haDeviceId +
            "\",\"sw\":\"" ESPALTHERMA_VERSION "\",\"url\":\"https://github.com/raomin/ESPAltherma/\"},\"cmps\":{";
 }
 
