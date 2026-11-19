@@ -7,6 +7,9 @@
 
 #include "topics.h"
 #include "sgdiscovery.h"
+#include "relays.h"
+#include "mqttjsonbuffer.h"
+#include <atomic>
 
 // Every topic and every Home Assistant id, from the configurable base topic (Settings > MQTT output)
 MqttTopics mqttTopics;
@@ -14,12 +17,16 @@ IPAddress netIP(); // netmgr.h, included later
 
 #define EEPROM_CHK 1
 #define EEPROM_STATE 0
+#define EEPROM_COOL 2 // the cooling demand relay: 1 when on
 
-#ifndef MAX_MSG_SIZE
-#define MAX_MSG_SIZE 7120//max size of the json message sent in mqtt
-#endif
-
-char jsonbuff[MAX_MSG_SIZE] = "{\0";
+// The values message of a poll, for the time of its publish. It was a 7,120-byte buffer kept for as long as the
+// firmware runs: it is now taken from the heap when a poll's values are published, with the room the selection
+// needs (mqttValuesBegin), and given back after the publish (mqttValuesEnd). It is filled as before, and the values
+// lock is released before the send as before.
+char *jsonbuff = nullptr;
+size_t jsonSize = 0;
+bool mqttValuesOverflow=false;
+std::atomic<bool> mqttValuesTooLarge{false};
 
 #include <WiFiClientSecure.h>
 WiFiClient plainClient;
@@ -28,23 +35,52 @@ PubSubClient client;
 Client *mqttNet = &plainClient; // the network client under PubSubClient
 
 extern Converter converter;
-extern CurveControl dhwControl, lwtControl;
+extern CurveControl dhwControl, lwtControl, coolControl, addControl;
 extern LimitControl limitControl;
 static bool limitDiscoveryOn = false;   // the power limit entities are in Home Assistant
 static bool updateDiscoveryOn = false;  // the firmware update entity is in Home Assistant
 static LimitKind limitDiscoveryKind = LIMIT_POWER;
 
-// The two target controls on MQTT (experimental, control.h): the entity's name and icon; the topics and the ids
-// come from mqttTopics (ctlSet, ctlState, ctlAttrs, cfgCtl, ctlUniq, ctlEntity)
+// The target controls on MQTT (experimental, control.h), in the order of ControlKind: the entity's name and icon;
+// the topics and the ids come from mqttTopics (ctlSet, ctlState, ctlAttrs, cfgCtl, ctlUniq, ctlEntity)
 struct ControlNames
 {
   const char *name, *icon;
 };
-static const ControlNames CONTROL_NAMES[2] = {{"Hot water target", "mdi:water-boiler"}, {"Leaving water target", "mdi:heating-coil"}};
-static const char *RESTORE_NAMES[2] = {"Restore hot water curve", "Restore leaving water curve"};
-bool controlDiscoveryOn[2] = {false, false}; // the number entity is published (with these limits)
-int controlDiscoveryMin[2] = {0, 0}, controlDiscoveryMax[2] = {0, 0};
-static bool controlEnabled(const CurveControl &c) { return c.kind == CONTROL_LWT ? config.lwtTarget : config.dhwTarget; }
+static_assert(CONTROL_KIND_COUNT == TOPICS_TARGET_COUNT, "one set of topics per target control");
+static const ControlNames CONTROL_NAMES[CONTROL_KIND_COUNT] = {{"Hot water target", "mdi:water-boiler"}, {"Leaving water target", "mdi:heating-coil"},
+                                                               {"Cooling target", "mdi:snowflake-thermometer"}, {"Additional zone target", "mdi:heating-coil"}};
+static const char *RESTORE_NAMES[CONTROL_KIND_COUNT] = {"Restore hot water curve", "Restore leaving water curve", "Restore cooling curve",
+                                                        "Restore additional zone curve"};
+bool controlDiscoveryOn[CONTROL_KIND_COUNT] = {}; // the number entity is published (with these limits)
+int controlDiscoveryMin[CONTROL_KIND_COUNT] = {}, controlDiscoveryMax[CONTROL_KIND_COUNT] = {};
+static CurveControl *const curveControls[CONTROL_KIND_COUNT] = {&dhwControl, &lwtControl, &coolControl, &addControl};
+static bool controlEnabled(const CurveControl &c)
+{
+  switch (c.kind)
+  {
+  case CONTROL_LWT:
+    return config.lwtTarget;
+  case CONTROL_COOL:
+    return config.coolTarget;
+  case CONTROL_ADD:
+    return config.addTarget;
+  default:
+    return config.dhwTarget;
+  }
+}
+// When a control's entities leave Home Assistant: its option off, a hydro board software that is not mapped, a
+// setpoint no longer weather dependent. Not a unit that does not answer for a moment: removing an entity also
+// drops what its owner set on it (name, area), and it came back 30 s later.
+static bool controlGone(const CurveControl &c)
+{
+  return !controlEnabled(c) || c.status == CONTROL_UNSUPPORTED || c.status == CONTROL_NOT_CURVE_MODE;
+}
+
+// One buffer for the discovery and control messages, which are built and published one after the other in the main
+// loop: each had its own, kept for as long as the firmware runs (1400 + 960 + 720 + 720 + 960 bytes). The longest
+// is the Smart Grid select: 839 bytes with the default base topic, 991 with the longest.
+static char mqttDiscoveryJson[1400];
 
 // The MQTT client's own buffer: the incoming commands and the short messages. It is taken from the heap for as
 // long as the firmware runs, so it is kept small: a longer message is written straight to the connection.
@@ -71,16 +107,45 @@ bool mqttPublish(const char *topic, const char *payload, bool retained = false)
 
 // Defined in main.cpp
 void requestSurvey();
+extern volatile bool discoveryDirty;
 void valuesLock();
 void valuesUnlock();
 void statsAppendJson(char *buf, size_t size); // main.cpp: the computed statistics, as ATTR keys
 void diiiAppendJson(char *buf, size_t size);  // main.cpp: the DIII E0/63 values of an HT outdoor unit (diii_comm.h)
 void meterAppendJson(char *buf, size_t size); // main.cpp: the unit's own energy meter, where the hydro board is mapped
-void settingsAppendJson(char *buf, size_t size); // main.cpp: the installer settings, where the hydro board is mapped
 
-void resetJson()
+void eventAddf(const char *format, ...); // eventlog.h
+
+// Takes the buffer of one values message, with room for its values and what the firmware adds. False when there
+// is nobody to send it to, or no room in the heap: the values of this poll are then not sent over MQTT (said once
+// in the event history). Main loop only.
+bool mqttValuesBegin(size_t room)
 {
+  static bool noRoomSaid = false;
+  free(jsonbuff); // never two at a time
+  jsonbuff = nullptr;
+  mqttValuesOverflow = false;
+  if (mqttWriteFailed || !client.connected())
+    return false;
+  jsonbuff = (char *)malloc(room);
+  if (jsonbuff == nullptr)
+  {
+    if (!noRoomSaid)
+      eventAddf("MQTT values not sent: no memory for a message of %u bytes", (unsigned)room);
+    noRoomSaid = true;
+    return false;
+  }
+  noRoomSaid = false;
+  jsonSize = room;
   strcpy(jsonbuff, config.jsonTable ? "[{" : "{");
+  return true;
+}
+
+void mqttValuesEnd()
+{
+  free(jsonbuff);
+  jsonbuff = nullptr;
+  jsonSize = 0;
 }
 
 // Selects the (plain or TLS) network client and the broker, from the configuration, and derives every topic and
@@ -110,7 +175,6 @@ void setupMqttClient()
     mqttNet = &plainClient;
     Serial.printf("Wifi client timeout: %d\n", plainClient.getTimeout());
   }
-  resetJson();
   client.setBufferSize(MQTT_BUFFER_SIZE);
   client.setServer(config.mqttServer, config.mqttPort);
   // 60 s instead of the library's 15: a main loop busy for a few seconds (a long publish on a slow link, a web
@@ -120,10 +184,14 @@ void setupMqttClient()
 
 // Relay states, for the web interface
 bool thermostatOn = false;
+bool coolingOn = false;    // the cooling demand relay is closed
 bool safetyActive = false; // the heat pump is stopped by the safety relay
 int sgMode = 0;
 
 int thermActiveState() { return config.thermActiveHigh ? HIGH : LOW; }
+int coolActiveState() { return config.coolActiveHigh ? HIGH : LOW; }
+// The cooling demand relay: a pin of its own, not the thermostat relay's
+bool coolConfigured() { return config.coolPin >= 0 && config.coolPin != config.thermPin; }
 
 // When the board last subscribed: a retained command reaches it within moments of that, at every connection
 static unsigned long mqttSubscribedAt = 0;
@@ -157,38 +225,45 @@ void publishHomeAssistantDeviceDiscovery();
 
 void sendValues()
 {
+  if (jsonbuff == nullptr)
+    return; // no message for this poll (mqttValuesBegin)
   mqttSerial.printf("Sending values in MQTT.\n");
 #ifdef ARDUINO_M5Stick_C_Plus2
   //Add Power values
   // getBatteryVoltage returns battery voltage [mV] as an int16_t
   float batteryVoltage = (float) M5.Power.getBatteryVoltage() / 1000; // convert to V as a float
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gV\",", "M5BatV", batteryVoltage);
 #elif ARDUINO_M5Stick_C
   //Add M5 APX values
   { // the input in use: the 5V pin (ACIN, eg. powered from the X10A) or USB (VBUS)
     float acin = M5.Power.Axp192.getACINVoltage(), vbus = M5.Power.Axp192.getVBUSVoltage();
     bool pin = acin > vbus;
-    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", pin ? acin : vbus,"M5AmpIn", pin ? M5.Power.Axp192.getACINCurrent() : M5.Power.Axp192.getVBUSCurrent());
+    snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5VIN", pin ? acin : vbus,"M5AmpIn", pin ? M5.Power.Axp192.getACINCurrent() : M5.Power.Axp192.getVBUSCurrent());
   }
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Power.Axp192.getBatteryVoltage(),"M5BatCur", M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Power.Axp192.getBatteryPower());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gV\",\"%s\":\"%gmA\",", "M5BatV", M5.Power.Axp192.getBatteryVoltage(),"M5BatCur", M5.Power.Axp192.getBatteryChargeCurrent() - M5.Power.Axp192.getBatteryDischargeCurrent());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%.3gmW\",", "M5BatPwr", M5.Power.Axp192.getBatteryPower());
 #endif
-  statsAppendJson(jsonbuff, MAX_MSG_SIZE);
-  diiiAppendJson(jsonbuff, MAX_MSG_SIZE);
-  meterAppendJson(jsonbuff, MAX_MSG_SIZE);
-  settingsAppendJson(jsonbuff, MAX_MSG_SIZE);
+  statsAppendJson(jsonbuff, jsonSize);
+  diiiAppendJson(jsonbuff, jsonSize);
+  meterAppendJson(jsonbuff, jsonSize);
   if (WiFi.status() == WL_CONNECTED) // not over Ethernet
-    snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
-  snprintf(jsonbuff + strlen(jsonbuff),MAX_MSG_SIZE - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
-  jsonbuff[strlen(jsonbuff) - 1] = '}';
-  if (config.jsonTable)
+    snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%ddBm\",", "WifiRSSI", WiFi.RSSI());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%s\",", "IP", netIP().toString().c_str());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%d\",", "FreeMem", ESP.getFreeHeap());
+  snprintf(jsonbuff + strlen(jsonbuff),jsonSize - strlen(jsonbuff) , "\"%s\":\"%lu\",", "Uptime", (unsigned long)(millis() / 1000)); // seconds
+  if (!mqttJsonFinish(jsonbuff,jsonSize,config.jsonTable,mqttValuesOverflow))
   {
-    strcat(jsonbuff,"]");
+    if (!mqttValuesTooLarge.exchange(true))
+    {
+      mqttSerial.println("MQTT values exceed the payload buffer; incomplete JSON discarded.");
+      eventAddf("MQTT values too large; reduce selection or use individual topics");
+    }
+    mqttValuesEnd();
+    return;
   }
+  mqttValuesTooLarge=false;
   mqttPublish(mqttTopics.attr, jsonbuff);
-  resetJson();
+  mqttValuesEnd();
 }
 
 // Removes every entity this base topic published from Home Assistant, and marks it offline: called before the
@@ -198,14 +273,20 @@ void mqttRetireDiscovery()
   if (!client.connected())
     return;
   const char *cfgs[] = {mqttTopics.cfgSensor, mqttTopics.cfgSwitch, mqttTopics.cfgSg, mqttTopics.cfgSafety,
-                        mqttTopics.cfgCtl[0], mqttTopics.cfgCtl[1], mqttTopics.cfgRestore[0], mqttTopics.cfgRestore[1],
-                        mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgUpdate, mqttTopics.cfgDevice};
+                        mqttTopics.cfgLimit, mqttTopics.cfgLimitOn, mqttTopics.cfgUpdate, mqttTopics.cfgDevice,
+                        mqttTopics.cfgCool};
   for (const char *t : cfgs)
     client.publish(t, "", true);
-  const char *states[] = {mqttTopics.ctlState[0], mqttTopics.ctlState[1], mqttTopics.ctlAttrs[0], mqttTopics.ctlAttrs[1],
-                          mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect, mqttTopics.updateTopic};
+  const char *states[] = {mqttTopics.state, mqttTopics.safetyState, mqttTopics.detect, mqttTopics.updateTopic,
+                          mqttTopics.coolState};
   for (const char *t : states)
     client.publish(t, "", true);
+  for (int k = 0; k < CONTROL_KIND_COUNT; k++)
+  {
+    const char *target[] = {mqttTopics.cfgCtl[k], mqttTopics.cfgRestore[k], mqttTopics.ctlState[k], mqttTopics.ctlAttrs[k]};
+    for (const char *t : target)
+      client.publish(t, "", true);
+  }
   client.publish(mqttTopics.lwt, "Offline", true);
 }
 
@@ -221,6 +302,9 @@ void readEEPROM(){
     }
     thermostatOn = EEPROM.read(EEPROM_STATE) == thermActiveState();
     mqttSerial.printf("Restoring previous state: %s",(EEPROM.read(EEPROM_STATE) == thermActiveState())? "On":"Off" );
+    // The cooling demand as it was (1: on; anything else, like the 0xFF of a board that never had it: off). Never
+    // with the heating demand: the heating one wins
+    coolingOn = coolConfigured() && EEPROM.read(EEPROM_COOL) == 1 && !(config.thermPin >= 0 && thermostatOn);
   }
   else{
     mqttSerial.printf("EEPROM not initialized (%d). Initializing...",EEPROM.read(EEPROM_CHK));
@@ -231,6 +315,22 @@ void readEEPROM(){
       digitalWrite(config.thermPin,!thermActiveState());
     }
   }
+  if (coolConfigured())
+    digitalWrite(config.coolPin, coolingOn ? coolActiveState() : !coolActiveState()); // its level before it becomes an output
+}
+
+// The cooling demand relay to its state: the pin, the state kept for the next start, the state told to the broker
+static void coolApply()
+{
+  if (!coolConfigured())
+    return;
+  digitalWrite(config.coolPin, coolingOn ? coolActiveState() : !coolActiveState());
+  if (EEPROM.read(EEPROM_COOL) != (coolingOn ? 1 : 0))
+  {
+    EEPROM.write(EEPROM_COOL, coolingOn ? 1 : 0);
+    EEPROM.commit();
+  }
+  client.publish(mqttTopics.coolState, coolingOn ? "ON" : "OFF", true);
 }
 
 // One connection attempt; on success publishes the discovery messages and subscribes.
@@ -249,12 +349,10 @@ bool mqttConnectOnce()
     if (client.connect(mqttTopics.clientId, config.mqttUser, config.mqttPwd, mqttTopics.lwt, 0, true, "Offline"))
     {
       mqttSerial.println("connected!");
-      static char json[1400]; // the discovery payloads, built from the base topic (the Smart Grid one: 839 bytes with the default base, 991 with the longest)
-      snprintf(json, sizeof(json),
-               "{\"name\":\"AlthermaSensors\",\"stat_t\":\"~/LWT\",\"avty_t\":\"~/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
-               "\"uniq_id\":\"%s\",\"device\":{\"identifiers\":[\"%s\"]}, \"~\":\"%s\",\"json_attr_t\":\"~/ATTR\"}",
-               mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.base);
-      client.publish(mqttTopics.cfgSensor, json, true);
+      auto &json = mqttDiscoveryJson;
+      int sensorLen = boardSensorDiscovery(json, sizeof(json), mqttTopics, BOARD_NAME); // with the board as the device's model
+      if (discoveryFits(sensorLen, sizeof(json), "the AlthermaSensors entity"))
+        client.publish(mqttTopics.cfgSensor, json, true);
       client.publish(mqttTopics.lwt, "Online", true);
       if (config.thermPin >= 0)
       {
@@ -271,6 +369,22 @@ bool mqttConnectOnce()
       {
         // No thermostat relay: remove the switch from HA
         client.publish(mqttTopics.cfgSwitch, "", true);
+      }
+      if (coolConfigured())
+      {
+        // The cooling demand relay, a switch next to the thermostat one
+        int coolLen = snprintf(json, sizeof(json),
+                 "{\"name\":\"Altherma Cooling\",\"cmd_t\":\"~/COOL\",\"stat_t\":\"~/COOL_STATE\",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",\"~\":\"%s\","
+                 "\"uniq_id\":\"%s_cooling\",\"icon\":\"mdi:snowflake\",\"device\":{\"identifiers\":[\"%s\"],\"name\":\"%s\"}}",
+                 mqttTopics.base, mqttTopics.id, mqttTopics.relayDeviceId, mqttTopics.relayDeviceName);
+        if (discoveryFits(coolLen, sizeof(json), "the cooling switch"))
+          client.publish(mqttTopics.cfgCool, json, true);
+        client.publish(mqttTopics.coolState, coolingOn ? "ON" : "OFF", true);
+        client.subscribe(mqttTopics.cool);
+      }
+      else
+      {
+        client.publish(mqttTopics.cfgCool, "", true);
       }
 
       publishHomeAssistantDeviceDiscovery();
@@ -315,7 +429,7 @@ bool mqttConnectOnce()
       }
 
       // Target controls (experimental): the number entities follow the controls' state, published by the main loop
-      for (CurveControl *c : {&dhwControl, &lwtControl})
+      for (CurveControl *c : curveControls)
       {
         controlDiscoveryOn[c->kind] = false;
         c->changed = true;
@@ -367,6 +481,11 @@ void callbackTherm(byte *payload, unsigned int length)
   }
   else if (length >= 2 && payload[1] == 'N')
   { //turn on
+    if (demandSwitch(thermostatOn, coolingOn, true))
+    {
+      coolApply(); // the cooling contact opens first: the unit never sees both demands
+      mqttSerial.println("Cooling demand released");
+    }
     digitalWrite(config.thermPin, thermActiveState());
     saveEEPROM(thermActiveState());
     thermostatOn = true;
@@ -437,6 +556,29 @@ void callbackSg(byte *payload, unsigned int length)
   {
     mqttSerial.printf("Unknown message: %s\n", payload);
   }
+}
+
+// The cooling demand relay: ON or OFF. Switching it on releases the heating demand first.
+void callbackCool(byte *payload, unsigned int length)
+{
+  payload[length] = '\0';
+  bool on = strcasecmp((const char *)payload, "ON") == 0;
+  if (!on && strcasecmp((const char *)payload, "OFF") != 0)
+  {
+    mqttSerial.printf("Unknown message: %s\n", payload);
+    return;
+  }
+  if (demandSwitch(coolingOn, thermostatOn, on))
+  {
+    // the heating contact opens first: the unit never sees both demands
+    if (config.thermPin >= 0)
+      digitalWrite(config.thermPin, !thermActiveState());
+    saveEEPROM(!thermActiveState());
+    client.publish(mqttTopics.state, "OFF", true);
+    mqttSerial.println("Heating demand released");
+  }
+  coolApply();
+  mqttSerial.println(on ? "Cooling demand ON" : "Cooling demand OFF");
 }
 
 void callbackSafety(byte *payload, unsigned int length)
@@ -585,7 +727,7 @@ void publishControl(CurveControl &c)
   {
     // Same device as the readings (homeassistant.cpp): its identifier and its name, which Home Assistant
     // requires in every entity that shares a device. def_ent_id fixes the entity id, like the readings do.
-    static char json[960]; // 515 bytes with the default base topic, 697 with the longest (640 cut it from 25 characters on)
+    auto &json = mqttDiscoveryJson; // 515 bytes with the default base topic, 697 with the longest
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
@@ -599,7 +741,7 @@ void publishControl(CurveControl &c)
     controlDiscoveryMin[c.kind] = c.minTarget;
     controlDiscoveryMax[c.kind] = c.maxTarget;
   }
-  else if (!ready && on)
+  else if (on && controlGone(c))
   {
     mqttPublish(mqttTopics.cfgCtl[k], "", true); // removes the entity
     on = false;
@@ -616,11 +758,11 @@ void publishControl(CurveControl &c)
     mqttPublish(mqttTopics.ctlAttrs[k], attrs, true);
   }
   // The "restore the unit's curve" button: present while a curve from before the first write is known
-  static bool restoreOn[2] = {false, false};
+  static bool restoreOn[CONTROL_KIND_COUNT] = {};
   bool restorable = ready && c.origA >= 0;
   if (restorable && !restoreOn[k])
   {
-    static char json[720]; // 400 to 540 bytes
+    auto &json = mqttDiscoveryJson; // 400 to 540 bytes
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"%s\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"pl_prs\":\"restore\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\",\"icon\":\"mdi:backup-restore\","
@@ -631,7 +773,7 @@ void publishControl(CurveControl &c)
       mqttPublish(mqttTopics.cfgRestore[k], json, true);
     restoreOn[k] = true;
   }
-  else if (!restorable && restoreOn[k])
+  else if (restoreOn[k] && (controlGone(c) || (ready && c.origA < 0)))
   {
     mqttPublish(mqttTopics.cfgRestore[k], "", true);
     restoreOn[k] = false;
@@ -655,7 +797,7 @@ void publishUpdateEntity()
   }
   if (!fwUpdate.checked)
     return;
-  static char json[720]; // 406 to 546 bytes
+  auto &json = mqttDiscoveryJson; // 406 to 546 bytes
   if (!updateDiscoveryOn)
   {
     int jsonLen = snprintf(json, sizeof(json),
@@ -681,7 +823,7 @@ void publishLimit()
   const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
   if (ready && (!limitDiscoveryOn || limitDiscoveryKind != c.kind))
   {
-    static char json[960]; // 485 to 667 bytes
+    auto &json = mqttDiscoveryJson; // 485 to 667 bytes
     int jsonLen = snprintf(json, sizeof(json),
              "{\"name\":\"Power limit\",\"uniq_id\":\"%s\",\"def_ent_id\":\"%s\",\"cmd_t\":\"%s\",\"stat_t\":\"%s\",\"json_attr_t\":\"%s\","
              "\"avty_t\":\"%s\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\","
@@ -702,7 +844,7 @@ void publishLimit()
     limitDiscoveryOn = true;
     limitDiscoveryKind = c.kind;
   }
-  else if (!ready && limitDiscoveryOn)
+  else if (limitDiscoveryOn && (!config.powerLimit || c.status == CONTROL_UNSUPPORTED))
   {
     mqttPublish(mqttTopics.cfgLimit, "", true);
     mqttPublish(mqttTopics.cfgLimitOn, "", true);
@@ -743,6 +885,10 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     callbackSafety(payload, length);
   }
+  else if (coolConfigured() && strcmp(topic, mqttTopics.cool) == 0)
+  {
+    callbackCool(payload, length);
+  }
   else if (config.debugSerial && strcmp(topic, mqttTopics.serialTx) == 0)
   {
     callbackDebugSerial(payload, length);
@@ -754,6 +900,14 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (config.lwtTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_LWT]) == 0)
   {
     callbackControl(lwtControl, payload, length);
+  }
+  else if (config.coolTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_COOL]) == 0)
+  {
+    callbackControl(coolControl, payload, length);
+  }
+  else if (config.addTarget && strcmp(topic, mqttTopics.ctlSet[CONTROL_ADD]) == 0)
+  {
+    callbackControl(addControl, payload, length);
   }
   else if (config.powerLimit && strcmp(topic, mqttTopics.limitSet) == 0)
   {
@@ -775,23 +929,37 @@ static void mqttDiscoverySink(void *ctx, const char *data, size_t len)
 {
   PubSubClient *c = static_cast<PubSubClient *>(ctx);
   if (!mqttWriteFailed && c->write(reinterpret_cast<const uint8_t *>(data), len) != len)
-    mqttWriteFailed = true; // the rest would wait 10s per write, with the values locked
+    mqttWriteFailed = true; // the remaining chunks must not wait again after a failed write
 }
 
 HaAnnounced haAnnounced; // the components of the last device discovery sent (haremoval.h)
 
 void publishHomeAssistantDeviceDiscovery()
 {
-  valuesLock(); // the heat pump task may be changing the values
-  const LabelDef *labels = converter.activeLabels;
-  const size_t count = converter.activeCount;
+  static bool allocationDeferred=false;
+  static unsigned long allocationFailedAt=0;
+  if (allocationDeferred && millis()-allocationFailedAt<30000)
+  {discoveryDirty=true;return;}
+  HaDiscoverySnapshot snapshot;
+  valuesLock();
+  bool copied=snapshot.capture(converter.activeLabels,converter.activeCount,haExtraLabels,haExtraCount,haDeviceModel);
+  valuesUnlock();
+  if (!copied)
+  {
+    allocationDeferred=true;allocationFailedAt=millis();
+    discoveryDirty=true;
+    mqttSerial.println("Home Assistant discovery deferred: no room for metadata snapshot.");
+    return;
+  }
+  allocationDeferred=false;
+  const size_t count = snapshot.count;
   const char *topic = mqttTopics.cfgDevice;
   haBinaryAsNumber = config.binaryAsNumber; // binary sensors then read 1/0
-  const std::vector<HaComponent> components = haComponents(labels, count);
+  const std::vector<HaComponent> components = haSnapshotComponents(snapshot);
   const std::vector<HaComponent> removed = haAnnounced.removed(components);
 
   // First pass: compute the exact payload length, required up-front for the MQTT fixed header.
-  size_t payloadLen = streamDeviceDiscoveryPayload(labels, count, nullptr, nullptr, &removed);
+  size_t payloadLen = streamDeviceDiscoverySnapshot(snapshot, nullptr, nullptr, &removed);
 
   mqttSerial.printf("Sending HA discovery: %u sensors, %u removed, %u bytes\n",
                     (unsigned)(count + 5), (unsigned)removed.size(), (unsigned)payloadLen);
@@ -801,14 +969,12 @@ void publishHomeAssistantDeviceDiscovery()
   // contiguous setBufferSize() allocation that previously ran out of heap on bigger definitions.
   if (!client.beginPublish(topic, payloadLen, true))
   {
-    valuesUnlock();
     mqttSerial.println("Error starting device discovery publish!");
     return;
   }
 
-  streamDeviceDiscoveryPayload(labels, count, mqttDiscoverySink, &client, &removed);
+  streamDeviceDiscoverySnapshot(snapshot, mqttDiscoverySink, &client, &removed);
 
   if (client.endPublish() && !mqttWriteFailed)
     haAnnounced.sent(components); // the next discovery leaves the removed ones out
-  valuesUnlock();
 }

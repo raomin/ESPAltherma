@@ -5,6 +5,7 @@
 // file the web page's "Check for an update" reads too, and notes whether a newer build exists: the home page shows
 // it and Home Assistant gets an update entity. Nothing is downloaded or installed by itself; the web page does that.
 
+#include <ctype.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,16 @@
 #define UPDATE_CHECK_FIRST_MS (3UL * 60UL * 1000UL)         // after boot, once online
 #define UPDATE_CHECK_EVERY_MS (24UL * 3600UL * 1000UL)      // after a check
 #define UPDATE_CHECK_RETRY_MS (60UL * 60UL * 1000UL)        // after a failed attempt
+
+// A web update is being written while its blocks keep coming. One that went quiet this long (a browser gone without
+// the connection saying so) no longer counts, so nothing that waits for it waits for ever.
+#define UPLOAD_QUIET_MS 15000UL
+
+// lastBlockMs: when the last block of the upload was written (millis), 0 when no upload is being written
+static bool uploadInProgress(uint32_t lastBlockMs, uint32_t nowMs)
+{
+  return lastBlockMs != 0 && (uint32_t)(nowMs - lastBlockMs) < UPLOAD_QUIET_MS;
+}
 
 struct FirmwareUpdate
 {
@@ -76,13 +87,28 @@ static bool versionRank(const char *v, int out[5])
   return true;
 }
 
+// What a version may be made of: letters, digits, dots and dashes, 23 characters at most. The text goes as it is
+// into the JSON of the Home Assistant update entity and into the log, and it comes from a site read without
+// checking its certificate.
+static bool versionText(const char *v)
+{
+  if (v == nullptr || !v[0] || strlen(v) > 23)
+    return false;
+  for (const char *p = v; *p; p++)
+    if (!isalnum((unsigned char)*p) && *p != '.' && *p != '-')
+      return false;
+  return true;
+}
+
 // A build is newer when the manifest and this firmware both carry a commit time and the manifest's is later; else
-// by the version. A development build on either side is never newer: the web page offers those by hand only.
+// by the version, also when the two times are the same: a release tagged on the commit of its last beta or
+// release candidate is newer than it. A development build on either side is never newer: the web page offers
+// those by hand only.
 static bool updateNewer(const char *latest, uint32_t latestBuild, const char *current, uint32_t currentBuild)
 {
   if (latest == nullptr || !latest[0])
     return false;
-  if (latestBuild && currentBuild)
+  if (latestBuild && currentBuild && latestBuild != currentBuild)
     return latestBuild > currentBuild;
   int a[5], b[5];
   if (!versionRank(latest, a) || !versionRank(current, b))

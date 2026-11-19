@@ -41,7 +41,8 @@
 
 ::Converter converter; // qualified: ArduinoJson (via ESPAsyncWebServer) also has a Converter
 char registryIDs[32]; //Holds the registries to query
-bool registryOk[32]; //Registries successfully read during the last query cycle
+std::atomic<bool> registryOk[32]; // polling task publishes results while MQTT reads them
+bool registryEverOk[32]; // and those that answered at least once since the list was made
 std::atomic<bool> busy{false}; // OTA/main task publishes the gate; the heat-pump task observes it
 
 Survey survey;
@@ -54,12 +55,15 @@ volatile bool forceDetection = false; //detect again even if a model is set (req
 unsigned long lastPollMs = 0;         //end of the last query cycle
 DetectResult detection;
 std::vector<LabelDef> catalogLabels; //values of the model, from the catalog
+uint32_t labelGeneration=0; // protected by valuesLock; a publish stops when its selection changes
 LayoutChecker layoutChecker;         //checks the model's layout against the replies (layoutfix.h)
 LayoutCycle layoutCycle;             //replies of the last query cycle
 volatile bool surveyRequested = false;
 volatile bool surveyInProgress = false; //the survey is being written: readers must not use it
 volatile bool surveyReady = false;
 CurveControl dhwControl, lwtControl;   //experimental hot water and leaving water targets (control.h), heat pump task
+CurveControl coolControl, addControl; //experimental cooling and additional zone targets (control.h, 20002203), heat pump task
+static_assert(CONFIG_TARGET_COUNT == CONTROL_KIND_COUNT, "one configuration slot per target control");
 LimitControl limitControl;             //experimental power limit (control.h), heat pump task
 SettingsReader unitSettings; // the installer settings, read only, where the hydro board is mapped for them
 MeterReader unitMeter; // the unit's own energy meter, where the hydro board is mapped for it (control.h)
@@ -125,18 +129,16 @@ void updateValues(char regID)
     if (!digit)
       alpha = true;
 
-    if (config.oneValOneTopic)
+    if (jsonbuff == nullptr)
     {
-      char topicBuff[128];
-      snprintf(topicBuff, sizeof(topicBuff), "%s%s", config.oneTopicPrefix, labels[i]->label);
-      mqttPublish(topicBuff, v);
+      // no values message for this poll (mqttValuesBegin)
     }
     else if (alpha){
 
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":\"%s\",", labels[i]->label, v);
+      mqttJsonAppend(jsonbuff,jsonSize,mqttValuesOverflow,"\"%s\":\"%s\",",labels[i]->label,v);
     }
     else{//number, no quotes
-      snprintf(jsonbuff + strlen(jsonbuff), MAX_MSG_SIZE - strlen(jsonbuff), "\"%s\":%s,", labels[i]->label, v);
+      mqttJsonAppend(jsonbuff,jsonSize,mqttValuesOverflow,"\"%s\":%s,",labels[i]->label,v);
     }
   }
 }
@@ -229,6 +231,7 @@ static bool surveyTwoZones(int model)
 }
 
 void initLabels(){
+  labelGeneration++;
   //The values of the configured model, from the catalog
   int model = catalogFindModel(config.model);
   if (model < 0)
@@ -271,6 +274,7 @@ void initRegistries(){
   for (size_t i = 0; i < sizeof(registryIDs); i++)
   {
     registryIDs[i]=0xff;
+    registryEverOk[i] = false;
   }
 
   int i = 0;
@@ -289,9 +293,23 @@ void initRegistries(){
   }
 }
 
+#ifdef HAS_M5_SCREEN
+// Starts the M5 library without the board's clock chip. Left to itself, M5.begin() puts in the system clock
+// whatever that chip holds, at every start, and nothing here ever sets the chip: the clock, which survives a
+// restart by itself as on any ESP32, was wrong until the time server answered. The first reading after a
+// restart then looked like another day and emptied the day's counters (#663), and an event could be dated
+// years away.
+static void m5Begin()
+{
+  auto cfg = M5.config();
+  cfg.internal_rtc = false;
+  M5.begin(cfg);
+}
+#endif
+
 void setupScreen(){
 #if !defined(ARDUINO_M5Stick_C_Plus2) && defined(ARDUINO_M5Stick_C) || defined(ARDUINO_M5Stick_C_Plus) || defined(ARDUINO_M5Stack_Tough)
-  M5.begin();
+  m5Begin();
   M5.Lcd.setRotation(1);
   M5.Display.setBrightness(127);
   M5.Lcd.fillScreen(TFT_WHITE);
@@ -307,7 +325,7 @@ void setupScreen(){
   M5.Lcd.setTextColor(TFT_GREEN);
 
 #elif defined(ARDUINO_M5Stick_C_Plus2)
-  M5.begin();
+  m5Begin();
   M5.Lcd.setRotation(1);
   M5.Lcd.setBrightness(127);
   M5.Lcd.fillScreen(TFT_WHITE);
@@ -353,7 +371,7 @@ void reloadLabels()
   valuesLock();
   initLabels();
   initRegistries();
-  memset(registryOk, 0, sizeof(registryOk));
+  for (auto &ok : registryOk) ok.store(false);
   valuesUnlock();
   discoveryDirty = true;
 }
@@ -376,8 +394,10 @@ void applyDetection()
     // Completes a key saved while the outdoor unit slept, the selection stays
     if (strcmp(key, config.detectedKey) != 0 && surveyKeyComplete(key))
     {
+      configLock();
       strlcpy(config.detectedKey, key, sizeof(config.detectedKey));
       configSave();
+      configUnlock();
     }
     return;
   }
@@ -391,6 +411,7 @@ void applyDetection()
     mqttSerial.println("Model uncertain and no value is safe to read: choose the model in the web interface.");
     return;
   }
+  configLock();
   strlcpy(config.model, CATALOG_MODELS[detection.model].name, sizeof(config.model));
   strlcpy(config.detectedKey, key, sizeof(config.detectedKey));
   config.fixCount = 0; //corrections belong to the previous model
@@ -398,6 +419,7 @@ void applyDetection()
   config.labelCount = safe < 0 ? 0 : safe; //0: all the recommended values
   memcpy(config.labels, keys, sizeof(uint32_t) * config.labelCount);
   configSave();
+  configUnlock();
   mqttSerial.printf("Detected %s (%s confidence)\n", config.model, detectConfidenceName(detection.confidence));
   reloadLabels();
 }
@@ -422,9 +444,11 @@ void layoutCheck()
     const LayoutCandidate &a = rc.c[0], &c = rc.c[k];
     mqttSerial.printf("Registry 0x%02x does not match %s on this unit (%u/%u plausible values): read with the layout of %s (%u/%u)\n",
                       rc.reg, config.model, a.plausible, a.checks, CATALOG_MODELS[c.model].name, c.plausible, c.checks);
+    configLock();
     config.fixReg[config.fixCount] = rc.reg;
     strlcpy(config.fixModel[config.fixCount], CATALOG_MODELS[c.model].name, sizeof(config.fixModel[0]));
     config.fixCount++;
+    configUnlock();
     changed = true;
   }
   if (changed)
@@ -447,19 +471,23 @@ void layoutFeedSurvey()
   layoutCheck();
 }
 
+// The X10A commands sent outside the controls (the survey's two reads, the memory reads of the diagnostics): the
+// controls' client (control.h), so that a frame and the check of its reply are written in one place
+static X10aClient &x10aLink()
+{
+  static X10aClient link;
+  link.exchange = x10aExchange;
+  return link;
+}
+
 // The hydro board's software, with the 'L' command of the X10A port: 4 bytes, the version's digits reversed
 // (04 29 00 18 is 18002904). Boards without the command answer NAK or nothing: the report then has no "iu_sw_id".
 static void surveyReadSoftwareId(Survey &s)
 {
-  uint8_t frame[4], reply[8];
-  size_t len = x10aFrame(0x4C, nullptr, 0, frame);
-  size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-  uint8_t sum = 0;
-  for (size_t i = 0; i < 5 && i < got; i++)
-    sum += reply[i];
-  s.hasSwId = got == 6 && reply[0] == 0x4C && (uint8_t)~sum == reply[5];
+  uint8_t id[4];
+  s.hasSwId = x10aLink().command(0x4C, nullptr, 0, id, sizeof(id));
   if (s.hasSwId)
-    memcpy(s.swId, reply + 1, 4);
+    memcpy(s.swId, id, sizeof(id));
 }
 
 // The unit's model name at the start of the hydro board's settings memory (the 'I' command, one byte each), where
@@ -471,14 +499,12 @@ static void surveyReadUnitModel(Survey &s)
   char name[UNIT_MODEL_MAX + 1] = {0};
   for (uint16_t i = 0; i < UNIT_MODEL_MAX; i++)
   {
-    uint8_t data[2] = {(uint8_t)i, (uint8_t)(i >> 8)}, frame[8], reply[8];
-    size_t len = x10aFrame(0x49, data, 2, frame);
-    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-    if (got != 3 || reply[0] != 0x49 || (uint8_t)~(uint8_t)(reply[0] + reply[1]) != reply[2])
+    uint8_t letter = 0;
+    if (!x10aLink().readMemory(i, letter))
       return;
-    if (reply[1] == 0)
+    if (letter == 0)
       break;
-    name[i] = (char)reply[1];
+    name[i] = (char)letter;
   }
   if (unitModelLooksValid(name))
     strlcpy(s.unitModel, name, sizeof(s.unitModel));
@@ -498,9 +524,13 @@ void runSurvey()
     surveyReadUnitModel(survey);
   }
   surveyInProgress = false;
-  static char detectJson[1024];
+  // The detection's part of the report, on the heap like the report itself (1 KB was kept for good as a static);
+  // without the room the report goes without it
+  const size_t detectSize = 1024;
+  std::unique_ptr<char[]> detectText(new (std::nothrow) char[detectSize]);
+  char *detectJson = detectText.get();
   detectModel(survey, detection);
-  bool reportOk = detectToJson(detection, detectJson, sizeof(detectJson)) != 0;
+  bool reportOk = detectJson == nullptr || detectToJson(detection, detectJson, detectSize) != 0;
   //Rendered aside then swapped in: the web interface may be reading the previous report. On the heap for that
   //time (3 KB kept for good as a static); without the room, rendered in place under the lock.
   std::unique_ptr<char[]> report(new (std::nothrow) char[sizeof(surveyJson)]);
@@ -515,6 +545,7 @@ void runSurvey()
   if (!reportOk) surveyJson[0] = 0;
   valuesUnlock();
   report.reset();
+  detectText.reset();
   if (!reportOk)
   {
     mqttSerial.println("Survey report too large; partial JSON discarded.");
@@ -552,12 +583,11 @@ void pollRegistries()
       []() { mqttSerial.println("Retrying..."); hpDelay(1000); });
     if (registryOk[i])
     {
+      registryEverOk[i] = true;
+      size_t payloadLength = config.protocol == 'I' ? (buff[2] >= 2 ? buff[2] - 2 : 0) : get_reply_len(buff[0], 'S') - 2;
       valuesLock();
-      converter.readRegistryValues(buff, config.protocol); //process all values from the register
-      if (config.protocol == 'I')
-        replyCache.update(buff[1], buff + 3, buff[2] >= 2 ? buff[2] - 2 : 0);
-      else
-        replyCache.update(buff[0], buff + 1, get_reply_len(buff[0], 'S') - 2);
+      converter.readRegistryValues(buff, config.protocol, payloadLength); //process all values from the register
+      replyCache.update(config.protocol == 'I' ? buff[1] : buff[0], buff + (config.protocol == 'I' ? 3 : 1), payloadLength);
       valuesUnlock();
       if (config.protocol == 'I' && buff[2] >= 2)
         layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
@@ -570,52 +600,65 @@ void pollRegistries()
 // Energy and cycle statistics (stats.h), fed from the labels' current values. Main loop, under the values lock.
 RTC_NOINIT_ATTR StatsDay statsDay;
 Stats stats;
-static const LabelDef STATS_LABELS[] = {
-    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Heat output (kW)"},
-    {-1, -1, -1, -1, ESP_SENSOR_POWER_KW, "Stats: Electrical input estimated (kW)"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP estimated"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today heating"},
-    {-1, -1, -1, -1, ESP_SENSOR_RATIO, "Stats: COP today hot water"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today heating (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today hot water (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Heat today cooling (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today heating (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today hot water (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Stats: Electricity today cooling (kWh)"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts today"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Compressor starts last hour"},
-    {-1, -1, -1, -1, ESP_SENSOR_COUNT, "Stats: Defrosts today"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Compressor run today (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Backup heater today (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last run (min)"},
-    {-1, -1, -1, -1, ESP_SENSOR_MINUTES, "Stats: Last pause (min)"},
+static const HaSensor STATS_LABELS[] = {
+    {"Stats: Heat output (kW)", ESP_SENSOR_POWER_KW},
+    {"Stats: Electrical input estimated (kW)", ESP_SENSOR_POWER_KW},
+    {"Stats: COP estimated", ESP_SENSOR_RATIO},
+    {"Stats: COP today heating", ESP_SENSOR_RATIO},
+    {"Stats: COP today hot water", ESP_SENSOR_RATIO},
+    {"Stats: Heat today heating (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Heat today hot water (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Heat today cooling (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today heating (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today hot water (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Electricity today cooling (kWh)", ESP_SENSOR_ENERGY_KWH},
+    {"Stats: Compressor starts today", ESP_SENSOR_COUNT},
+    {"Stats: Compressor starts last hour", ESP_SENSOR_COUNT},
+    {"Stats: Defrosts today", ESP_SENSOR_COUNT},
+    {"Stats: Compressor run today (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Backup heater today (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Last run (min)", ESP_SENSOR_MINUTES},
+    {"Stats: Last pause (min)", ESP_SENSOR_MINUTES},
 };
 
 // The DIII values (diii_comm.h appendJson keys): dataType 1 = temperature, conv 105 + "(A)" = current
-static const LabelDef DIII_LABELS[] = {
-    {-1, -1, -1, -1, 1, "E0: Leaving water (C)"},
-    {-1, -1, -1, -1, 1, "E0: Return water (C)"},
-    {-1, -1, -1, -1, 1, "E0: Remote room temp (C)"},
-    {-1, -1, -1, -1, 1, "E0: DHW tank (C)"},
-    {-1, -1, -1, -1, -1, "E0: 3-way valve DHW"},
-    {-1, -1, -1, -1, -1, "E0: Pump"},
-    {-1, -1, -1, -1, -1, "E0: EVL (pls)"},
-    {-1, -1, -1, -1, -1, "E0: EVH (pls)"},
-    {-1, -1, 105, -1, -1, "E0: INV current (A)"},
-    {-1, -1, -1, -1, -1, "E0: INV speed (rps)"},
-    {-1, -1, -1, -1, 1, "E0: INV fin temp (C)"},
-    {-1, -1, -1, -1, -1, "E0: Sync"},
-    {-1, -1, -1, -1, 1, "63: Leaving water (C)"},
-    {-1, -1, -1, -1, 1, "63: Return water (C)"},
-    {-1, -1, -1, -1, 1, "63: R410A liquid (C)"},
-    {-1, -1, -1, -1, 1, "63: BRC1 room temp (C)"},
-    {-1, -1, 105, -1, -1, "RAM: Outdoor input current (A)"},
-    {-1, -1, 105, -1, -1, "RAM: Outdoor rated current (A)"},
-    {-1, -1, -1, -1, -1, "RAM: Outdoor load (%)"},
+static const HaSensor DIII_LABELS[] = {
+    {"E0: Leaving water (C)", 1},
+    {"E0: Return water (C)", 1},
+    {"E0: Remote room temp (C)", 1},
+    {"E0: DHW tank (C)", 1},
+    {"E0: 3-way valve DHW", -1},
+    {"E0: Pump", -1},
+    {"E0: EVL (pls)", -1},
+    {"E0: EVH (pls)", -1},
+    {"E0: INV current (A)", -1, 105},
+    {"E0: INV speed (rps)", -1},
+    {"E0: INV fin temp (C)", 1},
+    {"E0: Sync", -1},
+    {"63: Leaving water (C)", 1},
+    {"63: Return water (C)", 1},
+    {"63: R410A liquid (C)", 1},
+    {"63: BRC1 room temp (C)", 1},
+    {"RAM: Outdoor input current (A)", -1, 105},
+    {"RAM: Outdoor rated current (A)", -1, 105},
+    {"RAM: Outdoor load (%)", -1},
 };
 
-// The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a number)
-static float statsValue(std::initializer_list<const char *> prefixes, bool *found = nullptr)
+// How fresh a value is. A value keeps its last text when its registry does not answer: read in this cycle, read
+// before but not in this cycle (stale), or never read since the start (a registry this unit does not have).
+enum ValueAge { VALUE_READ, VALUE_STALE, VALUE_NEVER };
+static ValueAge valueAge(int registryID)
+{
+  for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
+    if ((uint8_t)registryIDs[i] == (uint8_t)registryID)
+      return registryOk[i] ? VALUE_READ : registryEverOk[i] ? VALUE_STALE : VALUE_NEVER;
+  return VALUE_NEVER;
+}
+
+// The current value of the first selected label whose name starts with one of the prefixes (NAN: none, or not a
+// number). With `stale` given, a value not read in this cycle is not taken: NAN, and *stale set when it was read
+// before. Without it, the last text whatever its age.
+static float statsValue(std::initializer_list<const char *> prefixes, bool *stale = nullptr)
 {
   for (const char *p : prefixes)
   {
@@ -624,8 +667,14 @@ static float statsValue(std::initializer_list<const char *> prefixes, bool *foun
       const LabelDef &l = converter.activeLabels[i];
       if (strncasecmp(l.label, p, strlen(p)) != 0)
         continue;
-      if (found)
-        *found = true;
+      if (stale)
+      {
+        ValueAge age = valueAge(l.registryID);
+        if (age == VALUE_STALE)
+          *stale = true;
+        if (age != VALUE_READ)
+          return NAN;
+      }
       char *end;
       float v = strtof(l.asString, &end);
       return end == l.asString ? NAN : v;
@@ -634,8 +683,8 @@ static float statsValue(std::initializer_list<const char *> prefixes, bool *foun
   return NAN;
 }
 
-// ON/OFF labels: 1, 0, or -1 when not selected
-static int statsFlag(std::initializer_list<const char *> prefixes)
+// ON/OFF labels: 1, 0, or -1 when not selected or not read in this cycle (*stale set when it was read before)
+static int statsFlag(std::initializer_list<const char *> prefixes, bool *stale)
 {
   for (const char *p : prefixes)
   {
@@ -643,7 +692,14 @@ static int statsFlag(std::initializer_list<const char *> prefixes)
     {
       const LabelDef &l = converter.activeLabels[i];
       if (strncasecmp(l.label, p, strlen(p)) == 0)
+      {
+        ValueAge age = valueAge(l.registryID);
+        if (age == VALUE_STALE)
+          *stale = true;
+        if (age != VALUE_READ)
+          return -1;
         return strcasecmp(l.asString, "ON") == 0 || strcmp(l.asString, "1") == 0 ? 1 : 0;
+      }
     }
   }
   return -1;
@@ -698,41 +754,42 @@ static int unitCounterSensorType(const UnitCounterDef &d)
 }
 
 // The unit's own energy meter (control.h MeterReader): a lifetime count, a total_increasing sensor in Home Assistant
-static const LabelDef METER_LABEL = {-1, -1, -1, -1, ESP_SENSOR_ENERGY_KWH, "Unit meter: Heat produced (kWh)"};
+static const HaSensor METER_LABEL = {"Unit meter: Heat produced (kWh)", ESP_SENSOR_ENERGY_KWH};
 
 // The unit's model name (control.h MeterReader::model), a diagnostic text once read
-static const LabelDef UNIT_MODEL_LABEL = {-1, -1, -1, -1, ESP_SENSOR_TEXT, "Unit model"};
+static const HaSensor UNIT_MODEL_LABEL = {"Unit model", ESP_SENSOR_TEXT};
 
-// Room for every extra sensor: the statistics, the DIII values, the unit's meter and what other features add
-#define HA_EXTRA_LABELS_MAX 96
+// Room for every extra sensor: the statistics, the DIII values, the unit's meter, its model and its counters
+static constexpr size_t HA_EXTRA_LABELS_MAX = sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) +
+                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT + UNIT_SETTINGS_MAX;
 
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
 void haExtraSetup()
 {
-  static LabelDef extra[HA_EXTRA_LABELS_MAX];
+  static HaSensor extra[HA_EXTRA_LABELS_MAX];
   size_t n = 0;
+  valuesLock();
   if (config.statsEnabled)
-    for (const LabelDef &l : STATS_LABELS)
+    for (const HaSensor &l : STATS_LABELS)
       extra[n++] = l;
   if (diii.status == DIII_READY)
-    for (const LabelDef &l : DIII_LABELS)
+    for (const HaSensor &l : DIII_LABELS)
       extra[n++] = l;
-  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + UNIT_SETTINGS_MAX + 1 + UNIT_COUNTER_COUNT + 2 <= HA_EXTRA_LABELS_MAX, "room for the unit's settings");
   for (size_t i = 0; unitSettings.everRead && i < unitSettings.count(); i++)
-    extra[n++] = LabelDef(-1, -1, -1, -1, ESP_SENSOR_SETTING_C, unitSettings.map->defs[i].label);
+    extra[n++] = HaSensor(unitSettings.map->defs[i].label, ESP_SENSOR_SETTING_C);
 
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
   if (unitMeter.model[0])
     extra[n++] = UNIT_MODEL_LABEL;
-  static_assert(sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) + sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT <= HA_EXTRA_LABELS_MAX, "room for the unit's counters");
   for (size_t i = 0; unitMeter.status == CONTROL_READY && i < UNIT_COUNTER_COUNT; i++)
     if (unitMeter.counterMapped(i))
-      extra[n++] = LabelDef(-1, -1, -1, -1, unitCounterSensorType(UNIT_COUNTER_DEFS[i]), UNIT_COUNTER_DEFS[i].label);
+      extra[n++] = HaSensor(UNIT_COUNTER_DEFS[i].label, unitCounterSensorType(UNIT_COUNTER_DEFS[i]));
   haExtraCount = 0; // the main loop may be reading the list
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
+  valuesUnlock(); // readers see the complete list
 }
 
 // The DIII values as ATTR keys (mqtt.h, next to the statistics)
@@ -778,22 +835,34 @@ static void statsUpdate()
   stats.settings.maxHeatKW = statsHeatCap(); // the model may have been detected or changed since the start
   stats.settings.heaterInTank = strstr(config.model, "ECH2O") != nullptr; // every ECH2O definition carries it in its name
   StatsInput in;
-  in.inv = statsValue({"INV frequency", "INV Comp. Frequency"});
-  in.flow = statsValue({"Flow sensor"});
-  in.lw = statsValue({"Leaving water temp. before BUH", "Outlet Water Heat Exch. Temp.", "[HPSU] Tv inflow Temp", "Leaving water temp. (hydrobox)"});
-  in.lwAfter = statsValue({"Leaving water temp. after BUH", "Outlet Water BUH Temp.", "[HPSU] Tvbh inflow Temp"});
-  in.inlet = statsValue({"Inlet water temp", "[HPSU] Tr return Temp"});
-  in.amp = statsValue({"INV primary current"});
-  in.volt = statsValue({"Voltage (N-phase)", "Voltage (V)"}); // the Hybrid names it without the phase
-  in.outdoor = statsValue({"R1T-Outdoor air temp", "Outdoor air temp"});
-  in.v3 = statsFlag({"3way valve", "Priority to domestic water"});
-  in.defrost = statsFlag({"Defrost Operation"});
-  in.buh = statsFlag({"BUH Step1"});
-  in.buh2 = statsFlag({"BUH Step2"});
+  bool stale = false;
+  in.inv = statsValue({"INV frequency", "INV Comp. Frequency"}, &stale);
+  in.flow = statsValue({"Flow sensor"}, &stale);
+  in.lw = statsValue({"Leaving water temp. before BUH", "Outlet Water Heat Exch. Temp.", "[HPSU] Tv inflow Temp", "Leaving water temp. (hydrobox)"}, &stale);
+  in.lwAfter = statsValue({"Leaving water temp. after BUH", "Outlet Water BUH Temp.", "[HPSU] Tvbh inflow Temp"}, &stale);
+  in.inlet = statsValue({"Inlet water temp", "[HPSU] Tr return Temp"}, &stale);
+  in.amp = statsValue({"INV primary current"}, &stale);
+  in.volt = statsValue({"Voltage (N-phase)", "Voltage (V)"}, &stale); // the Hybrid names it without the phase
+  in.outdoor = statsValue({"R1T-Outdoor air temp", "Outdoor air temp"}, &stale);
+  in.v3 = statsFlag({"3way valve", "Priority to domestic water"}, &stale);
+  in.defrost = statsFlag({"Defrost Operation"}, &stale);
+  in.buh = statsFlag({"BUH Step1"}, &stale);
+  in.buh2 = statsFlag({"BUH Step2"}, &stale);
   for (size_t i = 0; i < converter.activeCount; i++)
     if (strcasecmp(converter.activeLabels[i].label, "Operation Mode") == 0)
+    {
       in.cooling = strcasestr(converter.activeLabels[i].asString, "cool") != nullptr;
-  stats.update(in, statsEpoch(), millis() / 1000);
+      if (valueAge(converter.activeLabels[i].registryID) == VALUE_STALE)
+        stale = true;
+    }
+  // A value the statistics read was read before and not in this cycle: it only has the text of its last reading.
+  // A unit that stopped answering went on adding heat and electricity to the day at its last power, for as long
+  // as it stayed silent. Such a cycle is no reading. (A registry that never answered is a value this unit does
+  // not have, as before.)
+  if (stale)
+    stats.noReading();
+  else
+    stats.update(in, statsEpoch(), millis() / 1000);
 }
 
 // The statistics as ATTR keys, in the order of STATS_LABELS; null when not known. The "Stats:" prefix keeps them
@@ -818,10 +887,68 @@ void statsAppendJson(char *buf, size_t size)
   }
 }
 
+// The room the values message of this poll needs: each selected value's name and its text as it is now, then what
+// the firmware adds itself, rounded up to a step so that it is the same from poll to poll. Under the values lock,
+// which is kept until the values are in the message.
+#define VALUES_ROOM_BOARD 320 // the board's supply (M5), signal, address, free memory and uptime
+#define VALUES_ROOM_STATS 900 // 18 statistics: 536 characters of names, a figure each
+#define VALUES_ROOM_DIII 700  // 19 DIII values: 364 characters of names
+#define VALUES_ROOM_METER 900 // the unit's model, its meter and its 13 counters: 580 characters of names
+// Called under valuesLock, with the same settings snapshot as valuesMessageRoom().
+static void settingsAppendJson()
+{
+  if (!jsonbuff || !unitSettings.everRead)
+    return;
+  for (size_t i = 0; i < unitSettings.count(); i++)
+  {
+    const char *label = unitSettings.map->defs[i].label;
+    if (unitSettings.known[i])
+      mqttJsonAppend(jsonbuff, jsonSize, mqttValuesOverflow, "\"%s\":%d,", label, unitSettings.value[i]);
+    else
+      mqttJsonAppend(jsonbuff, jsonSize, mqttValuesOverflow, "\"%s\":null,", label);
+  }
+}
+
+static size_t valuesMessageRoom()
+{
+  size_t room = VALUES_ROOM_BOARD + MQTT_JSON_FRAME_ROOM;
+  for (size_t i = 0; !config.oneValOneTopic && i < converter.activeCount; i++)
+    room += mqttJsonValueRoom(converter.activeLabels[i].label, converter.activeLabels[i].asString);
+  if (config.statsEnabled)
+    room += VALUES_ROOM_STATS;
+  if (diii.status == DIII_READY)
+    room += VALUES_ROOM_DIII;
+  if (unitMeter.status == CONTROL_READY || unitMeter.model[0])
+    room += VALUES_ROOM_METER;
+  if (unitSettings.everRead)
+    for (size_t i = 0; i < unitSettings.count(); i++)
+      room += mqttJsonValueRoom(unitSettings.map->defs[i].label, "00000000000"); // fits any signed 32-bit value
+  return mqttJsonRoomRounded(room);
+}
+
 void publishValues()
 {
   valuesLock();
   statsUpdate();
+  if (config.oneValOneTopic)
+  {
+    valuesUnlock();
+    publishOneValueSnapshots(converter.activeLabels,converter.activeCount,registryIDs,registryOk,labelGeneration,
+      valuesLock,valuesUnlock,[](const MqttReading &reading) {
+        const char *v=reading.value;
+        if (config.binaryAsNumber) {if (!strcmp(v,"ON")) v="1";else if (!strcmp(v,"OFF")) v="0";}
+        char topic[128];
+        int n=snprintf(topic,sizeof(topic),"%s%s",config.oneTopicPrefix,reading.label);
+        if (n>=0 && (size_t)n<sizeof(topic)) mqttPublish(topic,v);
+        else mqttSerial.println("Value topic too long; publish skipped.");
+      });
+    valuesLock();
+    mqttValuesBegin(valuesMessageRoom()); // one topic per value: the message only holds what the firmware adds
+    settingsAppendJson();
+    valuesUnlock();
+    sendValues();webSendValues();return;
+  }
+  mqttValuesBegin(valuesMessageRoom());
   for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
   {
     if (registryOk[i])
@@ -829,6 +956,7 @@ void publishValues()
       updateValues(registryIDs[i]);
     }
   }
+  settingsAppendJson();
   valuesUnlock();
   sendValues();//Send the full json message
   webSendValues();
@@ -848,7 +976,7 @@ struct HeldRtc
 {
   uint32_t magic;
   uint8_t unsaved; // newer than the configuration in flash
-  int16_t held[2];
+  int16_t held[2]; // hot water and leaving water; the cooling and additional zone holds go to the flash only
   char origSw[9];
   uint8_t limitOn;
   float limitValue;
@@ -857,8 +985,16 @@ struct HeldRtc
   uint32_t sum;
 };
 RTC_NOINIT_ATTR HeldRtc heldRtc;
+// What is kept in RTC memory is written by one version of the firmware and read by the next one after an update:
+// each block must keep its size, and no block may be added before another (the linker places them one after the
+// other). A block that grows moves the ones behind it, and the day's counters, the event history and the cause of
+// the restart are then lost at that update. New data to keep goes to the configuration in flash, or needs a
+// version of the block that is told apart.
+static_assert(sizeof(HeldRtc) == 40, "HeldRtc is kept in RTC memory across updates: its size must not change");
+static_assert(sizeof(StatsDay) == 164, "StatsDay is kept in RTC memory across updates: its size must not change");
+static_assert(sizeof(EventRing) == 2316, "EventRing is kept in RTC memory across updates: its size must not change");
 static DeferredSave heldSave;
-static ChangeLog targetLog[2], limitLog;
+static ChangeLog targetLog[CONTROL_KIND_COUNT], limitLog;
 
 static uint32_t heldRtcSum()
 {
@@ -922,7 +1058,8 @@ static void heldSaveTick()
 // One target control: identification, requests, saves. Heat pump task only (it owns the X10A link).
 static void controlTick(CurveControl &c, bool enabled, const char *what)
 {
-  if (!enabled || config.protocol != 'I' || busy)
+  // An option switched off with a curve from here in the unit: the unit's own goes back first (control.h leaving)
+  if (config.protocol != 'I' || busy || (!enabled && !c.leaving()))
   {
     if (c.status != CONTROL_OFF)
       c.reset();
@@ -963,19 +1100,23 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
   if (c.origChanged)
   {
     c.origChanged = false;
+    configLock();
     config.ctlOrig[k][0] = c.origA;
     config.ctlOrig[k][1] = c.origB;
     if (c.origA >= 0)
       strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
     configSave();
+    configUnlock();
   }
   if (c.heldChanged)
   {
     c.heldChanged = false;
+    configLock();
     config.ctlHeld[k] = c.held;
     if (c.held >= 0)
       strlcpy(config.ctlOrigSw, c.softwareId, sizeof(config.ctlOrigSw));
     heldStateChanged(c.held < 0); // a hold that ends is saved at once: it must not come back after a power cut
+    configUnlock();
   }
 }
 
@@ -983,7 +1124,8 @@ static void controlTick(CurveControl &c, bool enabled, const char *what)
 static void limitTick()
 {
   LimitControl &c = limitControl;
-  if (!config.powerLimit || config.protocol != 'I' || busy)
+  // The option switched off with a limit from here in the unit: the unit's own limitation goes back first
+  if (config.protocol != 'I' || busy || (!config.powerLimit && !c.leaving()))
   {
     if (c.status != CONTROL_OFF)
       c.reset();
@@ -996,7 +1138,7 @@ static void limitTick()
   if (c.status != before)
     mqttSerial.printf("Power limit control: %s (software %s)\n", controlStatusName(c.status), c.softwareId);
   if (before != CONTROL_READY && c.status == CONTROL_READY && !c.on && config.ctlLimitOn && strcmp(config.ctlLimitSw, c.softwareId) == 0)
-    c.restore(true, config.ctlLimitValue, config.ctlLimitOrig); // the limit wanted before a restart
+    c.restore(true, config.ctlLimitValue, config.ctlLimitOrig, config.ctlLimitOrigValue); // the limit wanted before a restart
   const char *unit = c.kind == LIMIT_POWER ? "kW" : "A";
   if (c.applied >= 0)
   {
@@ -1017,12 +1159,17 @@ static void limitTick()
   if (c.stateChanged)
   {
     c.stateChanged = false;
-    bool switched = config.ctlLimitOn != c.on; // on or off is saved at once, a new value when due
+    configLock();
+    // On or off is saved at once, a new value when due. What the unit held before the first write is saved at once
+    // too: its limit 1 is only in the configuration (the block in RTC memory keeps its size across updates)
+    bool switched = config.ctlLimitOn != c.on || config.ctlLimitOrigValue != c.origLimit;
     config.ctlLimitOn = c.on;
     config.ctlLimitValue = c.value;
     config.ctlLimitOrig = c.origEnable;
+    config.ctlLimitOrigValue = c.origLimit;
     strlcpy(config.ctlLimitSw, c.softwareId, sizeof(config.ctlLimitSw));
     heldStateChanged(switched);
+    configUnlock();
   }
 }
 
@@ -1106,16 +1253,10 @@ static void memoryTick()
   size_t pos = 0;
   for (uint16_t off = 0; off < memReqLen && ok; off += 16)
   {
-    uint16_t at = memReqAddr + off;
-    uint8_t a[2] = {(uint8_t)at, (uint8_t)(at >> 8)}, frame[8], reply[24];
-    size_t len = x10aFrame(0x52, a, 2, frame);
-    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-    uint8_t sum = 0;
-    for (size_t i = 0; i < 17 && i < got; i++)
-      sum += reply[i];
-    ok = got >= 18 && reply[0] == 0x52 && (uint8_t)~sum == reply[17];
+    uint8_t row[16];
+    ok = x10aLink().readRam(memReqAddr + off, row);
     for (size_t i = 0; ok && i < 16 && off + i < memReqLen; i++)
-      pos += snprintf(memHex + pos, sizeof(memHex) - pos, "%02X", reply[1 + i]);
+      pos += snprintf(memHex + pos, sizeof(memHex) - pos, "%02X", row[i]);
   }
   memHex[ok ? pos : 0] = 0;
   memReqOk = ok;
@@ -1224,16 +1365,10 @@ static void memoryDumpTick()
     return;
   for (int n = 0; n < MEMORY_DUMP_FRAMES_PER_TICK && dumpPos < dumpLen; n++)
   {
-    uint16_t at = dumpFrom + dumpPos;
-    uint8_t a[2] = {(uint8_t)at, (uint8_t)(at >> 8)}, frame[8], reply[24];
-    size_t len = x10aFrame(0x52, a, 2, frame);
-    size_t got = x10aExchange(frame, len, reply, sizeof(reply), 300);
-    uint8_t sum = 0;
-    for (size_t i = 0; i < 17 && i < got; i++)
-      sum += reply[i];
-    bool ok = got >= 18 && reply[0] == 0x52 && (uint8_t)~sum == reply[17];
+    uint8_t row[16];
+    bool ok = x10aLink().readRam(dumpFrom + dumpPos, row);
     if (ok)
-      memcpy(dumpBuf + dumpPos, reply + 1, 16);
+      memcpy(dumpBuf + dumpPos, row, 16);
     else if (++dumpTries < MEMORY_DUMP_TRIES)
       return; // the same frame again at the next tick, the poll in between
     else
@@ -1257,52 +1392,54 @@ static void memoryDumpTick()
 // The installer settings, read only (unitsettings.h): once the meter has found the unit loaded, every ten minutes
 static void settingsTick()
 {
-  if (config.protocol != 'I' || unitMeter.status == CONTROL_OFF || unitMeter.status == CONTROL_NO_ANSWER)
-  {
-    if (unitSettings.tick(millis(), nullptr, false))
-    {
-      haExtraSetup();
-      discoveryDirty = true;
-    }
-    return;
-  }
   if (busy)
     return;
-  if (unitSettings.exchange == nullptr)
-    unitSettings.exchange = x10aExchange;
-  if (!unitSettings.tick(millis(), unitMeter.softwareId, unitMeter.status == CONTROL_READY && unitMeter.known))
-    return;
-  mqttSerial.printf("Unit settings: %u read (software %s)\n", (unsigned)unitSettings.count(), unitMeter.softwareId);
-  haExtraSetup(); // their sensors join (or leave) the Home Assistant discovery
-  discoveryDirty = true;
-}
-
-// The installer settings as ATTR keys (mqtt.h): null while not known
-void settingsAppendJson(char *buf, size_t size)
-{
-  for (size_t i = 0; unitSettings.everRead && i < unitSettings.count(); i++)
+  const bool useSettings = config.protocol == 'I' && unitMeter.status != CONTROL_OFF && unitMeter.status != CONTROL_NO_ANSWER;
+  // The heat pump task is the only writer. Perform reads locally and publish the result under the values lock.
+  SettingsReader next = unitSettings;
+  next.exchange = x10aExchange;
+  const bool availabilityChanged = next.tick(millis(), useSettings ? unitMeter.softwareId : nullptr,
+                                             unitMeter.status == CONTROL_READY && unitMeter.known);
+  if (availabilityChanged || next.map != unitSettings.map || next.readAt != unitSettings.readAt)
   {
-    size_t n = strlen(buf);
-    if (unitSettings.known[i])
-      snprintf(buf + n, size - n, "\"%s\":%d,", unitSettings.map->defs[i].label, unitSettings.value[i]);
-    else
-      snprintf(buf + n, size - n, "\"%s\":null,", unitSettings.map->defs[i].label);
+    valuesLock();
+    unitSettings = next;
+    valuesUnlock();
+  }
+  if (availabilityChanged)
+  {
+    if (next.everRead)
+      mqttSerial.printf("Unit settings: %u read (software %s)\n", (unsigned)next.count(), unitMeter.softwareId);
+    haExtraSetup(); // their sensors join (or leave) the Home Assistant discovery
+    discoveryDirty = true;
   }
 }
 
 void controlLoop()
 {
+  HP_STAGE("hot water target");
   controlTick(dhwControl, config.dhwTarget, "Hot water");
+  HP_STAGE("leaving water target");
   controlTick(lwtControl, config.lwtTarget, "Leaving water");
+  HP_STAGE("cooling target");
+  controlTick(coolControl, config.coolTarget, "Cooling");
+  HP_STAGE("additional zone target");
+  controlTick(addControl, config.addTarget, "Additional zone");
+  HP_STAGE("power limit");
   limitTick();
+  HP_STAGE("unit counters");
   meterTick();
+  HP_STAGE("memory read");
   memoryTick();
+  HP_STAGE("memory dump");
   memoryDumpTick();
+  HP_STAGE("save held targets");
   heldSaveTick();
   settingsTick();
   // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
   bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;
   DiiiStatus before = diii.status;
+  HP_STAGE("DIII read");
   if (!diiiOn)
   {
     if (diii.status != DIII_OFF)
@@ -1312,6 +1449,7 @@ void controlLoop()
     diii.tick();
   if ((before == DIII_READY) != (diii.status == DIII_READY))
   {
+    HP_STAGE("extra sensor list");
     haExtraSetup(); // its sensors join (or leave) the Home Assistant discovery
     discoveryDirty = true;
   }
@@ -1341,7 +1479,7 @@ void hpTask(void *)
     }
     // While a DIII phase is learnt, a 30 s poll would hit the short hydro frame every minute: shift it by 7 s
     unsigned long wait = config.frequency + (diii.learning() ? 7000 : 0);
-    if (!busy && (uint8_t)registryIDs[0] != 0xFF)
+    if (!busy && !webUpdateRunning() && (uint8_t)registryIDs[0] != 0xFF)
     {
       HP_STAGE("query");
       pollRegistries();
@@ -1353,7 +1491,6 @@ void hpTask(void *)
     while (millis() - start < wait && !surveyRequested && !labelsDirty)
     {
       watchdogHp();
-      HP_STAGE("hot water target");
       controlLoop();
       HP_STAGE("wait");
       delay(diii.idleMs()); // 100 ms, 10 ms while a DIII frame is being learnt or is due
@@ -1369,6 +1506,9 @@ void setupPins()
     // closed an active-low relay until that state was restored, two seconds later on the boards with a screen
     pinMode(config.thermPin, OUTPUT);
   }
+
+  if (coolConfigured())
+    pinMode(config.coolPin, OUTPUT); // its level was set by readEEPROM() as well
 
   if (config.safetyPin >= 0)
   {
@@ -1387,12 +1527,69 @@ void setupPins()
   }
 }
 
+// After a crash or a watchdog reset the core writes a dump of the tasks in the "coredump" partition before it
+// restarts. Until now nothing read it: the event history said "crash" and that was all, and finding the cause took
+// an owner with a USB cable and the tools to decode the partition (#639). What the dump says in short now goes to
+// the event history at the next start: the task that crashed, the cause and the address, then the calls that led
+// there, as addresses to look up in the firmware.elf of the release
+// (xtensa-esp32-elf-addr2line -pfiaC -e firmware.elf <addresses>). The dump itself stays in its partition.
+//
+// This runs at a start that follows a crash: should reading the dump crash in its turn, the next start must not
+// try again. A mark in the board's flash, next to the boot number, tells that a read was in progress (only written
+// at a start that follows a crash).
+#if __has_include(<esp_core_dump.h>)
+#include <esp_core_dump.h>
+#endif
+
+static void crashReport()
+{
+#if defined(CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH) && defined(CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF) && __has_include(<esp_core_dump.h>)
+  esp_reset_reason_t why = esp_reset_reason();
+  if (why != ESP_RST_PANIC && why != ESP_RST_INT_WDT && why != ESP_RST_TASK_WDT && why != ESP_RST_WDT)
+    return;
+  Preferences prefs;
+  prefs.begin(EVENT_NVS_NAMESPACE, false);
+  if (prefs.getBool("crashread", false))
+  {
+    prefs.putBool("crashread", false);
+    prefs.end();
+    eventAddf("Crash report not read: reading the last one restarted the board");
+    return;
+  }
+  prefs.putBool("crashread", true);
+  esp_core_dump_summary_t *dump = nullptr;
+  if (esp_core_dump_image_check() == ESP_OK)
+    dump = (esp_core_dump_summary_t *)calloc(1, sizeof(esp_core_dump_summary_t));
+  if (dump != nullptr && esp_core_dump_get_summary(dump) == ESP_OK)
+  {
+    dump->exc_task[sizeof(dump->exc_task) - 1] = 0;
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+    eventAddf("Crash in task %s at %08x, cause %u, address %08x", dump->exc_task, (unsigned)dump->exc_pc,
+              (unsigned)dump->ex_info.exc_cause, (unsigned)dump->ex_info.exc_vaddr);
+    char calls[EVENT_TEXT_SIZE] = "Crash calls:";
+    size_t n = strlen(calls);
+    for (uint32_t i = 0; i < dump->exc_bt_info.depth && i < 16 && n + 10 < sizeof(calls); i++)
+      n += snprintf(calls + n, sizeof(calls) - n, " %08x", (unsigned)dump->exc_bt_info.bt[i]);
+    if (dump->exc_bt_info.depth > 0)
+      eventAddf("%s%s", calls, dump->exc_bt_info.corrupted ? " ?" : "");
+#else
+    eventAddf("Crash in task %s at %08x, cause %u, address %08x", dump->exc_task, (unsigned)dump->exc_pc,
+              (unsigned)dump->ex_info.mcause, (unsigned)dump->ex_info.mtval);
+#endif
+  }
+  free(dump);
+  prefs.putBool("crashread", false);
+  prefs.end();
+#endif
+}
+
 void setup()
 {
   heapMark("start");
   restartCauseLoad();
   eventBegin();
   eventAddf("Boot #%u: %s, firmware %s", eventBoot, resetReasonName(), ESPALTHERMA_VERSION);
+  crashReport();
   Serial.begin(115200);
 #if ARDUINO_USB_CDC_ON_BOOT && ARDUINO_USB_MODE
   Serial.setTxTimeoutMs(0); //USB port of the chip: do not block when no computer is connected
@@ -1442,6 +1639,8 @@ void setup()
   requestSurvey();
   heapMark("values list");
   lwtControl.kind = CONTROL_LWT;
+  coolControl.kind = CONTROL_COOL;
+  addControl.kind = CONTROL_ADD;
   diii.exchange = x10aExchange;
   diii.clock = millis;
   diii.log = diiiLog;
@@ -1468,7 +1667,7 @@ void loop()
   webLoop();
   //The heat pump task does the querying, we publish its results
   extraLoop();
-  if (cycleReady)
+  if (cycleReady && !webUpdateRunning()) // a poll under way when the upload began is published after it
   {
     cycleReady = false;
     LOOP_STAGE("publish values");
@@ -1494,7 +1693,7 @@ void loop()
     LOOP_STAGE("update entity");
     publishUpdateEntity();
   }
-  if ((dhwControl.changed || lwtControl.changed || limitControl.changed) && client.connected())
+  if ((dhwControl.changed || lwtControl.changed || coolControl.changed || addControl.changed || limitControl.changed) && client.connected())
   {
     LOOP_STAGE("target controls state");
     if (dhwControl.changed)
@@ -1506,6 +1705,16 @@ void loop()
     {
       lwtControl.changed = false;
       publishControl(lwtControl);
+    }
+    if (coolControl.changed)
+    {
+      coolControl.changed = false;
+      publishControl(coolControl);
+    }
+    if (addControl.changed)
+    {
+      addControl.changed = false;
+      publishControl(addControl);
     }
     if (limitControl.changed)
     {

@@ -6,6 +6,7 @@
 // directly. Changes are queued and applied by webLoop() in the main loop.
 
 #include <ESPAsyncWebServer.h>
+#include <atomic>
 #include <memory>
 #include <Update.h>
 #include "webui_data.h"
@@ -13,7 +14,7 @@
 #include <esp_heap_caps.h>
 
 #ifndef TELEMETRY_URL
-#define TELEMETRY_URL "" // Collection endpoint of the opt-in telemetry; nothing is sent while empty
+#define TELEMETRY_URL "" // Collection endpoint of the heat pump reports; nothing is sent while empty
 #endif
 #define TELEMETRY_AVAILABLE (strlen(TELEMETRY_URL) > 0)
 
@@ -22,7 +23,7 @@
 extern Survey survey;
 extern MeterReader unitMeter; // main.cpp: the unit's meter and its model name (control.h)
 extern DiiiComm diii;         // main.cpp: the HT outdoor unit's frame reader (diii_comm.h)
-String heartbeatPayload();    // the daily heartbeat of the opt-in telemetry, below
+String heartbeatPayload();    // the daily heartbeat of the reports, below
 extern char surveyJson[];
 extern bool surveyReportFailed;
 extern volatile bool labelsDirty;
@@ -31,6 +32,7 @@ extern volatile bool surveyRequested;
 extern volatile bool surveyInProgress;
 #include "stats.h"
 #include "fwupdate.h"
+#include "valuesjson.h"
 extern Stats stats;
 bool memoryRequest(uint16_t addr, uint8_t len); // main.cpp: the heat pump task reads the hydro board's memory
 void memoryResult(JsonDocument &doc);
@@ -44,7 +46,7 @@ extern volatile bool discoveryDirty;
 float statsVoltageRead(); // main.cpp: the unit's own voltage reading, NAN when it has none
 extern unsigned long lastPollMs;
 extern DetectResult detection;
-extern CurveControl dhwControl, lwtControl;
+extern CurveControl dhwControl, lwtControl, coolControl, addControl;
 extern LimitControl limitControl;
 void requestSurvey();
 void valuesLock();
@@ -105,7 +107,7 @@ unsigned long rebootAt = 0;
 volatile bool factoryResetRequested = false;
 const char *volatile rebootCause = "Restart from the web interface"; // restart cause saved for the next boot
 volatile bool mqttTestRequested = false;
-AppConfig mqttTestConfig;
+AppConfig *volatile mqttTestConfig = nullptr; // the settings under test, on the heap until the test has run
 char mqttTestResult[16] = ""; // "running", "ok" or "error"
 const char *mqttTestReason = "";  // English, translated by the web interface
 int mqttTestState = 0;             // PubSubClient state
@@ -119,6 +121,19 @@ AsyncWebServerRequest *updateOwner = nullptr;
 size_t updateBytes = 0;          // received so far
 unsigned long updateStarted = 0;
 uint32_t updateLowHeap = 0;      // lowest free data heap seen while it was written
+// When the upload's last block was written, 0 when none is being written: the heat pump task reads it
+std::atomic<uint32_t> updateLastBlock{0};
+#define UPLOAD_SILENCE_S 30 // an upload may stay this long without data before its connection is dropped
+
+// The polls and their publishes wait while a web update is written (#663). Publishing the values of one poll takes
+// more memory than the upload itself, and the two meet on nearly every update: an upload lasts about as long as
+// the time between two polls. Sampled on an ESP32-S3 with 128 values selected, MQTT connected and the page open
+// (it gets the values as an event): 71 KB of the data heap at the worst moment with a poll during the upload,
+// 21 KB without one.
+bool webUpdateRunning()
+{
+  return uploadInProgress(updateLastBlock, millis());
+}
 
 // An HTTPS connection takes 54 KB of the data heap while it is made: the TLS library's two 17 KB buffers, then
 // the handshake (sampled on an M5StickC: 62 KB free before, 8.6 KB at the lowest; /api/heap gives the last one).
@@ -185,6 +200,7 @@ struct TlsWatch
 static void updateFail(const char *why)
 {
   updateFailed = true;
+  updateLastBlock = 0; // the polls go on
   strlcpy(updateError, why && *why ? why : "unknown error", sizeof(updateError));
   if (Update.isRunning())
     Update.abort(); // frees its buffer; the reason is kept above
@@ -192,8 +208,21 @@ static void updateFail(const char *why)
   eventAddf("Firmware update failed: %s", updateError);
 }
 
+// A page of another site cannot ask for a change (netpolicy.h requestSameSite)
+static bool sameSite(AsyncWebServerRequest *r)
+{
+  const AsyncWebHeader *origin = r->getHeader("Origin"), *forwarded = r->getHeader("X-Forwarded-Host");
+  return requestSameSite(origin ? origin->value().c_str() : nullptr, r->host().c_str(),
+                         forwarded ? forwarded->value().c_str() : nullptr);
+}
+
 static bool authorized(AsyncWebServerRequest *r)
 {
+  if (!sameSite(r))
+  {
+    r->send(403, "application/json", "{\"ok\":false,\"error\":\"refused: this request comes from another site\"}");
+    return false;
+  }
   if (!config.adminPwd[0])
     return true;
   if (r->authenticate("admin", config.adminPwd))
@@ -224,26 +253,25 @@ void webLogChunk(const char *chunk, size_t len)
     webEvents.send(chunk, "log");
 }
 
+// The values to the open pages, once a poll (valuesjson.h). The buffer is taken in steps of 1024 bytes: the text
+// moves by a few bytes from poll to poll, and a buffer of the same size finds the hole the last one left. Without
+// the room for it, this poll's values are not sent: the pages show the next ones.
+#define WEB_VALUES_ROOM_STEP 1024
 void webSendValues()
 {
   if (webEvents.count() == 0)
     return;
-  // One document: serializeJson() overwrites a String, it does not append to it
-  JsonDocument doc;
-  JsonArray values = doc.to<JsonArray>();
   valuesLock();
-  for (size_t i = 0; i < converter.activeCount; i++)
-  {
-    const LabelDef &l = converter.activeLabels[i];
-    JsonObject item = values.add<JsonObject>();
-    item["l"] = l.label;
-    item["v"] = l.asString;
-    item["r"] = l.registryID;
-  }
+  size_t length = valuesJson(converter.activeLabels, converter.activeCount, nullptr, 0);
+  size_t room = (length + WEB_VALUES_ROOM_STEP) / WEB_VALUES_ROOM_STEP * WEB_VALUES_ROOM_STEP; // the text and its zero
+  char *text = (char *)malloc(room);
+  if (text != nullptr)
+    valuesJson(converter.activeLabels, converter.activeCount, text, room);
   valuesUnlock();
-  String s;
-  serializeJson(doc, s);
-  webEvents.send(s.c_str(), "values");
+  if (text == nullptr)
+    return;
+  webEvents.send(text, "values");
+  free(text);
 }
 
 // One target control, for the web interface
@@ -336,6 +364,7 @@ static void statusJson(JsonDocument &doc)
   mqtt["connected"] = (bool)mqttConnectedCache;
   mqtt["server"] = config.mqttServer;
   mqtt["state"] = (int)mqttStateCache;
+  mqtt["values_too_large"] = mqttValuesTooLarge.load();
 
   JsonObject up = doc["update"].to<JsonObject>(); // the daily check for a newer firmware (update.h)
   up["check"] = config.updateCheck;
@@ -377,6 +406,8 @@ static void statusJson(JsonDocument &doc)
   JsonObject relays = doc["relays"].to<JsonObject>();
   if (config.thermPin >= 0)
     relays["thermostat"] = thermostatOn;
+  if (coolConfigured())
+    relays["cooling"] = coolingOn;
   if (config.safetyPin >= 0)
     relays["safety"] = safetyActive;
   if (smartGridConfigured())
@@ -426,7 +457,7 @@ static void statusJson(JsonDocument &doc)
     st["tz"] = config.statsTz;
     st["voltage_read"] = !isnan(statsVoltageRead());
   }
-  if (config.dhwTarget || config.lwtTarget || config.powerLimit)
+  if (config.dhwTarget || config.lwtTarget || config.coolTarget || config.addTarget || config.powerLimit)
   {
     // Target controls (experimental, control.h)
     JsonObject ctl = doc["control"].to<JsonObject>();
@@ -434,6 +465,10 @@ static void statusJson(JsonDocument &doc)
       controlJson(ctl["dhw"].to<JsonObject>(), dhwControl);
     if (config.lwtTarget)
       controlJson(ctl["lwt"].to<JsonObject>(), lwtControl);
+    if (config.coolTarget)
+      controlJson(ctl["cool"].to<JsonObject>(), coolControl);
+    if (config.addTarget)
+      controlJson(ctl["add"].to<JsonObject>(), addControl);
     if (config.powerLimit)
       limitJson(ctl["limit"].to<JsonObject>(), limitControl);
   }
@@ -457,7 +492,7 @@ static void statusJson(JsonDocument &doc)
 #endif
 }
 
-// The exact payload of the opt-in telemetry: the survey report, the chosen model, and the random install id.
+// The exact payload of the heat pump report: the survey report, the chosen model, and the random install id.
 String telemetryPayload()
 {
   String s = "{\"install_id\":\"";
@@ -625,7 +660,9 @@ void webBegin()
   // Changing the settings, the firmware and the targets still ask for it.
   webServer.on("/api/config", HTTP_GET, [](AsyncWebServerRequest *r) {
     JsonDocument doc;
+    configLock();
     configToJson(config, doc, false);
+    configUnlock();
     sendJson(r, doc);
   });
 
@@ -640,11 +677,19 @@ void webBegin()
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
       return;
     }
-    AppConfig *next = new AppConfig(config);
+    configLock();
+    AppConfig *next = new (std::nothrow) AppConfig(config);
+    configUnlock();
+    if (next == nullptr) // no room for the copy now: without exceptions a plain new would have restarted the board
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
+      return;
+    }
     configFromJson(*next, doc.as<JsonVariantConst>());
     if (strcmp(next->model, config.model) != 0 && !doc["hp"]["layout_fixes"].is<JsonArrayConst>())
       next->fixCount = 0; // the corrections belong to the previous model
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
+                  next->coolPin != config.coolPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
     pendingConfig = next;
@@ -768,6 +813,8 @@ void webBegin()
   });
 
   webServer.on("/api/discover", HTTP_POST, [](AsyncWebServerRequest *r) {
+    if (!authorized(r))
+      return;
     discoverDone = false;
     discoverRequested = true;
     sendOk(r);
@@ -796,9 +843,18 @@ void webBegin()
     JsonDocument doc;
     if (!parseBody(r, doc))
       return;
-    mqttTestConfig = config;
-    configFromJson(mqttTestConfig, doc.as<JsonVariantConst>());
+    // A copy of the whole configuration, kept for good, was 1.7 KB of RAM for a button pressed once
+    configLock();
+    AppConfig *settings = mqttTestConfig == nullptr ? new (std::nothrow) AppConfig(config) : nullptr;
+    configUnlock();
+    if (settings == nullptr) // a test is running, or no room for now
+    {
+      r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
+      return;
+    }
+    configFromJson(*settings, doc.as<JsonVariantConst>());
     strcpy(mqttTestResult, "running");
+    mqttTestConfig = settings;
     mqttTestRequested = true;
     sendOk(r);
   }, nullptr, collectBody);
@@ -880,8 +936,8 @@ void webBegin()
     sendJson(r, doc);
   });
 
-  // Target controls (experimental): {"dhw_target": 50} or {"lwt_target": 35}, applied by the heat pump task;
-  // {"dhw_restore": true} or {"lwt_restore": true} puts the unit's own curve back
+  // Target controls (experimental): {"dhw_target": 50}, {"lwt_target": 35}, {"cool_target": 18} or {"add_target": 40},
+  // applied by the heat pump task; {"dhw_restore": true} (lwt_, cool_, add_) puts the unit's own curve back
   webServer.on("/api/control", HTTP_POST, [](AsyncWebServerRequest *r) {
     if (!authorized(r))
       return;
@@ -911,36 +967,54 @@ void webBegin()
       sendOk(r);
       return;
     }
-    // A restore is asked with true: "lwt_restore": false used to restore as well
-    bool dhwRestore = doc["dhw_restore"].is<bool>() && doc["dhw_restore"].as<bool>();
-    bool lwtRestore = doc["lwt_restore"].is<bool>() && doc["lwt_restore"].as<bool>();
-    bool dhw = doc["dhw_target"].is<int>() || dhwRestore;
-    bool lwt = doc["lwt_target"].is<int>() || lwtRestore;
-    if (!dhw && !lwt)
+    // A restore is asked with true: "lwt_restore": false used to restore as well. One target per request, the
+    // first of these found.
+    struct TargetKeys
     {
-      r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target or lwt_target missing\"}");
+      const char *target, *restore, *name;
+      CurveControl &control;
+      bool enabled;
+    };
+    const TargetKeys keys[] = {{"lwt_target", "lwt_restore", "Leaving water target", lwtControl, config.lwtTarget},
+                               {"dhw_target", "dhw_restore", "Hot water target", dhwControl, config.dhwTarget},
+                               {"cool_target", "cool_restore", "Cooling target", coolControl, config.coolTarget},
+                               {"add_target", "add_restore", "Additional zone target", addControl, config.addTarget}};
+    const TargetKeys *asked = nullptr;
+    bool restore = false;
+    for (const TargetKeys &k : keys)
+    {
+      bool wantsRestore = doc[k.restore].is<bool>() && doc[k.restore].as<bool>();
+      if (doc[k.target].is<int>() || wantsRestore)
+      {
+        asked = &k;
+        restore = wantsRestore;
+        break;
+      }
+    }
+    if (asked == nullptr)
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"dhw_target, lwt_target, cool_target or add_target missing\"}");
       return;
     }
-    CurveControl &c = lwt ? lwtControl : dhwControl;
-    if (!(lwt ? config.lwtTarget : config.dhwTarget) || c.status != CONTROL_READY)
+    CurveControl &c = asked->control;
+    if (!asked->enabled || c.status != CONTROL_READY)
     {
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"not ready\"}");
       return;
     }
-    if (lwt ? lwtRestore : dhwRestore)
+    if (restore)
     {
       if (c.origA < 0)
       {
         r->send(409, "application/json", "{\"ok\":false,\"error\":\"no curve to restore\"}");
         return;
       }
-      eventAddf("%s: the unit's curve asked back from the web page (%s)", lwt ? "Leaving water target" : "Hot water target",
-                r->client()->remoteIP().toString().c_str());
+      eventAddf("%s: the unit's curve asked back from the web page (%s)", asked->name, r->client()->remoteIP().toString().c_str());
       c.requestRestore();
       sendOk(r);
       return;
     }
-    int value = doc[lwt ? "lwt_target" : "dhw_target"].as<int>();
+    int value = doc[asked->target].as<int>();
     if (value < c.minTarget || value > c.maxTarget)
     {
       r->send(400, "application/json", "{\"ok\":false,\"error\":\"out of range\"}");
@@ -1058,7 +1132,7 @@ void webBegin()
     rebootCause = "Firmware update from the web interface";
     rebootRequested = true;
   }, [](AsyncWebServerRequest *r, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-    if (config.adminPwd[0] && !r->authenticate("admin", config.adminPwd))
+    if (!sameSite(r) || (config.adminPwd[0] && !r->authenticate("admin", config.adminPwd)))
       return;
     if (index == 0)
     {
@@ -1075,12 +1149,17 @@ void webBegin()
       updateBytes = 0;
       updateStarted = millis();
       updateLowHeap = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+      // The web server drops a request that stays 3 s without data. A firmware is 1.5 MB over a link that may
+      // stall longer than that (#663: uploads at 4 to 17 KB/s, each cut after a few hundred KB, with memory to
+      // spare): an upload gets 30 s. The server takes the limit off itself once it answers.
+      r->client()->setRxTimeout(UPLOAD_SILENCE_S);
       // The browser left or the connection was cut: said in the events with how far it got, and the update is
       // dropped (its buffer freed) instead of staying half done until the next one
       r->onDisconnect([r]() {
         if (updateOwner != r)
           return;
         updateOwner = nullptr;
+        updateLastBlock = 0;
         if (updateDone || updateFailed)
           return;
         char why[sizeof(updateError)];
@@ -1096,6 +1175,8 @@ void webBegin()
     if (updateOwner != r)
       return;
     updateBytes = index + len;
+    if (!updateFailed)
+      updateLastBlock = millis() | 1; // never 0, which says "no upload"
     uint32_t freeNow = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     if (freeNow < updateLowHeap)
       updateLowHeap = freeNow;
@@ -1139,19 +1220,22 @@ static void runMqttTest()
 {
   LOOP_STAGE("MQTT test");
   mqttTestRequested = false;
+  if (mqttTestConfig == nullptr)
+    return;
+  const AppConfig &settings = *mqttTestConfig; // freed at the end: a new test is refused until then
   WiFiClient plain;
   PubSubClient test;
   test.setClient(plain);
   WiFiClientSecure secure;
-  if (mqttTestConfig.mqttTls)
+  if (settings.mqttTls)
   {
     secure.setInsecure();
     test.setClient(secure);
   }
-  test.setServer(mqttTestConfig.mqttServer, mqttTestConfig.mqttPort);
+  test.setServer(settings.mqttServer, settings.mqttPort);
   char id[48];
-  snprintf(id, sizeof(id), "%s-test", mqttTestConfig.mqttClientId);
-  if (test.connect(id, mqttTestConfig.mqttUser, mqttTestConfig.mqttPwd))
+  snprintf(id, sizeof(id), "%s-test", settings.mqttClientId);
+  if (test.connect(id, settings.mqttUser, settings.mqttPwd))
   {
     strcpy(mqttTestResult, "ok");
     test.disconnect();
@@ -1163,6 +1247,9 @@ static void runMqttTest()
     mqttTestReason = mqttTestState == -2 ? "broker unreachable" : (mqttTestState == 4 || mqttTestState == 5) ? "wrong user or password" : "connection refused";
     strcpy(mqttTestResult, "error");
   }
+  AppConfig *done = mqttTestConfig;
+  mqttTestConfig = nullptr;
+  delete done;
 }
 
 // What a report is about: the identification key of the heat pump, the model and the firmware version, hashed
@@ -1207,12 +1294,14 @@ static void sendTelemetry()
   // Done when accepted, or refused for good (4xx but 429): retried later otherwise
   if ((code >= 200 && code < 300) || (code >= 400 && code < 500 && code != 429))
   {
+    configLock();
     config.telemetrySent = subject;
     configSave();
+    configUnlock();
   }
 }
 
-// The daily heartbeat of the opt-in telemetry, under the same box as the report: which boards are alive, on which
+// The daily heartbeat, under the same box as the report: which boards are alive, on which
 // firmware and board, with which model, and which optional features are on and working. No readings, no settings.
 // Posted to the report's site once a day, the first time ten minutes after the start (the controls have identified
 // by then), again an hour later when it failed. One row per board and day on the site.
@@ -1316,6 +1405,12 @@ static void updateCheckLoop()
     {
       const char *latest = doc["version"] | "";
       uint32_t build = doc["build_time"] | 0UL;
+      if (!versionText(latest))
+      {
+        mqttSerial.println("Update check: the site's answer holds no version");
+        http.end();
+        return;
+      }
       bool available = updateNewer(latest, build, ESPALTHERMA_VERSION, ESPALTHERMA_BUILD_TIME);
       if (!fwUpdate.checked || available != fwUpdate.available || strcmp(latest, fwUpdate.latest) != 0)
         fwUpdate.dirty = true; // Home Assistant hears of it
@@ -1377,14 +1472,18 @@ void webLoop()
     bool statsToggled = next->statsEnabled != config.statsEnabled;
     bool updateToggled = next->updateCheck != config.updateCheck;
     bool reboot = next->rxPin != config.rxPin || next->txPin != config.txPin || next->thermPin != config.thermPin ||
+                  next->coolPin != config.coolPin ||
                   next->sg1Pin != config.sg1Pin || next->sg2Pin != config.sg2Pin || next->safetyPin != config.safetyPin ||
                   strcmp(next->hostname, config.hostname) != 0 || strcmp(next->adminPwd, config.adminPwd) != 0;
     if (baseChanged)
       mqttRetireDiscovery(); // the entities of the old base topic leave Home Assistant
+    configLock();
+    configKeepRuntime(*next, config); // what the heat pump task wrote since the form's copy was made
     config = *next;
     pendingConfig = nullptr;
     delete next;
     configSave();
+    configUnlock();
     mqttSerial.println("Configuration saved.");
     if (wifiChanged)
       connectWifi();

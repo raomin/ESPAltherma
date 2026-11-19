@@ -137,11 +137,13 @@ private:
         sendError(IMPROV_ERROR_INVALID_RPC);
         return;
       }
+      configLock();
       memcpy(config.wifiSsid, args + 1, ssidLen);
       config.wifiSsid[ssidLen] = 0;
       memcpy(config.wifiPwd, args + 2 + ssidLen, pwdLen);
       config.wifiPwd[pwdLen] = 0;
       configSave();
+      configUnlock();
       mqttSerial.printf("WiFi credentials received for %s\n", config.wifiSsid);
       sendError(IMPROV_ERROR_NONE);
       sendState(IMPROV_STATE_PROVISIONING);

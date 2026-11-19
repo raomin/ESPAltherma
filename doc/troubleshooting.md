@@ -23,6 +23,8 @@ Once fixed, click **Detect again** in Setup → Heat pump.
 
 Open Diagnostics → Event history: it tells why the board restarted (power, crash, watchdog, Wi-Fi lost for too long...). A weak 5V from the X10A is a common cause: on M5 boards, the supply voltage is shown in the Values tab. Power the board from a USB charger in that case (and keep the GND wire).
 
+After a crash, the history also has two lines, `Crash in task ... at ..., cause ..., address ...` and `Crash calls: ...`: the task that crashed and the calls that led there, as addresses. Copy both in an issue with the firmware version and your board: they are looked up in the `firmware-elf.zip` of that release (`xtensa-esp32-elf-addr2line -pfiaC -e <board>.elf <addresses>`).
+
 A weak Wi-Fi signal is the other one: the System tab shows it in dBm. An ESP32 board with an external antenna connector, or a repeater near the heat pump, usually fixes it. ESPAltherma moves to the strongest access point of your network by itself, opens its setup network when the Wi-Fi is gone, and goes back to the previous firmware if an update cannot get back online.
 
 ## Note on voltage

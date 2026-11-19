@@ -313,6 +313,12 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
  <div class="card pad" id="lwtCard" data-block="lwt" hidden><h2>Leaving water target</h2><p class="sub" id="lwtSub"></p>
   <div class="acts" style="margin-top:12px"><input type="number" id="lwtVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="lwtSet">Apply</button><button id="lwtRestore" hidden>Restore the unit's curve</button><span class="msg" id="lwtMsg" translate="no"></span></div>
   <p class="sub">The shift set on the unit's interface or in the Daikin app adds to this target: with a +10 K shift, 35 °C here makes 45 °C at the floor or the radiators. Check the effective target above after a change.</p></div>
+ <div class="card pad" id="coolCard" data-block="cool" hidden><h2>Cooling target</h2><p class="sub" id="coolSub"></p>
+  <div class="acts" style="margin-top:12px"><input type="number" id="coolVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="coolSet">Apply</button><button id="coolRestore" hidden>Restore the unit's curve</button><span class="msg" id="coolMsg" translate="no"></span></div>
+  <p class="sub">The leaving water target while the unit cools (main zone), written into its cooling curve. Experimental: not seen during a cooling run yet.</p></div>
+ <div class="card pad" id="addCard" data-block="add" hidden><h2>Additional zone target</h2><p class="sub" id="addSub"></p>
+  <div class="acts" style="margin-top:12px"><input type="number" id="addVal" step="1" style="width:110px"><span translate="no">°C</span><button class="p" id="addSet">Apply</button><button id="addRestore" hidden>Restore the unit's curve</button><span class="msg" id="addMsg" translate="no"></span></div>
+  <p class="sub">The leaving water target of the additional zone while the unit heats, written into its curve. The unit never aims the additional zone lower than the main zone. Experimental: not seen with two zones and real valves yet.</p></div>
  <div class="card pad" id="limitCard" data-block="limit" hidden><h2>Power limit</h2><p class="sub" id="limitSub"></p>
   <div class="acts" style="margin-top:12px"><label class="chk" style="margin:0"><input type="checkbox" id="limitOn">Limit the heat pump</label><input type="number" id="limitVal" step="0.5" style="width:110px"><span translate="no" id="limitUnit">kW</span><button class="p" id="limitSet">Apply</button><span class="msg" id="limitMsg" translate="no"></span></div></div>
  <details class="all card" id="allBox" data-block="all"><summary><span>All readings</span> <span class="sub" id="valAge" translate="no"></span></summary><table><tbody id="dValues" translate="no"></tbody></table></details>
@@ -370,6 +376,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
 
 <section id="values">
  <h1>Values</h1>
+ <p class="msg bad" id="valuesSizeError" hidden>MQTT values exceeded the payload buffer. Select fewer readings or use one topic per value in Settings.</p>
  <div class="vbar card">
   <label class="s"><input type="search" id="valSearch" placeholder="Search: temperature, pump, 0x61…" aria-label="Search"></label>
   <label class="chk"><input type="checkbox" id="valSel">Selected only</label>
@@ -392,11 +399,11 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <path d="M80 26H280M80 86H280" style="stroke:var(--ink2);stroke-width:2;fill:none;opacity:.6"/><path d="M80 46H280" style="stroke:var(--hot);stroke-width:3;fill:none;stroke-linecap:round"/><path d="M80 66H280" style="stroke:var(--cold);stroke-width:3;fill:none;stroke-linecap:round"/>
    </svg>
    <div class="row"><label class="f"><span class="k">RX pin (to X10A TX)</span><input type="number" id="sRx"></label><label class="f"><span class="k">TX pin (to X10A RX)</span><input type="number" id="sTx"></label><label class="f"><span class="k">Read every (seconds)</span><input type="number" id="sFreq" min="5"></label></div>
-   <div class="row"><label class="f"><span class="k">Outdoor temperature on the home page</span><select id="sOutdoor"><option value="unit">Outdoor unit's sensor</option><option value="aux">External sensor (R6T)</option></select></label></div>
-   <p class="sub">When field setting [C-08] is "outdoor sensor", the unit follows the external sensor: choose it here to show it, with the auxiliary sensor (R6T) among the selected values.</p></div>
+   <div class="row"><label class="f"><span class="k">Outdoor temperature on the home page</span><select id="sOutdoor"><option value="unit">Outdoor unit's sensor</option><option value="aux">External sensor (R6T)</option></select></label><label class="f"><span class="k">Room temperature on the home page</span><select id="sIndoor"><option value="unit">The unit's own sensor</option><option value="aux">External sensor (R6T)</option></select></label></div>
+   <p class="sub">When field setting [C-08] is "outdoor sensor" or "room sensor", the unit follows the external sensor: choose it here to show it, with the auxiliary sensor (R6T) among the selected values. Only this page changes: both readings stay in the values and in Home Assistant.</p></div>
   <div class="card"><h2>Relays</h2><p class="sub">Optional: a thermostat input, the safety stop, Smart Grid. -1 = not used.</p>
-   <div class="row"><label class="f"><span class="k">Thermostat relay pin</span><input type="number" id="sTherm"></label><label class="f"><span class="k">Safety relay pin</span><input type="number" id="sSafety"></label><label class="f"><span class="k">Smart Grid pin 1</span><input type="number" id="sSg1"></label><label class="f"><span class="k">Smart Grid pin 2</span><input type="number" id="sSg2"></label></div>
-   <label class="chk"><input type="checkbox" id="sThermHigh">Thermostat relay active high</label><label class="chk"><input type="checkbox" id="sSafetyHigh">Safety relay active high</label><label class="chk"><input type="checkbox" id="sSgHigh">Smart Grid relays active high</label></div>
+   <div class="row"><label class="f"><span class="k">Thermostat relay pin</span><input type="number" id="sTherm"></label><label class="f"><span class="k">Cooling relay pin</span><input type="number" id="sCool"></label><label class="f"><span class="k">Safety relay pin</span><input type="number" id="sSafety"></label><label class="f"><span class="k">Smart Grid pin 1</span><input type="number" id="sSg1"></label><label class="f"><span class="k">Smart Grid pin 2</span><input type="number" id="sSg2"></label></div>
+   <label class="chk"><input type="checkbox" id="sThermHigh">Thermostat relay active high</label><label class="chk"><input type="checkbox" id="sCoolHigh">Cooling relay active high</label><label class="chk"><input type="checkbox" id="sSafetyHigh">Safety relay active high</label><label class="chk"><input type="checkbox" id="sSgHigh">Smart Grid relays active high</label></div>
   <div class="card"><h2>MQTT output</h2><p class="sub">For other home automation systems; Home Assistant needs nothing here.</p>
    <label class="chk"><input type="checkbox" id="sOneTopic">One topic per value</label>
    <label class="f"><span class="k">Topic prefix (one topic per value)</span><input type="text" id="sPrefix"></label>
@@ -411,11 +418,15 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
     <label class="f"><span class="k">Power factor</span><input type="number" id="sStatsPf" min="0.4" max="1" step="0.01" translate="no"></label>
     <label class="f"><span class="k">Backup heater step 1 (kW)</span><input type="number" id="sStatsBuh1" min="0" max="12" step="0.5" translate="no"></label>
     <label class="f"><span class="k">Backup heater step 2 (kW)</span><input type="number" id="sStatsBuh2" min="0" max="12" step="0.5" translate="no"></label>
+    <div id="sStatsTzRow" hidden><label class="f"><span class="k">UTC offset of the day's figures (minutes)</span><input type="number" id="sStatsTz" min="-720" max="840" step="15" translate="no"></label> <button type="button" id="sStatsTzBrowser" style="margin-top:8px">This browser's</button>
+    <p class="sub">With an admin password the page does not set the offset on its own, which would ask for the password: set it here, and again when the clocks change.</p></div>
    <p class="sub">The electricity is an estimate: the inverter current, which the unit reports, times the phase voltage (times 3 on three phases); units that report their voltage use it. The pump and the electronics are added while the compressor runs, 100 W unless a meter on your unit says otherwise, and the backup heater's kW while a step is on (3 kW steps on most kits, 3 and 6 kW on the 9 kW one; 0 for a step your unit has not).</p>
    <p class="sub">The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.</p></div>
   <div class="card"><h2>Experimental</h2><p class="sub">Under test: may not work on every unit.</p>
    <label class="chk"><input type="checkbox" id="sDhwTarget">Hot water target from Home Assistant and this page</label>
    <label class="chk"><input type="checkbox" id="sLwtTarget">Leaving water target (main zone) from Home Assistant and this page</label>
+   <label class="chk"><input type="checkbox" id="sCoolTarget">Cooling target (main zone) from Home Assistant and this page (software 20002203)</label>
+   <label class="chk"><input type="checkbox" id="sAddTarget">Additional zone target from Home Assistant and this page (software 20002203)</label>
    <label class="chk"><input type="checkbox" id="sRamOnly">Keep the targets in the unit's working memory only</label>
    <label class="chk"><input type="checkbox" id="sPowerLimit">Power limit from Home Assistant and this page</label>
    <p class="sub">ESPAltherma writes the target into the weather-dependent curve of the unit: the hot water curve, or the leaving water curve of the main zone. The corresponding setpoint mode must be set to weather dependent on the unit's interface, and the hydro board software must be a supported one (the versions are listed in the README). The interface may show its old curve until it restarts.</p>
@@ -675,6 +686,7 @@ function renderTiles() {
   const tog = (on, text) => el('div', {class: 'tog' + (on ? ' on' : '')}, el('i'), text);
   if (r.safety != null) togs.push(tog(r.safety, r.safety ? t('Safety: heat pump stopped') : t('Safety off')));
   if (r.thermostat != null) togs.push(tog(r.thermostat, r.thermostat ? t('Thermostat on') : t('Thermostat off')));
+  if (r.cooling != null) togs.push(tog(r.cooling, r.cooling ? t('Cooling demand on') : t('Cooling demand off')));
   if (r.smart_grid != null) togs.push(tog(r.smart_grid > 0, t('Smart Grid: {mode}', {mode: [t('Free running'), t('Forced off'), t('Recommended on'), t('Forced on')][r.smart_grid]})));
   if (togs.length) tiles.push(el('div', {class: 'card'}, el('div', {class: 'head'}, icon('relay'), el('span', {class: 'k'}, t('Relays'))), ...togs));
   tiles.push(tile('clock', t('Running for'), duration(s.uptime), '', {v: 'upV', s: 'upS'}));
@@ -682,6 +694,7 @@ function renderTiles() {
   $('#tiles').replaceChildren(...tiles, ...(grip ? [grip] : []));
 }
 // The day's energy and cycle figures (stats.h): a card of figures, each with its detail under it
+$('#sStatsTzBrowser').onclick = () => { $('#sStatsTz').value = -new Date().getTimezoneOffset(); };
 function renderToday() {
   const st = status.stats, card = $('#todayCard');
   card.hidden = !st;
@@ -718,9 +731,12 @@ function renderToday() {
   const sv = cfg.stats || {};
   $('#todayNote').textContent = (st.voltage_read ? t('Voltage as the unit reports it.') : t('Electricity at {v} V, {ph}: change it in Settings.', {v: sv.voltage || 230, ph: sv.phases == 3 ? t('3 phases') : t('1 phase')}))
     + (sv.power_factor && sv.power_factor < 1 ? ' ' + t('Power factor {pf}.', {pf: sv.power_factor}) : '');
-  // the day changes at the local midnight: the board learns the time zone from the browser
+  // the day changes at the local midnight: the board learns the time zone from the browser. Not with an admin
+  // password: the change would ask for it on a mere look at the home page (the offset is then set in Settings).
+  // Nothing before the configuration is loaded: until then the page does not know whether there is one.
   const tz = -new Date().getTimezoneOffset();
-  if (st.tz !== tz && !renderToday.tzSent) { renderToday.tzSent = true; post('/api/config', {stats: {tz}}).catch(() => {}); }
+  const noPassword = cfg.admin && !cfg.admin.has_pwd;
+  if (st.tz !== tz && noPassword && !renderToday.tzSent) { renderToday.tzSent = true; post('/api/config', {stats: {tz}}).catch(() => {}); }
 }
 // The home page's blocks in the order this browser keeps (localStorage): a grip in the corner of each block drags it
 // above or below the others; the move shows as the pointer goes, and the order is saved when it is let go.
@@ -790,7 +806,7 @@ function renderSystem() {
 }
 // Target controls (experimental): a card shows when its setting is on, the input when the unit allows it.
 // The effective value is what the thermostat really aims for, explained in a tip on hover.
-const CONTROLS = {dhw: {id: 'dhw', key: 'dhw_target'}, lwt: {id: 'lwt', key: 'lwt_target'}};
+const CONTROLS = {dhw: {id: 'dhw', key: 'dhw_target'}, lwt: {id: 'lwt', key: 'lwt_target'}, cool: {id: 'cool', key: 'cool_target'}, add: {id: 'add', key: 'add_target'}};
 function renderOneControl(u, c) {
   const card = $('#' + u.id + 'Card');
   card.hidden = !c;
@@ -813,6 +829,7 @@ function renderOneControl(u, c) {
       const tip = u.id === 'dhw'
         ? (capped ? t('What the thermostat really aims for: at this outdoor temperature the heat pump reaches {n} °C on its own, the rest would need the booster heater.', {n: c.ceiling})
                   : t('What the thermostat really aims for, after the limits of the unit.'))
+        : u.id === 'add' ? t('What the board aims for in the additional zone: the target plus its shift, never lower than the main zone.')
         : t('What the heat pump follows right now: the target, plus the shift and the room modulation set on the unit.');
       sub.append(' ', el('span', {class: 'tip', title: tip}, t('Aims for {n} °C', {n: c.effective})), '.');
     }
@@ -879,6 +896,7 @@ for (const u of Object.values(CONTROLS)) {
   };
 }
 function renderStatus() {
+  $('#valuesSizeError').hidden = !(status.mqtt && status.mqtt.values_too_large);
   const hp = status.hp;
   $('#hdrModel').textContent = [hp.unit, hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : ''].filter(Boolean).join(' · ');
   renderChips(); renderTiles(); renderBanners(); renderSystem(); renderControl(); renderToday();
@@ -916,6 +934,9 @@ function reading(list) {
   // The outdoor temperature from the external sensor when Settings say so: with [C-08] on "outdoor sensor" the unit runs
   // its curve from that one, not from the outdoor unit's (#629)
   if (cfg.hp && cfg.hp.outdoor_aux && r.aux != null) { r.out = r.aux; r.outAux = true; }
+  // The room temperature likewise, with [C-08] on "room sensor" (#699). Without the sensor among the values the room
+  // has no reading: the unit's own sensor is not the one it follows, it is not shown in its place
+  if (cfg.hp && cfg.hp.indoor_aux) { if (r.aux != null) r.room = r.aux; else delete r.room; }
   // No backup heater (EDLA...W1/V3 monoblocs): its outlet sensor (R2T) reads exactly 0, the leaving water is the heat exchanger's (R1T)
   if (r.lw2 != null && +r.lw2 === 0 && r.lw1 != null) r.lw2 = r.lw1;
   // The mixed zone's water is the bizone kit's sensor where the kit is fitted (the ECH2O units have no other). Not
@@ -1267,15 +1288,20 @@ function fillSettings() {
   const r = cfg.relays, o = cfg.output, w = cfg.wifi;
   $('#sRx').value = cfg.hp.rx; $('#sTx').value = cfg.hp.tx; $('#sFreq').value = Math.round(cfg.hp.frequency / 1000);
   $('#sOutdoor').options[0].text = t("Outdoor unit's sensor"); $('#sOutdoor').options[1].text = t('External sensor (R6T)'); $('#sOutdoor').value = cfg.hp.outdoor_aux ? 'aux' : 'unit';
+  $('#sIndoor').options[0].text = t("The unit's own sensor"); $('#sIndoor').options[1].text = t('External sensor (R6T)'); $('#sIndoor').value = cfg.hp.indoor_aux ? 'aux' : 'unit';
+  // one sensor, one place: choosing it for one gives the other back to the unit's sensor
+  $('#sOutdoor').onchange = () => { if ($('#sOutdoor').value === 'aux') $('#sIndoor').value = 'unit'; };
+  $('#sIndoor').onchange = () => { if ($('#sIndoor').value === 'aux') $('#sOutdoor').value = 'unit'; };
   tx('pinRx', 'G' + cfg.hp.rx); tx('pinTx', 'G' + cfg.hp.tx); tx('pinBoard', status.board || 'ESP32');
-  $('#sTherm').value = r.therm_pin; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
+  $('#sTherm').value = r.therm_pin; $('#sCool').value = r.cool_pin == null ? -1 : r.cool_pin; $('#sCoolHigh').checked = r.cool_high !== false; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
   $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sBase').value = (cfg.mqtt && cfg.mqtt.base_topic) || 'espaltherma'; $('#sJsonTable').checked = o.json_table; $('#sBinNum').checked = !!o.binary_num; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
   const st = cfg.stats || {};
   $('#sStatsPh').options[0].text = t('1 phase (230 V)'); $('#sStatsPh').options[1].text = t('3 phases (3 × 230 V)');
   $('#sStats').checked = st.enabled !== false; $('#sStatsV').value = st.voltage || 230; $('#sStatsPh').value = st.phases == 3 ? '3' : '1'; $('#sStatsAux').value = st.aux_w || 100; $('#sStatsPf').value = st.power_factor || 1;
   $('#sStatsBuh1').value = st.buh1_kw != null ? st.buh1_kw : 3; $('#sStatsBuh2').value = st.buh2_kw != null ? st.buh2_kw : 3;
-  $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target); $('#sLwtTarget').checked = !!(cfg.control && cfg.control.lwt_target); $('#sRamOnly').checked = !!(cfg.control && cfg.control.ram_only); $('#sPowerLimit').checked = !!(cfg.control && cfg.control.power_limit);
+  $('#sStatsTzRow').hidden = !cfg.admin.has_pwd; $('#sStatsTz').value = st.tz != null ? st.tz : -new Date().getTimezoneOffset();
+  $('#sDhwTarget').checked = !!(cfg.control && cfg.control.dhw_target); $('#sLwtTarget').checked = !!(cfg.control && cfg.control.lwt_target); $('#sCoolTarget').checked = !!(cfg.control && cfg.control.cool_target); $('#sAddTarget').checked = !!(cfg.control && cfg.control.add_target); $('#sRamOnly').checked = !!(cfg.control && cfg.control.ram_only); $('#sPowerLimit').checked = !!(cfg.control && cfg.control.power_limit);
   $('#sHost').value = cfg.hostname; $('#sNtp').value = cfg.ntp || ''; $('#sAdminState').textContent = cfg.admin.has_pwd ? t('(set)') : t('(none)'); $('#sAdminClearL').style.display = cfg.admin.has_pwd ? '' : 'none'; $('#sAdminClear').checked = false;
   fillLangs();
   $('#sStatic').checked = w.static; $('#sIp').value = w.ip; $('#sGw').value = w.gateway; $('#sMask').value = w.subnet; $('#sDns1').value = w.dns1;
@@ -1285,12 +1311,13 @@ $('#sStatic').onchange = e => $('#sStaticBox').hidden = !e.target.checked;
 $('#sSave').onclick = async () => {
   const n = id => parseInt($(id).value, 10);
   const d = {
-    hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000, outdoor_aux: $('#sOutdoor').value === 'aux'},
-    relays: {therm_pin: n('#sTherm'), sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
+    hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000, outdoor_aux: $('#sOutdoor').value === 'aux', indoor_aux: $('#sIndoor').value === 'aux'},
+    relays: {therm_pin: n('#sTherm'), cool_pin: n('#sCool'), cool_high: $('#sCoolHigh').checked, sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
-    control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, ram_only: $('#sRamOnly').checked, power_limit: $('#sPowerLimit').checked},
+    control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, cool_target: $('#sCoolTarget').checked, add_target: $('#sAddTarget').checked, ram_only: $('#sRamOnly').checked, power_limit: $('#sPowerLimit').checked},
     stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 100, power_factor: parseFloat($('#sStatsPf').value) || 1,
-            buh1_kw: parseFloat($('#sStatsBuh1').value) || 0, buh2_kw: parseFloat($('#sStatsBuh2').value) || 0},
+            buh1_kw: parseFloat($('#sStatsBuh1').value) || 0, buh2_kw: parseFloat($('#sStatsBuh2').value) || 0,
+            ...($('#sStatsTzRow').hidden ? {} : {tz: n('#sStatsTz')})},
     mqtt: {base_topic: $('#sBase').value.trim() || 'espaltherma'},
     hostname: $('#sHost').value.trim() || 'ESPAltherma',
     ntp: $('#sNtp').value.trim(),
@@ -1453,7 +1480,7 @@ function versionRank(v) {
 // Newer: by the time of the commits when both builds carry it (CI builds from 2.0.0-beta.8 on), else by the version.
 // A development build is never offered over a newer one, nor a release over a newer development build.
 function newerBuild(m, s) {
-  if (m.build_time && s.build) return m.build_time > s.build;
+  if (m.build_time && s.build && m.build_time !== s.build) return m.build_time > s.build; // the same commit: by the version
   return newerVersion(String(m.version || ''), s.fw);
 }
 function newerVersion(latest, current) {

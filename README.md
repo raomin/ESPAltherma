@@ -20,6 +20,8 @@
 
 <p align="center"><b><a href="https://espaltherma.pages.dev/">➜ Install ESPAltherma from your browser</a></b></p>
 
+<p align="center"><b><a href="https://espaltherma.pages.dev/demo/">➜ Or try it first: the live demo of the web interface, no board needed</a></b></p>
+
 ![The home page of ESPAltherma](doc/images/dashboard.png)
 
 <p align="center"><img src="doc/images/phone-dark.png" width="300" alt="ESPAltherma on a phone, dark mode"></p>
@@ -161,6 +163,12 @@ Once installed, the setup looks like this (other users' installations are shown 
 ![](doc/images/installation.png)
 
 To drive it from a room temperature, declare a climate entity on the switch: see [Home Assistant](doc/home-assistant.md#a-climate-entity). More notes in [the details](doc/control.md#the-thermostat-relay).
+
+## Cooling: a second relay
+
+A reversible unit has two inputs on its external thermostat connection, one that asks for heating and one that asks for cooling. A second relay on the cooling input lets you ask for cooling the same way: set its pin in **Settings → Relays** (*Cooling relay pin*). The switch `switch.altherma_cooling` then appears in Home Assistant; the MQTT topic is `espaltherma/COOL` (`ON` / `OFF`), the state is on `espaltherma/COOL_STATE`.
+
+The two relays are never closed together: switching one on releases the other first. The unit must take its heating and cooling requests from these two inputs, which is an installer setting: see [the details](doc/control.md#cooling-a-second-relay).
 
 ## Smart Grid
 

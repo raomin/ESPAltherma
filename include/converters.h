@@ -5,7 +5,15 @@ class Converter
 {
 public:
     int RType = 802; // refrigerant for pressure->temp: 801=R410A, 802=R32, 803=R22, 804=R744, 805=R134a
-    bool quiet = false; // no conversion trace on Serial (one-off decodes for the web interface)
+    // The conversion trace on Serial ("Converting from: 0x.. -> .."), for a build made with -D CONVERTER_TRACE.
+    // It was written for every value of every cycle, while the values are locked: about 38 characters a value,
+    // so near half a second of serial time a cycle for a large selection at 115200 baud. The replies are in the
+    // log as before (comm.h logBuffer).
+#ifdef CONVERTER_TRACE
+    bool quiet = false;
+#else
+    bool quiet = true;
+#endif
 
     // Active labels: the values selected for this installation
     LabelDef *activeLabels = nullptr;
@@ -29,32 +37,40 @@ public:
         }
     }
 
-    // Extract all values from the registry data response
-    void readRegistryValues(unsigned char *data, unsigned char protocol)
+    // Extract all values from the registry data response. payloadLength: the bytes of the reply the values are read
+    // from (after the registry id, and the length byte of protocol I; without the checksum)
+    void readRegistryValues(unsigned char *data, unsigned char protocol, size_t payloadLength)
     {
         if (protocol == 'S')
         {
             // Registry ID is first byte
-            readRegistryValues(data[0], data, 1);
+            readRegistryValues(data[0], data, 1, payloadLength);
         }
         else
         {
-            readRegistryValues(data[1], data, 3);
+            readRegistryValues(data[1], data, 3, payloadLength);
         }
     }
 
-    void readRegistryValues(char registryID, unsigned char *data, unsigned int offset)
+    // A value whose bytes are not all in the reply is skipped: it kept its last reading, where it used to be
+    // decoded from the checksum and whatever followed it in the buffer (a definition made for a longer reply)
+    static bool inPayload(const LabelDef &label, size_t payloadLength)
     {
-        // Serial.printf("For registry %d, we have these labels:\n", registryID);
+        size_t bytes = label.dataSize > 0 ? (size_t)label.dataSize : 1;
+        return label.offset >= 0 && (size_t)label.offset + bytes <= payloadLength;
+    }
+
+    void readRegistryValues(char registryID, unsigned char *data, unsigned int offset, size_t payloadLength)
+    {
         int num = 0;
         LabelDef *labels[128];
         getLabels(registryID, labels, num);
 
         for (int i = 0; i < num; i++)
         {
-            unsigned char *input = data;
-            input += labels[i]->offset + offset;
-            convert(labels[i], input);
+            if (!inPayload(*labels[i], payloadLength))
+                continue;
+            convert(labels[i], data + offset + labels[i]->offset);
         }
     }
 

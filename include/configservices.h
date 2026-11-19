@@ -9,7 +9,8 @@ inline ConfigServiceChanges configServiceChanges(const AppConfig &before,const A
     before.mqttPort!=after.mqttPort || strcmp(before.mqttUser,after.mqttUser)!=0 || strcmp(before.mqttPwd,after.mqttPwd)!=0 ||
     before.mqttTls!=after.mqttTls || before.mqttOff!=after.mqttOff || strcmp(before.mqttClientId,after.mqttClientId)!=0 ||
     before.jsonTable!=after.jsonTable || before.binaryAsNumber!=after.binaryAsNumber || before.debugSerial!=after.debugSerial ||
-    before.dhwTarget!=after.dhwTarget || before.lwtTarget!=after.lwtTarget || before.powerLimit!=after.powerLimit;
+    before.dhwTarget!=after.dhwTarget || before.lwtTarget!=after.lwtTarget || before.powerLimit!=after.powerLimit ||
+    before.coolTarget!=after.coolTarget || before.addTarget!=after.addTarget;
   return {mqtt,strcmp(before.ntpServer,after.ntpServer)!=0};
 }
 

@@ -11,14 +11,29 @@ const char *haDeviceName = "Daikin Altherma via ESPAltherma";
 const char *haDeviceModel = "Altherma";
 const char *haAttrTopic = "espaltherma/ATTR";
 const char *haHostname = "ESPAltherma";
-static std::string jsonEscape(const char *s);
 
-static std::string discoveryStart()
+// The board's name on the network is free text ("Heat pump cellar" is one): only a name made of letters, digits,
+// hyphens and underscores is also an address, <name>.local, that a browser opens.
+static bool isHostName(const char *s)
 {
-    const std::string url=std::string("http://")+haHostname+".local/";
+    const size_t n = strlen(s);
+    if (n == 0 || n > 63 || s[0] == '-' || s[n - 1] == '-')
+        return false;
+    for (; *s; s++)
+        if (!((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') || (*s >= '0' && *s <= '9') || *s == '-' || *s == '_'))
+            return false;
+    return true;
+}
+
+// The address of the board's page (the "Visit" link of the device) is given only when the name makes one. Home
+// Assistant checks it, and since 2026.11 refuses an address with a space in its host: one field refused is the
+// whole message refused, and every entity of the device then reads "no longer provided by the mqtt integration".
+static std::string discoveryStart(const char *model)
+{
+    const std::string url = isHostName(haHostname) ? std::string("\",\"configuration_url\":\"http://") + haHostname + ".local/" : "";
     return std::string("{\"dev\":{\"ids\":\"") + haDeviceId + "\",\"name\":\"" + haDeviceName +
-           "\",\"mf\":\"Daikin\",\"mdl\":\"" + haDeviceModel + "\",\"sw_version\":\"ESPAltherma " ESPALTHERMA_VERSION
-           "\",\"configuration_url\":\"" + jsonEscape(url.c_str()) + "\"},\"o\":{\"name\":\"" + haDeviceId +
+           "\",\"mf\":\"Daikin\",\"mdl\":\"" + model + "\",\"sw_version\":\"ESPAltherma " ESPALTHERMA_VERSION + url +
+           "\"},\"o\":{\"name\":\"" + haDeviceId +
            "\",\"sw\":\"" ESPALTHERMA_VERSION "\",\"url\":\"https://github.com/raomin/ESPAltherma/\"},\"cmps\":{";
 }
 
@@ -42,7 +57,7 @@ const LabelDef free_mem = {-1, -1, -1, -1, ESP_SENSOR_FREE_MEM, "FreeMem"};
 const LabelDef m5_vin = {-1, -1, -1, -1, ESP_SENSOR_M5VIN, "M5VIN"};
 const LabelDef uptime = {-1, -1, -1, -1, ESP_SENSOR_UPTIME, "Uptime"};
 const LabelDef ip_addr = {-1, -1, -1, -1, ESP_SENSOR_IP, "IP"};
-const LabelDef *haExtraLabels = nullptr;
+const HaSensor *haExtraLabels = nullptr;
 size_t haExtraCount = 0;
 
 static bool isMeasurementSensor(const std::string &sensorProperties)
@@ -54,8 +69,9 @@ static bool isMeasurementSensor(const std::string &sensorProperties)
            sensorProperties.find("\"stat_cla\"") == std::string::npos; // the computed values set their own
 }
 
-size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, DiscoverySink sink, void *ctx,
-                                    const std::vector<HaComponent> *removed)
+template<typename Read>
+static size_t streamDiscovery(size_t count,Read read,const char *model,DiscoverySink sink,void *ctx,
+                              const std::vector<HaComponent> *removed)
 {
     size_t total = 0;
     auto emit = [&](const char *data, size_t len) {
@@ -66,7 +82,7 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
         }
     };
 
-    std::string s = discoveryStart();
+    std::string s = discoveryStart(model);
     emit(s.data(), s.size());
 
     // Hardcoded ESP diagnostic sensors.
@@ -94,13 +110,7 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     // payload is never held in memory all at once.
     for (size_t i = 0; i < count; i++)
     {
-        s = "," + makeSensorJson(labels[i], false);
-        emit(s.data(), s.size());
-    }
-    // The values the firmware computes (energy and cycle statistics)
-    for (size_t i = 0; i < haExtraCount; i++)
-    {
-        s = "," + makeSensorJson(haExtraLabels[i], false);
+        s = "," + makeSensorJson(read(i), false);
         emit(s.data(), s.size());
     }
     // Values no longer selected: only their platform, so Home Assistant removes their entities
@@ -114,6 +124,29 @@ size_t streamDeviceDiscoveryPayload(const LabelDef *labels, size_t count, Discov
     emit(s.data(), s.size());
 
     return total;
+}
+
+size_t streamDeviceDiscoveryPayload(const LabelDef *labels,size_t count,DiscoverySink sink,void *ctx,
+                                    const std::vector<HaComponent> *removed)
+{
+    return streamDiscovery(count+haExtraCount,[&](size_t i){return i<count?labels[i]:haExtraLabels[i-count].definition();},haDeviceModel,sink,ctx,removed);
+}
+
+size_t streamDeviceDiscoverySnapshot(const HaDiscoverySnapshot &s,DiscoverySink sink,void *ctx,
+                                    const std::vector<HaComponent> *removed)
+{
+    return streamDiscovery(s.count,[&](size_t i){return s.labels[i].definition();},s.model,sink,ctx,removed);
+}
+
+std::vector<HaComponent> haSnapshotComponents(const HaDiscoverySnapshot &s)
+{
+    std::vector<HaComponent> out;
+    for(size_t i=0;i<s.count;i++)
+    {
+        bool binary=!s.labels[i].extra && getSensorDeviceAndUnit(s.labels[i].definition()).find("\"p\":\"binary_sensor\"")!=std::string::npos;
+        out.push_back({makeJsonKey(s.labels[i].label),binary?"binary_sensor":"sensor"});
+    }
+    return out;
 }
 
 std::vector<HaComponent> haComponents(const LabelDef *labels, size_t count)

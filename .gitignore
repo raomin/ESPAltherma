@@ -15,6 +15,7 @@ DaikinLogger.sln
 include/webui_data.h
 flasher/firmware/
 flasher/manifest-*.json
+flasher/demo/
 __pycache__/
 include/def/mydef.h
 .DS_Store

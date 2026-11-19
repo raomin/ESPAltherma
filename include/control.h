@@ -52,9 +52,10 @@ struct CurveSpec
   uint16_t memA, memB;     // the same settings in the board's memory (6-bit value above a minimum, in bits 7..2)
   uint16_t slotA, slotB;   // RAM records of their allowed ranges: 5 bytes [?, ?, span, minimum, step]
   uint16_t modeByte;       // memory byte of the setpoint mode
-  uint8_t modeMask;        // bits set when the target follows the curve
+  uint8_t modeMask;        // bits set when the target follows the curve (0: the mode is not known, not checked)
   uint16_t ramEffective;   // what the thermostat really aims for (0: not known)
   uint16_t ramCeiling;     // the unit's own maximum, which caps the target (0: none)
+  uint8_t ramMinimum;      // verified lower DHW target in RAM-only mode (0: keep the setting limits)
 };
 
 // The power limitation (the installer's demand control), as the hydro board holds it in RAM: the enable byte
@@ -95,6 +96,8 @@ struct ControlProfile
   LimitSpec limit;        // power limitation (missing on the boards not mapped for it)
   uint16_t ramHeatKwh;    // the unit's own energy meter, the heat produced in kWh as a 32-bit count (0: not mapped)
   UnitCounters counters;  // its operating hours and compressor starts (0: not mapped)
+  CurveSpec cool;         // cooling leaving water target of the main zone (experimental, 20002203 only)
+  CurveSpec add;          // heating leaving water target of the additional zone (experimental, 20002203 only)
 };
 
 // The energy meter (the heat produced since the installation, the user interface's energy data) is a 32-bit count
@@ -159,11 +162,20 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // its interface (ppuetsch, #647): the meter rises with the heat delivered, the same count again as a float at
     // 0x3756, the hours equal to the interface's.
     {"20002203",
-     {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160},
+     {0x3470, 0x34AE, 366, 367, 0x4FAB, 0x4FB0, 278, 0x01, 0x2EE8, 0x3160, 25},
      {0x3472, 0x34B0, 373, 372, 0x4FBA, 0x4FB5, 374, 0x0C, 0x2F3C, 0},
      {0x4E70, 0x4E71, 0x3476, 0x4E50, 0x41A8, 0x41AC},
      0x08E6,
-     {0x36B2, 0x3696, 0x3650, 0x3692, 0x3752, 0x36C2, 0x3664, 0x36A6, 0x08E2, 0x3722, 0x3702, 0x36FA, 0x371A}},
+     {0x36B2, 0x3696, 0x3650, 0x3692, 0x3752, 0x36C2, 0x3664, 0x36A6, 0x08E2, 0x3722, 0x3702, 0x36FA, 0x371A},
+     // Cooling and the additional zone, read on the same EHBX08EF6V while changing the settings on its interface
+     // and written in RAM (doc/memory-20002203.md): the cooling curve [1-09] / [1-08] (memory 378 / 377, both
+     // ranges [9-03]..[9-02]), its target in the same word as the heating one; the additional zone's heating curve
+     // [0-00] / [0-01] (memory 358 / 359, ranges 20..45 and 20..55), its target what the board aims for there.
+     // The cooling target follows the curve with the main zone weather dependent (the same mode byte); where the
+     // additional zone's setpoint mode is kept is not known: not checked. Neither a cooling run nor two zones with
+     // real valves were seen yet.
+     {0x3466, 0x34A4, 378, 377, 0x4FC9, 0x4FC4, 374, 0x0C, 0x2F3C, 0},
+     {0x3474, 0x34B2, 358, 359, 0x4F92, 0x4F97, 0, 0, 0x2F44, 0}},
     // 11-16 kW EBBH/EBBX DF, EBVH/EBVX/EBVZ S18/S23 DJ and EBSH/EBSX(B) P30/P50 DF and DG series (Altherma 3 H F
     // and its ECH2O, on ERLA outdoor units)
     {"20007903",
@@ -247,8 +259,28 @@ static const ControlProfile CONTROL_PROFILES[] = {
 enum ControlKind
 {
   CONTROL_DHW,
-  CONTROL_LWT
+  CONTROL_LWT,
+  CONTROL_COOL, // cooling leaving water target of the main zone
+  CONTROL_ADD   // heating leaving water target of the additional zone
 };
+#define CONTROL_KIND_COUNT 4
+
+inline const CurveSpec *controlSpec(const ControlProfile *p, ControlKind kind)
+{
+  if (p == nullptr)
+    return nullptr;
+  switch (kind)
+  {
+  case CONTROL_LWT:
+    return &p->lwt;
+  case CONTROL_COOL:
+    return &p->cool;
+  case CONTROL_ADD:
+    return &p->add;
+  default:
+    return &p->dhw;
+  }
+}
 
 enum ControlStatus
 {
@@ -302,18 +334,27 @@ struct X10aClient
     if (exchange == nullptr || n + 3 > sizeof(frame))
       return false;
     size_t len = x10aFrame(cmd, data, n, frame);
-    size_t r = exchange(frame, len, got, sizeof(got), firstByteMs);
     size_t want = 2 + replyData;
-    if (r < want || got[0] != cmd)
-      return false;
-    uint8_t sum = 0;
-    for (size_t i = 0; i < want - 1; i++)
-      sum += got[i];
-    if ((uint8_t)~sum != got[want - 1])
-      return false;
-    if (reply != nullptr)
-      memcpy(reply, got + 1, replyData);
-    return true;
+    // Asked a second time when no sound reply came: one lost frame made a control "not ready" for 30 s, and its
+    // entities left Home Assistant meanwhile. Every command used here gives the same result when repeated (a read,
+    // or a write of the same value at the same place). A unit that refuses (NAK) is not asked again.
+    for (int attempt = 0; attempt < 2; attempt++)
+    {
+      size_t r = exchange(frame, len, got, sizeof(got), firstByteMs);
+      if (r >= 1 && got[0] == 0x15)
+        return false;
+      if (r < want || got[0] != cmd)
+        continue;
+      uint8_t sum = 0;
+      for (size_t i = 0; i < want - 1; i++)
+        sum += got[i];
+      if ((uint8_t)~sum != got[want - 1])
+        continue;
+      if (reply != nullptr)
+        memcpy(reply, got + 1, replyData);
+      return true;
+    }
+    return false;
   }
 
   bool readRam(uint16_t addr, uint8_t *out16)
@@ -385,14 +426,20 @@ struct X10aClient
   // The hydro board's software: the 'L' command, 4 bytes, the digits reversed (04 29 00 18 is 18002904). The
   // boards of 2014-2017 (Altherma LT CA and CB) have no 'L' command and give it in registry 0x60 instead, bytes
   // 15 and 14 ("I/U Software ID (xx)" and "(yy)": 76 F2 is 76F2), the one printed by the service tools.
+  // out9 holds the id read before ("" when none): a unit that gave 8 digits has the 'L' command, and its registry
+  // 0x60 is not read in its place when a reply is lost. The newer units answer that registry too, with other
+  // bytes at 15 and 14: the unit then looked like another board, and a held target was dropped for it.
   bool readSoftwareId(char *out9)
   {
+    bool hasL = strlen(out9) == 8;
     uint8_t id[4];
     if (command(0x4C, nullptr, 0, id, 4))
     {
       snprintf(out9, 9, "%02X%02X%02X%02X", id[3], id[2], id[1], id[0]);
       return true;
     }
+    if (hasL)
+      return false;
     // 03 40 60 crc -> 40 60 L payload[L-2] crc
     uint8_t reg = 0x60, frame[CONTROL_FRAME_MAX], got[CONTROL_FRAME_MAX];
     if (exchange == nullptr)
@@ -420,6 +467,7 @@ struct CurveControl : X10aClient
   char softwareId[9] = "";
   int minTarget = 0, maxTarget = 0; // allowed targets (the unit's own limits)
   int minA = 0, minB = 0;           // minimum of each curve setting, the base of its memory encoding
+  int maxA = 0, maxB = 0;           // and its maximum: a curve outside these is not one the unit can hold
   int target = -1;                  // curve setpoint at the high outdoor temperature, as read from the unit (-1: unknown)
   int targetLo = -1;                // curve setpoint at the low outdoor temperature (equal to target once set from here)
   int effective = -1;               // what the thermostat really aims for (-1: unknown)
@@ -480,22 +528,23 @@ struct CurveControl : X10aClient
     }
     else
     {
-      if (softwareBefore[0] && strcmp(softwareBefore, softwareId) != 0)
-        setHeld(-1); // another hydro board software: the held target belongs to the previous one
+      // Another hydro board software: the held target belongs to the previous one. Not when one of the two is an
+      // id of the older boards and the other is not: that was a first identification gone to registry 0x60.
+      if (softwareBefore[0] && strlen(softwareBefore) == strlen(softwareId) && strcmp(softwareBefore, softwareId) != 0)
+        setHeld(-1);
       profile = nullptr;
       for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
       {
         if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
           profile = &CONTROL_PROFILES[i];
       }
-      spec = profile == nullptr ? nullptr : kind == CONTROL_LWT ? &profile->lwt : &profile->dhw;
+      spec = controlSpec(profile, kind);
       uint8_t mode = 0;
-      int maxA = 0, maxB = 0;
       if (spec == nullptr || spec->ramA == 0)
         status = CONTROL_UNSUPPORTED;
-      else if (!readMemory(spec->modeByte, mode))
+      else if (spec->modeMask && !readMemory(spec->modeByte, mode))
         status = CONTROL_NO_ANSWER;
-      else if (!(mode & spec->modeMask))
+      else if (spec->modeMask && !(mode & spec->modeMask))
         status = CONTROL_NOT_CURVE_MODE;
       else if (!readSlot(spec->slotA, minA, maxA) || !readSlot(spec->slotB, minB, maxB))
         status = CONTROL_UNSUPPORTED; // no answer, or limits that make no sense: not ours to write
@@ -503,7 +552,7 @@ struct CurveControl : X10aClient
       {
         minTarget = minA > minB ? minA : minB;
         maxTarget = maxA < maxB ? maxA : maxB;
-        if (ramOnly && kind == CONTROL_LWT)
+        if (ramOnly && (kind == CONTROL_LWT || kind == CONTROL_ADD))
         {
           // The mild point's record stops at 45 by a rule of the interface for that setting (the same literal in
           // every software), while the cold point's is the unit's own range [9-01]..[9-00], and the thermostat
@@ -512,6 +561,11 @@ struct CurveControl : X10aClient
           minTarget = minB;
           maxTarget = maxB;
         }
+        // The DHW field settings start at 35/45 °C, but a lower flat curve can work in RAM. On 20002203,
+        // 20/20 held in RAM while the effective target stayed at 25 °C; 25/25 and 30/30 followed directly.
+        // Only profiles verified on a unit opt in. Keep minA/minB for decoding and writing the memory.
+        if (ramOnly && kind == CONTROL_DHW && spec->ramMinimum > 0 && spec->ramMinimum < minTarget)
+          minTarget = spec->ramMinimum;
         status = minTarget >= 5 && maxTarget <= 90 && minTarget < maxTarget ? CONTROL_READY : CONTROL_UNSUPPORTED;
       }
     }
@@ -565,6 +619,32 @@ struct CurveControl : X10aClient
   int clamp(int value) const
   {
     return value < minTarget ? minTarget : value > maxTarget ? maxTarget : value;
+  }
+
+  // A pair the unit's two curve settings can hold
+  bool curveInRange(int a, int b) const
+  {
+    return a >= minA && a <= maxA && b >= minB && b <= maxB;
+  }
+
+  // The unit's own curve, taken before the first write from here (it was taken after it: a write that failed
+  // between the two points left a half-written curve to be recorded as the unit's at the next request). The curve
+  // the unit's memory holds, which is what it comes back to by itself; its RAM when the memory does not answer.
+  // Nothing is recorded when neither gives a curve within the ranges of the two settings (a RAM not loaded yet).
+  void rememberOriginal()
+  {
+    readSaved();
+    int a = savedA, b = savedB;
+    if (!curveInRange(a, b))
+    {
+      a = target;
+      b = targetLo;
+    }
+    if (!curveInRange(a, b))
+      return;
+    origA = a;
+    origB = b;
+    origChanged = true;
   }
 
   // Writes the two points of the curve in the RAM of the unit: applied within its next control cycle.
@@ -632,6 +712,20 @@ struct CurveControl : X10aClient
     origB = b;
   }
 
+  // The option was switched off. True while a curve from here is still in a unit that can take its own back: the
+  // caller keeps ticking, and the restore is asked for. (The control just stopped: the flat curve stayed in the
+  // unit, in its memory too when saved there, with nothing left on the page to put the unit's own back.)
+  bool leaving()
+  {
+    if (origA < 0 && held < 0)
+      return false;
+    if (status != CONTROL_READY && status != CONTROL_NO_ANSWER)
+      return false;
+    if (status == CONTROL_READY && !restoring && !restoreWanted)
+      requestRestore();
+    return true;
+  }
+
   // The wait before the next try at a unit that is not ready: doubled each time, up to the check interval, so a
   // unit that never gets ready is not asked more often than before
   static unsigned long nextRetry(unsigned long wait)
@@ -659,12 +753,20 @@ struct CurveControl : X10aClient
     }
     if (!ramOnly && held >= 0)
     {
-      // RAM only switched off: the held target is saved in the unit's memory like a fresh request
+      // RAM only switched off: the held target is saved in the unit's memory like a fresh request. A hot water
+      // target under the memory's minimum, which only the RAM takes, has no value there that anybody chose: the
+      // unit's curve comes back as with "Restore the unit's curve", and nothing is saved
+      bool memoryCannotHoldIt = held < minTarget;
       if (pendingA < 0 && wanted < 0 && !restoreWanted)
       {
-        pendingA = pendingB = clamp(held); // within the range the memory allows (45 for the leaving water)
-        restoring = false;
-        wantedAt = now;
+        if (memoryCannotHoldIt)
+          restoreWanted = true;
+        else
+        {
+          pendingA = pendingB = clamp(held); // within the range the memory allows (45 for the leaving water)
+          restoring = false;
+          wantedAt = now;
+        }
       }
       setHeld(-1);
     }
@@ -673,7 +775,24 @@ struct CurveControl : X10aClient
     {
       restoreWanted = false;
       wanted = -1;
+      bool wasHeld = held >= 0;
       setHeld(-1); // released: the unit's curve is back, in its RAM and (if it was changed) in its memory
+      if (origA >= 0 && origB >= 0 && !curveInRange(origA, origB))
+      {
+        origA = origB = -1; // not a curve this unit can hold (kept from an older firmware): forgotten, never written
+        origChanged = changed = true;
+      }
+      if (origA < 0 && wasHeld && ramOnly)
+      {
+        // A hold with no curve recorded (the first target was the one the RAM already had): the memory was never
+        // written in this mode, so it still holds the unit's own curve
+        readSaved();
+        if (curveInRange(savedA, savedB))
+        {
+          origA = savedA;
+          origB = savedB;
+        }
+      }
       if (origA >= 0 && origB >= 0 && !restoring)
       {
         pendingA = origA;
@@ -683,7 +802,11 @@ struct CurveControl : X10aClient
         changed = true;
       }
     }
+    // Taken here, and only this value: a request that arrives while this tick talks to the unit (seconds) stays
+    // for the next one. It was erased when the tick ended, and Home Assistant kept showing the earlier value.
     int w = wanted;
+    if (w >= 0 && wanted == w)
+      wanted = -1;
     if (w >= 0)
     {
       w = clamp(w);
@@ -699,19 +822,15 @@ struct CurveControl : X10aClient
       if (pendingA != target || pendingB != targetLo)
       {
         uint8_t mode = 0;
-        int beforeA = target, beforeB = targetLo;
-        if (!readMemory(spec->modeByte, mode) || !(mode & spec->modeMask) || !apply(pendingA, pendingB, now))
+        bool curveMode = !spec->modeMask || (readMemory(spec->modeByte, mode) && (mode & spec->modeMask));
+        if (curveMode && !restoring && origA < 0)
+          rememberOriginal();
+        if (!curveMode || !apply(pendingA, pendingB, now))
         {
-          wanted = pendingA = pendingB = -1;
+          pendingA = pendingB = -1;
           restoring = false;
           identify(now); // the unit stopped answering, or its interface left the weather-dependent mode
           return;
-        }
-        if (!restoring && origA < 0 && beforeA >= 0 && beforeB >= 0)
-        {
-          origA = beforeA; // the unit's own curve, from before the first write
-          origB = beforeB;
-          origChanged = true;
         }
       }
       bool done = false;
@@ -746,7 +865,7 @@ struct CurveControl : X10aClient
           restoring = false;
           changed = true;
         }
-        wanted = pendingA = pendingB = -1;
+        pendingA = pendingB = -1;
       }
       if (now - readAt >= CONTROL_READ_INTERVAL_MS)
         readTarget(now);
@@ -770,7 +889,8 @@ struct CurveControl : X10aClient
 // and reports what it applies in the active limit. Below the compressor's minimum the unit stops it, hence a
 // floor on the value. Nothing is written in the board's memory: a restart of the heat pump brings its own
 // settings back, and this control re-applies the wanted limit as soon as it sees it gone (the caller keeps the
-// wanted limit in its configuration). Switching off restores the enable byte found before the first write.
+// wanted limit in its configuration). Switching off puts back the enable byte and limit 1 found before the first
+// write: an installer's own continuous limitation is in force again, at its own value.
 #define LIMIT_REAPPLY_MS 60000UL  // a lost limit is written again at most this often
 #define LIMIT_READ_INTERVAL_MS 120000UL
 #define LIMIT_MIN_KW 1.0f
@@ -791,9 +911,12 @@ struct LimitControl : X10aClient
   ControlStatus status = CONTROL_OFF;
   char softwareId[9] = "";
   LimitKind kind = LIMIT_POWER;
+  bool kindKnown = false;
   float minLimit = LIMIT_MIN_KW, maxLimit = LIMIT_MAX_KW;
   int enable = -1;            // the unit's enable byte as read (-1: unknown)
   int origEnable = -1;        // the enable byte found before the first write from here (-1: none)
+  float origLimit = -1;       // limit 1 as found before the first write from here (-1: none)
+  bool resumed = false;       // the limit comes from before a restart of ESPAltherma: an enable byte at 1 may be ours
   float limit = -1;           // limit 1 as the unit holds it (-1: unknown)
   float active = -1;          // the limit the unit applies right now (-1: unknown)
   bool on = false;            // a limit from here is applied
@@ -815,6 +938,7 @@ struct LimitControl : X10aClient
     status = CONTROL_OFF;
     softwareId[0] = 0;
     enable = -1;
+    kindKnown = false;
     limit = active = -1;
     wanted = -1;
     wantedOn = -1;
@@ -842,18 +966,10 @@ struct LimitControl : X10aClient
         if (strcmp(CONTROL_PROFILES[i].softwareId, softwareId) == 0)
           profile = &CONTROL_PROFILES[i];
       spec = profile == nullptr || profile->limit.ramEnable == 0 ? nullptr : &profile->limit;
-      uint8_t k = 0;
       if (spec == nullptr)
         status = CONTROL_UNSUPPORTED;
-      else if (!readByte(spec->ramKind, k))
-        status = CONTROL_NO_ANSWER;
       else
-      {
-        kind = k == 1 ? LIMIT_POWER : LIMIT_CURRENT;
-        minLimit = kind == LIMIT_POWER ? LIMIT_MIN_KW : LIMIT_MIN_AMP;
-        maxLimit = kind == LIMIT_POWER ? LIMIT_MAX_KW : LIMIT_MAX_AMP;
         status = readBack(now) ? CONTROL_READY : CONTROL_NO_ANSWER;
-      }
     }
     if (status != CONTROL_READY)
     {
@@ -866,15 +982,17 @@ struct LimitControl : X10aClient
     return status == CONTROL_READY;
   }
 
-  // Reads the enable byte, limit 1 and the active limit from the unit.
+  // Accept only a complete, plausible enable/type/limit tuple. A unit can answer with zero RAM before
+  // its settings have loaded. A successful transport exchange is not sufficient permission to write.
   bool readBack(unsigned long now)
   {
     readAt = now;
-    uint8_t e = 0;
+    uint8_t e = 0, k = 0;
     float l = -1, a = -1;
-    if (spec == nullptr || !readByte(spec->ramEnable, e))
+    if (spec == nullptr || !readByte(spec->ramEnable, e) || !readByte(spec->ramKind, k) || e > 2 || k > 1)
       return false;
-    if (kind == LIMIT_POWER)
+    LimitKind readKind = k == 1 ? LIMIT_POWER : LIMIT_CURRENT;
+    if (readKind == LIMIT_POWER)
     {
       if (!readFloat(spec->ramKw, l))
         return false;
@@ -886,6 +1004,18 @@ struct LimitControl : X10aClient
         return false;
       l = b;
     }
+    // Plausibility bounds allow the installer's range (wider than our requested 1..20 kW / 4..50 A).
+    if (!isfinite(l) || (readKind == LIMIT_POWER ? (l < 1 || l > 25) : (l < 4 || l > 75)))
+      return false;
+    if (kindKnown && readKind != kind)
+    {
+      // Never reinterpret an existing kW hold as amperes (or vice versa) after an installer change.
+      on = false; value = -1; origEnable = -1; origLimit = -1; wanted = -1; wantedOn = -1;
+      stateChanged = changed = true;
+    }
+    kind = readKind; kindKnown = true;
+    minLimit = kind == LIMIT_POWER ? LIMIT_MIN_KW : LIMIT_MIN_AMP;
+    maxLimit = kind == LIMIT_POWER ? LIMIT_MAX_KW : LIMIT_MAX_AMP;
     if (spec->ramActive) // a board whose active limit is not mapped keeps it unknown (-1)
       readFloat(kind == LIMIT_CURRENT && spec->ramActiveAmp ? spec->ramActiveAmp : spec->ramActive, a);
     if (e != enable || l != limit || a != active)
@@ -901,11 +1031,22 @@ struct LimitControl : X10aClient
     return v < minLimit ? minLimit : v > maxLimit ? maxLimit : v;
   }
 
-  // Writes limit 1 and, when needed, the enable byte. The enable byte found first is remembered.
+  // Writes limit 1 and, when needed, the enable byte. What the unit held before the first write is remembered
+  // first: its enable byte and its limit 1, both put back when the limit is switched off.
   bool apply(float v, unsigned long now)
   {
-    if (spec == nullptr || enable < 0)
+    LimitKind expectedKind = kind;
+    if (status != CONTROL_READY || !isfinite(v) || !readBack(now) || kind != expectedKind)
       return false;
+    // After a restart of ESPAltherma with nothing remembered, an enable byte at 1 may be the one written from
+    // here: it is not taken for the unit's own
+    if (!on && origEnable < 0 && !(resumed && enable == 1))
+    {
+      origEnable = enable;
+      origLimit = limit;
+      stateChanged = true;
+    }
+    v = clamp(v); // includes automatic reapplication of a held/restored value
     bool ok;
     if (kind == LIMIT_POWER)
     {
@@ -920,37 +1061,59 @@ struct LimitControl : X10aClient
     }
     if (!ok)
       return false;
+    // The limit is in the unit from here on: should the enable byte not go through, the read-back writes it again
+    limit = v;
+    value = v;
+    on = true;
+    resumed = false;
+    stateChanged = changed = true;
     if (enable != 1)
     {
-      if (!on && origEnable < 0)
-        origEnable = enable; // the installer's own setting, put back when switched off
       uint8_t one = 1;
       if (!writeRamBytes(spec->ramEnable, &one, 1))
         return false;
       enable = 1;
     }
-    limit = v;
-    value = v;
-    on = true;
     applied = v;
     wroteAt = now;
     readAt = now + 5000 - LIMIT_READ_INTERVAL_MS; // read back once the board has recomputed
-    stateChanged = changed = true;
     return true;
   }
 
-  // Puts the enable byte back as found (or to "none") and forgets the limit.
+  // Puts limit 1 and the enable byte back as found before the first write ("none" when not known) and forgets
+  // the limit. A unit whose installer set a continuous limitation gets it back, at its own value.
   bool release(unsigned long now)
   {
-    if (spec == nullptr)
+    LimitKind expectedKind = kind;
+    if (status != CONTROL_READY || !readBack(now) || kind != expectedKind)
       return false;
-    uint8_t e = (uint8_t)(origEnable >= 0 && origEnable != 1 ? origEnable : 0);
+    bool origPlausible = kind == LIMIT_POWER ? (origLimit >= 1 && origLimit <= 25) : (origLimit >= 4 && origLimit <= 75);
+    if (origPlausible && origLimit != limit)
+    {
+      bool ok;
+      if (kind == LIMIT_POWER)
+      {
+        uint8_t f[4];
+        memcpy(f, &origLimit, 4);
+        ok = writeRamBytes(spec->ramKw, f, 4);
+      }
+      else
+      {
+        uint8_t b = (uint8_t)(origLimit + 0.5f);
+        ok = writeRamBytes(spec->ramAmp, &b, 1);
+      }
+      if (!ok)
+        return false;
+      limit = origLimit;
+    }
+    uint8_t e = origEnable >= 0 && origEnable <= 2 ? (uint8_t)origEnable : 0;
     if (!writeRamBytes(spec->ramEnable, &e, 1))
       return false;
     enable = e;
     on = false;
     value = -1;
     origEnable = -1;
+    origLimit = -1;
     released = true;
     wroteAt = now;
     readAt = now + 5000 - LIMIT_READ_INTERVAL_MS;
@@ -961,13 +1124,28 @@ struct LimitControl : X10aClient
   void request(float v) { wanted = v; }
   void requestOn(bool wantOn) { wantedOn = wantOn ? 1 : 0; }
 
+  // The option was switched off. True while a limit from here is still in a unit that can take its own
+  // limitation back: the caller keeps ticking, and the limit is switched off first.
+  bool leaving()
+  {
+    if (!on)
+      return false;
+    if (status != CONTROL_READY && status != CONTROL_NO_ANSWER)
+      return false;
+    if (status == CONTROL_READY && wantedOn != 0)
+      requestOn(false);
+    return true;
+  }
+
   // The limit the caller saved (from before a restart of ESPAltherma): applied once the unit is ready
-  void restore(bool savedOn, float savedValue, int savedOrigEnable)
+  void restore(bool savedOn, float savedValue, int savedOrigEnable, float savedOrigLimit = -1)
   {
     if (!savedOn || savedValue < 0)
       return;
     value = savedValue;
     origEnable = savedOrigEnable;
+    origLimit = savedOrigLimit;
+    resumed = true;
     wantedOn = 1;
   }
 
@@ -995,7 +1173,9 @@ struct LimitControl : X10aClient
     {
       wanted = -1;
       wantedOn = -1;
-      float v = clamp(w >= 0 ? w : value);
+      // Switched on with no value given: the limit applied from here before, else the unit's own limit 1, the
+      // value the number shows while off. (It was the minimum, 1 kW or 4 A.)
+      float v = clamp(w >= 0 ? w : value >= 0 ? value : limit);
       if (v >= minLimit && !apply(v, now))
         identify(now);
       return;
@@ -1009,11 +1189,7 @@ struct LimitControl : X10aClient
       }
       // The heat pump restarted (its settings came back) or someone changed them: apply ours again
       if (on && value >= 0 && (enable != 1 || limit < value - 0.05f || limit > value + 0.05f) && now - wroteAt >= LIMIT_REAPPLY_MS)
-      {
-        int keep = origEnable;
-        apply(value, now);
-        origEnable = keep;
-      }
+        apply(value, now); // `on` is set: what the unit held before the first write stays as remembered
     }
     else if (now - checkedAt >= CONTROL_CHECK_INTERVAL_MS)
       identify(now);

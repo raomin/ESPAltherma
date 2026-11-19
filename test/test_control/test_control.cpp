@@ -19,6 +19,9 @@ struct FakeUnit
     uint8_t memory[1024]; // the board's memory, by offset
     uint8_t ram[0x6000];  // RAM, by address
     bool answer = true;
+    int loseRamWrite = -1; // this many RAM writes go through, then loseCount are lost: not written, not acknowledged (-1: none)
+    int loseCount = 2;     // two by default: the second try of the same write is lost as well
+    int loseReplies = 0;   // this many exchanges of any kind get no answer
     int ramWrites = 0, memoryWrites = 0, badWrites = 0;
 
     void reset()
@@ -30,6 +33,9 @@ struct FakeUnit
         memset(memory, 0, sizeof(memory));
         memset(ram, 0, sizeof(ram));
         answer = true;
+        loseRamWrite = -1;
+        loseCount = 2;
+        loseReplies = 0;
         ramWrites = memoryWrites = badWrites = 0;
         // hot water: weather-dependent tank mode, curve 52 (low outdoor temperature) to 48 (high),
         // limits 35+21 / 45+11 -> 45..55, effective 48 capped by a ceiling of 51
@@ -113,6 +119,8 @@ struct FakeUnit
             const ControlProfile &p = CONTROL_PROFILES[i];
             if (addr == p.dhw.ramA || addr == p.dhw.ramB || addr == p.lwt.ramA || addr == p.lwt.ramB)
                 return true;
+            if (p.cool.ramA && (addr == p.cool.ramA || addr == p.cool.ramB || addr == p.add.ramA || addr == p.add.ramB))
+                return true;
             if (p.limit.ramEnable && (addr == p.limit.ramEnable || addr == p.limit.ramKw || addr == p.limit.ramAmp))
                 return true;
         }
@@ -138,6 +146,11 @@ struct FakeUnit
     {
         if (!answer || len < 3 || frame[0] != len - 1 || checksum(frame, len - 1) != frame[len - 1])
             return 0;
+        if (loseReplies > 0)
+        {
+            loseReplies--;
+            return 0;
+        }
         uint8_t cmd = frame[1];
         const uint8_t *data = frame + 2;
         size_t n = len - 3, out = 0;
@@ -165,6 +178,14 @@ struct FakeUnit
         }
         else if (cmd == 0x46 && n >= 3 && n <= 6)
         {
+            if (loseRamWrite == 0)
+            {
+                if (--loseCount <= 0)
+                    loseRamWrite = -1;
+                return 0;
+            }
+            if (loseRamWrite > 0)
+                loseRamWrite--;
             uint16_t addr = data[0] | data[1] << 8;
             ramWrites++;
             if (!isCurveWord(addr))
@@ -175,7 +196,7 @@ struct FakeUnit
         {
             uint16_t off = data[0] | data[1] << 8;
             memoryWrites++;
-            if (off != 366 && off != 367 && off != 372 && off != 373)
+            if (off != 366 && off != 367 && off != 372 && off != 373 && off != 377 && off != 378 && off != 358 && off != 359)
                 badWrites++;
             memory[off] = data[2];
         }
@@ -331,7 +352,8 @@ void test_applies_then_saves()
     TEST_ASSERT_EQUAL(50, c.targetLo);
     TEST_ASSERT_EQUAL(50, c.applied);
     TEST_ASSERT_TRUE(c.changed);
-    TEST_ASSERT_EQUAL(50, (int)c.wanted); // still pending its save
+    TEST_ASSERT_EQUAL(-1, (int)c.wanted); // taken by the tick
+    TEST_ASSERT_EQUAL(50, c.pendingA);     // and still pending its save
     c.tick(2000 + CONTROL_SAVE_DELAY_MS - 1);
     TEST_ASSERT_EQUAL(0, unit.memoryWrites);
     c.tick(2000 + CONTROL_SAVE_DELAY_MS);
@@ -339,7 +361,7 @@ void test_applies_then_saves()
     TEST_ASSERT_EQUAL((50 - 35) << 2 | 0x01, unit.memory[366]); // flag bits kept
     TEST_ASSERT_EQUAL((50 - 45) << 2 | 0x03, unit.memory[367]);
     TEST_ASSERT_EQUAL(50, c.saved);
-    TEST_ASSERT_EQUAL(-1, (int)c.wanted);
+    TEST_ASSERT_EQUAL(-1, c.pendingA);
     TEST_ASSERT_EQUAL(2, unit.ramWrites); // not written again
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
@@ -829,6 +851,417 @@ void test_ram_only_opens_the_leaving_water_range_to_the_units_own()
     TEST_ASSERT_EQUAL(55, d.maxTarget);
 }
 
+// The cooling curve and the additional zone's curve of 20002203 (doc/memory-20002203.md), as read on an EHBX08EF6V:
+// cooling 17 at the high outdoor temperature and 20 at the low one ([9-03]..[9-02] 17..22), its target in the
+// leaving water's word; the additional zone 35 / 50 (20..45 and 20..55), its target in a word of its own
+static const ControlProfile &coolingUnit()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    const uint8_t cooling[5] = {0xFF, 0x00, 6, 17, 8}, mild[5] = {0x00, 0x00, 26, 20, 8}, cold[5] = {0xFF, 0x00, 36, 20, 8};
+    memcpy(unit.ram + p.cool.slotA, cooling, 5);
+    memcpy(unit.ram + p.cool.slotB, cooling, 5);
+    memcpy(unit.ram + p.add.slotA, mild, 5);
+    memcpy(unit.ram + p.add.slotB, cold, 5);
+    unit.setWord(p.cool.ramA, 17 << 8);
+    unit.setWord(p.cool.ramB, 20 << 8);
+    unit.setWord(p.cool.ramEffective, 22 << 8);
+    unit.setWord(p.add.ramA, 35 << 8);
+    unit.setWord(p.add.ramB, 50 << 8);
+    unit.setWord(p.add.ramEffective, 35 << 8);
+    unit.memory[378] = (uint8_t)((17 - 17) << 2 | 0x03);
+    unit.memory[377] = (uint8_t)((20 - 17) << 2 | 0x03);
+    unit.memory[358] = (uint8_t)((35 - 20) << 2 | 0x03);
+    unit.memory[359] = (uint8_t)((50 - 20) << 2 | 0x03);
+    return p;
+}
+
+void test_cooling_target_writes_its_own_curve_on_20002203()
+{
+    const ControlProfile &p = coolingUnit();
+    CurveControl c = fresh(CONTROL_COOL);
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(17, c.minTarget);
+    TEST_ASSERT_EQUAL(22, c.maxTarget);
+    TEST_ASSERT_EQUAL(17, c.target);   // high outdoor temperature point, [1-09]
+    TEST_ASSERT_EQUAL(20, c.targetLo); // low outdoor temperature point, [1-08]
+    TEST_ASSERT_EQUAL(22, c.effective);
+    c.request(19);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(19 << 8, unit.word(p.cool.ramA));
+    TEST_ASSERT_EQUAL(19 << 8, unit.word(p.cool.ramB));
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.dhw.ramA)); // the other curves untouched
+    TEST_ASSERT_EQUAL(36 << 8, unit.word(p.lwt.ramA));
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL((19 - 17) << 2 | 0x03, unit.memory[377]);
+    TEST_ASSERT_EQUAL((19 - 17) << 2 | 0x03, unit.memory[378]);
+    TEST_ASSERT_EQUAL(19, c.saved);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+    // the main zone not weather dependent: refused, as the leaving water target
+    unit.memory[374] = 0x00;
+    TEST_ASSERT_FALSE(c.identify(3000 + CONTROL_SAVE_DELAY_MS));
+    TEST_ASSERT_EQUAL(CONTROL_NOT_CURVE_MODE, c.status);
+}
+
+void test_additional_zone_target_writes_its_own_curve_on_20002203()
+{
+    const ControlProfile &p = coolingUnit();
+    unit.memory[374] = 0x00; // its own setpoint mode is not known: the main zone's does not stop it
+    CurveControl c = fresh(CONTROL_ADD);
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(20, c.minTarget);
+    TEST_ASSERT_EQUAL(45, c.maxTarget); // the mild point's record, as for the main zone
+    TEST_ASSERT_EQUAL(35, c.target);    // [0-00]
+    TEST_ASSERT_EQUAL(50, c.targetLo);  // [0-01]
+    TEST_ASSERT_EQUAL(35, c.effective);
+    c.setRamOnly(true, 1500); // RAM only: the cold point's range, up to [9-06]
+    TEST_ASSERT_EQUAL(55, c.maxTarget);
+    c.request(48);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.add.ramA));
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.add.ramB));
+    TEST_ASSERT_EQUAL(48, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    c.requestRestore();
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(35 << 8, unit.word(p.add.ramA));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(p.add.ramB));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+void test_cooling_and_additional_zone_only_where_mapped()
+{
+    const ControlKind kinds[] = {CONTROL_COOL, CONTROL_ADD};
+    for (ControlKind kind : kinds)
+    {
+        CurveControl c = fresh(kind); // the default board, 18002904
+        TEST_ASSERT_FALSE(c.identify(1000));
+        TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, c.status);
+        c.request(20);
+        c.tick(2000);
+    }
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    size_t mapped = 0;
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+        mapped += CONTROL_PROFILES[i].cool.ramA != 0;
+    TEST_ASSERT_EQUAL(1, mapped);
+}
+
+// A second request that arrives while the first one is being written is applied at the next tick
+void test_request_arriving_during_a_tick_is_kept()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(-1, (int)c.wanted); // taken by the tick
+    c.request(53);                         // as if it had arrived while the tick was writing
+    c.tick(2100);
+    TEST_ASSERT_EQUAL(53 << 8, unit.word(0x187A));
+    c.tick(2100 + CONTROL_SAVE_DELAY_MS + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(53, c.saved);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// One lost frame is asked for again: the control stays ready
+void test_one_lost_reply_is_asked_again()
+{
+    CurveControl c = fresh();
+    unit.loseReplies = 1;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL_STRING("18002904", c.softwareId);
+    unit.loseReplies = 1;
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(CONTROL_READY, c.status);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A unit that has the 'L' command is not read through registry 0x60 when its 'L' reply is lost: it answers
+// that registry too, and looked like another board (the hold dropped, the control "unsupported")
+void test_lost_software_reply_does_not_make_another_board_of_the_unit()
+{
+    unit.reg60[15] = 0x82;
+    unit.reg60[14] = 0x94; // what a recent unit has there
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(47);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(47, c.held);
+    unit.loseReplies = 2; // 'L' and its second try
+    TEST_ASSERT_FALSE(c.identify(3000));
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, c.status);
+    TEST_ASSERT_EQUAL_STRING("18002904", c.softwareId);
+    TEST_ASSERT_EQUAL(47, c.held);
+    TEST_ASSERT_TRUE(c.identify(4000));
+    TEST_ASSERT_EQUAL(47, c.held);
+
+    // the first identification of all can still go to the registry; the next one corrects it without dropping a hold
+    CurveControl f = fresh();
+    f.ramOnly = true;
+    unit.loseReplies = 2;
+    TEST_ASSERT_FALSE(f.identify(1000));
+    TEST_ASSERT_EQUAL_STRING("8294", f.softwareId);
+    TEST_ASSERT_EQUAL(CONTROL_UNSUPPORTED, f.status);
+    f.setHeld(47); // kept by the caller from before
+    TEST_ASSERT_TRUE(f.identify(2000));
+    TEST_ASSERT_EQUAL_STRING("18002904", f.softwareId);
+    TEST_ASSERT_EQUAL(47, f.held);
+}
+
+// The unit's curve is recorded before the first write. The second point's write fails: the curve recorded is the
+// unit's own, not the half-written one, and the restore puts it back
+void test_original_curve_is_recorded_before_a_write_that_fails_halfway()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    unit.loseRamWrite = 1; // the first point goes in, the second is lost twice
+    c.request(50);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8)); // half written
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_EQUAL(52, c.origB);
+    TEST_ASSERT_TRUE(c.origChanged);
+    c.request(50); // asked again: what is recorded does not move
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(50 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_EQUAL(52, c.origB);
+    c.requestRestore();
+    c.tick(4000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The RAM holds a flat curve left by an earlier hold the board no longer knows of (its settings were erased): the
+// curve recorded is the one of the unit's memory. A RAM not loaded yet (zeros) and a memory that does not
+// answer: nothing is recorded
+void test_original_curve_comes_from_the_units_memory()
+{
+    unit.setWord(0x187A, 50 << 8);
+    unit.setWord(0x18B8, 50 << 8);
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(47);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(48, c.origA);
+    TEST_ASSERT_EQUAL(52, c.origB);
+    c.requestRestore();
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+
+    CurveControl z = fresh();
+    z.minA = 35; z.maxA = 55; z.minB = 45; z.maxB = 55;
+    z.target = z.targetLo = 0;
+    z.savedA = z.savedB = -1;
+    TEST_ASSERT_FALSE(z.curveInRange(z.target, z.targetLo));
+    TEST_ASSERT_TRUE(z.curveInRange(48, 52));
+    TEST_ASSERT_FALSE(z.curveInRange(48, 44));
+}
+
+// A curve kept from before that this unit cannot hold is forgotten at the restore, and nothing is written
+void test_restore_of_a_curve_out_of_range_writes_nothing()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.setOriginal(0, 0);
+    c.requestRestore();
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    TEST_ASSERT_EQUAL(-1, c.origA);
+    TEST_ASSERT_TRUE(c.origChanged);
+}
+
+// A hold with no curve recorded (the first target was what the RAM already had), then the RAM changed: the
+// restore takes the curve of the memory, which this mode never writes
+void test_restore_of_a_hold_without_a_recorded_curve_takes_the_memorys()
+{
+    unit.setWord(0x187A, 50 << 8);
+    unit.setWord(0x18B8, 50 << 8);
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(50); // already there: nothing written, nothing recorded
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(50, c.held);
+    TEST_ASSERT_EQUAL(-1, c.origA);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites);
+    c.requestRestore();
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
+// The option is switched off with a target from here in the unit: its own curve goes back, in the memory too
+// when the target was saved there, and only then the control stops
+void test_option_switched_off_puts_the_units_curve_back_first()
+{
+    CurveControl c = fresh();
+    TEST_ASSERT_FALSE(c.leaving()); // nothing of ours: stops at once
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_FALSE(c.leaving());
+    c.request(50);
+    c.tick(2000);
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS); // saved in the memory
+    TEST_ASSERT_EQUAL(50, c.saved);
+    unsigned long t = 2000 + CONTROL_SAVE_DELAY_MS + CONTROL_SAVE_INTERVAL_MS;
+    TEST_ASSERT_TRUE(c.leaving());
+    c.tick(t);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(0x18B8));
+    TEST_ASSERT_EQUAL((uint8_t)((48 - 35) << 2 | 0x01), unit.memory[366]);
+    TEST_ASSERT_EQUAL((uint8_t)((52 - 45) << 2 | 0x03), unit.memory[367]);
+    TEST_ASSERT_FALSE(c.leaving());
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+
+    // a hold, and a unit that does not answer when the option goes off: it waits for the unit
+    unit.reset();
+    CurveControl h = fresh();
+    h.ramOnly = true;
+    TEST_ASSERT_TRUE(h.identify(1000));
+    h.request(47);
+    h.tick(2000);
+    unit.answer = false;
+    h.identify(3000);
+    TEST_ASSERT_EQUAL(CONTROL_NO_ANSWER, h.status);
+    TEST_ASSERT_TRUE(h.leaving());
+    unit.answer = true;
+    TEST_ASSERT_TRUE(h.identify(4000));
+    TEST_ASSERT_TRUE(h.leaving());
+    h.tick(5000);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(0x187A));
+    TEST_ASSERT_EQUAL(-1, h.held);
+    TEST_ASSERT_FALSE(h.leaving());
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
+// The lower RAM range belongs only to the verified software; persistent targets retain the field-setting range.
+void test_dhw_low_range_only_on_verified_software_in_ram_only()
+{
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; ++i)
+    {
+        const ControlProfile &p = CONTROL_PROFILES[i];
+        if (!p.dhw.ramA) continue;
+        unit.reset(); unit.board(p);
+        CurveControl c = fresh();
+        TEST_ASSERT_TRUE(c.identify(1000));
+        TEST_ASSERT_EQUAL(45, c.minTarget);
+        c.setRamOnly(true, 2000);
+        TEST_ASSERT_EQUAL(strcmp(p.softwareId, "20002203") == 0 ? 25 : 45, c.minTarget);
+        TEST_ASSERT_EQUAL(55, c.maxTarget);
+        TEST_ASSERT_EQUAL(35, c.minA);
+        TEST_ASSERT_EQUAL(45, c.minB);
+        c.setRamOnly(false, 3000);
+        TEST_ASSERT_EQUAL(45, c.minTarget);
+        TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    }
+}
+
+void test_dhw_low_target_clamps_and_restores_without_persistent_writes()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    CurveControl c = fresh(); c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    uint8_t a = unit.memory[366], b = unit.memory[367];
+    c.request(20); c.tick(2000); // the effective target cannot go below 25 on the tested unit
+    TEST_ASSERT_EQUAL(25, c.held);
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramB));
+    c.tick(2000 + CONTROL_SAVE_DELAY_MS);
+    c.tick(2000 + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(a, unit.memory[366]);
+    TEST_ASSERT_EQUAL(b, unit.memory[367]);
+    TEST_ASSERT_FALSE(c.persist(25, 25)); // below the encoding bases: never wrap into another stored value
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    c.requestRestore(); c.tick(3000 + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(p.dhw.ramB));
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// Unticking RAM only with a target held under the memory's minimum: the unit's curve comes back, as with the
+// restore button, and the memory is not given a 45 nobody chose
+void test_dhw_low_hold_gives_the_units_curve_back_when_ram_only_is_disabled()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    CurveControl c = fresh(); c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    uint8_t a = unit.memory[366], b = unit.memory[367];
+    c.request(25); c.tick(2000);
+    TEST_ASSERT_EQUAL(25, c.held);
+    c.setRamOnly(false, 3000);
+    TEST_ASSERT_EQUAL(45, c.minTarget);
+    c.tick(3100);
+    c.tick(3200);
+    TEST_ASSERT_EQUAL(48 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(52 << 8, unit.word(p.dhw.ramB));
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(-1, c.origA); // nothing left to restore
+    c.tick(3200 + CONTROL_SAVE_DELAY_MS);
+    c.tick(3200 + CONTROL_SAVE_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(a, unit.memory[366]);
+    TEST_ASSERT_EQUAL(b, unit.memory[367]);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// A held target the memory can hold is still saved there when RAM only is unticked
+void test_dhw_hold_within_the_memory_range_is_saved_when_ram_only_is_disabled()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    CurveControl c = fresh(); c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(47); c.tick(2000);
+    TEST_ASSERT_EQUAL(47, c.held);
+    c.setRamOnly(false, 3000);
+    c.tick(3100);
+    c.tick(3100 + CONTROL_SAVE_DELAY_MS);
+    TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(47 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(47, c.saved);
+    TEST_ASSERT_EQUAL(2, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+void test_dhw_low_hold_returns_after_ram_is_reloaded_and_esp_restarts()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20002203");
+    unit.board(p);
+    CurveControl c = fresh(); c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(25); c.tick(2000);
+    unit.setWord(p.dhw.ramA, 48 << 8); unit.setWord(p.dhw.ramB, 52 << 8);
+    c.tick(2000 + CONTROL_READ_INTERVAL_MS);
+    c.tick(2010 + CONTROL_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramB));
+    unit.setWord(p.dhw.ramA, 48 << 8); unit.setWord(p.dhw.ramB, 52 << 8);
+    CurveControl restarted = fresh(); restarted.ramOnly = true;
+    TEST_ASSERT_TRUE(restarted.identify(1000));
+    restarted.setHeld(25); // the caller restores this from RTC/config after an ESP restart
+    restarted.tick(2000); restarted.tick(2010);
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(25 << 8, unit.word(p.dhw.ramB));
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+}
+
 static LimitControl freshLimit()
 {
     LimitControl c;
@@ -872,6 +1305,56 @@ void test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff()
     unit.answer=true;c.tick(now+CONTROL_RETRY_FIRST_MS);TEST_ASSERT_EQUAL(CONTROL_READY,c.status);
 }
 
+void test_power_limit_rejects_unloaded_or_implausible_ram_without_writes()
+{
+    for (int fault=0;fault<7;fault++)
+    {
+        unit.reset();
+        if (fault==0) memset(unit.ram,0,sizeof(unit.ram)); // correct software ID, RAM not loaded
+        if (fault==1) unit.ram[0x2FE9]=0xFF;
+        if (fault==2) unit.ram[0x2FE8]=3;
+        if (fault==3) unit.setFloat(0x1880,NAN);
+        if (fault==4) unit.setFloat(0x1880,INFINITY);
+        if (fault==5) unit.setFloat(0x1880,0.0f);
+        if (fault==6) {unit.ram[0x2FE9]=0;unit.ram[0x2FC8]=255;}
+        LimitControl c=freshLimit();c.restore(true,5,0);
+        TEST_ASSERT_FALSE(c.identify(1000));
+        c.tick(2000);TEST_ASSERT_EQUAL(0,unit.ramWrites);
+        TEST_ASSERT_FALSE(c.apply(5,3000));TEST_ASSERT_FALSE(c.release(3000));
+        TEST_ASSERT_EQUAL(0,unit.ramWrites);
+    }
+}
+
+void test_power_limit_revalidates_ram_before_new_write_and_release()
+{
+    LimitControl c=freshLimit();TEST_ASSERT_TRUE(c.identify(1000));
+    memset(unit.ram,0,sizeof(unit.ram)); // unit restarts after successful identification
+    c.request(5);c.tick(2000);TEST_ASSERT_EQUAL(0,unit.ramWrites);
+    unit.reset();TEST_ASSERT_TRUE(c.identify(3000));c.request(5);c.tick(4000);
+    int writes=unit.ramWrites;
+    unit.ram[0x2FE8]=255;c.requestOn(false);c.tick(5000);
+    TEST_ASSERT_EQUAL(writes,unit.ramWrites);
+}
+
+void test_power_limit_kind_change_drops_hold_instead_of_reinterpreting_kw_as_amps()
+{
+    LimitControl c=freshLimit();TEST_ASSERT_TRUE(c.identify(1000));c.request(5);c.tick(2000);
+    int writes=unit.ramWrites;
+    unit.ram[0x2FE9]=0; // installer changed the unit's limitation type to amperes
+    c.tick(2000+LIMIT_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(LIMIT_CURRENT,c.kind);TEST_ASSERT_FALSE(c.on);
+    TEST_ASSERT_EQUAL_FLOAT(-1,c.value);TEST_ASSERT_EQUAL(writes,unit.ramWrites);
+    TEST_ASSERT_EQUAL(50,unit.ram[0x2FC8]);
+}
+
+void test_power_limit_reapply_clamps_a_previously_held_value()
+{
+    LimitControl c=freshLimit();TEST_ASSERT_TRUE(c.identify(1000));c.request(5);c.tick(2000);
+    c.value=30;unit.setFloat(0x1880,20);
+    c.tick(2000+LIMIT_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_FLOAT(LIMIT_MAX_KW,unit.getFloat(0x1880));
+}
+
 // The power limit: identified from the unit's own state, applied as limit 1 + "continuous", read back, released
 void test_power_limit_applies_and_releases()
 {
@@ -902,6 +1385,163 @@ void test_power_limit_applies_and_releases()
     TEST_ASSERT_TRUE(c.released);
     TEST_ASSERT_EQUAL(0, unit.badWrites);
     TEST_ASSERT_EQUAL(0, unit.memoryWrites); // never the board's memory
+}
+
+// Switched on with no value (the switch in Home Assistant, the box of the page): the unit's own limit 1, the value
+// the number shows while off. It was the minimum, 1 kW or 4 A.
+void test_power_limit_switched_on_without_a_value_takes_the_units_own_limit()
+{
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.requestOn(true);
+    c.tick(2000);
+    TEST_ASSERT_TRUE(c.on);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, c.value);
+    // a value, off, then on again: the unit's own limit is back in between, and it is the one taken
+    c.request(3.0f);
+    c.tick(3000);
+    TEST_ASSERT_EQUAL_FLOAT(3.0f, unit.getFloat(0x1880));
+    c.requestOn(false);
+    c.tick(4000);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    c.requestOn(true);
+    c.tick(5000);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    // amperes: the unit's 50 A, not 4
+    unit.reset();
+    unit.ram[0x2FE9] = 0;
+    LimitControl a = freshLimit();
+    TEST_ASSERT_TRUE(a.identify(1000));
+    a.requestOn(true);
+    a.tick(2000);
+    TEST_ASSERT_EQUAL(50, unit.ram[0x2FC8]);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The installer set a limitation of his own (continuous at 16 A, or by the digital inputs): switching ours off
+// puts his enable byte and his limit 1 back. It wrote "none" over a continuous one and left our value in limit 1.
+void test_power_limit_off_puts_the_installers_limitation_back()
+{
+    unit.ram[0x2FE9] = 0; // amperes
+    unit.ram[0x2FE8] = 1; // continuous
+    unit.ram[0x2FC8] = 16;
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(10.0f);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(10, unit.ram[0x2FC8]);
+    TEST_ASSERT_EQUAL(1, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(16.0f, c.origLimit);
+    c.request(8.0f); // a second value does not change what is remembered
+    c.tick(3000);
+    TEST_ASSERT_EQUAL_FLOAT(16.0f, c.origLimit);
+    c.requestOn(false);
+    c.tick(4000);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL(16, unit.ram[0x2FC8]);
+    TEST_ASSERT_FALSE(c.on);
+    TEST_ASSERT_EQUAL(-1, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(-1, c.origLimit);
+
+    unit.reset();
+    unit.ram[0x2FE8] = 2; // by the digital inputs, kW
+    unit.setFloat(0x1880, 6.5f);
+    LimitControl d = freshLimit();
+    TEST_ASSERT_TRUE(d.identify(1000));
+    d.request(3.0f);
+    d.tick(2000);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    d.requestOn(false);
+    d.tick(3000);
+    TEST_ASSERT_EQUAL(2, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(6.5f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// ESPAltherma restarted with a limit on. What it remembered of the unit comes back with it; with nothing
+// remembered (a limit set by an older firmware), an enable byte at 1 is not taken for the unit's own
+void test_power_limit_resumed_after_a_restart_keeps_what_was_remembered()
+{
+    unit.ram[0x2FE9] = 0;
+    unit.ram[0x2FE8] = 1; // our own 1, still in the unit
+    unit.ram[0x2FC8] = 10;
+    LimitControl c = freshLimit();
+    c.restore(true, 10.0f, 1, 16.0f);
+    c.tick(1000);
+    c.tick(1500);
+    TEST_ASSERT_TRUE(c.on);
+    TEST_ASSERT_EQUAL(1, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(16.0f, c.origLimit);
+    c.requestOn(false);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL(16, unit.ram[0x2FC8]);
+
+    unit.reset();
+    unit.ram[0x2FE9] = 0;
+    unit.ram[0x2FE8] = 1;
+    unit.ram[0x2FC8] = 10;
+    LimitControl o = freshLimit();
+    o.restore(true, 10.0f, -1); // nothing remembered
+    o.tick(1000);
+    o.tick(1500);
+    TEST_ASSERT_TRUE(o.on);
+    TEST_ASSERT_EQUAL(-1, o.origEnable); // the 1 read now may be ours
+    o.requestOn(false);
+    o.tick(2000);
+    TEST_ASSERT_EQUAL(0, unit.ram[0x2FE8]); // as before: none
+    TEST_ASSERT_EQUAL(10, unit.ram[0x2FC8]);
+
+    unit.reset(); // nothing remembered, but the unit restarted too: its enable byte is not 1, so it is its own
+    unit.ram[0x2FE8] = 2;
+    LimitControl r = freshLimit();
+    r.restore(true, 5.0f, -1);
+    r.tick(1000);
+    r.tick(1500);
+    TEST_ASSERT_EQUAL(2, r.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, r.origLimit);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The limit went in but the enable byte did not: the limit counts as on, and the next read-back writes the byte
+void test_power_limit_enable_byte_lost_is_written_again()
+{
+    LimitControl c = freshLimit();
+    TEST_ASSERT_TRUE(c.identify(1000));
+    unit.loseRamWrite = 1; // the limit goes through, the enable byte is lost
+    c.request(4.0f);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL_FLOAT(4.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_EQUAL(0, unit.ram[0x2FE8]);
+    TEST_ASSERT_TRUE(c.on);
+    TEST_ASSERT_EQUAL(0, c.origEnable);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, c.origLimit);
+    c.tick(2000 + LIMIT_READ_INTERVAL_MS + LIMIT_REAPPLY_MS);
+    c.tick(2000 + 2 * LIMIT_READ_INTERVAL_MS + LIMIT_REAPPLY_MS);
+    TEST_ASSERT_EQUAL(1, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL(0, c.origEnable); // still the unit's own
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+// The option is switched off with a limit on: the unit's own limitation goes back first
+void test_power_limit_option_switched_off_releases_first()
+{
+    unit.ram[0x2FE8] = 2;
+    LimitControl c = freshLimit();
+    TEST_ASSERT_FALSE(c.leaving());
+    TEST_ASSERT_TRUE(c.identify(1000));
+    c.request(3.0f);
+    c.tick(2000);
+    TEST_ASSERT_TRUE(c.leaving());
+    c.tick(3000);
+    TEST_ASSERT_EQUAL(2, unit.ram[0x2FE8]);
+    TEST_ASSERT_EQUAL_FLOAT(20.0f, unit.getFloat(0x1880));
+    TEST_ASSERT_FALSE(c.on);
+    TEST_ASSERT_FALSE(c.leaving());
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
 // After a restart of the heat pump its own settings are back: the limit is written again, once per minute at most
@@ -1399,10 +2039,35 @@ int main(int, char **)
     RUN_TEST(test_ram_only_hold_from_the_saved_configuration);
     RUN_TEST(test_ram_only_hold_is_written_within_the_limits);
     RUN_TEST(test_ram_only_opens_the_leaving_water_range_to_the_units_own);
+    RUN_TEST(test_cooling_target_writes_its_own_curve_on_20002203);
+    RUN_TEST(test_additional_zone_target_writes_its_own_curve_on_20002203);
+    RUN_TEST(test_cooling_and_additional_zone_only_where_mapped);
     RUN_TEST(test_power_limit_retries_early_with_backoff_and_keeps_restored_request);
     RUN_TEST(test_power_limit_retry_at_time_zero_does_not_flood_the_bus_and_reset_is_immediate);
     RUN_TEST(test_power_limit_retry_is_capped_and_ready_failure_restarts_short_backoff);
+    RUN_TEST(test_power_limit_rejects_unloaded_or_implausible_ram_without_writes);
+    RUN_TEST(test_power_limit_revalidates_ram_before_new_write_and_release);
+    RUN_TEST(test_power_limit_kind_change_drops_hold_instead_of_reinterpreting_kw_as_amps);
+    RUN_TEST(test_power_limit_reapply_clamps_a_previously_held_value);
+    RUN_TEST(test_dhw_low_range_only_on_verified_software_in_ram_only);
+    RUN_TEST(test_dhw_low_target_clamps_and_restores_without_persistent_writes);
+    RUN_TEST(test_dhw_low_hold_gives_the_units_curve_back_when_ram_only_is_disabled);
+    RUN_TEST(test_dhw_hold_within_the_memory_range_is_saved_when_ram_only_is_disabled);
+    RUN_TEST(test_dhw_low_hold_returns_after_ram_is_reloaded_and_esp_restarts);
     RUN_TEST(test_power_limit_applies_and_releases);
+    RUN_TEST(test_power_limit_switched_on_without_a_value_takes_the_units_own_limit);
+    RUN_TEST(test_power_limit_off_puts_the_installers_limitation_back);
+    RUN_TEST(test_power_limit_resumed_after_a_restart_keeps_what_was_remembered);
+    RUN_TEST(test_power_limit_enable_byte_lost_is_written_again);
+    RUN_TEST(test_power_limit_option_switched_off_releases_first);
+    RUN_TEST(test_request_arriving_during_a_tick_is_kept);
+    RUN_TEST(test_one_lost_reply_is_asked_again);
+    RUN_TEST(test_lost_software_reply_does_not_make_another_board_of_the_unit);
+    RUN_TEST(test_original_curve_is_recorded_before_a_write_that_fails_halfway);
+    RUN_TEST(test_original_curve_comes_from_the_units_memory);
+    RUN_TEST(test_restore_of_a_curve_out_of_range_writes_nothing);
+    RUN_TEST(test_restore_of_a_hold_without_a_recorded_curve_takes_the_memorys);
+    RUN_TEST(test_option_switched_off_puts_the_units_curve_back_first);
     RUN_TEST(test_power_limit_is_applied_again_after_the_unit_restarts);
     RUN_TEST(test_power_limit_restored_and_current_kind);
     RUN_TEST(test_power_limit_on_every_mapped_board);

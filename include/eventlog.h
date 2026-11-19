@@ -61,19 +61,24 @@ void eventCopy(EventRing &out)
   portEXIT_CRITICAL(&eventMux);
 }
 
-// Main loop only (NVS).
+// Main loop only (NVS). The consistent copy that is written lives on the heap for the time of the write (it
+// was 2.3 KB of RAM kept for good). Without the room for it the save is left for the next time it is due: the
+// history itself is in RTC memory and survives a restart, only a power cut needs the saved one.
 void eventSave()
 {
-  static EventRing copy;
+  eventSavedAt = millis();
+  EventRing *copy = (EventRing *)malloc(sizeof(EventRing));
+  if (copy == nullptr)
+    return; // still dirty: tried again in EVENT_SAVE_MS
   eventDirty = false;
-  eventCopy(copy);
+  eventCopy(*copy);
   Preferences prefs;
   if (prefs.begin(EVENT_NVS_NAMESPACE, false))
   {
-    prefs.putBytes("ring", &copy, sizeof(copy));
+    prefs.putBytes("ring", copy, sizeof(EventRing));
     prefs.end();
   }
-  eventSavedAt = millis();
+  free(copy);
 }
 
 // First thing at boot: numbers the boot, and recovers the history saved before a power cut.

@@ -111,10 +111,21 @@ public:
   bool runBeforeRestart = false; // the RTC block says a run was going on when the board restarted
   bool runStateKnown = false;    // a reading since the start told whether the compressor runs
 
+  // What a day's block can hold: a day's worth at most. The mark alone does not tell a day kept from before the
+  // restart from memory that holds something else behind a mark left there: seen on a board that went through a
+  // build with another layout, 9.1e11 kWh of heat for the day, published as such.
+  static bool plausible(const StatsDay &d)
+  {
+    for (int m = 0; m < 3; m++)
+      if (!(d.heatKWh[m] >= 0 && d.heatKWh[m] < 2000) || !(d.elecKWh[m] >= 0 && d.elecKWh[m] < 2000)) // a NAN fails too
+        return false;
+    return d.runSec <= 172800UL && d.buhSec <= 172800UL && d.day >= -1 && d.day < 100000;
+  }
+
   void begin(StatsDay *rtc)
   {
     day = rtc;
-    if (day->magic != STATS_MAGIC)
+    if (day->magic != STATS_MAGIC || !plausible(*day))
     {
       memset(day, 0, sizeof(*day)); // a power-up: the RTC memory holds anything
       day->magic = STATS_MAGIC;
@@ -144,6 +155,14 @@ public:
   }
 
   // One reading. epoch: the clock (0 when not set), uptime: seconds since boot.
+  // A cycle in which the unit gave no reading: no power to show and nothing added. The run in progress, the
+  // starts and the day stay as they are. The next reading counts the time since the last one like any other,
+  // unless the silence lasted more than ten minutes (update(): nothing is added across such a gap).
+  void noReading()
+  {
+    heatKW = elecKW = cop = NAN;
+  }
+
   void update(const StatsInput &in, uint32_t epoch, uint32_t uptime)
   {
     uint32_t now = epoch ? epoch : uptime;
@@ -163,7 +182,10 @@ public:
       if (day->day == -1)
         day->day = d;
     }
-    if (day->day != d)
+    // Only the clock tells that the day changed. A reading that comes before the clock is set (after a restart,
+    // where the clock did not survive it, until the time server answers) knows no day: it emptied the counters
+    // kept from before the restart (#663)
+    if (epoch && day->day != d)
       resetDay(d);
     float dt = haveSample && now > lastSampleAt ? (float)(now - lastSampleAt) : 0;
     if (dt > 600)
