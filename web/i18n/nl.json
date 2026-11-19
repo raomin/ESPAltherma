@@ -1,4 +1,7 @@
 {
+  "SG timeout (seconds)": "Smart Grid-time-out (seconden)",
+  "0 disables the timeout. Otherwise, resend the Smart Grid command before this interval ends; without a new command, the relays return to normal operation. Do not retain these commands.": "0 schakelt de time-out uit. Stuur anders de Smart Grid-opdracht opnieuw voordat de tijd verstrijkt. Zonder nieuwe opdracht keren de relais terug naar normaal bedrijf. Verstuur deze opdrachten zonder MQTT-retain.",
+  "SG timeout must be a whole number from 0 to 86400 seconds.": "De Smart Grid-time-out moet een geheel getal tussen 0 en 86400 seconden zijn.",
  "Home": "Start",
  "Setup": "Instellen",
  "Values": "Waarden",

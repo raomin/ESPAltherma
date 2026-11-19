@@ -4,6 +4,7 @@
 #include "fwupdate.h"
 #include "version.h"
 #include "comm.h"
+#include <esp_timer.h>
 
 #include "topics.h"
 #include "sgdiscovery.h"
@@ -511,52 +512,7 @@ void callbackTherm(byte *payload, unsigned int length)
   }
 }
 
-//Smartgrid callbacks
-void callbackSg(byte *payload, unsigned int length)
-{
-  payload[length] = '\0';
-
-  if (payload[0] == '0')
-  {
-    // Set SG 0 mode => SG1 = INACTIVE, SG2 = INACTIVE
-    digitalWrite(config.sg1Pin, sgInactiveState());
-    digitalWrite(config.sg2Pin, sgInactiveState());
-    sgMode = 0;
-    publishSgState();
-    mqttSerial.println("Set SG mode to 0 - Normal operation");
-  }
-  else if (payload[0] == '1')
-  {
-    // Set SG 1 mode => SG1 = INACTIVE, SG2 = ACTIVE
-    digitalWrite(config.sg1Pin, sgInactiveState());
-    digitalWrite(config.sg2Pin, sgActiveState());
-    sgMode = 1;
-    publishSgState();
-    mqttSerial.println("Set SG mode to 1 - Forced OFF");
-  }
-  else if (payload[0] == '2')
-  {
-    // Set SG 2 mode => SG1 = ACTIVE, SG2 = INACTIVE
-    digitalWrite(config.sg1Pin, sgActiveState());
-    digitalWrite(config.sg2Pin, sgInactiveState());
-    sgMode = 2;
-    publishSgState();
-    mqttSerial.println("Set SG mode to 2 - Recommended ON");
-  }
-  else if (payload[0] == '3')
-  {
-    // Set SG 3 mode => SG1 = ACTIVE, SG2 = ACTIVE
-    digitalWrite(config.sg1Pin, sgActiveState());
-    digitalWrite(config.sg2Pin, sgActiveState());
-    sgMode = 3;
-    publishSgState();
-    mqttSerial.println("Set SG mode to 3 - Forced ON");
-  }
-  else
-  {
-    mqttSerial.printf("Unknown message: %s\n", payload);
-  }
-}
+#include "sgcontrol.h"
 
 // The cooling demand relay: ON or OFF. Switching it on releases the heating demand first.
 void callbackCool(byte *payload, unsigned int length)
