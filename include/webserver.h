@@ -381,6 +381,8 @@ static void statusJson(JsonDocument &doc)
   hp["confirmed"] = config.modelConfirmed;
   if (unitMeter.model[0])
     hp["unit"] = (const char *)unitMeter.model; // the unit's own model name, as on its name plate
+  if (unitMeter.status == CONTROL_READY && unitMeter.disinfection >= 0)
+    hp["disinfection"] = unitMeter.disinfection == 1; // a scheduled disinfection of the tank running
   hp["values"] = converter.activeCount;
   hp["last_poll"] = lastPollMs ? (long)((millis() - lastPollMs) / 1000) : -1;
   hp["survey_running"] = surveyRequested || surveyInProgress;
