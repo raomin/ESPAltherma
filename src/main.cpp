@@ -23,6 +23,7 @@
 #include "comm.h"
 #include "registrypoll.h"
 #include "control.h"
+#include "unitsettings.h"
 #include "diii_comm.h"
 #include "stats.h"
 #include "survey.h"
@@ -64,6 +65,7 @@ CurveControl dhwControl, lwtControl;   //experimental hot water and leaving wate
 CurveControl coolControl, addControl; //experimental cooling and additional zone targets (control.h, 20002203), heat pump task
 static_assert(CONFIG_TARGET_COUNT == CONTROL_KIND_COUNT, "one configuration slot per target control");
 LimitControl limitControl;             //experimental power limit (control.h), heat pump task
+SettingsReader unitSettings; // the installer settings, read only, where the hydro board is mapped for them
 MeterReader unitMeter; // the unit's own energy meter, where the hydro board is mapped for it (control.h)
 DiiiComm diii;                     //read-only DIII E0/63 frames of an HT outdoor unit (diii_comm.h), heat pump task
 static void diiiSleep(unsigned long ms)
@@ -759,7 +761,7 @@ static const HaSensor UNIT_MODEL_LABEL = {"Unit model", ESP_SENSOR_TEXT};
 
 // Room for every extra sensor: the statistics, the DIII values, the unit's meter, its model and its counters
 static constexpr size_t HA_EXTRA_LABELS_MAX = sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) +
-                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT;
+                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT + UNIT_SETTINGS_MAX;
 
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
@@ -774,6 +776,9 @@ void haExtraSetup()
   if (diii.status == DIII_READY)
     for (const HaSensor &l : DIII_LABELS)
       extra[n++] = l;
+  for (size_t i = 0; unitSettings.everRead && i < unitSettings.count(); i++)
+    extra[n++] = HaSensor(unitSettings.map->defs[i].label, ESP_SENSOR_SETTING_C);
+
   if (unitMeter.status == CONTROL_READY)
     extra[n++] = METER_LABEL;
   if (unitMeter.model[0])
@@ -889,6 +894,21 @@ void statsAppendJson(char *buf, size_t size)
 #define VALUES_ROOM_STATS 900 // 18 statistics: 536 characters of names, a figure each
 #define VALUES_ROOM_DIII 700  // 19 DIII values: 364 characters of names
 #define VALUES_ROOM_METER 900 // the unit's model, its meter and its 13 counters: 580 characters of names
+// Called under valuesLock, with the same settings snapshot as valuesMessageRoom().
+static void settingsAppendJson()
+{
+  if (!jsonbuff || !unitSettings.everRead)
+    return;
+  for (size_t i = 0; i < unitSettings.count(); i++)
+  {
+    const char *label = unitSettings.map->defs[i].label;
+    if (unitSettings.known[i])
+      mqttJsonAppend(jsonbuff, jsonSize, mqttValuesOverflow, "\"%s\":%d,", label, unitSettings.value[i]);
+    else
+      mqttJsonAppend(jsonbuff, jsonSize, mqttValuesOverflow, "\"%s\":null,", label);
+  }
+}
+
 static size_t valuesMessageRoom()
 {
   size_t room = VALUES_ROOM_BOARD + MQTT_JSON_FRAME_ROOM;
@@ -900,6 +920,9 @@ static size_t valuesMessageRoom()
     room += VALUES_ROOM_DIII;
   if (unitMeter.status == CONTROL_READY || unitMeter.model[0])
     room += VALUES_ROOM_METER;
+  if (unitSettings.everRead)
+    for (size_t i = 0; i < unitSettings.count(); i++)
+      room += mqttJsonValueRoom(unitSettings.map->defs[i].label, "00000000000"); // fits any signed 32-bit value
   return mqttJsonRoomRounded(room);
 }
 
@@ -919,7 +942,10 @@ void publishValues()
         if (n>=0 && (size_t)n<sizeof(topic)) mqttPublish(topic,v);
         else mqttSerial.println("Value topic too long; publish skipped.");
       });
+    valuesLock();
     mqttValuesBegin(valuesMessageRoom()); // one topic per value: the message only holds what the firmware adds
+    settingsAppendJson();
+    valuesUnlock();
     sendValues();webSendValues();return;
   }
   mqttValuesBegin(valuesMessageRoom());
@@ -930,6 +956,7 @@ void publishValues()
       updateValues(registryIDs[i]);
     }
   }
+  settingsAppendJson();
   valuesUnlock();
   sendValues();//Send the full json message
   webSendValues();
@@ -1362,6 +1389,32 @@ static void memoryDumpTick()
   }
 }
 
+// The installer settings, read only (unitsettings.h): once the meter has found the unit loaded, every ten minutes
+static void settingsTick()
+{
+  if (busy)
+    return;
+  const bool useSettings = config.protocol == 'I' && unitMeter.status != CONTROL_OFF && unitMeter.status != CONTROL_NO_ANSWER;
+  // The heat pump task is the only writer. Perform reads locally and publish the result under the values lock.
+  SettingsReader next = unitSettings;
+  next.exchange = x10aExchange;
+  const bool availabilityChanged = next.tick(millis(), useSettings ? unitMeter.softwareId : nullptr,
+                                             unitMeter.status == CONTROL_READY && unitMeter.known);
+  if (availabilityChanged || next.map != unitSettings.map || next.readAt != unitSettings.readAt)
+  {
+    valuesLock();
+    unitSettings = next;
+    valuesUnlock();
+  }
+  if (availabilityChanged)
+  {
+    if (next.everRead)
+      mqttSerial.printf("Unit settings: %u read (software %s)\n", (unsigned)next.count(), unitMeter.softwareId);
+    haExtraSetup(); // their sensors join (or leave) the Home Assistant discovery
+    discoveryDirty = true;
+  }
+}
+
 void controlLoop()
 {
   HP_STAGE("hot water target");
@@ -1382,6 +1435,7 @@ void controlLoop()
   memoryDumpTick();
   HP_STAGE("save held targets");
   heldSaveTick();
+  settingsTick();
   // Only on the HT outdoor unit: the hydrobox ports and the other units are never read by it
   bool diiiOn = config.protocol == 'I' && strstr(config.model, "ERRQ-ERSQ outdoor") != nullptr;
   DiiiStatus before = diii.status;
