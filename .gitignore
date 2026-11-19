@@ -20,3 +20,9 @@ __pycache__/
 include/def/mydef.h
 .DS_Store
 include/.DS_Store
+# What the IDF rebuild of the core 3 boards (custom_sdkconfig in platformio.ini) leaves in the project
+/.dummy
+/CMakeLists.txt
+/dependencies.lock
+/managed_components/
+/sdkconfig.*
