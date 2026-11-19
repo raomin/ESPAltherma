@@ -9,6 +9,7 @@
 #include <Preferences.h>
 #endif
 #include "topics.h"
+#include "sgtimeout.h"
 // Not <ArduinoJson.h>: its "using namespace ArduinoJson" clashes with our Converter class
 #include <ArduinoJson.hpp>
 using ArduinoJson::DeserializationError;
@@ -72,6 +73,7 @@ struct AppConfig
   bool coolActiveHigh;
   int8_t sg1Pin, sg2Pin;
   bool sgActiveHigh;
+  uint32_t sgTimeoutSeconds; // 0: disabled; lease of the last valid SG command, checked by the main loop
   int8_t safetyPin;
   bool safetyActiveHigh;
 
@@ -180,6 +182,7 @@ void configDefaults(AppConfig &c)
   c.sg1Pin = -1;
   c.sg2Pin = -1;
   c.sgActiveHigh = true;
+  c.sgTimeoutSeconds = 0;
   c.safetyPin = -1;
   c.safetyActiveHigh = true;
   strlcpy(c.oneTopicPrefix, "espaltherma/OneATTR/", sizeof(c.oneTopicPrefix));
@@ -277,6 +280,7 @@ void configToJson(const AppConfig &c, JsonDocument &doc, bool includeSecrets, bo
   relays["sg1_pin"] = c.sg1Pin;
   relays["sg2_pin"] = c.sg2Pin;
   relays["sg_high"] = c.sgActiveHigh;
+  relays["sg_timeout_s"] = c.sgTimeoutSeconds;
   relays["safety_pin"] = c.safetyPin;
   relays["safety_high"] = c.safetyActiveHigh;
 
@@ -367,6 +371,16 @@ static void readIp(JsonVariantConst v, uint32_t &dst)
     dst = ipFromString(v.as<const char *>());
 }
 
+static bool sgTimeoutSettingValid(JsonVariantConst value)
+{
+  if (value.isNull())
+    return true;
+  if (!value.is<double>())
+    return false;
+  double seconds = value.as<double>();
+  return seconds >= 0 && seconds <= SG_TIMEOUT_MAX_SECONDS && seconds == (uint32_t)seconds;
+}
+
 // Applies settings keys on top of c. Missing keys keep their current value. Runtime fields are NVS-only.
 void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = false)
 {
@@ -448,6 +462,8 @@ void configFromJson(AppConfig &c, JsonVariantConst src, bool includeRuntime = fa
   readNum(relays["cool_high"], c.coolActiveHigh);
   readNum(relays["sg2_pin"], c.sg2Pin);
   readNum(relays["sg_high"], c.sgActiveHigh);
+  if (!relays["sg_timeout_s"].isNull() && sgTimeoutSettingValid(relays["sg_timeout_s"]))
+    c.sgTimeoutSeconds = (uint32_t)relays["sg_timeout_s"].as<double>();
   readNum(relays["safety_pin"], c.safetyPin);
   readNum(relays["safety_high"], c.safetyActiveHigh);
 

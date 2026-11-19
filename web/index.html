@@ -403,7 +403,9 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
    <p class="sub">When field setting [C-08] is "outdoor sensor" or "room sensor", the unit follows the external sensor: choose it here to show it, with the auxiliary sensor (R6T) among the selected values. Only this page changes: both readings stay in the values and in Home Assistant.</p></div>
   <div class="card"><h2>Relays</h2><p class="sub">Optional: a thermostat input, the safety stop, Smart Grid. -1 = not used.</p>
    <div class="row"><label class="f"><span class="k">Thermostat relay pin</span><input type="number" id="sTherm"></label><label class="f"><span class="k">Cooling relay pin</span><input type="number" id="sCool"></label><label class="f"><span class="k">Safety relay pin</span><input type="number" id="sSafety"></label><label class="f"><span class="k">Smart Grid pin 1</span><input type="number" id="sSg1"></label><label class="f"><span class="k">Smart Grid pin 2</span><input type="number" id="sSg2"></label></div>
-   <label class="chk"><input type="checkbox" id="sThermHigh">Thermostat relay active high</label><label class="chk"><input type="checkbox" id="sCoolHigh">Cooling relay active high</label><label class="chk"><input type="checkbox" id="sSafetyHigh">Safety relay active high</label><label class="chk"><input type="checkbox" id="sSgHigh">Smart Grid relays active high</label></div>
+   <label class="chk"><input type="checkbox" id="sThermHigh">Thermostat relay active high</label><label class="chk"><input type="checkbox" id="sCoolHigh">Cooling relay active high</label><label class="chk"><input type="checkbox" id="sSafetyHigh">Safety relay active high</label><label class="chk"><input type="checkbox" id="sSgHigh">Smart Grid relays active high</label>
+   <label class="f"><span class="k">SG timeout (seconds)</span><input type="number" id="sSgTimeout" min="0" max="86400" step="1" translate="no"></label>
+   <p class="sub">0 disables the timeout. Otherwise, resend the Smart Grid command before this interval ends; without a new command, the relays return to normal operation. Do not retain these commands.</p></div>
   <div class="card"><h2>MQTT output</h2><p class="sub">For other home automation systems; Home Assistant needs nothing here.</p>
    <label class="chk"><input type="checkbox" id="sOneTopic">One topic per value</label>
    <label class="f"><span class="k">Topic prefix (one topic per value)</span><input type="text" id="sPrefix"></label>
@@ -1295,6 +1297,7 @@ function fillSettings() {
   tx('pinRx', 'G' + cfg.hp.rx); tx('pinTx', 'G' + cfg.hp.tx); tx('pinBoard', status.board || 'ESP32');
   $('#sTherm').value = r.therm_pin; $('#sCool').value = r.cool_pin == null ? -1 : r.cool_pin; $('#sCoolHigh').checked = r.cool_high !== false; $('#sSg1').value = r.sg1_pin; $('#sSg2').value = r.sg2_pin; $('#sSafety').value = r.safety_pin;
   $('#sThermHigh').checked = r.therm_high; $('#sSgHigh').checked = r.sg_high; $('#sSafetyHigh').checked = r.safety_high;
+  $('#sSgTimeout').value = r.sg_timeout_s || 0;
   $('#sOneTopic').checked = o.one_topic; $('#sPrefix').value = o.one_topic_prefix; $('#sBase').value = (cfg.mqtt && cfg.mqtt.base_topic) || 'espaltherma'; $('#sJsonTable').checked = o.json_table; $('#sBinNum').checked = !!o.binary_num; $('#sNoLog').checked = o.no_log; $('#sDebug').checked = o.debug_serial;
   const st = cfg.stats || {};
   $('#sStatsPh').options[0].text = t('1 phase (230 V)'); $('#sStatsPh').options[1].text = t('3 phases (3 × 230 V)');
@@ -1310,9 +1313,12 @@ function fillSettings() {
 $('#sStatic').onchange = e => $('#sStaticBox').hidden = !e.target.checked;
 $('#sSave').onclick = async () => {
   const n = id => parseInt($(id).value, 10);
+  const sgText = $('#sSgTimeout').value.trim(), sgTimeout = Number(sgText);
+  if (!sgText || !Number.isInteger(sgTimeout) || sgTimeout < 0 || sgTimeout > 86400)
+    return msg('#sMsg', t('SG timeout must be a whole number from 0 to 86400 seconds.'), false);
   const d = {
     hp: {rx: n('#sRx'), tx: n('#sTx'), frequency: Math.max(5, n('#sFreq')) * 1000, outdoor_aux: $('#sOutdoor').value === 'aux', indoor_aux: $('#sIndoor').value === 'aux'},
-    relays: {therm_pin: n('#sTherm'), cool_pin: n('#sCool'), cool_high: $('#sCoolHigh').checked, sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked},
+    relays: {therm_pin: n('#sTherm'), cool_pin: n('#sCool'), cool_high: $('#sCoolHigh').checked, sg1_pin: n('#sSg1'), sg2_pin: n('#sSg2'), safety_pin: n('#sSafety'), therm_high: $('#sThermHigh').checked, sg_high: $('#sSgHigh').checked, safety_high: $('#sSafetyHigh').checked, sg_timeout_s: sgTimeout},
     output: {one_topic: $('#sOneTopic').checked, one_topic_prefix: $('#sPrefix').value, json_table: $('#sJsonTable').checked, binary_num: $('#sBinNum').checked, no_log: $('#sNoLog').checked, debug_serial: $('#sDebug').checked},
     control: {dhw_target: $('#sDhwTarget').checked, lwt_target: $('#sLwtTarget').checked, cool_target: $('#sCoolTarget').checked, add_target: $('#sAddTarget').checked, ram_only: $('#sRamOnly').checked, power_limit: $('#sPowerLimit').checked},
     stats: {enabled: $('#sStats').checked, voltage: parseFloat($('#sStatsV').value) || 230, phases: n('#sStatsPh'), aux_w: parseFloat($('#sStatsAux').value) || 100, power_factor: parseFloat($('#sStatsPf').value) || 1,

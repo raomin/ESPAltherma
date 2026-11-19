@@ -1,4 +1,7 @@
 {
+  "SG timeout (seconds)": "SG-Zeitlimit (Sekunden)",
+  "0 disables the timeout. Otherwise, resend the Smart Grid command before this interval ends; without a new command, the relays return to normal operation. Do not retain these commands.": "0 deaktiviert das Zeitlimit. Sende den Smart-Grid-Befehl sonst vor Ablauf erneut. Ohne neuen Befehl kehren die Relais zum Normalbetrieb zurück. Sende diese Befehle ohne MQTT-Retain.",
+  "SG timeout must be a whole number from 0 to 86400 seconds.": "Das SG-Zeitlimit muss eine ganze Zahl zwischen 0 und 86400 Sekunden sein.",
  "Home": "Start",
  "Setup": "Einrichtung",
  "Values": "Werte",

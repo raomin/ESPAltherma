@@ -174,6 +174,8 @@ The two relays are never closed together: switching one on releases the other fi
 
 ESPAltherma can drive the SG-Ready inputs of your heat pump. Set the pins of the SG1 and SG2 relays in **Settings → Relays**, then send one of the values 0 to 3 to the MQTT topic `espaltherma/sg/set`, or use the `Smart Grid` select in Home Assistant. The current mode is published on `espaltherma/sg/state`.
 
+To return to normal operation if your automation stops sending, set **SG timeout (seconds)** in **Settings → Relays**. Resend the current command before the timeout, with MQTT retain disabled. The default of `0` keeps the mode until the next command or board restart. See [Smart Grid timeout](doc/control.md#smart-grid-timeout) for an example.
+
 You need two relays to open and close the SG1 and SG2 contacts of your heat pump. On the M5StickC, M5StickC Plus and Plus2, use the Grove port next to the USB-C connector: **Smart Grid pin 1 = 32**, **pin 2 = 33**. The M5Stack relay units switch on a high signal: keep *Smart Grid relays active high* ticked. On other boards, any two free GPIOs, not the X10A ones. I found that the 5V supply pin of X10A provides enough power for my ESP32 and both relays, but your mileage may vary.
 
 | sg/set | SG1 | SG2 | SG mode | What the heat pump does |

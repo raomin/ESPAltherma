@@ -411,7 +411,10 @@ static void statusJson(JsonDocument &doc)
   if (config.safetyPin >= 0)
     relays["safety"] = safetyActive;
   if (smartGridConfigured())
+  {
     relays["smart_grid"] = sgMode;
+    relays["sg_timeout_s"] = config.sgTimeoutSeconds;
+  }
   // Energy and cycle figures (stats.h)
   if (config.statsEnabled)
   {
@@ -672,6 +675,11 @@ void webBegin()
     JsonDocument doc;
     if (!parseBody(r, doc))
       return;
+    if (!sgTimeoutSettingValid(doc["relays"]["sg_timeout_s"]))
+    {
+      r->send(400, "application/json", "{\"ok\":false,\"error\":\"SG timeout must be a whole number from 0 to 86400 seconds.\"}");
+      return;
+    }
     if (pendingConfig != nullptr)
     {
       r->send(409, "application/json", "{\"ok\":false,\"error\":\"busy, retry\"}");
