@@ -218,11 +218,25 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // 0x18 lower (the curve, the limits at 20.0 kW, the reported targets and the ceiling all read as the unit
     // showed them), the limit records 0xC5 lower, the limitation bytes 0xB4 lower ([4-08] 0 and [4-09] 1 as set,
     // the four 50 A limits), the active limits at 0x3A42/0x3A46 (the board's 20.0 kW / 50.0 A defaults while no
-    // limit applies). Not yet written to on a unit; no meter or counters found in the dump.
+    // limit applies). The leaving water target written on that unit in RAM-only mode (the curve at 30/30, the
+    // unit's target following within 30 s, the curve restored); no meter or counters found in the dump.
     {"20017701",
      {0x3788, 0x37C6, 366, 367, 0x531E, 0x5323, 278, 0x01, 0x3146, 0x34A2},
      {0x378A, 0x37C8, 373, 372, 0x532D, 0x5328, 374, 0x0C, 0x319A, 0},
      {0x51BF, 0x51C0, 0x378E, 0x519F, 0x3A42, 0x3A46}},
+    // The 4-8 kW EBLA/EDLA E monoblocs on a software between the two: no image of it either, the addresses come
+    // from two memory dumps of an EDLA08E23V3 and what its interface showed then (sildehoop, #712). The converted
+    // settings and the targets sit two bytes above 20017701's: the hot water curve 55/60, the leaving water curve
+    // 27/34, the targets 45 and 25, the four 20.0 kW limits. The range records are in the same order as on
+    // 20002203 (35..75 and 45..75 for the tank, twice [9-01]..[9-00] = 25..40 for the leaving water), the
+    // limitation bytes read [4-08] 0 and [4-09] 1 as set with the four 50 A limits 0x20 below, and the active
+    // limits are the 20.0 kW / 50.0 A pair of the board's defaults. The four setting bytes of the memory image
+    // read as the interface's values, at the same indexes. Not yet written to on a unit; the meter and the
+    // counters are not placed.
+    {"20017702",
+     {0x378A, 0x37C8, 366, 367, 0x533B, 0x5340, 278, 0x01, 0x3148, 0x34A4},
+     {0x378C, 0x37CA, 373, 372, 0x534A, 0x5345, 374, 0x0C, 0x319C, 0},
+     {0x51D9, 0x51DA, 0x3790, 0x51B9, 0x456E, 0x4572}},
     // 12 kW ELVH/ELVX/ELVZ/ELBH/ELBX EJ/EF and ELSH/ELSX 12 P30/P50 (the 2026 series). One of the three memory-read
     // handler candidates of this software could not be resolved; the two others and the converter agree on the
     // same layout as every other board, and identify() reads everything back before a write.

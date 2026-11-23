@@ -1625,7 +1625,7 @@ void test_power_limit_on_every_mapped_board()
         TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
         TEST_ASSERT_EQUAL_FLOAT(p.limit.ramActive ? 50.0f : -1.0f, a.active); // unknown where not mapped (20002202)
     }
-    TEST_ASSERT_EQUAL(12, mapped); // 20017701, 20002202 and 20007902 from their owners' dumps and reads included
+    TEST_ASSERT_EQUAL(13, mapped); // 20017701, 20017702, 20002202 and 20007902 from their owners' dumps and reads included
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
