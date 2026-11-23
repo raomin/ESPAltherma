@@ -311,7 +311,7 @@ void setupScreen(){
   M5.Lcd.setRotation(1);
   M5.Display.setBrightness(127);
   M5.Lcd.fillScreen(TFT_WHITE);
-  M5.Lcd.setFreeFont(&FreeSansBold12pt7b);
+  M5.Lcd.setFont(&FreeSansBold12pt7b);
   M5.Lcd.setTextDatum(MC_DATUM);
   int xpos = M5.Lcd.width() / 2; // Half the screen width
   int ypos = M5.Lcd.height() / 2; // Half the screen width
@@ -319,7 +319,9 @@ void setupScreen(){
   M5.Lcd.drawString("ESPAltherma", xpos,ypos);
   delay(2000);
   M5.Lcd.fillScreen(TFT_BLACK);
-  M5.Lcd.setTextFont(1);
+  // setFont, not setTextFont(1): asked for font 1 that way, the display library leaves a free font in place, and
+  // the log came out in the banner's font on every board but the Plus2 (#715)
+  M5.Lcd.setFont(&Font0);
   M5.Lcd.setTextColor(TFT_GREEN);
 
 #elif defined(ARDUINO_M5Stick_C_Plus2)
