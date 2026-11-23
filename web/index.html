@@ -897,7 +897,14 @@ for (const u of Object.values(CONTROLS)) {
     catch (e) { msg(m, e.message, false); }
   };
 }
+// This page is the one of the firmware that served it. When the board answers as another firmware (updated from
+// here, from Home Assistant or from another tab), the page is loaded again: its code is the old firmware's.
+let servedBy = null;
+const firmwareOf = s => s && s.fw ? s.fw + '/' + (s.build || 0) : null;
 function renderStatus() {
+  const firmware = firmwareOf(status);
+  if (firmware && servedBy && firmware !== servedBy) return location.reload();
+  servedBy = servedBy || firmware;
   $('#valuesSizeError').hidden = !(status.mqtt && status.mqtt.values_too_large);
   const hp = status.hp;
   $('#hdrModel').textContent = [hp.unit, hp.model ? hp.model.replace(/^Altherma\((.*)\)$/, '$1') : ''].filter(Boolean).join(' · ');
@@ -1457,8 +1464,30 @@ async function uploadFirmware(file) {
   const fd = new FormData(); fd.append('firmware', file);
   const x = new XMLHttpRequest(), p = $('#fwProg');
   p.hidden = false; p.value = 0; x.upload.onprogress = e => p.value = e.loaded / e.total * 100;
-  x.onload = () => {
-    if (x.status === 200) return msg('#fwMsg', t('Updated. Restarting…'), true); // the buttons stay off: the board restarts
+  x.onload = async () => {
+    if (x.status === 200) {
+      // The buttons stay off while the board restarts, and come back with it: they used to stay off until the page
+      // was loaded again, and a tab kept open could not update the next day (#707). A board back as another
+      // firmware reloads the page (renderStatus); back as the same one, the page goes on.
+      msg('#fwMsg', t('Updated. Restarting…'), true);
+      await sleep(5000);
+      for (let i = 0; i < 90; i++) {
+        try {
+          const c = new AbortController(), timer = setTimeout(() => c.abort(), 2500);
+          const r = await fetch('/api/status', {signal: c.signal});
+          clearTimeout(timer);
+          const s = r.ok ? await r.json() : null;
+          if (s && s.uptime < 120) {
+            busy(false); p.hidden = true;
+            status = s; statusAt = Date.now(); renderStatus();
+            return msg('#fwMsg', t('This board runs {fw}.', {fw: s.fw}), true);
+          }
+        } catch (e) {}
+        await sleep(2000);
+      }
+      busy(false);
+      return msg('#fwMsg', t('The board did not come back after its restart.'), false);
+    }
     busy(false);
     // the board's own reason when it gives one, else what the HTTP status tells (a proxy's size limit: 413)
     let why = x.status === 401 ? t('the admin password was refused') : 'HTTP ' + x.status;
