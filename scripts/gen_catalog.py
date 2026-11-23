@@ -115,7 +115,8 @@ RECOMMENDED = {
     "Flow sensor (l/min)", "Water pressure",
     "LW setpoint (main)", "DHW setpoint", "RT setpoint",
     "I/U operation mode", "3way valve(On:DHW_Off:Space)", "Water pump operation",
-    "Circulation pump operation", "Powerful DHW Operation. ON/OFF", "Silent Mode",
+    # not "Circulation pump operation": the output for a hot water circulation pump, an option few units have (#711)
+    "Powerful DHW Operation. ON/OFF", "Silent Mode",
     "Freeze Protection for water piping", "Brine inlet temp.", "Brine outlet temp.", "Mixed water temp.",
     # Altherma HT hydrobox (its own refrigerant stage), both protocols
     "Low Pressure (stage)", "Low Pressure(T)", "High Pressure (stage)", "High Pressure(T)",
