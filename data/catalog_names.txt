@@ -4132,6 +4132,56 @@ R134a liquid temp.
 Thermo Off Error
 Warning Code
 
+[Altherma(HT EKHBRD-ERRQ series 11-16kW protocols I and S)]
+*Refrigerant type
+20-10 (unknown)
+20-12 (unknown)
+20-4 (unknown)
+20-6 (unknown)
+4 Way Valve
+4 Way Valve Data Qty
+Caution Code
+Comp. INV Current Drop
+Comp. INV Current Protection Retry Qty
+Comp. Preheat
+Connected Indoor Unit Qty
+Crank Case Heater Qty
+Crankcase Heater
+Discharge Temp. Protection Retry Qty
+Discharge pipe temp.
+EV (pls)
+Expansion Valve Data Qty
+Fan Data Qty
+Fin Temp.
+Fin Temp. Drop Control
+Fin Temp. Protection Retry Qty
+HP Drop Control
+HP Protection Retry Qty
+High Pressure (stage)
+High Pressure(T)
+INV Comp. Frequency(Hz)
+INV compressor Qty
+INV primary current (A)
+INV secondary current (A)
+LP Drop Control
+LP Protection Retry Qty
+Low Pressure (stage)
+Low Pressure(T)
+Max. connectable indoor units
+O/U Discharge Temp. Drop
+O/U Error Code
+O/U Error type
+Operation Mode
+R134a liquid temp.
+STD compressor Qty
+Sensor Data Qty
+Solenoid valve Qty
+Switch box cooling fan
+Target Cond. Temp.
+Target Evap. Temp.
+Thermo Off Error
+Warning Code
+
 [Altherma(HT EKHBRD-ERRQ series 11-16kW)]
 *Refrigerant type
 20-10 (unknown)

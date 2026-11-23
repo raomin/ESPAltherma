@@ -99,12 +99,38 @@ void test_matching_definition_kept(void)
         TEST_ASSERT_EQUAL_INT(-1, layoutCheckDecide(lc.regs[i]));
 }
 
+// The hydrobox read with both protocols: its registries from 0x50 up are protocol S replies, which are neither
+// checked as protocol I layouts nor offered to another model (the HT outdoor unit reads its own 0x50 with I)
+void test_registries_read_with_protocol_s_are_left_out(void)
+{
+    int both = catalogFindModel("Altherma(HT EKHBRD-ERRQ series 11-16kW protocols I and S)");
+    TEST_ASSERT_TRUE(both >= 0);
+    TEST_ASSERT_EQUAL('I', CATALOG_MODELS[both].protocol);
+    TEST_ASSERT_EQUAL(0x50, CATALOG_MODELS[both].sFrom);
+    for (int m = 0; m < CATALOG_MODEL_COUNT; m++)
+        if (m != both)
+            TEST_ASSERT_EQUAL_MESSAGE(0, CATALOG_MODELS[m].sFrom, CATALOG_MODELS[m].name);
+    LayoutChecker lc;
+    layoutCheckInit(lc, both);
+    for (uint8_t i = 0; i < lc.count; i++)
+        TEST_ASSERT_TRUE(lc.regs[i].reg < 0x50);
+    for (int m = 0; m < CATALOG_MODEL_COUNT; m++)
+    {
+        layoutCheckInit(lc, m);
+        for (uint8_t i = 0; i < lc.count; i++)
+            for (uint8_t k = 0; k < lc.regs[i].count; k++)
+                if (lc.regs[i].c[k].model == both)
+                    TEST_ASSERT_TRUE_MESSAGE(lc.regs[i].reg < 0x50, CATALOG_MODELS[m].name);
+    }
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
     RUN_TEST(test_checked_registries);
     RUN_TEST(test_real_unit_fixes_0x21);
     RUN_TEST(test_matching_definition_kept);
+    RUN_TEST(test_registries_read_with_protocol_s_are_left_out);
     UNITY_END();
     return 0;
 }

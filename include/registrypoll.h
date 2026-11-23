@@ -5,6 +5,13 @@
 #include <stddef.h>
 #include <string.h>
 
+// The protocol a registry is read with: the model's, or protocol S from sFrom up on a board that answers both and
+// keeps other values in each (the Altherma HT hydrobox: catalog.h CatalogModel::sFrom)
+inline char registryProtocol(uint8_t registry, char protocol, uint8_t sFrom)
+{
+  return protocol == 'I' && sFrom != 0 && registry >= sFrom ? 'S' : protocol;
+}
+
 // query() owns framing/checksum validation. Matching bytes left by a failed query are never evidence
 // of success. Clear each attempt so even a short later reply cannot inherit an earlier one's payload.
 template <typename Query, typename Retry>

@@ -40,6 +40,9 @@
 
 ::Converter converter; // qualified: ArduinoJson (via ESPAsyncWebServer) also has a Converter
 char registryIDs[32]; //Holds the registries to query
+// A board that answers both protocols, each with values of its own: the registries from this one up are read with
+// protocol S, the others with the model's protocol I (catalog.h CatalogModel::sFrom; 0: one protocol for all)
+static uint8_t protocolSFrom = 0;
 std::atomic<bool> registryOk[32]; // polling task publishes results while MQTT reads them
 bool registryEverOk[32]; // and those that answered at least once since the list was made
 std::atomic<bool> busy{false}; // OTA/main task publishes the gate; the heat-pump task observes it
@@ -236,9 +239,11 @@ void initLabels(){
   {
     catalogLabels.clear();
     converter.setLabels(nullptr, 0);
+    protocolSFrom = 0;
     return;
   }
   config.protocol = CATALOG_MODELS[model].protocol;
+  protocolSFrom = CATALOG_MODELS[model].sFrom;
   //Registries corrected with the layout of another definition
   CatalogFix fixes[CONFIG_MAX_FIXES];
   size_t fixCount = 0;
@@ -578,18 +583,19 @@ void pollRegistries()
     watchdogHp();
     diii.hold(1500, diiiSleep); // a registry query must not land in a DIII E0 window
     unsigned char buff[REPLY_BUFFER_SIZE] = {0};
-    registryOk[i] = registryPoll((uint8_t)registryIDs[i], buff, sizeof(buff), config.protocol,
-      [&]() { return queryRegistry(registryIDs[i], buff, config.protocol); },
+    const char protocol = registryProtocol((uint8_t)registryIDs[i], config.protocol, protocolSFrom);
+    registryOk[i] = registryPoll((uint8_t)registryIDs[i], buff, sizeof(buff), protocol,
+      [&]() { return queryRegistry(registryIDs[i], buff, protocol); },
       []() { mqttSerial.println("Retrying..."); hpDelay(1000); });
     if (registryOk[i])
     {
       registryEverOk[i] = true;
-      size_t payloadLength = config.protocol == 'I' ? (buff[2] >= 2 ? buff[2] - 2 : 0) : get_reply_len(buff[0], 'S') - 2;
+      size_t payloadLength = protocol == 'I' ? (buff[2] >= 2 ? buff[2] - 2 : 0) : get_reply_len(buff[0], 'S') - 2;
       valuesLock();
-      converter.readRegistryValues(buff, config.protocol, payloadLength); //process all values from the register
-      replyCache.update(config.protocol == 'I' ? buff[1] : buff[0], buff + (config.protocol == 'I' ? 3 : 1), payloadLength);
+      converter.readRegistryValues(buff, protocol, payloadLength); //process all values from the register
+      replyCache.update(protocol == 'I' ? buff[1] : buff[0], buff + (protocol == 'I' ? 3 : 1), payloadLength);
       valuesUnlock();
-      if (config.protocol == 'I' && buff[2] >= 2)
+      if (protocol == 'I' && buff[2] >= 2)
         layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
     }
   }

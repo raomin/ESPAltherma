@@ -71,6 +71,7 @@ FAMILIES = {
     "Altherma(ERLA03 D EHFH-EHFZ DJ series 3kW).h": "L",
     "Altherma(HT EKHBRD-ERRQ series 11-16kW).h": "L",
     "Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S).h": "S",
+    "Altherma(HT EKHBRD-ERRQ series 11-16kW protocols I and S).h": "L",
     "Altherma(HT ERRQ-ERSQ outdoor unit 11-16kW).h": "L",
     "Altherma(Hybrid).h": "L",
     "Altherma(LT_CA_CB_04-08kW).h": "L",
@@ -92,7 +93,12 @@ FAMILY_ORDER = "GLSR"
 # never propose them (the Altherma 4 hydro board always reports AS1709968).
 AS_ONLY = {"Altherma 4(EPSK-EPSKS EPBX-EPSX-EPVX-EPVZ series 04-14kW).h"}
 # Never auto-detected, chosen from the list: the same board as another model, read with the other protocol
-MANUAL_ONLY = {"Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S).h"}
+MANUAL_ONLY = {"Altherma(HT EKHBRD-ERRQ series 11-16kW protocol S).h",
+               "Altherma(HT EKHBRD-ERRQ series 11-16kW protocols I and S).h"}
+# A protocol I model whose board also answers protocol S, with other values: its registries from this one up are
+# read with protocol S, in the same pass (the Altherma HT hydrobox, discussion #624). Such a definition must not
+# name a value in both halves: a name is one MQTT key.
+S_FROM = {"Altherma(HT EKHBRD-ERRQ series 11-16kW protocols I and S).h": 0x50}
 # Told by the shape of their replies only (detect.h): an outdoor unit's port, whose registries the rules would read as
 # another model's
 SHAPE_ONLY = {"Altherma(HT ERRQ-ERSQ outdoor unit 11-16kW).h"}
@@ -122,6 +128,8 @@ RECOMMENDED = {
     "Low Pressure (stage)", "Low Pressure(T)", "High Pressure (stage)", "High Pressure(T)",
     "INV Comp. Frequency(Hz)", "EV (pls)", "4 Way Valve", "Switch box cooling fan",
     "R134a liquid temp.", "Target Evap. Temp.",
+    # the same hydrobox read with both protocols: the two more values its owners follow (#624)
+    "HP Drop Control", "INV secondary current (A)",
     # Altherma HT read on its outdoor unit: the water and the hydrobox's state, from the hydrobox block
     "Leaving water temp. (hydrobox)", "Inlet water temp. (hydrobox)", "I/U Error Code", "I/U Thermostat ON/OFF",
     # Altherma 4: its refrigerant liquid side, in the outdoor unit
@@ -134,11 +142,14 @@ RECOMMENDED_ONLY = {"Brine inlet temp.": "GEO", "Brine outlet temp.": "GEO", "Mi
                     "INV Comp. Frequency(Hz)": "HT", "EV (pls)": "HT", "4 Way Valve": "HT", "Switch box cooling fan": "HT",
                     "Low Pressure(T)": "HT", "High Pressure (stage)": "HT", "High Pressure(T)": "HT",
                     "R134a liquid temp.": "HT", "Target Evap. Temp.": "HT",
-                    "Liquid pipe temp.(R6T)": "Altherma 4"}
+                    "Liquid pipe temp.(R6T)": "Altherma 4",
+                    "HP Drop Control": "protocols I and S", "INV secondary current (A)": "protocols I and S"}
 # Not recommended on the models whose definition file name contains the given word: the ECH2O units have no water
 # pressure on the X10A port (it lives on the RoCon controller's bus), registry 0x62 reads 0 there (issue #615), and
 # their room temperature and target are the RoCon's too, the Daikin board's read a constant 20.0 (#599).
-RECOMMENDED_NOT = {"Water pressure": "ECH2O", "Indoor ambient temp. (R1T)": "ECH2O", "RT setpoint": "ECH2O"}
+RECOMMENDED_NOT = {"Water pressure": "ECH2O", "Indoor ambient temp. (R1T)": "ECH2O", "RT setpoint": "ECH2O",
+                   # the hydrobox's protocol S operation mode is not checked: it read "Fan Only" with the compressor running
+                   "Operation Mode": "protocols I and S"}
 
 # Capacity range in the definition name, eg. "04-08kW", "9-16kW", "3kW"
 CAPACITY = re.compile(r"(\d+)(?:-(\d+))?\s*kW")
@@ -389,14 +400,15 @@ def build():
     out.append("#define CATALOG_MODEL_COUNT %d" % len(models))
     out.append("#define CATALOG_ENTRY_COUNT %d" % len(ordered))
     out.append("")
-    out.append("// name, family, protocol, capacity range in kW from the name (0: not told), AS number only")
+    out.append("// name, family, protocol, capacity range in kW from the name (0: not told), AS number only, protocol S from")
     out.append("static const CatalogModel CATALOG_MODELS[CATALOG_MODEL_COUNT] = {")
     for name, family in models:
         protocol = "S" if family in "SR" else "I"
         m = CAPACITY.search(name)
         low, high = (int(m.group(1)), int(m.group(2) or m.group(1))) if m else (0, 0)
         manual = name + ".h" in AS_ONLY or name + ".h" in MANUAL_ONLY or name + ".h" in SHAPE_ONLY
-        out.append("    {%s, '%s', '%s', %d, %d, %d}," % (c_string(name), family, protocol, low, high, 1 if manual else 0))
+        out.append("    {%s, '%s', '%s', %d, %d, %d, 0x%02x}," % (c_string(name), family, protocol, low, high, 1 if manual else 0,
+                                                             S_FROM.get(name + ".h", 0)))
     out.append("};")
     out.append("")
     out.append("static const char CATALOG_LABELS[] =")

@@ -197,6 +197,13 @@ static int layoutSimilarity(int a, int b)
   return n;
 }
 
+// A registry a protocol I model reads with protocol S (catalog.h CatalogModel::sFrom): its entries are not a
+// protocol I layout, neither to check nor to offer to another model
+static bool layoutReadWithS(int model, uint8_t reg)
+{
+  return CATALOG_MODELS[model].sFrom != 0 && reg >= CATALOG_MODELS[model].sFrom;
+}
+
 // Sets up the check for the active model: the registries where another model puts 2-byte values at other offsets.
 void layoutCheckInit(LayoutChecker &lc, int model)
 {
@@ -212,6 +219,8 @@ void layoutCheckInit(LayoutChecker &lc, int model)
     if (!catalogInModel(e, model) || seen[e.reg])
       continue;
     seen[e.reg] = true;
+    if (layoutReadWithS(model, e.reg))
+      continue; // read with protocol S: no protocol I layout to compare
     LayoutCheck &rc = lc.regs[lc.count];
     memset(&rc, 0, sizeof(rc));
     rc.reg = e.reg;
@@ -222,7 +231,7 @@ void layoutCheckInit(LayoutChecker &lc, int model)
       continue;
     for (int m = 0; m < CATALOG_MODEL_COUNT && rc.count < LAYOUT_MAX_CANDIDATES; m++)
     {
-      if (m == model || CATALOG_MODELS[m].protocol != 'I')
+      if (m == model || CATALOG_MODELS[m].protocol != 'I' || layoutReadWithS(m, e.reg))
         continue;
       LayoutSlot slots[LAYOUT_MAX_SLOTS];
       uint8_t n = layoutSlotsOf(m, e.reg, slots);

@@ -57,6 +57,20 @@ void test_protocol_s_uses_its_first_byte()
     }, []() {}));
 }
 
+// A board read with both protocols (the Altherma HT hydrobox): protocol S from a registry up, protocol I below.
+// Any other model keeps its one protocol, whatever the registry.
+void test_a_board_read_with_both_protocols_takes_s_from_its_registry_up()
+{
+    TEST_ASSERT_EQUAL('I', registryProtocol(0x00, 'I', 0x50));
+    TEST_ASSERT_EQUAL('I', registryProtocol(0x30, 'I', 0x50));
+    TEST_ASSERT_EQUAL('S', registryProtocol(0x50, 'I', 0x50));
+    TEST_ASSERT_EQUAL('S', registryProtocol(0x55, 'I', 0x50));
+    TEST_ASSERT_EQUAL('I', registryProtocol(0x50, 'I', 0)); // the HT outdoor unit's 0x50, protocol I
+    TEST_ASSERT_EQUAL('I', registryProtocol(0x62, 'I', 0));
+    TEST_ASSERT_EQUAL('S', registryProtocol(0x10, 'S', 0));
+    TEST_ASSERT_EQUAL('S', registryProtocol(0x10, 'S', 0x50));
+}
+
 int main(int, char **)
 {
     UNITY_BEGIN();
@@ -65,5 +79,6 @@ int main(int, char **)
     RUN_TEST(test_valid_retry_does_not_inherit_payload_from_failed_attempt);
     RUN_TEST(test_wrong_register_or_header_is_retried);
     RUN_TEST(test_protocol_s_uses_its_first_byte);
+    RUN_TEST(test_a_board_read_with_both_protocols_takes_s_from_its_registry_up);
     return UNITY_END();
 }

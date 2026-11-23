@@ -124,13 +124,13 @@ void test_catalog_build_recommended(void)
     TEST_ASSERT_TRUE(model >= 0);
     std::vector<LabelDef> labels;
     catalogBuildLabels(model, nullptr, 0, labels);
-    TEST_ASSERT_EQUAL_size_t(31, labels.size());
+    TEST_ASSERT_EQUAL_size_t(30, labels.size()); // 31 with "Circulation pump operation", an option few units have (#711)
     // Two zones found by the survey: the mixed water, both pumps and the second zone's target join them
     catalogTwoZones() = true;
     std::vector<LabelDef> twoZones;
     catalogBuildLabels(model, nullptr, 0, twoZones);
     catalogTwoZones() = false;
-    TEST_ASSERT_EQUAL_size_t(35, twoZones.size());
+    TEST_ASSERT_EQUAL_size_t(34, twoZones.size());
     int zoneValues = 0;
     for (auto &l : twoZones)
         zoneValues += catalogTwoZoneLabel(l.label);
@@ -591,6 +591,57 @@ void test_detect_json_reports_truncation_instead_of_returning_a_partial_object(v
     TEST_ASSERT_GREATER_THAN(0,detectToJson(r,out,sizeof(out)));
 }
 
+// The hydrobox read with both protocols in one pass (#624): chosen from the list only, the values of protocol I
+// below 0x50 and those of protocol S from there, no name twice, and what its owners follow selected by default
+void test_hydrobox_read_with_both_protocols(void)
+{
+    int both = catalogFindModel("Altherma(HT EKHBRD-ERRQ series 11-16kW protocols I and S)");
+    int onlyI = catalogFindModel("Altherma(HT EKHBRD-ERRQ series 11-16kW)");
+    TEST_ASSERT_TRUE(both >= 0 && onlyI >= 0);
+    TEST_ASSERT_EQUAL(1, CATALOG_MODELS[both].asOnly); // never proposed by the detection
+    TEST_ASSERT_EQUAL(0, CATALOG_MODELS[onlyI].asOnly);
+    Survey s;
+    hydroboxSurvey(s, 17);
+    DetectResult r;
+    detectModel(s, r);
+    TEST_ASSERT_EQUAL(onlyI, r.model);
+    int below = 0, above = 0;
+    for (int i = 0; i < CATALOG_ENTRY_COUNT; i++)
+    {
+        const CatalogEntry &e = CATALOG_ENTRIES[i];
+        if (!catalogInModel(e, both) || (e.flags & CATALOG_FLAG_ALWAYS))
+            continue;
+        (e.reg >= 0x50 ? above : below)++;
+        bool sameInI = false; // every protocol I value of the hydrobox, read as that model reads it
+        for (int k = 0; k < CATALOG_ENTRY_COUNT && !sameInI; k++)
+            sameInI = catalogInModel(CATALOG_ENTRIES[k], onlyI) && catalogKey(CATALOG_ENTRIES[k]) == catalogKey(e) &&
+                      strcmp(catalogLabel(CATALOG_ENTRIES[k]), catalogLabel(e)) == 0;
+        if (e.reg < 0x50)
+            TEST_ASSERT_TRUE_MESSAGE(sameInI, catalogLabel(e));
+        for (int k = i + 1; k < CATALOG_ENTRY_COUNT; k++) // one name, one MQTT key
+            if (catalogInModel(CATALOG_ENTRIES[k], both) && !(CATALOG_ENTRIES[k].flags & CATALOG_FLAG_ALWAYS))
+                TEST_ASSERT_TRUE_MESSAGE(strcmp(catalogLabel(e), catalogLabel(CATALOG_ENTRIES[k])) != 0, catalogLabel(e));
+    }
+    TEST_ASSERT_EQUAL(11, above);
+    TEST_ASSERT_TRUE(below > 30);
+    std::vector<LabelDef> labels;
+    TEST_ASSERT_EQUAL(805, catalogBuildLabels(both, nullptr, 0, labels)); // R134a
+    const char *wanted[] = {"O/U Error type", "O/U Error Code", "Target Evap. Temp.", "HP Drop Control", "Low Pressure (stage)",
+                            "Low Pressure(T)", "INV primary current (A)", "INV secondary current (A)", "INV Comp. Frequency(Hz)",
+                            "EV (pls)", "4 Way Valve", "Switch box cooling fan", "High Pressure (stage)", "High Pressure(T)",
+                            "Discharge pipe temp.", "R134a liquid temp."};
+    for (const char *w : wanted)
+    {
+        bool found = false;
+        for (const LabelDef &l : labels)
+            found = found || strcmp(l.label, w) == 0;
+        TEST_ASSERT_TRUE_MESSAGE(found, w);
+    }
+    for (const LabelDef &l : labels) // not checked on the hydrobox: offered, not selected
+        TEST_ASSERT_TRUE(strcmp(l.label, "Operation Mode") != 0);
+    TEST_ASSERT_EQUAL(sizeof(wanted) / sizeof(wanted[0]), labels.size());
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
@@ -607,6 +658,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_detect_all_as_numbers);
     RUN_TEST(test_detect_real_epga);
     RUN_TEST(test_detect_hydrobox_by_its_shape);
+    RUN_TEST(test_hydrobox_read_with_both_protocols);
     RUN_TEST(test_detect_ht_outdoor_by_its_shape);
     RUN_TEST(test_detect_unit_name_picks_the_capacity);
     RUN_TEST(test_detect_json);
