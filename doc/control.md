@@ -48,6 +48,14 @@ Smart Grid needs to be switched ON in the heat pump configuration menu, otherwis
 
 Coming from v1: the pins set in Settings → Relays replace `PIN_SG1`/`PIN_SG2` of `setup.h`. Until they are set (-1), the Smart Grid select is not in Home Assistant. On a ROTEX, the SG1 and SG2 contacts are located in the J8 connector, pins 5-6 (Smart Grid) and 11-12 (EVU).
 
+### Smart Grid timeout
+
+Set **SG timeout (seconds)** in **Settings → Relays** to expire a command from `sg/set`. With a 30-second timeout, for example, publish the desired mode every 10 seconds while your automation wants it active. A valid repeated command restarts the timer even when the mode stays the same. Modes 1, 2 and 3 revert to mode 0 and open both contacts when the deadline passes, including if the broker is disconnected. A single selection in Home Assistant also expires unless an automation repeats it.
+
+Publish these commands with `retain: false` and clear any existing retained command on `sg/set` before enabling the timeout. A retained command replayed by the broker on reconnect is received as a new command and can enable the mode again. ESPAltherma reports the mode on `sg/state` as usual.
+
+The valid range is 0 to 86400 whole seconds, with `0` (default) disabling the timeout. The API setting is `{"relays":{"sg_timeout_s":30}}`. Settings changes use the time of the last valid command, and heartbeats do not write to flash.
+
 ## Hot water and leaving water targets
 
 The user interface of the heat pump owns the setpoints it shows and re-sends them to the hydro board every second, so they cannot be changed through the X10A port. But when a setpoint mode is *weather dependent*, the hydro board computes that target itself from its own curve. ESPAltherma can then write the wanted target into both points of that curve: the target holds whatever the weather, it applies within a second, and it is saved in the unit so it survives a restart. This works for the hot water tank and for the leaving water of the main zone (the water sent to the floor or the radiators).

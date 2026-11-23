@@ -1602,6 +1602,8 @@ void setup()
 void loop()
 {
   watchdogLoop();
+  LOOP_STAGE("Smart Grid timeout");
+  sgTimeoutLoop();
   LOOP_STAGE("network");
   netLoop();
   LOOP_STAGE("Improv");
