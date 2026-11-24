@@ -143,7 +143,7 @@ std::vector<HaComponent> haSnapshotComponents(const HaDiscoverySnapshot &s)
     std::vector<HaComponent> out;
     for(size_t i=0;i<s.count;i++)
     {
-        bool binary=!s.labels[i].extra && getSensorDeviceAndUnit(s.labels[i].definition()).find("\"p\":\"binary_sensor\"")!=std::string::npos;
+        bool binary=getSensorDeviceAndUnit(s.labels[i].definition()).find("\"p\":\"binary_sensor\"")!=std::string::npos; // an extra can be one (the disinfection)
         out.push_back({makeJsonKey(s.labels[i].label),binary?"binary_sensor":"sensor"});
     }
     return out;

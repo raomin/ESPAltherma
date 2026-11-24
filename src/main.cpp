@@ -765,9 +765,13 @@ static const HaSensor METER_LABEL = {"Unit meter: Heat produced (kWh)", ESP_SENS
 // The unit's model name (control.h MeterReader::model), a diagnostic text once read
 static const HaSensor UNIT_MODEL_LABEL = {"Unit model", ESP_SENSOR_TEXT};
 
-// Room for every extra sensor: the statistics, the DIII values, the unit's meter, its model and its counters
+// A scheduled disinfection of the tank running (control.h DisinfectionFlag): a binary sensor, ON/OFF as the readings
+static const HaSensor DISINFECTION_LABEL = {"Disinfection running", -1, 300};
+
+// Room for every extra sensor: the statistics, the DIII values, the unit's meter, its model, the disinfection and
+// its counters
 static constexpr size_t HA_EXTRA_LABELS_MAX = sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) +
-                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT;
+                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 3 + UNIT_COUNTER_COUNT;
 
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
@@ -786,6 +790,8 @@ void haExtraSetup()
     extra[n++] = METER_LABEL;
   if (unitMeter.model[0])
     extra[n++] = UNIT_MODEL_LABEL;
+  if (unitMeter.status == CONTROL_READY && unitMeter.disinfectionFlag != nullptr)
+    extra[n++] = DISINFECTION_LABEL;
   for (size_t i = 0; unitMeter.status == CONTROL_READY && i < UNIT_COUNTER_COUNT; i++)
     if (unitMeter.counterMapped(i))
       extra[n++] = HaSensor(UNIT_COUNTER_DEFS[i].label, unitCounterSensorType(UNIT_COUNTER_DEFS[i]));
@@ -816,6 +822,15 @@ void meterAppendJson(char *buf, size_t size)
     snprintf(buf + n, size - n, "\"%s\":%lu,", METER_LABEL.label, (unsigned long)unitMeter.heatKWh);
   else
     snprintf(buf + n, size - n, "\"%s\":null,", METER_LABEL.label);
+  if (unitMeter.disinfectionFlag != nullptr)
+  {
+    n = strlen(buf);
+    const char *on = config.binaryAsNumber ? "1" : "ON", *off = config.binaryAsNumber ? "0" : "OFF";
+    if (unitMeter.disinfection < 0)
+      snprintf(buf + n, size - n, "\"%s\":null,", DISINFECTION_LABEL.label);
+    else
+      snprintf(buf + n, size - n, "\"%s\":\"%s\",", DISINFECTION_LABEL.label, unitMeter.disinfection ? on : off);
+  }
   for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++) // the unit's hours, starts and energy where mapped: null while not known
   {
     if (!unitMeter.counterMapped(i))
@@ -896,7 +911,7 @@ void statsAppendJson(char *buf, size_t size)
 #define VALUES_ROOM_BOARD 320 // the board's supply (M5), signal, address, free memory and uptime
 #define VALUES_ROOM_STATS 900 // 18 statistics: 536 characters of names, a figure each
 #define VALUES_ROOM_DIII 700  // 19 DIII values: 364 characters of names
-#define VALUES_ROOM_METER 900 // the unit's model, its meter and its 13 counters: 580 characters of names
+#define VALUES_ROOM_METER 940 // the unit's model, its meter, the disinfection and its 13 counters: 610 characters of names
 static size_t valuesMessageRoom()
 {
   size_t room = VALUES_ROOM_BOARD + MQTT_JSON_FRAME_ROOM;
