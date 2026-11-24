@@ -213,7 +213,7 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x5273, 0x5274, 0x37A6, 0x5253, 0x45D8, 0x45DC},
      0x093E,
      {0x39CE, 0x39B2, 0x3978, 0x39AE, 0x3A62, 0x39DE, 0x398C, 0x39C2, 0x093A},
-    // Cooling curve: the RAM words (0x3796/0x37D4) and their range records (0x5401/0x53FC, 16..22 °C) were read
+    // Cooling curve: the RAM words (0x3796/0x37D4) and their range records (0x5401/0x53FC) were read
     // on an EBLA08E23V3 (20017704) after changing [1-09]/[1-08] and restarting the heat pump; the field-setting
     // indices 378/377, the mode byte 374 (mask 0x0C) and the shared leaving-water target word 0x31B2 follow the
     // LWT entry and the 20002203 cooling mapping
