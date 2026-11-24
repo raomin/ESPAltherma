@@ -45,6 +45,7 @@ void heldForget();  // main.cpp: drops what the controls hold in RTC memory (a f
 extern volatile bool discoveryDirty;
 float statsVoltageRead(); // main.cpp: the unit's own voltage reading, NAN when it has none
 extern unsigned long lastPollMs;
+extern UnitGuard unitGuard; // unitguard.h
 extern DetectResult detection;
 extern CurveControl dhwControl, lwtControl, coolControl, addControl;
 extern LimitControl limitControl;
@@ -383,6 +384,7 @@ static void statusJson(JsonDocument &doc)
     hp["unit"] = (const char *)unitMeter.model; // the unit's own model name, as on its name plate
   hp["values"] = converter.activeCount;
   hp["last_poll"] = lastPollMs ? (long)((millis() - lastPollMs) / 1000) : -1;
+  hp["restarting"] = unitGuard.holding; // the polls are kept back while the unit restarts: the values are the last good ones
   hp["survey_running"] = surveyRequested || surveyInProgress;
   hp["survey_done"] = surveyJson[0] != 0;
   valuesLock();hp["survey_report_error"] = surveyReportFailed;valuesUnlock();

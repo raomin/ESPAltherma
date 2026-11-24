@@ -52,6 +52,10 @@ The high temperature Altherma (an EKHBRD011-016 hydrobox on an ERRQ or ERSQ outd
 
 Both boards can be read at once with two ESPAltherma boards: give the second one its own base topic in Settings → MQTT output. Mapped by owners on [issue #95](https://github.com/raomin/ESPAltherma/issues/95).
 
+## Readings that stop for a few minutes: "Heat pump restarting" in the event history
+
+When the unit restarts (its user interface does it after a change of field settings, and after a power cut), its board goes on answering for about two minutes, with zeros in place of most values. ESPAltherma keeps those polls back: nothing is published, Home Assistant and the page keep the last readings, and the event history says *Heat pump restarting* then *Heat pump back*. It tells from registry 0x00, the outdoor unit's identification, which loses its content for as long as the restart lasts. After five minutes the readings follow what the unit answers again, whatever it is (an outdoor unit without power answers zeros for good). Units read with protocol S have no such registry and are read as before, and so is a board that starts together with the unit: it has not seen that registry complete yet.
+
 ## A value is always 0 (or OFF)
 
 The definitions contain values for a range of products. It is possible that some of the values are not implemented in your specific heat pump. The Values tab shows the current reading of each value: use it to see which ones your unit really reports. If it says 'conv XXX not avail.' it is that I did not implement this specific conversion of value. If you need this value, create an issue and I'll implement it.

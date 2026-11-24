@@ -22,6 +22,7 @@
 #include "converters.h"
 #include "comm.h"
 #include "registrypoll.h"
+#include "unitguard.h"
 #include "control.h"
 #include "diii_comm.h"
 #include "stats.h"
@@ -60,6 +61,7 @@ std::vector<LabelDef> catalogLabels; //values of the model, from the catalog
 uint32_t labelGeneration=0; // protected by valuesLock; a publish stops when its selection changes
 LayoutChecker layoutChecker;         //checks the model's layout against the replies (layoutfix.h)
 LayoutCycle layoutCycle;             //replies of the last query cycle
+UnitGuard unitGuard;                 //keeps back the polls read while the unit restarts (unitguard.h), heat pump task
 volatile bool surveyRequested = false;
 volatile bool surveyInProgress = false; //the survey is being written: readers must not use it
 volatile bool surveyReady = false;
@@ -378,6 +380,7 @@ void reloadLabels()
   initRegistries();
   for (auto &ok : registryOk) ok.store(false);
   valuesUnlock();
+  unitGuard.retry();
   discoveryDirty = true;
 }
 
@@ -574,32 +577,83 @@ void publishSurvey()
 
 void hpDelay(unsigned long ms);
 
-// Queries all registries and converts their values. Heat pump task only.
-void pollRegistries()
+// Registry 0x00 for the restart guard (unitguard.h): one attempt, the payload of its reply
+static bool unitGuardRead(uint8_t *payload, uint8_t &len)
 {
+  watchdogHp();
+  diii.hold(1500, diiiSleep);
+  unsigned char buff[REPLY_BUFFER_SIZE] = {0};
+  if (!queryRegistry(0x00, buff, 'I') || buff[0] != 0x40 || buff[1] != 0x00 || buff[2] < 2)
+    return false;
+  len = buff[2] - 2 > UNIT_GUARD_PAYLOAD ? UNIT_GUARD_PAYLOAD : buff[2] - 2;
+  memcpy(payload, buff + 3, len);
+  return true;
+}
+
+// Queries all registries and converts their values; false when the poll is kept back because the unit restarts
+// (unitguard.h): its replies are dropped and the values stay those of the poll before. The replies are converted
+// together once the last one is in, so that what is read between two polls is one poll's values. Heat pump task only.
+bool pollRegistries()
+{
+  static unsigned char replies[32][REPLY_BUFFER_SIZE]; // 2 KB, not on the task's stack
+  bool answered[32] = {false};
   layoutCycle.clear();
-  for (size_t i = 0; (i < 32) && (uint8_t)registryIDs[i] != 0xFF; i++)
+  // A model read with protocol S has no registry 0x00
+  const bool guarded = config.protocol == 'I' && unitGuard.wanted();
+  uint8_t before[UNIT_GUARD_PAYLOAD], after[UNIT_GUARD_PAYLOAD], beforeLen = 0, afterLen = 0;
+  const bool hasBefore = guarded && unitGuardRead(before, beforeLen);
+  if (guarded)
+    unitGuard.answered(hasBefore);
+  size_t count = 0;
+  for (; (count < 32) && (uint8_t)registryIDs[count] != 0xFF; count++)
   {
+    const size_t i = count;
     watchdogHp();
     diii.hold(1500, diiiSleep); // a registry query must not land in a DIII E0 window
-    unsigned char buff[REPLY_BUFFER_SIZE] = {0};
+    unsigned char *buff = replies[i];
     const char protocol = registryProtocol((uint8_t)registryIDs[i], config.protocol, protocolSFrom);
-    registryOk[i] = registryPoll((uint8_t)registryIDs[i], buff, sizeof(buff), protocol,
+    answered[i] = registryPoll((uint8_t)registryIDs[i], buff, REPLY_BUFFER_SIZE, protocol,
       [&]() { return queryRegistry(registryIDs[i], buff, protocol); },
       []() { mqttSerial.println("Retrying..."); hpDelay(1000); });
-    if (registryOk[i])
+  }
+  // Without the first read the second one would cost a second timeout: the unit does not answer that registry
+  const bool hasAfter = hasBefore && unitGuardRead(after, afterLen);
+  if (guarded)
+  {
+    const UnitGuardVerdict verdict = unitGuard.poll(hasBefore ? before : nullptr, beforeLen, hasAfter ? after : nullptr, afterLen, millis());
+    if (unitGuard.began)
     {
-      registryEverOk[i] = true;
-      size_t payloadLength = protocol == 'I' ? (buff[2] >= 2 ? buff[2] - 2 : 0) : get_reply_len(buff[0], 'S') - 2;
-      valuesLock();
-      converter.readRegistryValues(buff, protocol, payloadLength); //process all values from the register
-      replyCache.update(protocol == 'I' ? buff[1] : buff[0], buff + (protocol == 'I' ? 3 : 1), payloadLength);
-      valuesUnlock();
-      if (protocol == 'I' && buff[2] >= 2)
-        layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
+      mqttSerial.println("Registry 0x00 lost its content: the unit restarts, the readings stay until it is back.");
+      eventAddf("Heat pump restarting (registry 0x00 lost its content): readings kept");
+    }
+    if (unitGuard.ended)
+      eventAddf("Heat pump back after %lu s: readings follow again", (millis() - unitGuard.since) / 1000);
+    if (unitGuard.gaveUp)
+      eventAddf("Registry 0x00 still incomplete after %lu min: readings as answered", UNIT_GUARD_MAX_MS / 60000);
+    if (verdict == UNIT_GUARD_HOLD)
+    {
+      mqttSerial.println("Poll not used: the unit restarts.");
+      return false;
     }
   }
+  valuesLock();
+  for (size_t i = 0; i < count; i++)
+  {
+    registryOk[i] = answered[i];
+    if (!answered[i])
+      continue;
+    registryEverOk[i] = true;
+    unsigned char *buff = replies[i];
+    const char protocol = registryProtocol((uint8_t)registryIDs[i], config.protocol, protocolSFrom);
+    size_t payloadLength = protocol == 'I' ? (buff[2] >= 2 ? buff[2] - 2 : 0) : get_reply_len(buff[0], 'S') - 2;
+    converter.readRegistryValues(buff, protocol, payloadLength); //process all values from the register
+    replyCache.update(protocol == 'I' ? buff[1] : buff[0], buff + (protocol == 'I' ? 3 : 1), payloadLength);
+    if (protocol == 'I' && buff[2] >= 2)
+      layoutCycle.add(buff[1], buff + 3, buff[2] - 2);
+  }
+  valuesUnlock();
   layoutCheck();
+  return true;
 }
 
 // Sends the values of the last query cycle in mqtt. Main loop only.
@@ -1436,9 +1490,10 @@ void hpTask(void *)
     if (!busy && !webUpdateRunning() && (uint8_t)registryIDs[0] != 0xFF)
     {
       HP_STAGE("query");
-      pollRegistries();
+      // A poll kept back while the unit restarts is not published: the values are those already sent
+      if (pollRegistries())
+        cycleReady = true;
       lastPollMs = millis();
-      cycleReady = true;
       mqttSerial.printf("Done. Waiting %ld ms...", (long)(wait - (millis() - start)));
     }
     HP_STAGE("wait");
