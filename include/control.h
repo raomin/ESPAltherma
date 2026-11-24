@@ -267,6 +267,24 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // 8164 h heating, 0 cooling (no hot water by the compressor: the boiler makes it), 8713 h pump, 7899 starts
     // (= 7896 + 3 of the two per-mode counts). The hours sit 0x54 above the 76F2 profile's, the meter 0x10 above.
     {"5190", {}, {}, {}, 0x085E, {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0, 0, 0, 0x085A}},
+    // The Altherma Hybrid on another software (word 9051 of registry 0x60): no image of it, the addresses come from
+    // two memory dumps of an EHYHBH05AAV3 and what its interface showed then (bunni1310, #716). The converted
+    // settings sit 0x3C above 76F2's: the hot water curve 52/52, the leaving water curve 35/50, the additional
+    // zone's 35/60 after it, the four 20.0 kW limits six bytes after the hot water word. The range records are in
+    // 76F2's order (35..60 and 45..60 for the tank, 35..50 and 35..45 for the leaving water); the limitation bytes
+    // read as the unit's memory has them ([4-08] none, kW), the four 50 A limits 0x20 below. The targets sit 0x24
+    // above 76F2's: the leaving water's read 40.25 with 40.2 on the interface, the hot water's 45 (its reheat
+    // setpoint) with the 52 it reports 0x3A after it, as on 18002904. The four setting bytes of the memory read as
+    // the interface's values at the same indexes, and the memory starts with the unit's name. The meter and the
+    // counters are where 5190 has them: the meter (10121 kWh) equals its float, and the heat of the three modes,
+    // 0x54 above 76F2's, adds up to it (9591.8 + 530.0 + 0). Not yet written to on a unit, the counters not yet
+    // compared with the interface; where this software keeps the active limit and the tank's ceiling is not known.
+    {"9051",
+     {0x15E0, 0x161E, 366, 367, 0x2C79, 0x2C7E, 278, 0x01, 0x1060, 0},
+     {0x15E2, 0x1620, 373, 372, 0x2C88, 0x2C83, 374, 0x0C, 0x10C4, 0},
+     {0x2BDE, 0x2BDF, 0x15E6, 0x2BBE, 0, 0},
+     0x085E,
+     {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0x1806, 0x179C, 0x17EA, 0x085A}},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 

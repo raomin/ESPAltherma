@@ -88,7 +88,8 @@ struct FakeUnit
         setWord(p.dhw.ramA, 48 << 8);
         setWord(p.dhw.ramB, 52 << 8);
         setWord(p.dhw.ramEffective, 48 << 8);
-        setWord(p.dhw.ramCeiling, 51 << 8);
+        if (p.dhw.ramCeiling)
+            setWord(p.dhw.ramCeiling, 51 << 8);
         setWord(p.lwt.ramB, 40 << 8);
         setWord(p.lwt.ramA, 36 << 8);
         setWord(p.lwt.ramEffective, 37 << 8 | 0x4D);
@@ -513,7 +514,7 @@ void test_every_other_software_writes_its_own_addresses()
         TEST_ASSERT_EQUAL(48, c.target);
         TEST_ASSERT_EQUAL(52, c.targetLo);
         TEST_ASSERT_EQUAL(48, c.effective);
-        TEST_ASSERT_EQUAL(51, c.ceiling);
+        TEST_ASSERT_EQUAL(p.dhw.ramCeiling ? 51 : -1, c.ceiling); // not placed on 9051: none shown
         c.request(50);
         c.tick(2000);
         TEST_ASSERT_EQUAL_MESSAGE(50 << 8, unit.word(p.dhw.ramA), p.softwareId);
@@ -941,10 +942,16 @@ void test_cooling_and_additional_zone_only_where_mapped()
         c.tick(2000);
     }
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
-    size_t mapped = 0;
+    // Only where an owner read the addresses on a unit: 20002203 for both, 20017704 for cooling (#719)
     for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
-        mapped += CONTROL_PROFILES[i].cool.ramA != 0;
-    TEST_ASSERT_EQUAL(1, mapped);
+    {
+        const ControlProfile &p = CONTROL_PROFILES[i];
+        const bool first = strcmp(p.softwareId, "20002203") == 0;
+        TEST_ASSERT_TRUE_MESSAGE(first || strcmp(p.softwareId, "20017704") == 0 || p.cool.ramA == 0, p.softwareId);
+        TEST_ASSERT_TRUE_MESSAGE(first || p.add.ramA == 0, p.softwareId);
+    }
+    TEST_ASSERT_NOT_EQUAL(0, FakeUnit::profileFor("20002203").cool.ramA);
+    TEST_ASSERT_NOT_EQUAL(0, FakeUnit::profileFor("20002203").add.ramA);
 }
 
 // A second request that arrives while the first one is being written is applied at the next tick
@@ -1625,7 +1632,7 @@ void test_power_limit_on_every_mapped_board()
         TEST_ASSERT_EQUAL(LIMIT_CURRENT, a.kind);
         TEST_ASSERT_EQUAL_FLOAT(p.limit.ramActive ? 50.0f : -1.0f, a.active); // unknown where not mapped (20002202)
     }
-    TEST_ASSERT_EQUAL(13, mapped); // 20017701, 20017702, 20002202 and 20007902 from their owners' dumps and reads included
+    TEST_ASSERT_EQUAL(14, mapped); // 20017701, 20017702, 20002202, 20007902 and 9051 from their owners' dumps and reads included
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
 
@@ -1771,7 +1778,7 @@ void test_every_mapped_software_reads_its_meter_and_counters()
         }
         TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
     }
-    TEST_ASSERT_EQUAL(15, mapped); // the Hybrid 5190 and 20007902 included
+    TEST_ASSERT_EQUAL(16, mapped); // the Hybrids 5190 and 9051 and 20007902 included
 }
 
 // 20002203: the heat produced, the compressor and pump hours and the compressor starts of the interface, 32-bit
