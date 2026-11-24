@@ -212,7 +212,12 @@ static const ControlProfile CONTROL_PROFILES[] = {
      {0x37A2, 0x37E0, 373, 372, 0x53F2, 0x53ED, 374, 0x0C, 0x31B2, 0},
      {0x5273, 0x5274, 0x37A6, 0x5253, 0x45D8, 0x45DC},
      0x093E,
-     {0x39CE, 0x39B2, 0x3978, 0x39AE, 0x3A62, 0x39DE, 0x398C, 0x39C2, 0x093A}},
+     {0x39CE, 0x39B2, 0x3978, 0x39AE, 0x3A62, 0x39DE, 0x398C, 0x39C2, 0x093A},
+    // Cooling curve: the RAM words (0x3796/0x37D4) and their range records (0x5401/0x53FC, 16..22 °C) were read
+    // on an EBLA08E23V3 (20017704) after changing [1-09]/[1-08] and restarting the heat pump; the field-setting
+    // indices 378/377, the mode byte 374 (mask 0x0C) and the shared leaving-water target word 0x31B2 follow the
+    // LWT entry and the 20002203 cooling mapping
+    {0x3796, 0x37D4, 378, 377, 0x5401, 0x53FC, 374, 0x0C, 0x31B2, 0}},
     // The same ECH2O boards on their earlier software: no image of it, the addresses come from a memory dump of an
     // EHSXB08P50EF (forTT78, #642) matched against 20017704's layout: the converted settings and the targets sit
     // 0x18 lower (the curve, the limits at 20.0 kW, the reported targets and the ceiling all read as the unit
