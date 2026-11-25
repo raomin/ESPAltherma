@@ -112,7 +112,7 @@
  "Computed on the board from the values it reads: the heat delivered (flow and water temperatures), the electricity drawn (inverter current and the mains voltage) and their ratio, the day's figures per mode and the compressor cycles. Shown on the home page and sent to Home Assistant.": "Berekend op het bord uit de waarden die het leest: de geleverde warmte (debiet en watertemperaturen), de opgenomen elektriciteit (inverterstroom en netspanning) en hun verhouding, de dagcijfers per modus en de compressorcycli. Getoond op de startpagina en verzonden naar Home Assistant.",
  "Compute energy and cycle figures": "Energie en cycli berekenen",
  "Mains voltage (V)": "Netspanning (V)",
- "Supply": "Voeding",
+ "Outdoor unit supply": "Voeding van de buitenunit",
  "Pump and electronics (W)": "Pomp en elektronica (W)",
  "Power factor": "Arbeidsfactor",
  "The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.": "De arbeidsfactor zet de voltampère van de omvormer om in watt. Standaard 1, wat bij laag compressortoerental te hoog uitkomt: met een meter op de unit vult u de waarde in die ermee overeenkomt, 0,6 tot 0,9 bij de meeste units. Pomp en back-upverwarming blijven buiten beschouwing.",

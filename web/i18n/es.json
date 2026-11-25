@@ -112,7 +112,7 @@
  "Computed on the board from the values it reads: the heat delivered (flow and water temperatures), the electricity drawn (inverter current and the mains voltage) and their ratio, the day's figures per mode and the compressor cycles. Shown on the home page and sent to Home Assistant.": "Calculados en la placa a partir de los valores que lee: el calor entregado (caudal y temperaturas del agua), la electricidad consumida (corriente del inversor y tensión de red) y su relación, las cifras del día por modo y los ciclos del compresor. Se muestran en la página de inicio y se envían a Home Assistant.",
  "Compute energy and cycle figures": "Calcular energía y ciclos",
  "Mains voltage (V)": "Tensión de red (V)",
- "Supply": "Alimentación",
+ "Outdoor unit supply": "Alimentación de la unidad exterior",
  "Pump and electronics (W)": "Bomba y electrónica (W)",
  "Power factor": "Factor de potencia",
  "The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.": "El factor de potencia convierte los voltamperios del inversor en vatios. 1 por defecto, que lee alto a baja velocidad del compresor: con un contador en la unidad, ponga el valor que coincida con él, de 0,6 a 0,9 en la mayoría de las unidades. La bomba y el calentador de apoyo no se ven afectados.",

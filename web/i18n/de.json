@@ -112,7 +112,7 @@
  "Computed on the board from the values it reads: the heat delivered (flow and water temperatures), the electricity drawn (inverter current and the mains voltage) and their ratio, the day's figures per mode and the compressor cycles. Shown on the home page and sent to Home Assistant.": "Auf dem Board aus den gelesenen Werten berechnet: die gelieferte Wärme (Durchfluss und Wassertemperaturen), der Strombezug (Inverterstrom und Netzspannung) und ihr Verhältnis, die Tageswerte je Betriebsart und die Verdichterzyklen. Auf der Startseite angezeigt und an Home Assistant gesendet.",
  "Compute energy and cycle figures": "Energie und Zyklen berechnen",
  "Mains voltage (V)": "Netzspannung (V)",
- "Supply": "Versorgung",
+ "Outdoor unit supply": "Versorgung des Außengeräts",
  "Pump and electronics (W)": "Pumpe und Elektronik (W)",
  "Power factor": "Leistungsfaktor",
  "The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.": "Der Leistungsfaktor macht aus den Voltampere des Inverters Watt. Standard 1, was bei niedriger Verdichterdrehzahl zu hoch liest: mit einem Zähler an der Anlage den Wert eintragen, der zu ihm passt, 0,6 bis 0,9 bei den meisten Anlagen. Pumpe und Heizstab sind nicht betroffen.",
