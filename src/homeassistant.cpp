@@ -239,6 +239,7 @@ std::string getConversion(const LabelDef &label)
         case ESP_SENSOR_MINUTES:
         case ESP_SENSOR_HOURS:
         case ESP_SENSOR_TOTAL:
+        case ESP_SENSOR_BAR:
             return std::string(" if value_json['") + label.label + "'] is not none else None";
     }
     return "";
@@ -282,6 +283,8 @@ std::string getSensorDeviceAndUnit(const LabelDef &label)
             return "\"p\":\"sensor\",\"icon\":\"mdi:counter\",\"stat_cla\":\"total_increasing\",";
         case ESP_SENSOR_TEXT:
             return "\"p\":\"sensor\",\"icon\":\"mdi:heat-pump\",\"ent_cat\":\"diagnostic\",";
+        case ESP_SENSOR_BAR:
+            return "\"p\":\"sensor\",\"dev_cla\":\"pressure\",\"unit_of_meas\":\"bar\",\"stat_cla\":\"measurement\",\"sug_dsp_prc\":2,";
 
         /// Built-in ones:
         // TODO: move magic numbers to consts

@@ -819,9 +819,14 @@ static const HaSensor METER_LABEL = {"Unit meter: Heat produced (kWh)", ESP_SENS
 // The unit's model name (control.h MeterReader::model), a diagnostic text once read
 static const HaSensor UNIT_MODEL_LABEL = {"Unit model", ESP_SENSOR_TEXT};
 
-// Room for every extra sensor: the statistics, the DIII values, the unit's meter, its model and its counters
+// The water pressure of the Hybrid's gas boiler (control.h MeterReader::waterBar): the registries' "Water pressure"
+// reads 0 on that unit, hence a name of its own
+static const HaSensor WATER_BAR_LABEL = {"Boiler water pressure (bar)", ESP_SENSOR_BAR};
+
+// Room for every extra sensor: the statistics, the DIII values, the unit's meter, its model, its counters and the
+// boiler's water pressure
 static constexpr size_t HA_EXTRA_LABELS_MAX = sizeof(STATS_LABELS) / sizeof(STATS_LABELS[0]) +
-                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 2 + UNIT_COUNTER_COUNT;
+                                             sizeof(DIII_LABELS) / sizeof(DIII_LABELS[0]) + 3 + UNIT_COUNTER_COUNT;
 
 // The statistics, the DIII values and the unit's meter share the one list of extra Home Assistant sensors. The
 // DIII ones only once the reader found its outdoor unit, the meter once read (no empty sensors on the other units).
@@ -843,6 +848,8 @@ void haExtraSetup()
   for (size_t i = 0; unitMeter.status == CONTROL_READY && i < UNIT_COUNTER_COUNT; i++)
     if (unitMeter.counterMapped(i))
       extra[n++] = HaSensor(UNIT_COUNTER_DEFS[i].label, unitCounterSensorType(UNIT_COUNTER_DEFS[i]));
+  if (unitMeter.status == CONTROL_READY && unitMeter.waterBarMapped())
+    extra[n++] = WATER_BAR_LABEL;
   haExtraCount = 0; // the main loop may be reading the list
   haExtraLabels = n ? extra : nullptr;
   haExtraCount = n;
@@ -882,6 +889,14 @@ void meterAppendJson(char *buf, size_t size)
       snprintf(buf + n, size - n, "\"%s\":%lu.%03lu,", UNIT_COUNTER_DEFS[i].label, v / 1000, v % 1000);
     else
       snprintf(buf + n, size - n, "\"%s\":%lu,", UNIT_COUNTER_DEFS[i].label, v);
+  }
+  if (unitMeter.waterBarMapped()) // the boiler's water pressure: null while not known
+  {
+    n = strlen(buf);
+    if (unitMeter.waterBarKnown)
+      snprintf(buf + n, size - n, "\"%s\":%.2f,", WATER_BAR_LABEL.label, unitMeter.waterBar);
+    else
+      snprintf(buf + n, size - n, "\"%s\":null,", WATER_BAR_LABEL.label);
   }
 }
 
@@ -950,7 +965,7 @@ void statsAppendJson(char *buf, size_t size)
 #define VALUES_ROOM_BOARD 320 // the board's supply (M5), signal, address, free memory and uptime
 #define VALUES_ROOM_STATS 900 // 18 statistics: 536 characters of names, a figure each
 #define VALUES_ROOM_DIII 700  // 19 DIII values: 364 characters of names
-#define VALUES_ROOM_METER 900 // the unit's model, its meter and its 13 counters: 580 characters of names
+#define VALUES_ROOM_METER 960 // the unit's model, its meter, its 13 counters and the boiler's pressure: 610 characters of names
 static size_t valuesMessageRoom()
 {
   size_t room = VALUES_ROOM_BOARD + MQTT_JSON_FRAME_ROOM;

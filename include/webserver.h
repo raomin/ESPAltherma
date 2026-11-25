@@ -382,6 +382,8 @@ static void statusJson(JsonDocument &doc)
   hp["confirmed"] = config.modelConfirmed;
   if (unitMeter.model[0])
     hp["unit"] = (const char *)unitMeter.model; // the unit's own model name, as on its name plate
+  if (unitMeter.waterBarMapped() && unitMeter.waterBarKnown)
+    hp["water_bar"] = serialized(String(unitMeter.waterBar, 2)); // the Hybrid's boiler, where the board has it
   hp["values"] = converter.activeCount;
   hp["last_poll"] = lastPollMs ? (long)((millis() - lastPollMs) / 1000) : -1;
   hp["restarting"] = unitGuard.holding; // the polls are kept back while the unit restarts: the values are the last good ones

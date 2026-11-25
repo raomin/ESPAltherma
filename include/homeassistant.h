@@ -50,6 +50,7 @@ extern size_t haExtraCount;
 #define ESP_SENSOR_HOURS 988 // a lifetime count of operating hours
 #define ESP_SENSOR_TOTAL 987 // a lifetime count (the compressor starts)
 #define ESP_SENSOR_TEXT 986  // a text, for diagnostics (the unit's model name)
+#define ESP_SENSOR_BAR 985   // a pressure in bar (the water pressure of the Hybrid's boiler)
 
 /*
  * Turns a LabelDef into a "component" JSON element for inclusion in the "cmp" array of the Device Discovery payload.

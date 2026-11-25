@@ -98,6 +98,7 @@ struct ControlProfile
   UnitCounters counters;  // its operating hours and compressor starts (0: not mapped)
   CurveSpec cool;         // cooling leaving water target of the main zone (experimental, 20002203 only)
   CurveSpec add;          // heating leaving water target of the additional zone (experimental, 20002203 only)
+  uint16_t ramWaterBar;   // the water pressure the Hybrid's gas boiler measures, a float in bar (0: not mapped)
 };
 
 // The energy meter (the heat produced since the installation, the user interface's energy data) is a 32-bit count
@@ -267,29 +268,37 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // E series on their 2019 software, and the 2026 ground-source EGSAH/EGSAX boards.
     {"19016505", {}, {}, {}, 0x08E2, {0x37BE, 0x37A2, 0x375C, 0x379E, 0x385E, 0x37CE, 0x3770, 0x37B2, 0x08DE}},
     {"23015103", {}, {}, {}, 0x0986, {0x4070, 0x4054, 0x401A, 0x4050, 0x4104, 0x4080, 0x402E, 0x4064, 0x0982}},
-    // Altherma Hybrid (AS1706433 boards, software word 5190 of registry 0x60, no 'L' command like the CB boards):
-    // the meter and the counters read on an owner's unit against its interface (marcoatwork80, #647): 32520 kWh,
+    // Altherma Hybrid (AS1706433 boards, no 'L' command like the CB boards). Registry 0x60 has its software word as
+    // the bytes 51 90: the unit's report shows them in that order ("iu_sw": "5190"), the id here takes the second
+    // byte first, as for 76F2. One software, which an entry "5190" next to this one took for two until beta.35: it
+    // never matched a unit.
+    // The meter and the counters were read on an owner's unit against its interface (marcoatwork80, #647): 32520 kWh,
     // 8164 h heating, 0 cooling (no hot water by the compressor: the boiler makes it), 8713 h pump, 7899 starts
     // (= 7896 + 3 of the two per-mode counts). The hours sit 0x54 above the 76F2 profile's, the meter 0x10 above.
-    {"5190", {}, {}, {}, 0x085E, {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0, 0, 0, 0x085A}},
-    // The Altherma Hybrid on another software (word 9051 of registry 0x60): no image of it, the addresses come from
-    // two memory dumps of an EHYHBH05AAV3 and what its interface showed then (bunni1310, #716). The converted
+    // No image of this software: the other addresses come from two memory dumps of an EHYHBH05AAV3 and what its
+    // interface showed then (bunni1310, #716). The converted
     // settings sit 0x3C above 76F2's: the hot water curve 52/52, the leaving water curve 35/50, the additional
     // zone's 35/60 after it, the four 20.0 kW limits six bytes after the hot water word. The range records are in
     // 76F2's order (35..60 and 45..60 for the tank, 35..50 and 35..45 for the leaving water); the limitation bytes
     // read as the unit's memory has them ([4-08] none, kW), the four 50 A limits 0x20 below. The targets sit 0x24
     // above 76F2's: the leaving water's read 40.25 with 40.2 on the interface, the hot water's 45 (its reheat
     // setpoint) with the 52 it reports 0x3A after it, as on 18002904. The four setting bytes of the memory read as
-    // the interface's values at the same indexes, and the memory starts with the unit's name. The meter and the
-    // counters are where 5190 has them: the meter (10121 kWh) equals its float, and the heat of the three modes,
-    // 0x54 above 76F2's, adds up to it (9591.8 + 530.0 + 0). Not yet written to on a unit, the counters not yet
-    // compared with the interface; where this software keeps the active limit and the tank's ceiling is not known.
+    // the interface's values at the same indexes, and the memory starts with the unit's name. On those dumps the
+    // meter (10121 kWh) equals its float, and the heat of the three modes, 0x54 above 76F2's, adds up to it
+    // (9591.8 + 530.0 + 0). Not yet written to on a unit, the energy of each mode not yet compared with the
+    // interface; where this software keeps the active limit and the tank's ceiling is not known.
+    // The water pressure is the gas boiler's (its sensor, its display; the registries' own reads 0 on the Hybrid):
+    // one float follows the display in three dumps of two units (#718), 1.45 then 2.02 on an EHYHBX08AAV3 whose
+    // display showed 1.5 then 2.0 after a refill, 1.80 on the EHYHBH05AAV3 at 1.7. Found by its value, no code read.
     {"9051",
      {0x15E0, 0x161E, 366, 367, 0x2C79, 0x2C7E, 278, 0x01, 0x1060, 0},
      {0x15E2, 0x1620, 373, 372, 0x2C88, 0x2C83, 374, 0x0C, 0x10C4, 0},
      {0x2BDE, 0x2BDF, 0x15E6, 0x2BBE, 0, 0},
      0x085E,
-     {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0x1806, 0x179C, 0x17EA, 0x085A}},
+     {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0x1806, 0x179C, 0x17EA, 0x085A},
+     {},
+     {},
+     0x1E5C},
 };
 #define CONTROL_PROFILE_COUNT (sizeof(CONTROL_PROFILES) / sizeof(CONTROL_PROFILES[0]))
 
@@ -1405,6 +1414,21 @@ inline uint16_t unitCounterAddress(const UnitCounters &c, size_t i)
   }
 }
 
+// The water pressure of the Hybrid's gas boiler, a float in bar read with the meter (not a count: the value of the
+// moment). false: not a pressure. A board that has not heard from its boiler yet holds 0, and a circuit under
+// pressure never reads exactly that; beyond 4 bar the safety valve has long opened (3 bar).
+#define UNIT_WATER_BAR_MAX 4.0f
+
+inline bool unitWaterBarDecode(const uint8_t *b, float &bar)
+{
+  float v;
+  memcpy(&v, b, sizeof(v));
+  if (!(v > 0.0f && v <= UNIT_WATER_BAR_MAX)) // also NaN
+    return false;
+  bar = v;
+  return true;
+}
+
 // The unit's model name, as on its name plate (EHBX08EF6V): the first bytes of the hydro board's memory, the
 // installer settings' block the targets are read from (the same 'I' command), ended by a 0. Found at the start of
 // that block's image in the RAM of 20002203 (0x0968, the settings at 0x0968 + their offset); the block's layout is
@@ -1441,6 +1465,8 @@ struct MeterReader : X10aClient
   unsigned long checkedAt = 0, readAt = 0;
   uint32_t counter[UNIT_COUNTER_COUNT] = {0};     // the highest count read of each mapped counter since the start (energy in Wh)
   bool counterKnown[UNIT_COUNTER_COUNT] = {false}; // the last read gave it
+  float waterBar = 0;                              // the boiler's water pressure where mapped, as last read
+  bool waterBarKnown = false;                      // the last read gave it
 
   void reset()
   {
@@ -1454,6 +1480,17 @@ struct MeterReader : X10aClient
     checkedAt = readAt = 0;
     forgetCounters();
     memset(counter, 0, sizeof(counter));
+    waterBar = 0;
+    waterBarKnown = false;
+  }
+
+  bool waterBarMapped() const { return profile != nullptr && profile->ramWaterBar != 0; }
+
+  // Not a lifetime count: read whether the counts are loaded or not, and unknown as soon as a read gives none
+  void readWaterBar()
+  {
+    uint8_t b[16];
+    waterBarKnown = waterBarMapped() && readRam(profile->ramWaterBar, b) && unitWaterBarDecode(b, waterBar);
   }
 
   bool counterMapped(size_t i) const { return profile != nullptr && unitCounterAddress(profile->counters, i) != 0; }
@@ -1543,6 +1580,7 @@ struct MeterReader : X10aClient
       readCounters();
     else
       forgetCounters();
+    readWaterBar();
     return known;
   }
 

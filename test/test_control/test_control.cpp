@@ -1778,7 +1778,7 @@ void test_every_mapped_software_reads_its_meter_and_counters()
         }
         TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
     }
-    TEST_ASSERT_EQUAL(16, mapped); // the Hybrids 5190 and 9051 and 20007902 included
+    TEST_ASSERT_EQUAL(15, mapped); // the Hybrid (9051) and 20007902 included
 }
 
 // 20002203: the heat produced, the compressor and pump hours and the compressor starts of the interface, 32-bit
@@ -1901,21 +1901,86 @@ void test_the_energy_of_each_mode_is_read_on_20002203()
     TEST_ASSERT_FALSE(m.counterKnown[7]);
     TEST_ASSERT_EQUAL_UINT32(915000, m.counter[7]);
     TEST_ASSERT_TRUE(m.counterKnown[5]);
-    // the other softwares: the heat of each mode and the electricity total where the meter is mapped (the Hybrid has
-    // the total only), the electricity of each mode nowhere else
+    // the other softwares: the heat of each mode and the electricity total where the meter is mapped, the
+    // electricity of each mode nowhere else
     for (size_t p = 0; p < CONTROL_PROFILE_COUNT; p++)
     {
         const ControlProfile &q = CONTROL_PROFILES[p];
         if (strcmp(q.softwareId, "20002203") == 0)
             continue;
-        bool hybrid = strcmp(q.softwareId, "5190") == 0;
         for (size_t i = 5; i < 8; i++)
-            TEST_ASSERT_EQUAL_MESSAGE(q.ramHeatKwh != 0 && !hybrid, unitCounterAddress(q.counters, i) != 0, q.softwareId);
+            TEST_ASSERT_EQUAL_MESSAGE(q.ramHeatKwh != 0, unitCounterAddress(q.counters, i) != 0, q.softwareId);
         TEST_ASSERT_EQUAL_MESSAGE(q.ramHeatKwh != 0, unitCounterAddress(q.counters, 8) != 0, q.softwareId);
         for (size_t i = 9; i < UNIT_COUNTER_COUNT; i++)
             TEST_ASSERT_EQUAL_UINT16(0, unitCounterAddress(q.counters, i));
     }
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+}
+
+// The Altherma Hybrid: the water pressure its gas boiler measures, a float in bar the hydro board keeps, read with
+// the meter. The value of the moment: unknown as soon as a read gives none, never the last one kept.
+void test_the_hybrid_reads_the_water_pressure_of_its_boiler()
+{
+    const ControlProfile &p = FakeUnit::profileFor("9051");
+    TEST_ASSERT_EQUAL_STRING("9051", p.softwareId);
+    TEST_ASSERT_EQUAL_HEX16(0x1E5C, p.ramWaterBar);
+    unit.board(p);
+    unit.setU32(p.ramHeatKwh, 37019);
+    const uint8_t at15[4] = {0x99, 0x99, 0xB9, 0x3F}; // the bytes of an owner's dump with 1.5 bar on the display
+    memcpy(unit.ram + 0x1E5C, at15, 4);
+    MeterReader m;
+    m.exchange = fakeExchange;
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_TRUE(m.waterBarMapped());
+    TEST_ASSERT_TRUE(m.waterBarKnown);
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, 1.45f, m.waterBar);
+    const uint8_t at20[4] = {0xAE, 0x47, 0x01, 0x40}; // the same unit refilled: 2.0 on the display
+    memcpy(unit.ram + 0x1E5C, at20, 4);
+    m.tick(1000 + METER_READ_INTERVAL_MS);
+    TEST_ASSERT_TRUE(m.waterBarKnown);
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, 2.02f, m.waterBar);
+    // not a pressure: nothing heard from the boiler yet (0), not a number, negative, beyond the safety valve
+    const uint32_t bad[] = {0, 0x7FC00000, 0xBF800000, 0x40900000};
+    unsigned long t = 1000 + METER_READ_INTERVAL_MS;
+    for (uint32_t raw : bad)
+    {
+        unit.setU32(0x1E5C, raw);
+        m.tick(t += METER_READ_INTERVAL_MS);
+        TEST_ASSERT_FALSE(m.waterBarKnown);
+    }
+    unit.setFloat(0x1E5C, 4.0f);
+    m.tick(t += METER_READ_INTERVAL_MS);
+    TEST_ASSERT_TRUE(m.waterBarKnown);
+    // a unit just powered up has no counts yet: the pressure is read all the same
+    unit.setU32(p.ramHeatKwh, 0);
+    unit.setFloat(0x1E5C, 1.8f);
+    m.tick(t += METER_READ_INTERVAL_MS);
+    TEST_ASSERT_FALSE(m.known);
+    TEST_ASSERT_TRUE(m.waterBarKnown);
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, 1.8f, m.waterBar);
+    // no answer: unknown
+    unit.answer = false;
+    m.tick(t += METER_READ_INTERVAL_MS);
+    TEST_ASSERT_FALSE(m.waterBarKnown);
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    // only the Hybrid has a boiler: mapped nowhere else, and nothing read there
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+        TEST_ASSERT_EQUAL_MESSAGE(strcmp(CONTROL_PROFILES[i].softwareId, "9051") == 0, CONTROL_PROFILES[i].ramWaterBar != 0,
+                                  CONTROL_PROFILES[i].softwareId);
+    unit.reset();
+    unit.board(FakeUnit::profileFor("18002904"));
+    unit.setU32(FakeUnit::profileFor("18002904").ramHeatKwh, 79084);
+    unit.setFloat(0x1E5C, 1.5f);
+    MeterReader other;
+    other.exchange = fakeExchange;
+    other.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, other.status);
+    TEST_ASSERT_FALSE(other.waterBarMapped());
+    TEST_ASSERT_FALSE(other.waterBarKnown);
+    // the Hybrid is one software: the two bytes of its registry the other way round are not another one
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+        TEST_ASSERT_TRUE(strcmp(CONTROL_PROFILES[i].softwareId, "5190") != 0);
 }
 
 // What the controls hold is saved in the board's flash once unchanged for ten minutes, an hour at most after the
@@ -2030,6 +2095,7 @@ int main(int, char **)
     RUN_TEST(test_the_unit_model_name_is_read_from_the_memory);
     RUN_TEST(test_every_mapped_software_reads_its_meter_and_counters);
     RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
+    RUN_TEST(test_the_hybrid_reads_the_water_pressure_of_its_boiler);
     RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);
     RUN_TEST(test_lifetime_counts_never_go_back);
     RUN_TEST(test_the_energy_of_each_mode_is_read_on_20002203);

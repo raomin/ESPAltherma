@@ -9,6 +9,7 @@ void test_compact_extra_metadata_preserves_discovery()
         {"E0: INV current (A)", -1, 105},
         {"Unit model", ESP_SENSOR_TEXT},
         {"Unit meter: Compressor hours (h)", ESP_SENSOR_HOURS},
+        {"Boiler water pressure (bar)", ESP_SENSOR_BAR},
     };
     for (const HaSensor &sensor : sensors)
     {
@@ -17,6 +18,12 @@ void test_compact_extra_metadata_preserves_discovery()
         TEST_ASSERT_EQUAL_STRING(expected.c_str(), makeSensorJson(sensor.definition(), false).c_str());
     }
     TEST_ASSERT_TRUE(sizeof(HaSensor) < sizeof(LabelDef));
+    // the boiler's water pressure: a measurement in bar, "None" while the board has no value
+    std::string bar = makeSensorJson(HaSensor("Boiler water pressure (bar)", ESP_SENSOR_BAR).definition(), false);
+    TEST_ASSERT_NOT_NULL(strstr(bar.c_str(), "\"dev_cla\":\"pressure\""));
+    TEST_ASSERT_NOT_NULL(strstr(bar.c_str(), "\"unit_of_meas\":\"bar\""));
+    TEST_ASSERT_NOT_NULL(strstr(bar.c_str(), "\"stat_cla\":\"measurement\""));
+    TEST_ASSERT_NOT_NULL(strstr(bar.c_str(), "is not none else None"));
 }
 
 void test_extra_components_are_removed_when_disabled()
