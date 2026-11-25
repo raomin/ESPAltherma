@@ -965,7 +965,7 @@ void statsAppendJson(char *buf, size_t size)
 #define VALUES_ROOM_BOARD 320 // the board's supply (M5), signal, address, free memory and uptime
 #define VALUES_ROOM_STATS 900 // 18 statistics: 536 characters of names, a figure each
 #define VALUES_ROOM_DIII 700  // 19 DIII values: 364 characters of names
-#define VALUES_ROOM_METER 960 // the unit's model, its meter, its 13 counters and the boiler's pressure: 610 characters of names
+#define VALUES_ROOM_METER 1100 // the unit's model, its meter, its 15 counters and the boiler's pressure: 692 characters of names
 static size_t valuesMessageRoom()
 {
   size_t room = VALUES_ROOM_BOARD + MQTT_JSON_FRAME_ROOM;

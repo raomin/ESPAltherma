@@ -1019,8 +1019,10 @@ function paint() {
   requestAnimationFrame(() => { fit($('#lComp'), 70); fit($('#sInv'), 70); }); // once displayed: hidden texts have no width
   tx('sV3', r.v3 == null ? '' : v3 ? t('to the hot water') : t('to the house'));
   tx('sPump', r.pump == null && flow == null ? '' : pump ? t('Pump on') : t('Pump off'));
-  // Exactly 0: no pressure sensor on the unit (an empty circuit would stop the heat pump in error)
-  const bar = n('bar') || null;
+  // Exactly 0: no pressure sensor on the unit (an empty circuit would stop the heat pump in error). The Altherma
+  // Hybrid's is in its gas boiler: the board reads that one apart (hp.water_bar), and it is shown in its place
+  const boilerBar = !n('bar') && status.hp && status.hp.water_bar != null ? +status.hp.water_bar : null;
+  const bar = n('bar') || boilerBar || null;
   tx('sBar', bar == null ? '' : f1(bar) + ' bar');
   const a = (-135 + (bar || 0) / 4 * 270) * Math.PI / 180;
   $('#needle').setAttribute('d', `M500 492L${(500 + 11 * Math.sin(a)).toFixed(1)} ${(492 - 11 * Math.cos(a)).toFixed(1)}`);
@@ -1043,7 +1045,9 @@ function paint() {
   tx('dBar', bar == null ? '—' : f1(bar));
   $('#barGauge').style.visibility = bar == null ? 'hidden' : '';
   $('#pMark').setAttribute('cx', (Math.max(0, Math.min(3, bar || 0)) / 3 * 250).toFixed(1));
-  tx('dBarS', bar == null ? '' : bar < 1 ? t('Low: top up the system') : bar > 2.5 ? t('High: check the expansion vessel') : t('In the good range'));
+  // The boiler's sensor reads higher while the pump runs (2.5 bar against 2.0 at rest on an owner's unit): its
+  // value is only called high from the safety valve's 3 bar
+  tx('dBarS', bar == null ? '' : bar < 1 ? t('Low: top up the system') : bar > (boilerBar != null ? 3 : 2.5) ? t('High: check the expansion vessel') : t('In the good range'));
   // Protocol S units have no error type, only codes: letters and digits ("A1", "U4"), "0" when there is none
   const set = s => s != null && !/^[\s0]*$/.test(s);
   const code = n('code'), fault = r.err != null ? !/^normal$/i.test(r.err) || code > 0 : set(r.code);

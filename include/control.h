@@ -81,11 +81,14 @@ struct LimitSpec
 // function that fills the kWh block (13809 on an 18002904 = its Wh slots to the kWh); so those four come with the
 // meter everywhere. The electricity of each mode stays on 20002203: on 18002904 the slot that is empty on 20002203
 // holds the largest count (8712 of 13809 kWh), so the slots do not mean the same on every software.
+// Last, the operating hours of the Altherma Hybrid's gas boiler in space heating and in hot water: 32-bit counts
+// in the same block as the compressor's, on software 9051 only.
 struct UnitCounters
 {
   uint16_t hoursHeating, hoursCooling, hoursDhw, hoursPump, starts;
   uint16_t heatHeating, heatDhw, heatCooling;
   uint16_t elecAll, elecHeating, elecDhw, elecCooling, elecBackup;
+  uint16_t hoursBoilerHeating, hoursBoilerDhw; // the gas boiler of the Altherma Hybrid
 };
 
 struct ControlProfile
@@ -237,8 +240,11 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // 20002203 (35..75 and 45..75 for the tank, twice [9-01]..[9-00] = 25..40 for the leaving water), the
     // limitation bytes read [4-08] 0 and [4-09] 1 as set with the four 50 A limits 0x20 below, and the active
     // limits are the 20.0 kW / 50.0 A pair of the board's defaults. The four setting bytes of the memory image
-    // read as the interface's values, at the same indexes. Not yet written to on a unit; the meter and the
-    // counters are not placed.
+    // read as the interface's values, at the same indexes. Confirmed on that unit (25 November 2026): with
+    // [1-03], [1-02] and [9-01] changed since the dumps, the curve read 21/31 and the range 20..40 as set; a
+    // leaving water target of 28 held in the RAM moved the unit's setpoint from 28 to 29 (its +1 shift) within
+    // 15 s, and the restore brought 21/31 back. The hot water target was not tried (fixed setpoints there); the
+    // meter and the counters are not placed.
     {"20017702",
      {0x378A, 0x37C8, 366, 367, 0x533B, 0x5340, 278, 0x01, 0x3148, 0x34A4},
      {0x378C, 0x37CA, 373, 372, 0x534A, 0x5345, 374, 0x0C, 0x319C, 0},
@@ -285,17 +291,29 @@ static const ControlProfile CONTROL_PROFILES[] = {
     // setpoint) with the 52 it reports 0x3A after it, as on 18002904. The four setting bytes of the memory read as
     // the interface's values at the same indexes, and the memory starts with the unit's name. On those dumps the
     // meter (10121 kWh) equals its float, and the heat of the three modes, 0x54 above 76F2's, adds up to it
-    // (9591.8 + 530.0 + 0). Not yet written to on a unit, the energy of each mode not yet compared with the
-    // interface; where this software keeps the active limit and the tank's ceiling is not known.
+    // (9591.8 + 530.0 + 0). Where this software keeps the active limit and the tank's ceiling is not known.
+    // Confirmed on that unit with the first build that wrote to it (bunni1310, #718, 25 November 2026): a leaving
+    // water target of 36 saved in the memory gave 41 on the interface with its +5 shift, and the restore brought
+    // 35/50 back; with the memory left alone a held 41 stayed (46 on the interface ten minutes later, the range
+    // 35..50) and a hot water target of 50 moved the tank's setpoint from 52 within 10 s. The hot water's
+    // effective target is the reheat setpoint there ([6-0C], moved from 45 to 50 between the dumps and the test).
+    // The hours, the starts, the heat and the electricity equal the interface's: 4625 and 107 h, 9246 h pump,
+    // 24683 starts, 10137 and 4119 kWh.
     // The water pressure is the gas boiler's (its sensor, its display; the registries' own reads 0 on the Hybrid):
     // one float follows the display in three dumps of two units (#718), 1.45 then 2.02 on an EHYHBX08AAV3 whose
-    // display showed 1.5 then 2.0 after a refill, 1.80 on the EHYHBH05AAV3 at 1.7. Found by its value, no code read.
+    // display showed 1.5 then 2.0 after a refill, 1.80 on the EHYHBH05AAV3 at 1.7; then read by the firmware, 1.87
+    // for 1.9 on the latter and 2.53 for 2.5 on the former, which reads about 0.5 bar more while it heats than at
+    // rest (2.5 and 2.0). Found by its value, no code read.
+    // The gas boiler's hours (the interface's operating hours of the boiler, at installer level) are 32-bit counts
+    // in the block of the compressor's: space heating right after the heat float of that mode, hot water 0x10
+    // under the compressor's. 1544 and 234 in the EHYHBH05AAV3 dump with 1552 and 234 on its interface a day later;
+    // 1591 and 147 in the EHYHBX08AAV3's with 1592 and 147 on its interface two hours later. Found by their values.
     {"9051",
      {0x15E0, 0x161E, 366, 367, 0x2C79, 0x2C7E, 278, 0x01, 0x1060, 0},
      {0x15E2, 0x1620, 373, 372, 0x2C88, 0x2C83, 374, 0x0C, 0x10C4, 0},
      {0x2BDE, 0x2BDF, 0x15E6, 0x2BBE, 0, 0},
      0x085E,
-     {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0x1806, 0x179C, 0x17EA, 0x085A},
+     {0x17F6, 0x17DA, 0x1788, 0x17D6, 0x18AA, 0x1806, 0x179C, 0x17EA, 0x085A, 0, 0, 0, 0, 0x180A, 0x1778},
      {},
      {},
      0x1E5C},
@@ -1319,7 +1337,8 @@ struct ChangeLog
 
 // The unit's lifetime counters read with the meter, where the profile maps them: lifetime totals in Home
 // Assistant, in the order of UnitCounters
-#define UNIT_COUNTER_COUNT 13
+#define UNIT_COUNTER_COUNT 15
+#define UNIT_COUNTER_BOILER 13 // the first of the two counters of the Hybrid's gas boiler, the last two
 
 enum UnitCounterKind : uint8_t
 {
@@ -1350,6 +1369,8 @@ static const UnitCounterDef UNIT_COUNTER_DEFS[UNIT_COUNTER_COUNT] = {
     {UNIT_WH_COUNT, "Unit meter: Electricity used, hot water (kWh)"},
     {UNIT_WH_COUNT, "Unit meter: Electricity used, cooling (kWh)"},
     {UNIT_WH_COUNT, "Unit meter: Electricity used, backup heater (kWh)"},
+    {UNIT_HOURS, "Unit meter: Boiler hours, space heating (h)"},
+    {UNIT_HOURS, "Unit meter: Boiler hours, hot water (h)"},
 };
 
 inline bool unitCounterIsEnergy(UnitCounterKind k) { return k == UNIT_KWH_FLOAT || k == UNIT_KWH_COUNT || k == UNIT_WH_COUNT; }
@@ -1409,8 +1430,14 @@ inline uint16_t unitCounterAddress(const UnitCounters &c, size_t i)
     return c.elecDhw;
   case 11:
     return c.elecCooling;
-  default:
+  case 12:
     return c.elecBackup;
+  case UNIT_COUNTER_BOILER:
+    return c.hoursBoilerHeating;
+  case UNIT_COUNTER_BOILER + 1:
+    return c.hoursBoilerDhw;
+  default:
+    return 0;
   }
 }
 

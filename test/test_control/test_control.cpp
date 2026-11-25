@@ -1812,8 +1812,10 @@ void test_the_unit_counters_are_read_with_the_meter()
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
     TEST_ASSERT_EQUAL_UINT32(18720, m.heatKWh);
     TEST_ASSERT_EQUAL_STRING("Unit meter: Compressor hours, space heating (h)", UNIT_COUNTER_DEFS[0].label);
-    for (size_t i = 0; i < UNIT_COUNTER_COUNT; i++)
+    for (size_t i = 0; i < UNIT_COUNTER_BOILER; i++)
         TEST_ASSERT_TRUE(m.counterMapped(i) && m.counterKnown[i]);
+    for (size_t i = UNIT_COUNTER_BOILER; i < UNIT_COUNTER_COUNT; i++) // no gas boiler on this unit
+        TEST_ASSERT_FALSE(m.counterMapped(i) || m.counterKnown[i]);
     TEST_ASSERT_EQUAL_UINT32(3240, m.counter[0]);
     TEST_ASSERT_EQUAL_UINT32(251, m.counter[1]);
     TEST_ASSERT_EQUAL_UINT32(691, m.counter[2]);
@@ -1879,7 +1881,7 @@ void test_the_energy_of_each_mode_is_read_on_20002203()
     MeterReader m = meterOn20002203();
     m.tick(1000);
     TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
-    for (size_t i = 5; i < UNIT_COUNTER_COUNT; i++)
+    for (size_t i = 5; i < UNIT_COUNTER_BOILER; i++)
     {
         TEST_ASSERT_TRUE(m.counterMapped(i) && m.counterKnown[i]);
         TEST_ASSERT_TRUE(unitCounterIsEnergy(UNIT_COUNTER_DEFS[i].kind));
@@ -1911,7 +1913,7 @@ void test_the_energy_of_each_mode_is_read_on_20002203()
         for (size_t i = 5; i < 8; i++)
             TEST_ASSERT_EQUAL_MESSAGE(q.ramHeatKwh != 0, unitCounterAddress(q.counters, i) != 0, q.softwareId);
         TEST_ASSERT_EQUAL_MESSAGE(q.ramHeatKwh != 0, unitCounterAddress(q.counters, 8) != 0, q.softwareId);
-        for (size_t i = 9; i < UNIT_COUNTER_COUNT; i++)
+        for (size_t i = 9; i < UNIT_COUNTER_BOILER; i++)
             TEST_ASSERT_EQUAL_UINT16(0, unitCounterAddress(q.counters, i));
     }
     TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
@@ -1981,6 +1983,55 @@ void test_the_hybrid_reads_the_water_pressure_of_its_boiler()
     // the Hybrid is one software: the two bytes of its registry the other way round are not another one
     for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
         TEST_ASSERT_TRUE(strcmp(CONTROL_PROFILES[i].softwareId, "5190") != 0);
+}
+
+// The Altherma Hybrid: the operating hours of its gas boiler in space heating and in hot water, two lifetime
+// counts read with the compressor's. The figures are two owners' memory dumps, equal to their interfaces'.
+void test_the_hybrid_reads_the_hours_of_its_boiler()
+{
+    const ControlProfile &p = FakeUnit::profileFor("9051");
+    TEST_ASSERT_EQUAL(15, UNIT_COUNTER_COUNT);
+    TEST_ASSERT_EQUAL(13, UNIT_COUNTER_BOILER);
+    TEST_ASSERT_EQUAL_STRING("Unit meter: Boiler hours, space heating (h)", UNIT_COUNTER_DEFS[UNIT_COUNTER_BOILER].label);
+    TEST_ASSERT_EQUAL_STRING("Unit meter: Boiler hours, hot water (h)", UNIT_COUNTER_DEFS[UNIT_COUNTER_BOILER + 1].label);
+    TEST_ASSERT_EQUAL(UNIT_HOURS, UNIT_COUNTER_DEFS[UNIT_COUNTER_BOILER].kind);
+    TEST_ASSERT_EQUAL(UNIT_HOURS, UNIT_COUNTER_DEFS[UNIT_COUNTER_BOILER + 1].kind);
+    TEST_ASSERT_EQUAL_HEX16(0x180A, unitCounterAddress(p.counters, UNIT_COUNTER_BOILER));
+    TEST_ASSERT_EQUAL_HEX16(0x1778, unitCounterAddress(p.counters, UNIT_COUNTER_BOILER + 1));
+    TEST_ASSERT_EQUAL_HEX16(0, unitCounterAddress(p.counters, UNIT_COUNTER_COUNT)); // beyond the list: none
+    unit.board(p);
+    unit.setU32(p.ramHeatKwh, 10121);
+    unit.setU32(0x17F6, 4616);       // the compressor's hours in space heating
+    unit.setFloat(0x1806, 9591.8f);  // the heat of that mode, the four bytes before the boiler's hours
+    unit.setU32(0x180A, 1544);       // an EHYHBH05AAV3: 1552 h on its interface a day later
+    unit.setU32(0x1788, 107);        // the compressor's hours in hot water
+    unit.setU32(0x1778, 234);        // 234 h on its interface
+    MeterReader m;
+    m.exchange = fakeExchange;
+    m.tick(1000);
+    TEST_ASSERT_EQUAL(CONTROL_READY, m.status);
+    TEST_ASSERT_TRUE(m.counterMapped(UNIT_COUNTER_BOILER) && m.counterKnown[UNIT_COUNTER_BOILER]);
+    TEST_ASSERT_TRUE(m.counterMapped(UNIT_COUNTER_BOILER + 1) && m.counterKnown[UNIT_COUNTER_BOILER + 1]);
+    TEST_ASSERT_EQUAL_UINT32(1544, m.counter[UNIT_COUNTER_BOILER]);
+    TEST_ASSERT_EQUAL_UINT32(234, m.counter[UNIT_COUNTER_BOILER + 1]);
+    TEST_ASSERT_EQUAL_UINT32(4616, m.counter[0]); // the compressor's stay their own
+    TEST_ASSERT_EQUAL_UINT32(107, m.counter[2]);
+    TEST_ASSERT_UINT32_WITHIN(1, 9591800, m.counter[5]);
+    // the other unit, an EHYHBX08AAV3: 1592 and 147 h on its interface two hours after the dump
+    unit.setU32(0x180A, 1591);
+    unit.setU32(0x1778, 147);
+    m.tick(1000 + METER_READ_INTERVAL_MS);
+    TEST_ASSERT_EQUAL_UINT32(1591, m.counter[UNIT_COUNTER_BOILER]);
+    TEST_ASSERT_EQUAL_UINT32(234, m.counter[UNIT_COUNTER_BOILER + 1]); // a lifetime count never goes down
+    // the electricity of each mode is not placed on this software
+    for (size_t i = 9; i < UNIT_COUNTER_BOILER; i++)
+        TEST_ASSERT_FALSE(m.counterMapped(i));
+    TEST_ASSERT_EQUAL(0, unit.ramWrites + unit.memoryWrites);
+    // only the Hybrid has a boiler
+    for (size_t i = 0; i < CONTROL_PROFILE_COUNT; i++)
+        for (size_t k = UNIT_COUNTER_BOILER; k < UNIT_COUNTER_COUNT; k++)
+            TEST_ASSERT_EQUAL_MESSAGE(strcmp(CONTROL_PROFILES[i].softwareId, "9051") == 0,
+                                      unitCounterAddress(CONTROL_PROFILES[i].counters, k) != 0, CONTROL_PROFILES[i].softwareId);
 }
 
 // What the controls hold is saved in the board's flash once unchanged for ten minutes, an hour at most after the
@@ -2096,6 +2147,7 @@ int main(int, char **)
     RUN_TEST(test_every_mapped_software_reads_its_meter_and_counters);
     RUN_TEST(test_the_unit_counters_are_read_with_the_meter);
     RUN_TEST(test_the_hybrid_reads_the_water_pressure_of_its_boiler);
+    RUN_TEST(test_the_hybrid_reads_the_hours_of_its_boiler);
     RUN_TEST(test_a_unit_just_powered_up_publishes_no_zero);
     RUN_TEST(test_lifetime_counts_never_go_back);
     RUN_TEST(test_the_energy_of_each_mode_is_read_on_20002203);

@@ -74,6 +74,8 @@ def key(reg, off, conv, size=2):
 
 
 class Device:
+    hybrid = False  # an Altherma Hybrid: no water pressure in the registries, the gas boiler's in the status
+
     def __init__(self, fresh, ethernet=False, bizone=False, leave_out=()):
         self.start = time.time()
         self.ethernet = ethernet
@@ -115,7 +117,8 @@ class Device:
             "mqtt": {"configured": bool(c["mqtt"]["server"]), "connected": bool(c["mqtt"]["server"]) and link != "none", "server": c["mqtt"]["server"], "state": 0},
             "hp": {"protocol": c["hp"]["protocol"], "model": c["hp"]["model"], "confirmed": c["hp"]["confirmed"],
                    "values": len(self.values()), "last_poll": 12 if c["hp"]["model"] else -1,
-                   "survey_running": time.time() < self.survey_until, "survey_done": time.time() >= self.survey_until},
+                   "survey_running": time.time() < self.survey_until, "survey_done": time.time() >= self.survey_until,
+                   **({"water_bar": 2.53} if self.hybrid else {})},
             "detect": {"model": MODELS[0][0], "family": "G", "confidence": "low"},
             "telemetry_available": True,
             "reset_reason": "restart by the firmware", "restart_cause": "Settings changed from the web interface",
@@ -200,6 +203,8 @@ class Device:
         base, drift = READINGS.get(l, (0, 0))
         if self.bizone and l == "LW setpoint (main)":
             base = 30  # the mixed zone target
+        if self.hybrid and l == "Water pressure":
+            return "0.0"
         return {217: "Heating", 304: "OFF", 301: "ON", 302: "ON"}.get(c, "%.1f" % (base + drift * math.sin(time.time() / 40 + r + o)))
 
     def values(self):
@@ -370,6 +375,7 @@ def main():
     ap.add_argument("--nodhw", action="store_true", help="no hot water tank: its values are not selected")
     ap.add_argument("--noroom", action="store_true", help="no room thermostat: its values are not selected")
     ap.add_argument("--limit", action="store_true", help="the power limit option on")
+    ap.add_argument("--hybrid", action="store_true", help="an Altherma Hybrid: the water pressure is the gas boiler's")
     ap.add_argument("--uptime", type=int, default=0, help="seconds the board has been running (an update restarts it first from 300)")
     args = ap.parse_args()
     global LIMIT_ON
@@ -377,6 +383,7 @@ def main():
     leave_out = ({"DHW tank temp. (R5T)", "DHW setpoint"} if args.nodhw else set()) | \
         ({"Indoor ambient temp. (R1T)", "RT setpoint"} if args.noroom else set())
     Handler.device = Device(args.fresh, args.ethernet, args.bizone, leave_out)
+    Handler.device.hybrid = args.hybrid
     Handler.device.start -= args.uptime
     print("Mock ESPAltherma on http://localhost:%d" % args.port)
     ThreadingHTTPServer(("", args.port), Handler).serve_forever()
