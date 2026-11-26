@@ -304,6 +304,7 @@
  "Aims for {n} °C": "Vise {n} °C",
  "Saved in the unit.": "Enregistrée dans l'unité.",
  "Applied, saved in the unit in a moment.": "Appliquée, enregistrée dans l'unité dans un instant.",
+ "Held in the working memory of the unit, not saved.": "Maintenue dans la mémoire de travail de l'unité, non enregistrée.",
  "Before ESPAltherma, the curve of the unit was {lo} °C to {hi} °C.": "Avant ESPAltherma, la courbe de l'unité allait de {lo} °C à {hi} °C.",
  "Limited to {n} {u}. The unit applies {a} {u}.": "Limitée à {n} {u}. L'unité applique {a} {u}.",
  "No limit from ESPAltherma. The unit allows {min} to {max} {u}; under the compressor minimum it stops.": "Pas de limite depuis ESPAltherma. L'unité accepte de {min} à {max} {u} ; sous le minimum du compresseur, elle s'arrête.",

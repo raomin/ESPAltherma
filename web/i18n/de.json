@@ -304,6 +304,7 @@
  "Aims for {n} °C": "Zielt auf {n} °C",
  "Saved in the unit.": "Im Gerät gespeichert.",
  "Applied, saved in the unit in a moment.": "Angewendet, wird gleich im Gerät gespeichert.",
+ "Held in the working memory of the unit, not saved.": "Im Arbeitsspeicher der Einheit gehalten, nicht gespeichert.",
  "Before ESPAltherma, the curve of the unit was {lo} °C to {hi} °C.": "Vor ESPAltherma ging die Kurve der Einheit von {lo} °C bis {hi} °C.",
  "Limited to {n} {u}. The unit applies {a} {u}.": "Begrenzt auf {n} {u}. Das Gerät wendet {a} {u} an.",
  "No limit from ESPAltherma. The unit allows {min} to {max} {u}; under the compressor minimum it stops.": "Keine Grenze von ESPAltherma. Das Gerät erlaubt {min} bis {max} {u}; unter dem Verdichter-Minimum hält es an.",

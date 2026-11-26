@@ -304,6 +304,7 @@
  "Aims for {n} °C": "Mikt op {n} °C",
  "Saved in the unit.": "Opgeslagen in het toestel.",
  "Applied, saved in the unit in a moment.": "Toegepast, wordt zo opgeslagen in het toestel.",
+ "Held in the working memory of the unit, not saved.": "Vastgehouden in het werkgeheugen van het toestel, niet opgeslagen.",
  "Before ESPAltherma, the curve of the unit was {lo} °C to {hi} °C.": "Vóór ESPAltherma liep de stooklijn van het toestel van {lo} °C tot {hi} °C.",
  "Limited to {n} {u}. The unit applies {a} {u}.": "Begrensd op {n} {u}. Het toestel past {a} {u} toe.",
  "No limit from ESPAltherma. The unit allows {min} to {max} {u}; under the compressor minimum it stops.": "Geen begrenzing vanuit ESPAltherma. Het toestel staat {min} tot {max} {u} toe; onder het compressorminimum stopt het.",

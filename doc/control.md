@@ -64,7 +64,7 @@ To try it:
 
 1. On the user interface of the heat pump, set the tank setpoint mode, or the leaving water setpoint mode of the main zone, to *weather dependent* ("loi d'eau" on a French interface).
 2. In ESPAltherma, tick the corresponding box under **Settings → Experimental**.
-3. The home page shows a *Hot water target* or *Leaving water target* card with the current target and the allowed range (the unit's own limits). Home Assistant gets a `Hot water target` and a `Leaving water target` number entity; the MQTT topics are `espaltherma/dhw_target/set` and `espaltherma/lwt_target/set` (a whole number of degrees), with the state on `.../state`.
+3. The home page shows a *Hot water target* or *Leaving water target* card with the current target and the allowed range (the unit's own limits, read again every 10 minutes: after a change of `[9-00]` or `[9-01]` on the interface the card and the number entity follow by themselves). Home Assistant gets a `Hot water target` and a `Leaving water target` number entity; the MQTT topics are `espaltherma/dhw_target/set` and `espaltherma/lwt_target/set` (a whole number of degrees), with the state on `.../state`.
 
 Next to the target, the card shows what the thermostat really aims for, with an explanation on hover. The hot water target is capped by the maximum the heat pump reaches on its own at the current outdoor temperature (about 50 °C on a mild day; above that the booster heater would have to finish), so asking for 55 heats the tank to that maximum. The leaving water target carries the shift and the room modulation set on the unit. Home Assistant gets these as the `effective` and `ceiling` attributes of the entities (on MQTT, `.../attributes`).
 

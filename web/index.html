@@ -836,7 +836,7 @@ function renderOneControl(u, c) {
         : t('What the heat pump follows right now: the target, plus the shift and the room modulation set on the unit.');
       sub.append(' ', el('span', {class: 'tip', title: tip}, t('Aims for {n} °C', {n: c.effective})), '.');
     }
-    if (flat) sub.append(' ' + (c.saved === c.target ? t('Saved in the unit.') : t('Applied, saved in the unit in a moment.')));
+    if (flat) sub.append(' ' + (c.ram_only && c.held >= 0 ? t('Held in the working memory of the unit, not saved.') : c.saved === c.target ? t('Saved in the unit.') : t('Applied, saved in the unit in a moment.')));
     if (c.orig_hi >= 0) sub.append(' ' + t('Before ESPAltherma, the curve of the unit was {lo} °C to {hi} °C.', {lo: c.orig_lo, hi: c.orig_hi}));
   }
   const v = $('#' + u.id + 'Val');
