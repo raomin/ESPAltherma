@@ -231,7 +231,7 @@ public:
       day->running = inRun; // kept for a restart, once known (a reading without the inverter keeps the last)
     if (runNow)
       day->runSec += (uint32_t)dt;
-    if (in.buh == 1)
+    if (in.buh == 1 || in.buh2 == 1) // either step: a unit can switch the second one alone (#724)
       day->buhSec += (uint32_t)dt;
     bool defrost = in.defrost == 1;
     if (defrost && !lastDefrost)

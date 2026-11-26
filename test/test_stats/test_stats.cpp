@@ -162,6 +162,22 @@ void test_defrost_and_buh(void)
     TEST_ASSERT_FALSE(isnan(s.cop));
 }
 
+// The second step on alone, as some units switch it (#724): the heater's time counts, with that step's own kW
+void test_buh_second_step_alone(void)
+{
+    StatsDay rtc;
+    Stats s = fresh(rtc);
+    s.settings.buhKW[0] = 2;
+    s.settings.buhKW[1] = 4;
+    StatsInput d = heating();
+    d.buh2 = 1;
+    s.update(d, T0, 10);
+    s.update(d, T0 + 60, 70);
+    s.update(d, T0 + 120, 130);
+    TEST_ASSERT_EQUAL(120, rtc.buhSec);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 6 * 230 / 1000.0f + 4, s.elecKW);
+}
+
 // An ECH2O making hot water (#659): 47 C out of the exchanger, 40 C after the tank coil, 39.7 C return. The sensor
 // after the heater would give 0.3 kW for 8; with the heater in the tank the one before it is taken, in every mode
 void test_heater_in_tank_takes_the_exchanger_outlet(void)
@@ -470,6 +486,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_day_energy_per_mode);
     RUN_TEST(test_cycles);
     RUN_TEST(test_defrost_and_buh);
+    RUN_TEST(test_buh_second_step_alone);
     RUN_TEST(test_heater_in_tank_takes_the_exchanger_outlet);
     RUN_TEST(test_heater_in_tank_counts_its_heat);
     RUN_TEST(test_sanity_caps);
