@@ -113,6 +113,7 @@
  "Compute energy and cycle figures": "Energie en cycli berekenen",
  "Mains voltage (V)": "Netspanning (V)",
  "Outdoor unit supply": "Voeding van de buitenunit",
+ "On the outdoor unit's nameplate: 1~ 230 V is 1 phase, 3N~ 400 V is 3 phases. The 6V or 9W in the indoor unit's name is the supply of its backup heater, not of the compressor.": "Op het typeplaatje van de buitenunit: 1~ 230 V is 1 fase, 3N~ 400 V is 3 fasen. De 6V of 9W in de naam van de binnenunit is de voeding van de back-upverwarming, niet die van de compressor.",
  "Pump and electronics (W)": "Pomp en elektronica (W)",
  "Power factor": "Arbeidsfactor",
  "The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.": "De arbeidsfactor zet de voltampère van de omvormer om in watt. Standaard 1, wat bij laag compressortoerental te hoog uitkomt: met een meter op de unit vult u de waarde in die ermee overeenkomt, 0,6 tot 0,9 bij de meeste units. Pomp en back-upverwarming blijven buiten beschouwing.",

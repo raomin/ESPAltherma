@@ -113,6 +113,7 @@
  "Compute energy and cycle figures": "Energie und Zyklen berechnen",
  "Mains voltage (V)": "Netzspannung (V)",
  "Outdoor unit supply": "Versorgung des Außengeräts",
+ "On the outdoor unit's nameplate: 1~ 230 V is 1 phase, 3N~ 400 V is 3 phases. The 6V or 9W in the indoor unit's name is the supply of its backup heater, not of the compressor.": "Auf dem Typenschild des Außengeräts: 1~ 230 V ist 1 Phase, 3N~ 400 V sind 3 Phasen. Das 6V oder 9W im Namen des Innengeräts ist die Versorgung seines Heizstabs, nicht die des Verdichters.",
  "Pump and electronics (W)": "Pumpe und Elektronik (W)",
  "Power factor": "Leistungsfaktor",
  "The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.": "Der Leistungsfaktor macht aus den Voltampere des Inverters Watt. Standard 1, was bei niedriger Verdichterdrehzahl zu hoch liest: mit einem Zähler an der Anlage den Wert eintragen, der zu ihm passt, 0,6 bis 0,9 bei den meisten Anlagen. Pumpe und Heizstab sind nicht betroffen.",

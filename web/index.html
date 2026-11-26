@@ -416,6 +416,7 @@ td.nowrap{white-space:nowrap;color:var(--ink2)}
    <label class="chk"><input type="checkbox" id="sStats">Compute energy and cycle figures</label>
     <label class="f"><span class="k">Mains voltage (V)</span><input type="number" id="sStatsV" min="100" max="500" step="1" translate="no"></label>
     <label class="f"><span class="k">Outdoor unit supply</span><select id="sStatsPh" translate="no"><option value="1">1 ~ 230 V</option><option value="3">3 ~ 230 V</option></select></label>
+    <p class="sub">On the outdoor unit's nameplate: 1~ 230 V is 1 phase, 3N~ 400 V is 3 phases. The 6V or 9W in the indoor unit's name is the supply of its backup heater, not of the compressor.</p>
     <label class="f"><span class="k">Pump and electronics (W)</span><input type="number" id="sStatsAux" min="10" max="500" step="10" translate="no"></label>
     <label class="f"><span class="k">Power factor</span><input type="number" id="sStatsPf" min="0.4" max="1" step="0.01" translate="no"></label>
     <label class="f"><span class="k">Backup heater step 1 (kW)</span><input type="number" id="sStatsBuh1" min="0" max="12" step="0.5" translate="no"></label>

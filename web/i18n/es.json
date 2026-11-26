@@ -113,6 +113,7 @@
  "Compute energy and cycle figures": "Calcular energía y ciclos",
  "Mains voltage (V)": "Tensión de red (V)",
  "Outdoor unit supply": "Alimentación de la unidad exterior",
+ "On the outdoor unit's nameplate: 1~ 230 V is 1 phase, 3N~ 400 V is 3 phases. The 6V or 9W in the indoor unit's name is the supply of its backup heater, not of the compressor.": "En la placa de la unidad exterior: 1~ 230 V es monofásico, 3N~ 400 V es trifásico. El 6V o 9W del nombre de la unidad interior es la alimentación de su resistencia de apoyo, no la del compresor.",
  "Pump and electronics (W)": "Bomba y electrónica (W)",
  "Power factor": "Factor de potencia",
  "The power factor turns the inverter's volt-amperes into watts. 1 by default, which reads high at low compressor speed: with a meter on the unit, set the value that matches it, 0.6 to 0.9 on most units. The pump and the backup heater are not affected.": "El factor de potencia convierte los voltamperios del inversor en vatios. 1 por defecto, que lee alto a baja velocidad del compresor: con un contador en la unidad, ponga el valor que coincida con él, de 0,6 a 0,9 en la mayoría de las unidades. La bomba y el calentador de apoyo no se ven afectados.",
