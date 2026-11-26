@@ -1,0 +1,46 @@
+name: Suggestion or feature request
+description: An idea to make ESPAltherma better, or something you miss.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! One suggestion per issue keeps it easy to follow.
+        Something that does not work goes in the bug report form; questions and model support go to the [Discussions](https://github.com/raomin/ESPAltherma/discussions). For the Home Assistant card, use [its own repository](https://github.com/raomin/espaltherma-card/issues).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What you would like
+      description: What ESPAltherma should do, or do differently. Screenshots welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: What it is for
+      description: Your installation and what you want to achieve. It often shows a simpler way to get there.
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      options:
+        - ESPAltherma 2 (installed with the web installer)
+        - ESPAltherma 1.x (built with setup.h)
+    validations:
+      required: true
+
+  - type: input
+    id: heatpump
+    attributes:
+      label: Heat pump
+      description: The model numbers of the indoor and outdoor units, when the suggestion depends on the unit.
+      placeholder: "Indoor EHVH08S18CB3V, outdoor ERLQ008CAV3"
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Links, what you tried, how you do it today.
