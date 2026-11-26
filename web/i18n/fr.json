@@ -455,7 +455,7 @@
  "pump {h} h": "pompe {h} h",
  "{n} starts": "{n} démarrages",
  "{e} kWh electricity": "{e} kWh d'électricité",
- "A whole range at once, as a file to attach to the issue: a few hundred frames, a minute or two. 16 KB at most, 0x3000-0x5FFF holds the settings and the counters of most softwares, 0x0800-0x0FFF the meters.": "Toute une plage d'un coup, en fichier à joindre au ticket : quelques centaines de trames, une ou deux minutes. 16 Ko au plus ; 0x3000-0x5FFF contient les réglages et les compteurs de la plupart des logiciels, 0x0800-0x0FFF les compteurs d'énergie.",
+ "A whole range at once, as a file to attach to the issue: a few hundred frames, a minute or two. 16 KB at most. A request to support a software needs two ranges: 0x0800-0x2FFF and 0x3000-0x5FFF (the settings and the counters are in the first on the softwares of 2018 and before, in the second on the later ones).": "Toute une plage d'un coup, en fichier à joindre au ticket : quelques centaines de trames, une ou deux minutes. 16 Ko au plus. Pour demander la prise en charge d'un logiciel, il faut deux plages : 0x0800-0x2FFF et 0x3000-0x5FFF (les réglages et les compteurs sont dans la première sur les logiciels de 2018 et avant, dans la seconde sur les suivants).",
  "From": "De",
  "To": "À",
  "Dump": "Extraire",

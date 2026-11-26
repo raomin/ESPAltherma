@@ -455,7 +455,7 @@
  "pump {h} h": "Pumpe {h} h",
  "{n} starts": "{n} Starts",
  "{e} kWh electricity": "{e} kWh Strom",
- "A whole range at once, as a file to attach to the issue: a few hundred frames, a minute or two. 16 KB at most, 0x3000-0x5FFF holds the settings and the counters of most softwares, 0x0800-0x0FFF the meters.": "Ein ganzer Bereich auf einmal, als Datei für das Issue: ein paar hundert Frames, ein bis zwei Minuten. Höchstens 16 KB; 0x3000-0x5FFF enthält bei den meisten Softwares die Einstellungen und Zähler, 0x0800-0x0FFF die Energiezähler.",
+ "A whole range at once, as a file to attach to the issue: a few hundred frames, a minute or two. 16 KB at most. A request to support a software needs two ranges: 0x0800-0x2FFF and 0x3000-0x5FFF (the settings and the counters are in the first on the softwares of 2018 and before, in the second on the later ones).": "Ein ganzer Bereich auf einmal, als Datei für das Issue: ein paar hundert Frames, ein bis zwei Minuten. Höchstens 16 KB. Damit eine Software unterstützt werden kann, braucht es zwei Bereiche: 0x0800-0x2FFF und 0x3000-0x5FFF (die Einstellungen und Zähler liegen bei den Softwares bis 2018 im ersten, bei den späteren im zweiten).",
  "From": "Von",
  "To": "Bis",
  "Dump": "Auslesen",
