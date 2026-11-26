@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report it! Questions, model support and ideas go to the [Discussions](https://github.com/raomin/ESPAltherma/discussions).
+        Thanks for taking the time to report it! A suggestion has its own form; questions and model support go to the [Discussions](https://github.com/raomin/ESPAltherma/discussions).
         Before opening an issue, have a look at the Troubleshooting section of the README: [ESPAltherma 2](https://github.com/raomin/ESPAltherma/tree/beta#troubleshooting) · [ESPAltherma 1.x](https://github.com/raomin/ESPAltherma#troubleshooting).
 
   - type: dropdown
