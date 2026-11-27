@@ -140,7 +140,16 @@ bool webUpdateRunning()
 // the handshake (sampled on an M5StickC: 62 KB free before, 8.6 KB at the lowest; /api/heap gives the last one).
 // Without that room it fails, and leaves the web server and MQTT nothing meanwhile. The callers skip their turn
 // then and come back later. ESP.getFreeHeap() does not tell: it also counts 30 to 40 KB that only code can use.
+// Built with dynamic TLS buffers (the C6, platformio.ini), the send buffer is 4 KB and the receive buffer is taken
+// only while a record is read: a call takes 33 KB (sampled on an ESP32-S3: 205 KB free before, 172 KB at the
+// lowest). The receive buffer stays 16 KB, as the sites do not negotiate smaller records: the block it needs is
+// the same.
+#include <sdkconfig.h>
+#ifdef CONFIG_MBEDTLS_DYNAMIC_BUFFER
+#define TLS_HEAP_NEEDED 40000
+#else
 #define TLS_HEAP_NEEDED 58000
+#endif
 #define TLS_BLOCK_NEEDED 17500
 static bool tlsHasRoom()
 {
