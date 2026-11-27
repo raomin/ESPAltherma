@@ -1164,7 +1164,7 @@ void test_dhw_low_range_only_on_verified_software_in_ram_only()
         TEST_ASSERT_TRUE(c.identify(1000));
         TEST_ASSERT_EQUAL(45, c.minTarget);
         c.setRamOnly(true, 2000);
-        TEST_ASSERT_EQUAL(strcmp(p.softwareId, "20002203") == 0 ? 25 : 45, c.minTarget);
+        TEST_ASSERT_EQUAL(strcmp(p.softwareId, "20002203") == 0 || strcmp(p.softwareId, "20017704") == 0 ? 25 : 45, c.minTarget);
         TEST_ASSERT_EQUAL(55, c.maxTarget);
         TEST_ASSERT_EQUAL(35, c.minA);
         TEST_ASSERT_EQUAL(45, c.minB);
@@ -1196,6 +1196,23 @@ void test_dhw_low_target_clamps_and_restores_without_persistent_writes()
     TEST_ASSERT_EQUAL(48 << 8, unit.word(p.dhw.ramA));
     TEST_ASSERT_EQUAL(52 << 8, unit.word(p.dhw.ramB));
     TEST_ASSERT_EQUAL(-1, c.held);
+    TEST_ASSERT_EQUAL(0, unit.memoryWrites);
+    TEST_ASSERT_EQUAL(0, unit.badWrites);
+}
+
+void test_dhw_low_target_reaches_41_on_20017704()
+{
+    const ControlProfile &p = FakeUnit::profileFor("20017704");
+    unit.board(p);
+    CurveControl c = fresh();
+    c.ramOnly = true;
+    TEST_ASSERT_TRUE(c.identify(1000));
+    TEST_ASSERT_EQUAL(25, c.minTarget);
+    c.request(41);
+    c.tick(2000);
+    TEST_ASSERT_EQUAL(41, c.held);
+    TEST_ASSERT_EQUAL(41 << 8, unit.word(p.dhw.ramA));
+    TEST_ASSERT_EQUAL(41 << 8, unit.word(p.dhw.ramB));
     TEST_ASSERT_EQUAL(0, unit.memoryWrites);
     TEST_ASSERT_EQUAL(0, unit.badWrites);
 }
@@ -2121,6 +2138,7 @@ int main(int, char **)
     RUN_TEST(test_power_limit_reapply_clamps_a_previously_held_value);
     RUN_TEST(test_dhw_low_range_only_on_verified_software_in_ram_only);
     RUN_TEST(test_dhw_low_target_clamps_and_restores_without_persistent_writes);
+    RUN_TEST(test_dhw_low_target_reaches_41_on_20017704);
     RUN_TEST(test_dhw_low_hold_gives_the_units_curve_back_when_ram_only_is_disabled);
     RUN_TEST(test_dhw_hold_within_the_memory_range_is_saved_when_ram_only_is_disabled);
     RUN_TEST(test_dhw_low_hold_returns_after_ram_is_reloaded_and_esp_restarts);
